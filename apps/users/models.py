@@ -130,7 +130,8 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
 
     mobile_verified = models.BooleanField(default=False,
                                          verbose_name='Mobile Verified')
-
+    email_verified = models.BooleanField(default=False,
+                                         verbose_name='Email Verified')
     user_types = models.ManyToManyField(UserTypes)
 
     REQUIRED_FIELDS = []

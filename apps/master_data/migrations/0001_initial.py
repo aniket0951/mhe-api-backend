@@ -37,8 +37,11 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=50)),
                 ('slug', models.SlugField(blank=True, null=True, unique=True)),
+<<<<<<< HEAD
                 ('start_date', models.DateField()),
                 ('end_date', models.DateField()),
+=======
+>>>>>>> dev
             ],
             options={
                 'verbose_name': 'Billing Sub Group',
@@ -71,8 +74,11 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('code', models.SlugField(blank=True, null=True, unique=True)),
                 ('description', models.TextField(blank=True, null=True)),
+<<<<<<< HEAD
                 ('start_date', models.DateField()),
                 ('end_date', models.DateField()),
+=======
+>>>>>>> dev
             ],
             options={
                 'verbose_name': 'Specialisation',

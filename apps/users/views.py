@@ -1,4 +1,5 @@
 from django.shortcuts import render
+<<<<<<< HEAD
 import math, random
 import requests
 from datetime import datetime, timedelta, timezone
@@ -182,6 +183,5 @@ def change_mobile_number(request):
 #         return Response({"details": "OTP sent successfully", "status": 200})
 #     else:
 #         return Response({"details": "Mobile number is wrong or see your connection", "status": 400})
-
 
 # Create your views here.

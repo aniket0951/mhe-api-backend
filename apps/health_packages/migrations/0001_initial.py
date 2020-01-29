@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('master_data', '0001_initial'),
         ('health_tests', '0001_initial'),
-    ]
 
     operations = [
         migrations.CreateModel(

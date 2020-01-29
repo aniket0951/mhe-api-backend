@@ -16,7 +16,7 @@ import environ
 
 root = environ.Path(__file__) - 2
 # set default values and casting
-env = environ.Env(DEBUG=(bool, True),)
+env = environ.Env(DEBUG=(bool, False),)
 # reading .env file
 environ.Env.read_env('.env')
 
@@ -114,10 +114,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'manipal_api.wsgi.application'
 
 
-AUTHENTICATION_BACKENDS = [
-        'social_core.backends.facebook.FacebookOAuth2',
-    ]
-
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -134,16 +130,29 @@ AUTHENTICATION_BACKENDS = [
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'doctor_app',
+#         'USER': os.environ.get("SQL_USERNAME"),
+#         'PASSWORD': os.environ.get("SQL_PASSWORD"),
+#         'HOST': 'localhost',
+#         'PORT': '3306',
+#     }
+# }
+# =======
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'doctor_app',
-        'USER': os.environ.get("SQL_USERNAME"),
-        'PASSWORD': os.environ.get("SQL_PASSWORD"),
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': env('MANIPAL_DB_NAME'),
+        'USER': env('MANIPAL_DB_USER'),
+        'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),
+        'HOST': env('MANIPAL_DB_HOST'),
+        'PORT': env('MANIPAL_DB_PORT'),
+
     }
 }
+
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
