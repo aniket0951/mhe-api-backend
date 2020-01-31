@@ -111,6 +111,11 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
                                        auto_now_add=True,
                                        verbose_name="otp generate time")
 
+    favorite_hospital_code = models.CharField(blank = True,
+                           null=True,
+                           max_length=100,
+                           verbose_name="Favorite Hospital Code")
+
     # display_picture = models.ImageField(upload_to=generate_display_picture_path,
     # storage=MediaStorage(),
     # validators=[validate_file_size, ],
@@ -145,3 +150,29 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
 
     def __str__(self):
         return str(self.mobile)
+
+
+class Relationship(models.Model):
+    user_id = models.ForeignKey(BaseUser,
+                                on_delete=models.PROTECT,
+                                null=False,
+                                blank=False,
+                                related_name = 'user')
+
+    relative_user_id = models.ForeignKey(BaseUser,
+                                on_delete=models.PROTECT,
+                                null=False,
+                                blank=False,
+                                related_name = 'relative_user')
+
+    relation = models.IntegerField(blank=True,
+                              null=True,
+                              verbose_name='relation')
+    class Meta:
+        verbose_name = "Relationship"
+        verbose_name_plural = "Relationships"
+
+    def __str__(self):
+        return str(self.relation)
+
+
