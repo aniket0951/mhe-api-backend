@@ -1,14 +1,11 @@
 from django.conf.urls import url
-
 from . import views
-
-# from rest_framework import routers
-
-# router = routers.SimpleRouter()
-# router.register(r'slave', views.SlaveViewSet, "Slave")
+from django.urls import path
 
 urlpatterns = [
-    url(r'^appointments/', views.appointment, name='appointment'),
+    path('doctors/', views.DoctorsAPIView.as_view()),
+    path('location/', views.LocationAPIView.as_view()),
+    path('specialisation/', views.SpecialisationAPIView.as_view()),
+    path('doctorIn/', views.DoctorDetailView, name = "doctorview")
 ]
 
-# urlpatterns += router.urls
