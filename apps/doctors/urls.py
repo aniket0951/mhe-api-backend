@@ -9,4 +9,3 @@ urlpatterns = [
     path('doctorIn/', views.DoctorDetailView, name = "doctorview")
 ]
 
-
