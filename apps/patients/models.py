@@ -22,4 +22,4 @@ class Patient(BaseUser):
         permissions = ()
 
     def __str__(self):
-        return self.representation
+        return self.first_name

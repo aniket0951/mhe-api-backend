@@ -32,7 +32,7 @@ class Hospital(MyBaseModel):
         verbose_name_plural = "Hospitals"
 
     def __str__(self):
-        return self.name
+        return self.profit_center
 
     def save(self, *args, **kwargs):
         super(Hospital, self).save(*args, **kwargs)
@@ -56,7 +56,7 @@ class Specialisation(MyBaseModel):
         verbose_name_plural = "Specialisations"
 
     def __str__(self):
-        return self.name
+        return self.code
 
     def save(self, *args, **kwargs):
         super(Specialisation, self).save(*args, **kwargs)
