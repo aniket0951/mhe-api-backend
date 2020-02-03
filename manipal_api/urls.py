@@ -11,5 +11,4 @@ urlpatterns = [
     path('myAppointment/', include('apps.appointments.urls')),
 
     
->>>>>>> manipal_api/urls.py
 ]
