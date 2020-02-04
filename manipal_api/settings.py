@@ -125,34 +125,10 @@ WSGI_APPLICATION = 'manipal_api.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-"""
 # Database (Postgresql) Settings
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': env('MANIPAL_DB_NAME'),
-#         'USER': env('MANIPAL_DB_USER'),
-#         'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),
-#         'HOST': env('MANIPAL_DB_HOST'),
-#         'PORT': env('MANIPAL_DB_PORT'),
-
-#     }
-# }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'doctor_app',
-#         'USER': os.environ.get("SQL_USERNAME"),
-#         'PASSWORD': os.environ.get("SQL_PASSWORD"),
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#     }
-# }
-# =======
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': env('MANIPAL_DB_NAME'),
         'USER': env('MANIPAL_DB_USER'),
         'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),
@@ -161,20 +137,6 @@ DATABASES = {
 
     }
 }
-"""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'doctor_app',
-        'USER': os.environ.get("SQL_USERNAME"),
-        'PASSWORD': os.environ.get("SQL_PASSWORD"),
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
-}
-
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

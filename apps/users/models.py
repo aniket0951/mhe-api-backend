@@ -87,8 +87,9 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
                                    null=True,
                                    verbose_name='Middle Name')
 
-    mobile = PhoneNumberField(blank=True,
-                              null=True,
+    mobile = PhoneNumberField(blank=False,
+                              null=False,
+                              unique=True,
                               verbose_name="Mobile Number")
 
     otp = models.CharField(blank = True,
@@ -140,7 +141,7 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
     user_types = models.ManyToManyField(UserTypes)
 
     REQUIRED_FIELDS = []
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'mobile'
 
     objects = UserManager()
 
