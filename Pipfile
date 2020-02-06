@@ -17,6 +17,10 @@ pycodestyle = "==2.5.0"
 autopep8 = "==1.4.4"
 django-phonenumber-field = "*"
 phonenumbers = "*"
+djangorestframework = "*"
+django-filter = "*"
+requests = "*"
+boto3 = "*"
 
 [requires]
 python_version = "3.8"

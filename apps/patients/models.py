@@ -5,6 +5,7 @@ import uuid
 # Create your models here.
 from apps.users.models import BaseUser
 
+
 class Patient(BaseUser):
     unique_identifier = models.UUIDField(primary_key=True,
                           default=uuid.uuid4,

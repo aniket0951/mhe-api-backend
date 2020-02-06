@@ -2,6 +2,11 @@ from django.conf.urls import url
 
 from . import views
 
+# from rest_framework import routers
+
+# router = routers.SimpleRouter()
+# router.register(r'slave', views.SlaveViewSet, "Slave")
+
 urlpatterns = [
     url(r'^api/user/sign_up/', views.sign_up, name='sign_up'),
     url(r'^api/user/send_otp/', views.send_otp, name='send_otp'),

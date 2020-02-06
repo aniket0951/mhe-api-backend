@@ -131,7 +131,6 @@ WSGI_APPLICATION = 'manipal_api.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-"""
 # Database (Postgresql) Settings
 DATABASES = {
     'default': {
@@ -144,20 +143,6 @@ DATABASES = {
 
     }
 }
-"""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'doctor_app',
-        'USER': os.environ.get("SQL_USERNAME"),
-        'PASSWORD': os.environ.get("SQL_PASSWORD"),
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
-}
-
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
