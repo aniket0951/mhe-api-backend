@@ -30,7 +30,7 @@ class Doctor(BaseUser):
 
     start_date = models.DateField()
 
-    end_date = models.DateField()
+    end_date = models.DateField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Doctor"
