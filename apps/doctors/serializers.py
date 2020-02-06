@@ -6,7 +6,7 @@ from apps.patients.models import Patient
 class HospitalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hospital
-        fields = ['profit_center']
+        fields = '__all__'
 
 class HospitalDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,7 +37,7 @@ class DoctorSerializer(serializers.ModelSerializer):
 class DoctorSpecificSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
-        fields = ['id']
+        fields = ['id','first_name', 'experience']
 
 class HospitalSpecificSerializer(serializers.ModelSerializer):
     class Meta:
