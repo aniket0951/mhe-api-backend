@@ -1,10 +1,6 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
-
-# Create your models here.
 from apps.meta_app.models import MyBaseModel
-from django.contrib.gis.geos import Point
-from django.contrib.gis.db import models
 
 class Hospital(MyBaseModel):
     longitude = models.FloatField(null = True, blank= True)
