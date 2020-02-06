@@ -30,9 +30,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
+AWS_ACCESS_KEY = env('ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY  = env('SECRET_KEY')
+AWS_SNS_TOPIC_NAME = env('SNS_TOPIC_NAME')
+AWS_SNS_TOPIC_REGION = env('SNS_TOPIC_REGION')
+AWS_SNS_Topic_ARN  = env('SNS_Topic_ARN')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = True
+"""
+env('DEBUG')
+"""
 
 ALLOWED_HOSTS = ['*']
 
@@ -47,6 +55,9 @@ INBUILT_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'django_filters',
+    'django.contrib.gis',
 ]
 
 CUSTOM_APPS = [
@@ -57,6 +68,7 @@ CUSTOM_APPS = [
     'apps.health_packages',
     'apps.health_tests',
     'apps.doctors',
+    'apps.appointments',
 
 
 
@@ -119,7 +131,7 @@ WSGI_APPLICATION = 'manipal_api.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
+"""
 # Database (Postgresql) Settings
 DATABASES = {
     'default': {
@@ -132,6 +144,20 @@ DATABASES = {
 
     }
 }
+"""
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'doctor_app',
+        'USER': os.environ.get("SQL_USERNAME"),
+        'PASSWORD': os.environ.get("SQL_PASSWORD"),
+        'HOST': 'localhost',
+        'PORT': '3306',
+    }
+}
+
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -165,6 +191,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+    }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/

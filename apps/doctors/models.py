@@ -3,8 +3,8 @@ import uuid
 from django.db import models
 
 from apps.master_data.models import Hospital, Specialisation
-# Create your models here.
 from apps.users.models import BaseUser
+
 
 
 class Doctor(BaseUser):
@@ -38,4 +38,4 @@ class Doctor(BaseUser):
         permissions = ()
 
     def __str__(self):
-        return self.representation
+        return self.code
