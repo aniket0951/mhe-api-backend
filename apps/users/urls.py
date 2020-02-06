@@ -21,4 +21,6 @@ urlpatterns = [
     url(r'^api/user/list_family_members/', views.list_family_members, name='list_family_members'),
     url(r'^api/user/delete_family_member/', views.delete_family_member, name='delete_family_member'),
     url(r'^api/user/set_favorite_hospital/', views.set_favorite_hospital, name='set_favorite_hospital'),
+    url(r'^api/user/add_family_member_verification/', views.add_family_member_verification, name='add_family_member_verification'),
+
 ]	

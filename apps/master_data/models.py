@@ -3,10 +3,13 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 # Create your models here.
 from apps.meta_app.models import MyBaseModel
-
+from django.contrib.gis.geos import Point
+from django.contrib.gis.db import models
 
 class Hospital(MyBaseModel):
-
+    longitude = models.FloatField(null = True, blank= True)
+    latitude = models.FloatField(null = True, blank= True)
+    distance = models.IntegerField(default= 1.5)
     profit_center = models.CharField(max_length=50,
                                      null=False,
                                      blank=False,
@@ -26,6 +29,7 @@ class Hospital(MyBaseModel):
                               verbose_name="Mobile Number")
 
     address = models.TextField(blank=True, null=True)
+    distance = models.IntegerField(blank = True,default=2.5)
 
     class Meta:
         verbose_name = "Hospital"

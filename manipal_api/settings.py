@@ -30,6 +30,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
+AWS_ACCESS_KEY = env('ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY  = env('SECRET_KEY')
+AWS_SNS_TOPIC_NAME = env('SNS_TOPIC_NAME')
+AWS_SNS_TOPIC_REGION = env('SNS_TOPIC_REGION')
+AWS_SNS_Topic_ARN  = env('SNS_Topic_ARN')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -52,6 +57,7 @@ INBUILT_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
+    'django.contrib.gis',
 ]
 
 CUSTOM_APPS = [
