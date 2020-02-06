@@ -6,6 +6,14 @@ from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 from apps.patients.models import Patient
 
+class AppointmentDoctorSerializer(serializers.ModelSerializer):
+    doctor = DoctorSpecificSerializer(read_only=True)
+
+    class Meta:
+        model  = Appointment
+        fields  =  ['doctor']
+
+
 
 class AppointmentSerializer(serializers.ModelSerializer):
     doctor = DoctorSpecificSerializer(read_only=True)
@@ -15,6 +23,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = ('id','patient', 'token_no' , 'doctor' , 'hospital' ,'time_slot_from' , 'appointment_date', 'status')
     
+    """
     def create(self, validated_data):
         hospital_data = validated_data['hospital']
         doctor_data = validated_data['doctor']
@@ -24,3 +33,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         Doctor.objects.create(appointment=appointment, **doctor_data)
         Patient.objects.create(appointment=appointment, **patient_data)
         return appointment
+    """
+
+    

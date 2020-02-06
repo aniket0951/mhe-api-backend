@@ -8,11 +8,12 @@ from django.forms.models import model_to_dict
 from rest_framework.response import Response
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital, Specialisation
-from apps.doctors.serializers import DoctorSerializer, HospitalDetailSerializer, SpecialisationDetailSerializer,SpecialisationDetailSerializer
+from apps.doctors.serializers import DoctorSerializer, HospitalDetailSerializer, SpecialisationDetailSerializer,SpecialisationDetailSerializer,HospitalSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import generics
 from rest_framework import filters
+from rest_framework.views import APIView
 
 
 """
@@ -40,13 +41,35 @@ class DoctorsAPIView(generics.ListCreateAPIView):
         location = self.request.GET.get('location')
         return qs.filter(linked_hospitals__code = location)
     """
-class LocationAPIView(generics.ListCreateAPIView):
+class LocationAPIView(generics.ListAPIView):
     queryset          = Hospital.objects.all()
-    serializer_class  = HospitalDetailSerializer
+    serializer_class  = HospitalSerializer
+
+    def list(self, request):
+        queryset = Hospital.objects.all()
+        serializer = HospitalSerializer(queryset, many=True)
+        return Response({"data": serializer.data, "status" : 200})
+
+
+class PreferredLocationView(APIView):
+    serializers_class = HospitalSerializer
+    queryset = Hospital.objects.all()
+
+    def get(request):
+        long = self.request.query_params.get('long', None)
+        lat =  self.request.query_params.get('lat', None)
+        hospital = HospitalSerializer.objects.all()
+        serializer = HospitalSerializer(hospital)
+        context = {'status' : 200, "data": serializer.data}
+        return Response(context) 
+
+
 
 class SpecialisationAPIView(generics.ListCreateAPIView):
     queryset          = Specialisation.objects.all()
     serializer_class  = SpecialisationDetailSerializer
+
+
 """
 class DoctorDetailAPIView(generics.RetrieveAPIView):
     
@@ -80,9 +103,6 @@ def DoctorDetailView(request):
     return HttpResponse(json.dumps(json_to_be_returned))
 
 
-@api_view(['POST'])
-def bookAppointment(request):
-    pass
 
     
 

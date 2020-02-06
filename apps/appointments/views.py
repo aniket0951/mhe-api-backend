@@ -1,9 +1,11 @@
 from django.shortcuts import render
 from .models import Appointment
-from .serializers import AppointmentSerializer
+from .serializers import AppointmentSerializer , AppointmentDoctorSerializer
 
 # Create your views here.
 import rest_framework
+import base64
+import hashlib
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.filters import OrderingFilter
@@ -77,6 +79,8 @@ class AppointmentsAPIView(generics.ListCreateAPIView):
         if patient_id is not None:
             queryset = queryset.filter(patient_id = patient_id)
             return queryset
+        else:
+            return queryset
 
 
 @api_view(['POST'])
@@ -113,6 +117,59 @@ def CancelAppointment(request):
     instance.status = 2
     instance.save()
     return Response({"message": "Appointment has been cancelled"}, status = 2)
+
+class RecentlyVisitedDoctorlistView(generics.ListCreateAPIView):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentDoctorSerializer
+    
+
+    def get_queryset(self):
+        queryset = Appointment.objects.all()
+        patient_id = self.request.query_params.get('patient_id', None)
+        
+        if patient_id is not None:
+            queryset = queryset.filter(patient_id = patient_id)
+            return queryset
+        else:
+            return queryset
+
+@api_view(['GET'])
+def get_data(request):
+    param = {}
+    token = {}
+    token["auth"] = {}
+    token["auth"]["user"] = "manipalhospitaladmin"
+    token["auth"]["key"] = "ldyVqN8Jr1GPfmwBflC2uQcKX2uflbRP"
+    token["username"] = "Patient"
+    token["accounts"] = []
+    account = {
+           "patient_name": "Jane Doe",
+           "account_number": "ACC1",
+           "amount": "150.25",
+           "email": "abc@xyz.com",
+           "phone": "9876543210"
+       }
+    token["accounts"].append(account)
+    token["processing_id"] = "TESTAPPID819"
+    token["paymode"] =  ""
+    token["response_url"]  =  ""
+    token["return_url"]  = ""
+    param["token"] = token
+    param["check_sum_hash"] = get_checksum(token["auth"]["user"], token["auth"]["key"], token["processing_id"] ,"mid", "bDp0YXGlb0s4PEqdl2cEWhgGN0kFFEPD")
+    param["mid"] = "ydLf7fPe"
+    
+    return Response(data = param)
+
+def get_checksum(user, key, processing_id, mid, secret_key):
+    hash_string = user + "|" + key + "|" + processing_id + "|"+ mid + "|" + secret_key
+    checksum = base64.b64encode(hashlib.sha256(hash_string.encode("utf-8")).digest())
+    return checksum
+
+
+    
+
+
+
 
 
       

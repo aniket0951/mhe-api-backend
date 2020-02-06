@@ -1,6 +1,7 @@
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
                                         PermissionsMixin)
 from django.db import models
+from django.core.validators import MaxValueValidator
 
 from apps.meta_app.models import MyBaseModel, UserTypes
 from phonenumber_field.modelfields import PhoneNumberField
@@ -66,7 +67,8 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
         ('Others', 'Others')
     )
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField(blank = True, null = True)
+
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
@@ -85,9 +87,34 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
                                    null=True,
                                    verbose_name='Middle Name')
 
-    mobile = PhoneNumberField(blank=True,
+    mobile = PhoneNumberField(unique = True,blank=True,
                               null=True,
                               verbose_name="Mobile Number")
+
+    otp = models.CharField(blank = True,
+                           null=True,
+                           max_length=4,
+                           verbose_name="Otp Number")
+
+    facebook_id = models.CharField(blank = True,
+                           null=True,
+                           max_length=100,
+                           verbose_name="Facebook Id")
+
+    google_id = models.CharField(blank = True,
+                           null=True,
+                           max_length=100,
+                           verbose_name="Google Id")
+
+    otp_generate_time = models.DateTimeField(blank = True,
+                                       null=True,
+                                       auto_now_add=True,
+                                       verbose_name="otp generate time")
+
+    favorite_hospital_code = models.CharField(blank = True,
+                           null=True,
+                           max_length=100,
+                           verbose_name="Favorite Hospital Code")
 
     # display_picture = models.ImageField(upload_to=generate_display_picture_path,
     # storage=MediaStorage(),
@@ -106,13 +133,14 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
 
     address = models.TextField(blank=True, null=True)
 
+    mobile_verified = models.BooleanField(default=False,
+                                         verbose_name='Mobile Verified')
     email_verified = models.BooleanField(default=False,
                                          verbose_name='Email Verified')
-
     user_types = models.ManyToManyField(UserTypes)
 
     REQUIRED_FIELDS = []
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'mobile'
 
     objects = UserManager()
 
@@ -121,4 +149,28 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
         verbose_name_plural = "Base Users"
 
     def __str__(self):
-        return self.email
+        return str(self.mobile)
+
+
+class Relationship(models.Model):
+    user_id = models.ForeignKey(BaseUser,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name = 'user')
+
+    relative_user_id = models.ForeignKey(BaseUser,
+                                on_delete=models.CASCADE,
+                                null=False,
+                                blank=False,
+                                related_name = 'relative_user')
+
+    relation = models.IntegerField(blank=True,
+                              null=True,
+                              verbose_name='relation')
+    class Meta:
+        verbose_name = "Relationship"
+        verbose_name_plural = "Relationships"
+
+    def __str__(self):
+        return str(self.relation)
