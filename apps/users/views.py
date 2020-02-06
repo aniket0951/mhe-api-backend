@@ -106,11 +106,11 @@ def login(request):
     if not mobile_exist:
         return Response({"message": "Mobile number is not registered", "status": 400})
     else:
-        message = generate_otp(mobile)
+        message, OTP = generate_otp(mobile)
         if(message == 1):
             return Response({"message": "User doesn't exist", "status": 400})
         else:
-            return Response({"message": "OTP sent successfully", "status": 200})
+            return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
         
 
 
@@ -127,13 +127,13 @@ def generate_otp(mobile, new_mobile = None):
     response = client.publish(PhoneNumber=mobile, Message = OTP)
     user = BaseUser.objects.filter(mobile = mobile).first()
     if not user:
-        return 1
+        return 1, OTP 
     else:
         user.otp = str(OTP)
         t = datetime.now()
         user.otp_generate_time = t
         user.save()
-        return 2
+        return 2, OTP
 
 
 @api_view(['GET'])
@@ -147,11 +147,11 @@ def send_otp(request):
         mob = mobile
     if not "+" in mob:
         mob = "+" + str(mob)
-    message = generate_otp(mob)
+    message, OTP = generate_otp(mob)
     if(message == 1):
         Response({"message": "User doesn't exist", "status": 400})
     else:
-        return Response({"message": "OTP sent successfully", "status": 200})
+        return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
 
 def family_list(mobile):
     rows =Relationship.objects.filter(relative_user_id__mobile = mobile)
@@ -223,11 +223,11 @@ def facebook_or_google_login(request):
     if id_exist:
         user = id_exist.values()[0]
         mobile = user.get("mobile")
-        message = generate_otp(mobile)
+        message, OTP = generate_otp(mobile)
         if(message == 1):
             return Response({"message": "User doesn't exist", "status": 400})
         else:
-            return Response({"message": "OTP sent successfully", "status": 200, "mobile": mobile})
+            return Response({"message": "OTP sent successfully", "status": 200, "mobile": mobile, "OTP":OTP})
     else:
         return Response({"message": "Facebook Id or Google Id Doesn't Exist", "status": 402})
 
@@ -247,20 +247,20 @@ def facebook_or_google_signup(request):
         else:
             user.google_id = google_id
             print(user.google_id)
-        message = generate_otp(mobile)
+        message , OTP = generate_otp(mobile)
         if(message == 1):
             return Response({"message": "User doesn't exist", "status": 400})
         else:
-            return Response({"message": "OTP sent successfully", "status": 200})  
+            return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})  
     else:
         serializer = UserSerializer(data = data)
         if serializer.is_valid():
             serializer.save()
-            message = generate_otp(mobile)
+            message, OTP = generate_otp(mobile)
             if(message == 1):
                 return Response({"message": "User doesn't exist", "status": 400})
             else:
-                return Response({"message": "OTP sent successfully", "status": 200})
+                return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
 
 @api_view(['POST'])
 def change_mobile_number(request):
@@ -328,11 +328,11 @@ def add_family_member(request):
         serializer = UserSerializer(data = data)
         if serializer.is_valid():
             serializer.save()
-            message = generate_otp(family_member_mobile)
+            message, OTP = generate_otp(family_member_mobile)
             if(message == 1):
                 return Response({"message": "User doesn't exist", "status": 400})
             else:
-                return Response({"message": "OTP sent successfully", "status": 200})       
+                return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})       
         else:
             return Response({"message": serializer.errors, "status":400})
 
