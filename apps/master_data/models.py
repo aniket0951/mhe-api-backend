@@ -2,21 +2,16 @@ from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 from apps.meta_app.models import MyBaseModel
 
+
 class Hospital(MyBaseModel):
-    longitude = models.FloatField(null = True, blank= True)
-    latitude = models.FloatField(null = True, blank= True)
-    distance = models.IntegerField(default= 1.5)
-    profit_center = models.CharField(max_length=50,
-                                     null=False,
-                                     blank=False,
-                                     )
 
     code = models.SlugField(unique=True,
-                            blank=True,
-                            null=True)
+                            blank=False,
+                            null=False)
 
-    description = models.TextField(blank=True,
-                                   null=True)
+    description = models.TextField(blank=False,
+                                   null=False,
+                                   max_length=100)
 
     email = models.EmailField()
 
@@ -24,8 +19,9 @@ class Hospital(MyBaseModel):
                               null=True,
                               verbose_name="Mobile Number")
 
-    address = models.TextField(blank=True, null=True)
-    distance = models.IntegerField(blank = True,default=2.5)
+    address = models.TextField(blank=True,
+                               null=True,
+                               max_length=100)
 
     class Meta:
         verbose_name = "Hospital"
@@ -36,7 +32,6 @@ class Hospital(MyBaseModel):
 
     def save(self, *args, **kwargs):
         super(Hospital, self).save(*args, **kwargs)
-
 
 
 class Specialisation(MyBaseModel):
@@ -51,6 +46,7 @@ class Specialisation(MyBaseModel):
     start_date = models.DateField()
 
     end_date = models.DateField()
+
     class Meta:
         verbose_name = "Specialisation"
         verbose_name_plural = "Specialisations"
@@ -62,22 +58,25 @@ class Specialisation(MyBaseModel):
         super(Specialisation, self).save(*args, **kwargs)
 
 
-
-
 class BillingGroup(MyBaseModel):
 
-    name = models.CharField(max_length=50,
-                            null=False,
-                            blank=False,
-                            )
-
-    slug = models.SlugField(unique=True,
+    code = models.SlugField(unique=True,
                             blank=True,
                             null=True)
 
-    start_date = models.DateField()
+    code_abbreviation = models.CharField(max_length=100,
+                                         null=True,
+                                         blank=True,)
+
+    description = models.TextField(blank=False,
+                                   null=False,
+                                   max_length=100)
+
+    start_date = models.DateField(blank=False,
+                                  null=False,)
 
     end_date = models.DateField()
+
     class Meta:
         verbose_name = "Billing Group"
         verbose_name_plural = "Billing Groups"
@@ -86,24 +85,35 @@ class BillingGroup(MyBaseModel):
         return self.name
 
     def save(self, *args, **kwargs):
-        self.slug = self.name.lower().strip().replace(" ", "_")
         super(BillingGroup, self).save(*args, **kwargs)
 
 
 class BillingSubGroup(MyBaseModel):
 
-    name = models.CharField(max_length=50,
-                            null=False,
-                            blank=False,
-                            )
-
-    slug = models.SlugField(unique=True,
+    code = models.SlugField(unique=True,
                             blank=True,
                             null=True)
+
+    code_abbreviation = models.CharField(max_length=100,
+                                         null=True,
+                                         blank=True,)
+
+    code_translation = models.CharField(max_length=100,
+                                         null=True,
+                                         blank=True,)
+
+    description = models.TextField(blank=False,
+                                   null=False,
+                                   max_length=100)
+
+    billing_group = models.ForeignKey(BillingGroup,
+                                      on_delete=models.PROTECT,
+                                      )
 
     start_date = models.DateField()
 
     end_date = models.DateField()
+
     class Meta:
         verbose_name = "Billing Sub Group"
         verbose_name_plural = "Billing Sub Groups"
@@ -114,4 +124,3 @@ class BillingSubGroup(MyBaseModel):
     def save(self, *args, **kwargs):
         self.slug = self.name.lower().strip().replace(" ", "_")
         super(BillingSubGroup, self).save(*args, **kwargs)
-
