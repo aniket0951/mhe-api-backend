@@ -85,11 +85,11 @@ def sign_up(request):
             else:
                 return Response({"message": serializer.errors, "status":400})
         print("OTP is generating")
-        message = generate_otp(mobile)
+        message, OTP = generate_otp(mobile)
         if(message == 1):
             return Response({"message": "User doesn't exist", "status": 400})
         else:
-            return Response({"message": "OTP sent successfully", "status": 200})
+            return Response({"message": "OTP sent successfully", "status": 200", OTP":OTP })
             
             
 
