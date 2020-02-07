@@ -10,4 +10,3 @@ urlpatterns = [
     path('PreferredLocation/', views.PreferredLocationView, name = "PreferredLocationView"),
 ]
 
-
