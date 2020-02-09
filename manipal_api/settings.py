@@ -31,10 +31,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 AWS_ACCESS_KEY = env('ACCESS_KEY')
-AWS_SECRET_ACCESS_KEY  = env('SECRET_KEY')
+AWS_SECRET_ACCESS_KEY = env('SECRET_KEY')
 AWS_SNS_TOPIC_NAME = env('SNS_TOPIC_NAME')
 AWS_SNS_TOPIC_REGION = env('SNS_TOPIC_REGION')
-AWS_SNS_Topic_ARN  = env('SNS_Topic_ARN')
+AWS_SNS_Topic_ARN = env('SNS_Topic_ARN')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -55,8 +55,7 @@ INBUILT_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'django_filters',
+
 ]
 
 CUSTOM_APPS = [
@@ -69,13 +68,14 @@ CUSTOM_APPS = [
     'apps.doctors',
     'apps.appointments',
 
-
-
-
 ]
 
 THIRD_PARTY_APPS = [
+    'corsheaders',
+    'rest_framework',
+    'django_filters',
     'phonenumber_field',
+    'import_export',
 ]
 
 # Application definition
@@ -178,7 +178,7 @@ USE_TZ = True
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
-    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/

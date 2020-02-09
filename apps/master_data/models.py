@@ -75,14 +75,15 @@ class BillingGroup(MyBaseModel):
     start_date = models.DateField(blank=False,
                                   null=False,)
 
-    end_date = models.DateField()
+    end_date = models.DateField(blank=True,
+                                null=True)
 
     class Meta:
         verbose_name = "Billing Group"
         verbose_name_plural = "Billing Groups"
 
     def __str__(self):
-        return self.name
+        return self.code
 
     def save(self, *args, **kwargs):
         super(BillingGroup, self).save(*args, **kwargs)
@@ -99,8 +100,8 @@ class BillingSubGroup(MyBaseModel):
                                          blank=True,)
 
     code_translation = models.CharField(max_length=100,
-                                         null=True,
-                                         blank=True,)
+                                        null=True,
+                                        blank=True,)
 
     description = models.TextField(blank=False,
                                    null=False,
@@ -110,17 +111,18 @@ class BillingSubGroup(MyBaseModel):
                                       on_delete=models.PROTECT,
                                       )
 
-    start_date = models.DateField()
+    start_date = models.DateField(blank=False,
+                                  null=False,)
 
-    end_date = models.DateField()
+    end_date = models.DateField(blank=True,
+                                null=True)
 
     class Meta:
         verbose_name = "Billing Sub Group"
         verbose_name_plural = "Billing Sub Groups"
 
     def __str__(self):
-        return self.name
+        return self.code
 
     def save(self, *args, **kwargs):
-        self.slug = self.name.lower().strip().replace(" ", "_")
         super(BillingSubGroup, self).save(*args, **kwargs)

@@ -21,6 +21,8 @@ djangorestframework = "*"
 django-filter = "*"
 requests = "*"
 boto3 = "*"
+django-import-export = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.8"
