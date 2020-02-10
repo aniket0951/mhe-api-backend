@@ -185,8 +185,9 @@ def send_otp(request):
     if not "+" in mob:
         mob = "+" + str(mob)
     message, OTP = generate_otp(mob)
+    print(message)
     if(message == 1):
-        Response({"message": "User doesn't exist", "status": 400})
+        return Response({"message": "User doesn't exist", "status": 400})
     else:
         return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
 
@@ -369,6 +370,7 @@ def add_family_member(request):
         BaseUser.objects.filter(mobile = family_member_mobile).delete()
         data['mobile'] = family_member_mobile
         serializer = UserSerializer(data = data)
+        print(serializer)
         if serializer.is_valid():
             serializer.save()
             message, OTP = generate_otp(family_member_mobile)
@@ -434,9 +436,10 @@ def edit_family_member(request):
     family_user.gender = data.get("gender")
     family_user.email = data.get("email")
     family_user.save()
-    relation.relation = data.get("relation")
     relation = Relationship.objects.filter(user_id_id__mobile= mobile,relative_user_id_id__mobile = family_member_mobile).first()
-    relation.save()
+    if relation:
+        relation.relation = data.get("relation")
+        relation.save()
     user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
     user_data["family_members"] = list_family_member(mobile)
     return Response({"data": user_data,"message": "Profile is updated", "status": 200})
