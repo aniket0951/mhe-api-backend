@@ -52,6 +52,33 @@ def generate_otp() :
   
     return OTP
 """
+@api_view(['POST'])
+def edit_user_profile(request):
+    data = request.data
+    mobile = data.get("mobile")
+    first_name = data.get("first_name")
+    last_name  = data.get("last_name")
+    gender = data.get("gender")
+    facebook_id = data.get("facebook_id")
+    google_id = data.get("google_id")
+    email = data.get("email")
+
+    mobile_verified = BaseUser.objects.filter(mobile = mobile, mobile_verified =True).first()
+    if mobile_verified:
+        mobile_verified.first_name = first_name
+        mobile_verified.last_name = last_name
+        mobile_verified.gender = gender
+        mobile_verified.email = email
+        mobile_verified.facebook_id = facebook_id
+        mobile_verified.google_id = google_id
+        mobile_verified.save()
+        family_list = list_family_member(mobile)
+        user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
+        user_data["family_members"] = family_list
+        return Response({"data": user_data, "message": "User Profile has been updated", "status": 200})
+    else:
+        return Response({"message": "User doesn't Exist", "status": 400})
+
 
 
 
@@ -64,14 +91,25 @@ def sign_up(request):
     gender = data.get("gender")
     facebook_id = data.get("facebook_id")
     google_id = data.get("google_id")
-    print("hello")
     mobile_verified = BaseUser.objects.filter(mobile = mobile, mobile_verified =True).first()
     mobile_exist = BaseUser.objects.filter(mobile = mobile).first()
+    
     if mobile_verified :
-        return Response({"message": "mobile number already registered", "status": 400})
+        if google_id or facebook_id:
+            if google_id:
+                mobile_verified.google_id = google_id
+            else:
+                mobile_verified.facebook_id = facebook_id
+            mobile_verified.save()
+            message , OTP = generate_otp(mobile)
+            if(message == 1):
+                return Response({"message": "User doesn't exist", "status": 400})
+            else:
+                return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP})
+        else:
+            return Response({"message": "mobile number already registered", "status": 400})
     else:
         if mobile_exist:
-            print("Mobile exist")
             mobile_exist.first_name = first_name
             mobile_exist.last_name = last_name
             mobile_exist.gender = gender
@@ -84,12 +122,11 @@ def sign_up(request):
                 serializer.save()
             else:
                 return Response({"message": serializer.errors, "status":400})
-        print("OTP is generating")
-        message = generate_otp(mobile)
+        message , OTP = generate_otp(mobile)
         if(message == 1):
             return Response({"message": "User doesn't exist", "status": 400})
         else:
-            return Response({"message": "OTP sent successfully", "status": 200})
+            return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP})
             
             
 
@@ -97,10 +134,6 @@ def sign_up(request):
 def login(request):
     data = request.data
     mobile = data.get("mobile")
-    """
-    if not "+" in mobile:
-        mobile = "+" + mobile
-    """
     mobile_exist = BaseUser.objects.filter(mobile = mobile, mobile_verified = True)
     if not mobile_exist:
         return Response({"message": "Mobile number is not registered", "status": 400})
@@ -123,7 +156,12 @@ def generate_otp(mobile, new_mobile = None):
         aws_access_key_id=AWS_ACCESS_KEY, 
         aws_secret_access_key= AWS_SECRET_ACCESS_KEY, 
         region_name= REGION_NAME)  
-    response = client.publish(PhoneNumber=mobile, Message = OTP)
+    response = client.publish(PhoneNumber=mobile, Message = OTP, MessageAttributes = {
+                   'AWS.SNS.SMS.SMSType': {
+                       'DataType': 'String',
+                       'StringValue': 'Transactional'
+                   }
+    })
     user = BaseUser.objects.filter(mobile = mobile).first()
     if not user:
         return 1, OTP 
@@ -185,7 +223,6 @@ def otp_verification(request):
     
     current_time = datetime.now(timezone.utc)
     diff = current_time -verification_time_limit
-    
     difference = diff.seconds
     if mobile_exist.otp != user_otp:
         return Response({"message": "OTP is wrong", "status": 400})
@@ -309,19 +346,26 @@ def add_family_member(request):
     data = request.data
     mobile = data.get("mobile")
     relation = data.get("relation")
+    email = data.get("email")
+    family_member_mobile = data.get("family_member_mobile")
     user = BaseUser.objects.filter(mobile = mobile).first()
+    family_user = BaseUser.objects.filter(mobile = family_member_mobile).first()
+    print(family_user)
     if not user:
         return Response({"message": "User doesn't Exist", "status": 400})
+
     """
     user_gender = user.gender
     if not user_gender:
         return Response({"details": "user gender not found", "status": 200})
     """
-    family_member_mobile = data.get("family_member_mobile")
+
     mobile_verified = BaseUser.objects.filter(mobile = family_member_mobile, mobile_verified = True)
-    if mobile_verified:
-        return Response({"details": "family member already exist", "status": 400})
-    else:
+    if family_user:
+        relationship_exist = Relationship.objects.filter(user_id = user, relative_user_id = family_user).first()
+        if relationship_exist:
+            return Response({"message":"Relative is already part of family", "status": 400})
+    if True:
         BaseUser.objects.filter(mobile = family_member_mobile).delete()
         data['mobile'] = family_member_mobile
         serializer = UserSerializer(data = data)
@@ -341,6 +385,7 @@ def add_family_member_verification(request):
     mobile = data.get("mobile")
     relation = data.get("relation")
     family_member_mobile = data.get("family_member_mobile")
+    email = data.get("email")
     user_otp = data.get("user_otp")
     user = BaseUser.objects.get(mobile = mobile)
     mobile_exist = BaseUser.objects.filter(mobile = family_member_mobile).first()
@@ -361,7 +406,6 @@ def add_family_member_verification(request):
             return Response({"message": "Member is already part of your family", "status":400})
         R1 = Relationship(relation = relation, user_id = user, relative_user_id = mobile_exist)
         R1.save()
-        print("object is saved")
         family_list = list_family_member(mobile)
         user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
         user_data["family_members"] = family_list
@@ -375,6 +419,10 @@ def edit_family_member(request):
     data = request.data
     mobile = data.get("mobile")
     family_member_mobile = data.get("family_member_mobile")
+    if not mobile:
+        return Response({"message": "User number is missing", "status": 402} )
+    if not family_member_mobile:
+        return Response({"message": "family member number is missing", "status": 402})
     family_user = BaseUser.objects.filter(mobile = family_member_mobile).first()
     """
     serializer = UserSerializer(family_user, data=data, partial=True)
@@ -384,12 +432,12 @@ def edit_family_member(request):
     family_user.first_name = data.get("first_name")
     family_user.last_name = data.get("last_name")
     family_user.gender = data.get("gender")
+    family_user.email = data.get("email")
     family_user.save()
-    relation = Relationship.objects.filter(user_id_id__mobile= mobile,relative_user_id_id__mobile = family_member_mobile).first()
     relation.relation = data.get("relation")
+    relation = Relationship.objects.filter(user_id_id__mobile= mobile,relative_user_id_id__mobile = family_member_mobile).first()
     relation.save()
     user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
-    
     user_data["family_members"] = list_family_member(mobile)
     return Response({"data": user_data,"message": "Profile is updated", "status": 200})
 
@@ -398,16 +446,15 @@ def edit_family_member(request):
 def delete_family_member(request):
     data = request.data
     mobile = data.get("mobile")
+    if not mobile:
+        return Response({"message": "User number is missing", "status": 402} )
     family_member_mobile = data.get("family_member_mobile")
-    """
-    family_user = BaseUser.objects.get(mobile = family_member_mobile)
-    idd = family_user.id
-    """
+    if not family_member_mobile:
+        return Response({"message": "family member number is missing", "status": 402})
     Relationship.objects.filter(user_id_id__mobile = mobile, relative_user_id_id__mobile = family_member_mobile).delete()
     user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
     user_data["family_members"] = list_family_member(mobile)
-    return Response({"data": user_data,"message": "succesfully deleted", "status": 200})
-    
+    return Response({"data": user_data,"message": "succesfully deleted", "status": 200}) 
 
 
 def list_family_member(mobile):
@@ -421,6 +468,8 @@ def list_family_member(mobile):
         json_obj["mobile"] = str(row.relative_user_id.mobile)
         json_obj["last_name"] = row.relative_user_id.last_name
         json_obj["gender"] = row.relative_user_id.gender
+        json_obj["email"] = row.relative_user_id.email
+        json_obj["email_verified"] = row.relative_user_id.email_verified
         json_obj["UHID"] = ""
         family_member.append(json_obj.copy())
     return family_member
@@ -448,7 +497,6 @@ def list_family_members(request):
     data = request.data
     mobile = data.get("mobile")
     rows =Relationship.objects.filter(user_id_id__mobile = mobile)
-    family_members = []
     family_member = []
     
     for row in rows:
@@ -457,13 +505,10 @@ def list_family_members(request):
         json_obj["relation"] = row.relation
         json_obj["mobile"] = str(row.relative_user_id.mobile)
         json_obj["last_name"] = row.relative_user_id.last_name
+        json_obj["email"] = row.relative_user_id.email
+        json_obj["email_verified"] = row.relative_user_id.email_verified
         json_obj["UHID"] = ""
         family_member.append(json_obj.copy())
-    return Response({"data": family_member})
-        
-    """
-        family_member = BaseUser.objects.filter(id = rel_idd).values()[0]
-        family_member_details["family_member"] = family_member
-        family_member_details["relation"] = relation
-        family_members_details.append(family_member_details)
-    """
+    return Response({"data": family_member, "message": "family is sent", "status": 200})
+
+
