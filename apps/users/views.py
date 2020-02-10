@@ -434,8 +434,8 @@ def edit_family_member(request):
     family_user.gender = data.get("gender")
     family_user.email = data.get("email")
     family_user.save()
-    relation.relation = data.get("relation")
     relation = Relationship.objects.filter(user_id_id__mobile= mobile,relative_user_id_id__mobile = family_member_mobile).first()
+    relation.relation = data.get("relation")
     relation.save()
     user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
     user_data["family_members"] = list_family_member(mobile)
