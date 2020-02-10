@@ -186,7 +186,7 @@ def send_otp(request):
         mob = "+" + str(mob)
     message, OTP = generate_otp(mob)
     if(message == 1):
-        Response({"message": "User doesn't exist", "status": 400})
+        return Response({"message": "User doesn't exist", "status": 400})
     else:
         return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
 
