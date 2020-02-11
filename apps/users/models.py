@@ -88,7 +88,7 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
                                    verbose_name='Middle Name')
 
 
-    mobile = PhoneNumberField(unique = True,blank=True,
+    mobile = PhoneNumberField(blank=True,
                               null=True,
                               verbose_name="Mobile Number")
 
