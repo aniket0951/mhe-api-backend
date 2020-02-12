@@ -81,6 +81,7 @@ def edit_user_profile(request):
         mobile_verified.save()
         family_list = list_family_member(mobile_verified.id)
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
+        user_data["profile_url"] = generate_pre_signed_url(mobile_verified.profile_image)
         user_data["family_members"] = family_list
         return Response({"data": user_data, "message": "User Profile has been updated", "status": 200})
     else:
@@ -440,7 +441,7 @@ def member_edit_verification(request):
                 relation.relation = data.get("relation")
                 relation.save()
             user_data = BaseUser.objects.filter(id = user_id).values()[0]
-            user_data["profile_url"] = generate_pre_signed_url(family_user_exists.profile_image)
+            user_data["profile_url"] = generate_pre_signed_url(BaseUser.objects.filter(id = user_id).first().profile_image)
             user_data["family_members"] = list_family_member(user_id)
             return Response({"data": user_data,"message": "Family Member Profile is updated", "status": 200})
         else:
