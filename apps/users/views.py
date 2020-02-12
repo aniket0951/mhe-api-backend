@@ -215,6 +215,7 @@ def family_list(mobile):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def otp_verification(request):
     data = request.data
     user_id = data.get("user_id")
@@ -232,6 +233,8 @@ def otp_verification(request):
         mobile_exist.set_password(randint(1000, 9999))
         mobile_exist.save()
         payload = jwt_payload_handler(user)
+        payload['username'] = payload['username'].raw_input
+        payload['mobile'] = payload['mobile'].raw_input
         token = jwt_encode_handler(payload)
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
         user_data["profile_url"] = generate_pre_signed_url(mobile_exist.profile_image)
@@ -501,21 +504,11 @@ def set_favorite_hospital(request):
 def list_family_members(request):
     data = request.data
     user_id = data.get("user_id")
-    rows =Relationship.objects.filter(user_id_id = user_id)
-    family_member = []
-    
-    for row in rows:
-        json_obj = {}
-        json_obj["first_name"] = row.relative_user_id.first_name
-        json_obj["relation"] = row.relation
-        json_obj["mobile"] = str(row.relative_user_id.mobile)
-        json_obj["last_name"] = row.relative_user_id.last_name
-        json_obj["email"] = row.relative_user_id.email
-        json_obj["email_verified"] = row.relative_user_id.email_verified
-        json_obj["id"] = row.relative_user_id.id
-        json_obj["UHID"] = ""
-        family_member.append(json_obj.copy())
-    return Response({"data": family_member, "message": "family is sent", "status": 200})
+        
+    user_data = BaseUser.objects.filter(id = user_id).values()[0]
+    user_data["family_members"] = list_family_member(user_id)
+    return Response({"data": user_data, "message": "family is sent", "status": 200})
+
 
 def multi_part_upload_with_s3(file, s3_file_path):
     # Multipart upload
