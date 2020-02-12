@@ -104,7 +104,7 @@ def sign_up(request):
             if(message == 1):
                 return Response({"message": "User doesn't exist", "status": 400})
             else:
-                return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP})
+                return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP, "id": mobile_verified.id })
         else:
             return Response({"message": "mobile number already registered", "status": 400})
     else:
