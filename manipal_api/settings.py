@@ -76,6 +76,7 @@ THIRD_PARTY_APPS = [
     'django_filters',
     'phonenumber_field',
     'import_export',
+    'django_extensions'
 ]
 
 # Application definition
@@ -176,11 +177,51 @@ USE_L10N = True
 USE_TZ = True
 
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend', ],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny', ],
 }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+MANIPAL_API_URL = env('MANIPAL_API_URL')
+
+REST_PROXY = {
+
+    'HOST': MANIPAL_API_URL,
+    # 'AUTH': {
+    #     'user': PROCESS_ENGINE_USER,
+    #     'password': PROCESS_ENGINE_PASSWORD,
+    #     # Or alternatively:
+    #     'token': '',
+    # },
+    'TIMEOUT': None,
+    'DEFAULT_HTTP_ACCEPT': 'application/json',
+    'DEFAULT_HTTP_ACCEPT_LANGUAGE': 'en-US,en;q=0.8',
+    'DEFAULT_CONTENT_TYPE': 'application/xml',
+
+    # Return response as-is if enabled
+    'RETURN_RAW': False,
+
+    # Used to translate Accept HTTP field
+    'ACCEPT_MAPS': {
+        'text/html': 'application/json',
+    },
+
+    # Do not pass following parameters
+    'DISALLOWED_PARAMS': ('format',),
+
+    # Perform a SSL Cert Verification on URI requests are being proxied to
+    'VERIFY_SSL': False,
+    
+}

@@ -23,6 +23,8 @@ requests = "*"
 boto3 = "*"
 django-import-export = "*"
 pandas = "*"
+django-extensions = "*"
+six = "*"
 
 [requires]
 python_version = "3.8"

@@ -10,4 +10,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/appointment/', include('apps.doctors.urls')),
     path('api/myAppointment/', include('apps.appointments.urls')),
+    path('api/master_data/', include('apps.master_data.urls')),
+
 ]
