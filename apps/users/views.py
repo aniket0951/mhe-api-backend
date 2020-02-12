@@ -358,7 +358,7 @@ def add_family_member_verification(request):
     user_otp = data.get("user_otp")
     user = BaseUser.objects.filter(id = user_id).first()
     member = BaseUser.objects.filter(id = member_id).first()
-    if (member.otp != user_otp) or (user_otp == "0000"):
+    if (member.otp == user_otp) or (user_otp == "0000"):
         member.mobile_verified = True
         member.otp = None
         member.save()
