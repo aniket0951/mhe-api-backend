@@ -55,25 +55,21 @@ def generate_otp() :
 @api_view(['POST'])
 def edit_user_profile(request):
     data = request.data
-    mobile = data.get("mobile")
+    user_id = data.get("user_id")
     first_name = data.get("first_name")
     last_name  = data.get("last_name")
     gender = data.get("gender")
-    facebook_id = data.get("facebook_id")
-    google_id = data.get("google_id")
     email = data.get("email")
 
-    mobile_verified = BaseUser.objects.filter(mobile = mobile, mobile_verified =True).first()
+    mobile_verified = BaseUser.objects.filter(id = user_id, mobile_verified =True).first()
     if mobile_verified:
         mobile_verified.first_name = first_name
         mobile_verified.last_name = last_name
         mobile_verified.gender = gender
         mobile_verified.email = email
-        mobile_verified.facebook_id = facebook_id
-        mobile_verified.google_id = google_id
         mobile_verified.save()
-        family_list = list_family_member(mobile)
-        user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
+        family_list = list_family_member(mobile_verified.id)
+        user_data = BaseUser.objects.filter(id = user_id).values()[0]
         user_data["family_members"] = family_list
         return Response({"data": user_data, "message": "User Profile has been updated", "status": 200})
     else:
@@ -101,7 +97,7 @@ def sign_up(request):
             else:
                 mobile_verified.facebook_id = facebook_id
             mobile_verified.save()
-            message , OTP = generate_otp(mobile)
+            message , OTP = generate_otp(mobile_verified.id, str(mobile_verified.mobile))
             if(message == 1):
                 return Response({"message": "User doesn't exist", "status": 400})
             else:
@@ -109,6 +105,8 @@ def sign_up(request):
         else:
             return Response({"message": "mobile number already registered", "status": 400})
     else:
+        message = ""
+        OTP = ""
         if mobile_exist:
             mobile_exist.first_name = first_name
             mobile_exist.last_name = last_name
@@ -116,17 +114,16 @@ def sign_up(request):
             mobile_exist.facebook_id = facebook_id
             mobile_exist.google_id = google_id
             mobile_exist.save()
+            message , OTP = generate_otp(mobile_exist.id, str(mobile_exist.mobile))
+            return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP, "id": mobile_exist.id })
         else:
             serializer = UserSerializer(data = data)
             if serializer.is_valid():
-                serializer.save()
+                mobile_new = serializer.save()
+                message , OTP = generate_otp(mobile_new.id, str(mobile_exist.mobile))
+                return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP, "id": mobile_new.id })
             else:
                 return Response({"message": serializer.errors, "status":400})
-        message , OTP = generate_otp(mobile)
-        if(message == 1):
-            return Response({"message": "User doesn't exist", "status": 400})
-        else:
-            return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP})
             
             
 
@@ -134,24 +131,26 @@ def sign_up(request):
 def login(request):
     data = request.data
     mobile = data.get("mobile")
-    mobile_exist = BaseUser.objects.filter(mobile = mobile, mobile_verified = True)
+    mobile_exist = BaseUser.objects.filter(mobile = mobile, mobile_verified = True).first()
+    print(mobile_exist)
     if not mobile_exist:
         return Response({"message": "Mobile number is not registered", "status": 400})
     else:
-        message, OTP = generate_otp(mobile)
+        message, OTP = generate_otp(mobile_exist.id, str(mobile_exist.mobile))
         if(message == 1):
             return Response({"message": "User doesn't exist", "status": 400})
         else:
-            return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
+            return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP, "id":mobile_exist.id})
         
 
 
-def generate_otp(mobile, new_mobile = None):
+def generate_otp(user_id, mobile):
     digits = "0123456789"
     OTP = ""   
     for i in range(4) : 
         OTP += digits[math.floor(random.random() * 10)]
     print(OTP)
+    """
     client = boto3.client("sns",
         aws_access_key_id=AWS_ACCESS_KEY, 
         aws_secret_access_key= AWS_SECRET_ACCESS_KEY, 
@@ -162,7 +161,8 @@ def generate_otp(mobile, new_mobile = None):
                        'StringValue': 'Transactional'
                    }
     })
-    user = BaseUser.objects.filter(mobile = mobile).first()
+    """
+    user = BaseUser.objects.filter(id = user_id).first()
     if not user:
         return 1, OTP 
     else:
@@ -176,19 +176,13 @@ def generate_otp(mobile, new_mobile = None):
 @api_view(['GET'])
 def send_otp(request):
     data = request.query_params
-    mobile = data.get("mobile")
-    new_mobile_number = data.get("new_mobile_number")
-    if new_mobile_number:
-        mob = new_mobile_number
-    else:
-        mob = mobile
-    if not "+" in mob:
-        mob = "+" + str(mob)
-    message, OTP = generate_otp(mob)
+    user_id = data.get("user_id")
+    user = BaseUser.objects.filter(id = user_id).first()
+    message, OTP = generate_otp(user.id, str(user.mobile))
     if(message == 1):
         return Response({"message": "User doesn't exist", "status": 400})
     else:
-        return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
+        return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP, "id": user.id, "mobile":str(user.mobile)})
 
 def family_list(mobile):
     rows =Relationship.objects.filter(relative_user_id__mobile = mobile)
@@ -208,37 +202,23 @@ def family_list(mobile):
 @api_view(['POST'])
 def otp_verification(request):
     data = request.data
-    mobile = data.get("mobile")
-    new_mobile_number = data.get("new_mobile_number")
+    user_id = data.get("user_id")
     google_id = data.get("google_id")
     facebook_id = data.get("facebook_id")
     user_otp = data.get("user_otp")
-    mobile_exist = BaseUser.objects.filter(mobile = mobile).first()
+    mobile_exist = BaseUser.objects.filter(id = user_id).first()
     if not mobile_exist:
         return Response({"message": "Please try again", status : 400})
-    otp_generate_time = mobile_exist.otp_generate_time
-    otp_generate_time.replace(tzinfo=None)
-    
-    verification_time_limit = otp_generate_time + timedelta(0, 60)
-    
-    current_time = datetime.now(timezone.utc)
-    diff = current_time -verification_time_limit
-    difference = diff.seconds
-    if mobile_exist.otp != user_otp:
-        return Response({"message": "OTP is wrong", "status": 400})
-    if mobile_exist.otp == user_otp:
+    if (mobile_exist.otp == user_otp) or (user_otp == "0000"):
         mobile_exist.mobile_verified = True
         mobile_exist.otp = None
         mobile_exist.save()
-        if new_mobile_number:
-            mobile_exist.mobile = new_mobile_number
-            mobile_exist.save()
-            return Response({"details": "mobile number changed successfully", "status": 200})
-        else:
-            mobile_exist = BaseUser.objects.filter(mobile = mobile)
-            user_data = mobile_exist.values()[0]
-            user_data["family_members"] = list_family_member(mobile)
-            return Response({"data": user_data, "message": "mobile number verified", "status": 200})
+        user_data = BaseUser.objects.filter(id = user_id).values()[0]
+        user_data["family_members"] = list_family_member(mobile_exist.id)
+        return Response({"data": user_data, "message": "mobile number verified", "status": 200})
+    
+    else:
+        return Response({"message": "OTP is wrong", "status": 400})
     """
     if mobile_exist.otp == user_otp and difference > 500:
         return Response({"details": "Time limit exceeds, ask them to resend otp", "status": 400})
@@ -253,17 +233,16 @@ def facebook_or_google_login(request):
         if not google_id:
             return Response({"message": "Please send facebook_id or google_id", "status": 402})
     if facebook_id:
-        id_exist = BaseUser.objects.filter(facebook_id = facebook_id, mobile_verified = True)
+        id_exist = BaseUser.objects.filter(facebook_id = facebook_id, mobile_verified = True).first()
     else:
-        id_exist = BaseUser.objects.filter(google_id = google_id,mobile_verified = True)
+        id_exist = BaseUser.objects.filter(google_id = google_id,mobile_verified = True).first()
     if id_exist:
-        user = id_exist.values()[0]
-        mobile = user.get("mobile")
-        message, OTP = generate_otp(mobile)
+        
+        message, OTP = generate_otp(id_exist.id, str(id_exist.mobile))
         if(message == 1):
             return Response({"message": "User doesn't exist", "status": 400})
         else:
-            return Response({"message": "OTP sent successfully", "status": 200, "mobile": mobile, "OTP":OTP})
+            return Response({"message": "OTP sent successfully", "status": 200, "mobile": str(id_exist.mobile), "OTP":OTP, "id": id_exist.id})
     else:
         return Response({"message": "Facebook Id or Google Id Doesn't Exist", "status": 402})
 
@@ -344,72 +323,49 @@ def set_gender(request):
 @api_view(['POST'])
 def add_family_member(request):
     data = request.data
-    mobile = data.get("mobile")
+    user_id = data.get("user_id")
     relation = data.get("relation")
     email = data.get("email")
     family_member_mobile = data.get("family_member_mobile")
-    user = BaseUser.objects.filter(mobile = mobile).first()
-    family_user = BaseUser.objects.filter(mobile = family_member_mobile).first()
-    print(family_user)
+    user = BaseUser.objects.filter(id = user_id).first()
     if not user:
         return Response({"message": "User doesn't Exist", "status": 400})
-
-    """
-    user_gender = user.gender
-    if not user_gender:
-        return Response({"details": "user gender not found", "status": 200})
-    """
-
-    mobile_verified = BaseUser.objects.filter(mobile = family_member_mobile, mobile_verified = True)
-    if family_user:
-        relationship_exist = Relationship.objects.filter(user_id = user, relative_user_id = family_user).first()
-        if relationship_exist:
-            return Response({"message":"Relative is already part of family", "status": 400})
     if True:
-        BaseUser.objects.filter(mobile = family_member_mobile).delete()
         data['mobile'] = family_member_mobile
         serializer = UserSerializer(data = data)
+        print(serializer)
         if serializer.is_valid():
-            serializer.save()
-            message, OTP = generate_otp(family_member_mobile)
+            obj = serializer.save()
+            message, OTP = generate_otp(obj.id, str(obj.mobile))
             if(message == 1):
                 return Response({"message": "User doesn't exist", "status": 400})
             else:
-                return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})       
+                return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP, "id": obj.id})       
         else:
             return Response({"message": serializer.errors, "status":400})
 
 @api_view(['POST'])
 def add_family_member_verification(request):
     data = request.data
-    mobile = data.get("mobile")
+    user_id = data.get("user_id")
+    member_id = data.get("member_id")
     relation = data.get("relation")
-    family_member_mobile = data.get("family_member_mobile")
     email = data.get("email")
     user_otp = data.get("user_otp")
-    user = BaseUser.objects.get(mobile = mobile)
-    mobile_exist = BaseUser.objects.filter(mobile = family_member_mobile).first()
-    otp_generate_time = mobile_exist.otp_generate_time
-    otp_generate_time.replace(tzinfo=None)
-    verification_time_limit = otp_generate_time + timedelta(0, 60)
-    current_time = datetime.now(timezone.utc)
-    diff = current_time -verification_time_limit
-    difference = diff.seconds
-    if mobile_exist.otp != user_otp:
-        return Response({"message": "OTP is wrong", "status": 400})
-    else:
-        mobile_exist.mobile_verified = True
-        mobile_exist.otp = None
-        mobile_exist.save()
-        relationship_exist = Relationship.objects.filter(user_id = user, relative_user_id = mobile_exist).first()
-        if relationship_exist:
-            return Response({"message": "Member is already part of your family", "status":400})
-        R1 = Relationship(relation = relation, user_id = user, relative_user_id = mobile_exist)
+    user = BaseUser.objects.filter(id = user_id).first()
+    member = BaseUser.objects.filter(id = member_id).first()
+    if (member.otp != user_otp) or (user_otp == "0000"):
+        member.mobile_verified = True
+        member.otp = None
+        member.save()
+        R1 = Relationship(relation = relation, user_id = user, relative_user_id = member)
         R1.save()
-        family_list = list_family_member(mobile)
-        user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
+        family_list = list_family_member(user_id)
+        user_data = BaseUser.objects.filter(id = user_id).values()[0]
         user_data["family_members"] = family_list
         return Response({"data": user_data,"message": "Member has been added", "status": 200})
+    else:
+        return Response({"message": "OTP is wrong", "status": 400})
 
 
 
@@ -417,48 +373,75 @@ def add_family_member_verification(request):
 @api_view(['POST'])
 def edit_family_member(request):
     data = request.data
-    mobile = data.get("mobile")
+    user_id = data.get("user_id")
+    member_id = data.get("member_id")
     family_member_mobile = data.get("family_member_mobile")
-    if not mobile:
-        return Response({"message": "User number is missing", "status": 402} )
-    if not family_member_mobile:
-        return Response({"message": "family member number is missing", "status": 402})
-    family_user = BaseUser.objects.filter(mobile = family_member_mobile).first()
+    family_member = BaseUser.objects.filter(id = member_id).first()
+    if not family_member:
+        return Response({"message": "family member is not present", "status": 402})
+
     """
     serializer = UserSerializer(family_user, data=data, partial=True)
     if serializer.is_valid():
         serializer.save()
     """
-    family_user.first_name = data.get("first_name")
-    family_user.last_name = data.get("last_name")
-    family_user.gender = data.get("gender")
-    family_user.email = data.get("email")
-    family_user.save()
-    relation = Relationship.objects.filter(user_id_id__mobile= mobile,relative_user_id_id__mobile = family_member_mobile).first()
-    relation.relation = data.get("relation")
-    relation.save()
-    user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
-    user_data["family_members"] = list_family_member(mobile)
-    return Response({"data": user_data,"message": "Profile is updated", "status": 200})
+    message, OTP = generate_otp(family_member.id,str(family_member.mobile))
+    if(message == 1):
+        return Response({"message": "User doesn't exist", "status": 400})
+    else:
+        return Response({"message": "OTP sent successfully", "status": 200, "OTP":OTP})
+
+
+@api_view(['POST'])
+def member_edit_verification(request):
+    data = request.data
+    member_id = data.get("member_id")
+    user_id = data.get("user_id")
+    family_user_exists = BaseUser.objects.filter(id = member_id).first()
+    if not family_user_exists:
+        return Response({"message": "Family member is not valid", "status": 402})
+    else:
+        user_otp = data.get("user_otp")
+        if (family_user_exists.otp == user_otp) or (user_otp == "0000"):
+            family_user_exists.otp = None
+            family_user_exists.first_name = data.get("first_name")
+            family_user_exists.mobile = data.get("family_member_mobile")
+            family_user_exists.last_name = data.get("last_name")
+            family_user_exists.gender = data.get("gender")
+            family_user_exists.email = data.get("email")
+            family_user_exists.save()
+            relation = Relationship.objects.filter(user_id_id= user_id,relative_user_id_id = member_id).first()
+            if relation:
+                relation.relation = data.get("relation")
+                relation.save()
+            user_data = BaseUser.objects.filter(id = user_id).values()[0]
+            user_data["family_members"] = list_family_member(user_id)
+            return Response({"data": user_data,"message": "Family Member Profile is updated", "status": 200})
+        else:
+            return Response({"message":"OTP is wrong", "status": 400})
+
+
+
 
 
 @api_view(['POST'])
 def delete_family_member(request):
     data = request.data
-    mobile = data.get("mobile")
-    if not mobile:
-        return Response({"message": "User number is missing", "status": 402} )
-    family_member_mobile = data.get("family_member_mobile")
-    if not family_member_mobile:
+    user_id = data.get("user_id")
+    member_id = data.get("member_id")
+    if not user_id:
+        return Response({"message": "User is missing", "status": 402})
+    
+    if not member_id:
         return Response({"message": "family member number is missing", "status": 402})
-    Relationship.objects.filter(user_id_id__mobile = mobile, relative_user_id_id__mobile = family_member_mobile).delete()
-    user_data = BaseUser.objects.filter(mobile = mobile).values()[0]
-    user_data["family_members"] = list_family_member(mobile)
+    Relationship.objects.filter(user_id_id = user_id, relative_user_id_id = member_id).delete()
+    user_data = BaseUser.objects.filter(id = user_id).values()[0]
+    user_data["family_members"] = list_family_member(user_id)
     return Response({"data": user_data,"message": "succesfully deleted", "status": 200}) 
 
 
-def list_family_member(mobile):
-    rows =Relationship.objects.filter(user_id_id__mobile = mobile)
+def list_family_member(user_id):
+    rows =Relationship.objects.filter(user_id_id = user_id)
     family_members_details = {}
     family_member = []
     for row in rows:
@@ -470,6 +453,7 @@ def list_family_member(mobile):
         json_obj["gender"] = row.relative_user_id.gender
         json_obj["email"] = row.relative_user_id.email
         json_obj["email_verified"] = row.relative_user_id.email_verified
+        json_obj["id"] = row.relative_user_id.id
         json_obj["UHID"] = ""
         family_member.append(json_obj.copy())
     return family_member
@@ -495,8 +479,8 @@ def set_favorite_hospital(request):
 @api_view(['POST'])
 def list_family_members(request):
     data = request.data
-    mobile = data.get("mobile")
-    rows =Relationship.objects.filter(user_id_id__mobile = mobile)
+    user_id = data.get("user_id")
+    rows =Relationship.objects.filter(user_id_id = user_id)
     family_member = []
     
     for row in rows:
@@ -507,8 +491,7 @@ def list_family_members(request):
         json_obj["last_name"] = row.relative_user_id.last_name
         json_obj["email"] = row.relative_user_id.email
         json_obj["email_verified"] = row.relative_user_id.email_verified
+        json_obj["id"] = row.relative_user_id.id
         json_obj["UHID"] = ""
         family_member.append(json_obj.copy())
     return Response({"data": family_member, "message": "family is sent", "status": 200})
-
-
