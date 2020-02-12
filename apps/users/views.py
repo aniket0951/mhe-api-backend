@@ -288,7 +288,7 @@ def change_mobile_number(request):
     new_mobile_number = data.get("new_mobile_number")
     mobile_exist = BaseUser.objects.filter(mobile = new_mobile_number)
     if mobile_exist:
-        return Response({"details": "Mobile number is already registred", "status": 400})
+        return Response({"Message": "Mobile number is already registred", "status": 400})
     res = requests.get("http://localhost:8000/api/user/send_otp/", params = {"new_mobile_number": new_mobile_number, "mobile": mobile})
     if res.status_code == 200:
         return Response({"message": "OTP sent successfully", "status": 200})
@@ -425,9 +425,6 @@ def member_edit_verification(request):
             return Response({"message":"OTP is wrong", "status": 400})
 
 
-
-
-
 @api_view(['POST'])
 def delete_family_member(request):
     data = request.data
@@ -459,6 +456,7 @@ def list_family_member(user_id):
         json_obj["email_verified"] = row.relative_user_id.email_verified
         json_obj["id"] = row.relative_user_id.id
         json_obj["UHID"] = ""
+        json_obj["profile_url"] = generate_pre_signed_url(row.relative_user_id.profile_image)
         family_member.append(json_obj.copy())
     return family_member
         
@@ -478,7 +476,7 @@ def set_favorite_hospital(request):
     user = BaseUser.objects.get(mobile = mobile)
     user.favorite_hospital_code = code
     user.save()
-    return Response({"details": "Favorite Hospital Saved", "status": 200})
+    return Response({"Message": "Favorite Hospital Saved", "status": 200})
 
 @api_view(['POST'])
 def list_family_members(request):
@@ -550,4 +548,18 @@ def set_profile_photo(request):
     user = BaseUser.objects.get(id = user_id)
     user.profile_image = url
     user.save()
-    return Response({"url": presigned_url, "details": "file saved to s3 successfully", "status": 200})
+    return Response({"url": presigned_url, "Message": "file saved to s3 successfully", "status": 200})
+
+
+@api_view(['POST'])
+def user_profile_details(request):
+    data = request.data
+    user_id = data.get("user_id")
+    mobile_exist = BaseUser.objects.filter(id = user_id).first()
+    if not mobile_exist:
+        return Response({"message": "Please try again", "status" : 400})
+    else:
+        user_data = BaseUser.objects.filter(id = user_id).values()[0]
+        user_data["profile_url"] = generate_pre_signed_url(mobile_exist.profile_image)
+        user_data["family_members"] = list_family_member(mobile_exist.id)
+        return Response({"data": user_data, "message": "all details fethced", "status": 200})
