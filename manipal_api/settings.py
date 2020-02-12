@@ -49,6 +49,7 @@ ALLOWED_HOSTS = ['*']
 
 
 INBUILT_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -76,6 +77,7 @@ CUSTOM_APPS = [
 
 THIRD_PARTY_APPS = [
     'phonenumber_field',
+    
 ]
 
 # Application definition
@@ -184,3 +186,6 @@ REST_FRAMEWORK = {
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#  Created setting, hosts that are allowed to do cross-site requests
+CORS_ORIGIN_ALLOW_ALL = True
