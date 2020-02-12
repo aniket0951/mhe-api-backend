@@ -211,12 +211,13 @@ def otp_verification(request):
     user_otp = data.get("user_otp")
     mobile_exist = BaseUser.objects.filter(id = user_id).first()
     if not mobile_exist:
-        return Response({"message": "Please try again", status : 400})
+        return Response({"message": "Please try again", "status" : 400})
     if (mobile_exist.otp == user_otp) or (user_otp == "0000"):
         mobile_exist.mobile_verified = True
         mobile_exist.otp = None
         mobile_exist.save()
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
+        user_data["profile_url"] = generate_pre_signed_url(mobile_exist.profile_image)
         user_data["family_members"] = list_family_member(mobile_exist.id)
         return Response({"data": user_data, "message": "mobile number verified", "status": 200})
     
