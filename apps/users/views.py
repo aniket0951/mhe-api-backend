@@ -476,7 +476,7 @@ def set_favorite_hospital(request):
     user = BaseUser.objects.get(mobile = mobile)
     user.favorite_hospital_code = code
     user.save()
-    return Response({"Message": "Favorite Hospital Saved", "status": 200})
+    return Response({"message": "Favorite Hospital Saved", "status": 200})
 
 @api_view(['POST'])
 def list_family_members(request):
@@ -530,7 +530,7 @@ def generate_pre_signed_url(image_url):
             Params={
                 'Bucket': S3_BUCKET_NAME,
                 'Key': decoded_url.split(S3_BUCKET_NAME+".s3." + S3_REGION_NAME + ".amazonaws.com/")[-1]
-            }, ExpiresIn=600
+            }, ExpiresIn=6000
         )
         return url
     except Exception:
@@ -548,7 +548,7 @@ def set_profile_photo(request):
     user = BaseUser.objects.get(id = user_id)
     user.profile_image = url
     user.save()
-    return Response({"url": presigned_url, "Message": "file saved to s3 successfully", "status": 200})
+    return Response({"url": presigned_url, "message": "file saved to s3 successfully", "status": 200})
 
 
 @api_view(['POST'])
