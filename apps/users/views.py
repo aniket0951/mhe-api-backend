@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+import urllib
 import math, random, json
 import requests
 from datetime import datetime, timedelta, timezone
@@ -12,11 +12,14 @@ from apps.users.models import BaseUser, Relationship
 from rest_framework.parsers import JSONParser
 import os
 from django.conf import settings
+import threading
+from boto3.s3.transfer import TransferConfig
 
 AWS_ACCESS_KEY = settings.AWS_ACCESS_KEY
 AWS_SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
 REGION_NAME = settings.AWS_SNS_TOPIC_REGION
-
+S3_BUCKET_NAME = settings.AWS_S3_BUCKET_NAME
+S3_REGION_NAME = settings.AWS_S3_REGION_NAME
 
 
 relationship_CHOICES = {'1': ['Father','2', '4'],
@@ -208,12 +211,13 @@ def otp_verification(request):
     user_otp = data.get("user_otp")
     mobile_exist = BaseUser.objects.filter(id = user_id).first()
     if not mobile_exist:
-        return Response({"message": "Please try again", status : 400})
+        return Response({"message": "Please try again", "status" : 400})
     if (mobile_exist.otp == user_otp) or (user_otp == "0000"):
         mobile_exist.mobile_verified = True
         mobile_exist.otp = None
         mobile_exist.save()
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
+        user_data["profile_url"] = generate_pre_signed_url(mobile_exist.profile_image)
         user_data["family_members"] = list_family_member(mobile_exist.id)
         return Response({"data": user_data, "message": "mobile number verified", "status": 200})
     
@@ -495,3 +499,55 @@ def list_family_members(request):
         json_obj["UHID"] = ""
         family_member.append(json_obj.copy())
     return Response({"data": family_member, "message": "family is sent", "status": 200})
+
+def multi_part_upload_with_s3(file, s3_file_path):
+    # Multipart upload
+    try:
+        s3 = boto3.client('s3',
+                        aws_access_key_id = AWS_ACCESS_KEY,
+                        aws_secret_access_key= AWS_SECRET_ACCESS_KEY,
+                        region_name= S3_REGION_NAME)
+
+        config = TransferConfig(multipart_threshold=1024 * 25, max_concurrency=10,
+                                multipart_chunksize=1024 * 25, use_threads=True)
+        # s3_file_path = 'multipart_files/test.jpg'
+        s3.upload_fileobj(file, S3_BUCKET_NAME, s3_file_path,
+                                Config=config)
+        url = "https://%s.s3.%s.amazonaws.com/%s" % (S3_BUCKET_NAME, S3_REGION_NAME, s3_file_path)
+        presigned_url = generate_pre_signed_url(url)
+        return presigned_url, url
+    except Exception as e:
+        print("Error uploading: {}".format(e))
+
+
+def generate_pre_signed_url(image_url):
+    try:
+        s3 = boto3.client('s3',
+                        aws_access_key_id = AWS_ACCESS_KEY,
+                        aws_secret_access_key= AWS_SECRET_ACCESS_KEY,
+                        region_name= S3_REGION_NAME)
+        decoded_url = urllib.request.unquote(image_url)
+        url = s3.generate_presigned_url(
+            ClientMethod='get_object',
+            Params={
+                'Bucket': S3_BUCKET_NAME,
+                'Key': decoded_url.split(S3_BUCKET_NAME+".s3." + S3_REGION_NAME + ".amazonaws.com/")[-1]
+            }, ExpiresIn=600
+        )
+        return url
+    except Exception:
+        return None
+
+
+@api_view(['POST'])
+def set_profile_photo(request):
+    data = request.data
+    file = data.get("file")
+    filename = file.name
+    user_id = data.get("user_id")
+    s3_file_path = "users/{0}/profile_piture/{1}".format(user_id, filename)
+    presigned_url, url = multi_part_upload_with_s3(file, s3_file_path)
+    user = BaseUser.objects.get(id = user_id)
+    user.profile_image = url
+    user.save()
+    return Response({"url": presigned_url, "details": "file saved to s3 successfully", "status": 200})
