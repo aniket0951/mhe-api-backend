@@ -288,7 +288,7 @@ def change_mobile_number(request):
     new_mobile_number = data.get("new_mobile_number")
     mobile_exist = BaseUser.objects.filter(mobile = new_mobile_number)
     if mobile_exist:
-        return Response({"Message": "Mobile number is already registred", "status": 400})
+        return Response({"message": "Mobile number is already registred", "status": 400})
     res = requests.get("http://localhost:8000/api/user/send_otp/", params = {"new_mobile_number": new_mobile_number, "mobile": mobile})
     if res.status_code == 200:
         return Response({"message": "OTP sent successfully", "status": 200})
