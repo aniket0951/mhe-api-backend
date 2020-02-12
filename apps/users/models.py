@@ -107,6 +107,10 @@ class BaseUser(AbstractBaseUser, PermissionsMixin, MyBaseModel):
                            max_length=100,
                            verbose_name="Google Id")
 
+    profile_image = models.URLField(blank = True,
+                           null=True,
+                           verbose_name="Profile S3 Link")
+
     otp_generate_time = models.DateTimeField(blank = True,
                                        null=True,
                                        auto_now_add=True,

@@ -1,19 +1,24 @@
-from rest_framework.decorators import api_view
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
-from django.core import serializers
 import json
+
+from django.core import serializers
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from rest_framework.response import Response
-from apps.doctors.models import Doctor
-from apps.master_data.models import Hospital, Specialisation
-from apps.doctors.serializers import DoctorSerializer, HospitalDetailSerializer, SpecialisationDetailSerializer,SpecialisationDetailSerializer,HospitalSerializer
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.viewsets import ModelViewSet
-from rest_framework import generics
-from rest_framework import filters
+from rest_framework import filters, generics
+from rest_framework.decorators import api_view
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+
+from apps.doctors.models import Doctor
+from apps.doctors.serializers import (DoctorSerializer,
+                                      HospitalDetailSerializer,
+                                      HospitalSerializer,
+                                      SpecialisationDetailSerializer)
+from apps.master_data.models import Hospital, Specialisation
 
 
 """
@@ -42,6 +47,7 @@ class DoctorsAPIView(generics.ListCreateAPIView):
         return qs.filter(linked_hospitals__code = location)
     """
 class LocationAPIView(generics.ListAPIView):
+    permission_classes = [AllowAny]
     queryset          = Hospital.objects.all()
     serializer_class  = HospitalSerializer
 
@@ -101,20 +107,3 @@ def DoctorDetailView(request):
     """
     json_to_be_returned["available_slot"] = ["5:50- 6:50", "7:50- 9:50"]
     return HttpResponse(json.dumps(json_to_be_returned))
-
-
-
-    
-
-    
-    
-    
-
-
-
-    
-    
-    
-    
-
-    

@@ -24,6 +24,6 @@ urlpatterns = [
     url(r'^api/user/add_family_member_verification/', views.add_family_member_verification, name='add_family_member_verification'),
     url(r'^api/user/member_edit_verification/', views.member_edit_verification, name='member_edit_verification'),
     url(r'^api/user/edit_user_profile/', views.edit_user_profile, name='edit_user_profile'),
-
-
+    url(r'^api/user/set_profile_photo/', views.set_profile_photo, name='set_profile_photo'),
+    url(r'^api/user/user_profile_details/', views.user_profile_details, name='user_profile_details'),
 ]	
