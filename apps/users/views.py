@@ -120,7 +120,7 @@ def sign_up(request):
             serializer = UserSerializer(data = data)
             if serializer.is_valid():
                 mobile_new = serializer.save()
-                message , OTP = generate_otp(mobile_new.id, str(mobile_exist.mobile))
+                message , OTP = generate_otp(mobile_new.id, str(mobile_new.mobile))
                 return Response({"message": "OTP sent successfully", "status": 200, "OTP": OTP, "id": mobile_new.id })
             else:
                 return Response({"message": serializer.errors, "status":400})
