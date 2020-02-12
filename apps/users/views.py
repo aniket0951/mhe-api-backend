@@ -14,8 +14,9 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import JSONParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
@@ -80,16 +81,14 @@ def edit_user_profile(request):
         mobile_verified.save()
         family_list = list_family_member(mobile_verified.id)
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
-        user_data["profile_url"] = generate_pre_signed_url(mobile_verified.profile_image)
         user_data["family_members"] = family_list
         return Response({"data": user_data, "message": "User Profile has been updated", "status": 200})
     else:
         return Response({"message": "User doesn't Exist", "status": 400})
 
 
-
-
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def sign_up(request):
     data = request.data
     mobile = data.get("mobile")
@@ -139,6 +138,7 @@ def sign_up(request):
             
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login(request):
     data = request.data
     mobile = data.get("mobile")
@@ -186,6 +186,7 @@ def generate_otp(user_id, mobile):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def send_otp(request):
     data = request.query_params
     user_id = data.get("user_id")
@@ -245,6 +246,7 @@ def otp_verification(request):
     """
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def facebook_or_google_login(request):
     data = request.data
     facebook_id = data.get("facebook_id")
