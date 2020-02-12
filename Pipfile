@@ -21,6 +21,7 @@ djangorestframework = "*"
 django-filter = "*"
 requests = "*"
 boto3 = "*"
+djangorestframework-jwt = "*"
 
 [requires]
 python_version = "3.8"

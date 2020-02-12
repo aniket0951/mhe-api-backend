@@ -1,19 +1,26 @@
-from django.shortcuts import render
-import urllib
-import math, random, json
-import requests
-from datetime import datetime, timedelta, timezone
-import boto3
-from rest_framework.decorators import api_view
-from django.http import HttpResponse, JsonResponse
-from rest_framework.response import Response
-from apps.users.serializers import UserSerializer
-from apps.users.models import BaseUser, Relationship
-from rest_framework.parsers import JSONParser
+import json
+import math
 import os
-from django.conf import settings
+import random
 import threading
+import urllib
+from datetime import datetime, timedelta, timezone
+from random import randint
+
+import boto3
+import requests
 from boto3.s3.transfer import TransferConfig
+from django.conf import settings
+from django.contrib.auth import authenticate
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.parsers import JSONParser
+from rest_framework.response import Response
+from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+
+from apps.users.models import BaseUser, Relationship
+from apps.users.serializers import UserSerializer
 
 AWS_ACCESS_KEY = settings.AWS_ACCESS_KEY
 AWS_SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
@@ -173,6 +180,7 @@ def generate_otp(user_id, mobile):
         user.otp = str(OTP)
         t = datetime.now()
         user.otp_generate_time = t
+        user.set_password(str(OTP))
         user.save()
         return 2, OTP
 
@@ -182,6 +190,8 @@ def send_otp(request):
     data = request.query_params
     user_id = data.get("user_id")
     user = BaseUser.objects.filter(id = user_id).first()
+    if not user:
+        return Response({"message": "User doesn't exist", "status": 400})
     message, OTP = generate_otp(user.id, str(user.mobile))
     if(message == 1):
         return Response({"message": "User doesn't exist", "status": 400})
@@ -213,14 +223,19 @@ def otp_verification(request):
     mobile_exist = BaseUser.objects.filter(id = user_id).first()
     if not mobile_exist:
         return Response({"message": "Please try again", "status" : 400})
-    if (mobile_exist.otp == user_otp) or (user_otp == "0000"):
+
+    user = authenticate(username=mobile_exist.mobile, password=user_otp)
+    if  user or (user_otp == "0000"):
         mobile_exist.mobile_verified = True
         mobile_exist.otp = None
+        mobile_exist.set_password(randint(1000, 9999))
         mobile_exist.save()
+        payload = jwt_payload_handler(user)
+        token = jwt_encode_handler(payload)
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
         user_data["profile_url"] = generate_pre_signed_url(mobile_exist.profile_image)
         user_data["family_members"] = list_family_member(mobile_exist.id)
-        return Response({"data": user_data, "message": "mobile number verified", "status": 200})
+        return Response({"data": user_data, "message": "mobile number verified", "token":token, "status": 200})
     
     else:
         return Response({"message": "OTP is wrong", "status": 400})
