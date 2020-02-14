@@ -7,6 +7,7 @@ from apps.appointments import views
 
 urlpatterns = [
     path('', include(('apps.users.urls', 'users'), namespace='users')),
+    path('', include(('apps.manipal_admin.urls', 'manipal_admin'), namespace='manipal_admin')),
     path('admin/', admin.site.urls),
     path('api/appointment/', include('apps.doctors.urls')),
     path('api/myAppointment/', include('apps.appointments.urls')),

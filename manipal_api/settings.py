@@ -26,6 +26,7 @@ AWS_SNS_TOPIC_REGION = env('SNS_TOPIC_REGION')
 AWS_SNS_Topic_ARN = env('SNS_Topic_ARN')
 AWS_S3_BUCKET_NAME = env('S3_BUCKET_NAME')
 AWS_S3_REGION_NAME = env('S3_REGION_NAME')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -60,10 +61,7 @@ CUSTOM_APPS = [
     'apps.health_tests',
     'apps.doctors',
     'apps.appointments',
-
-
-
-
+    'apps.manipal_admin'
 ]
 
 THIRD_PARTY_APPS = [
