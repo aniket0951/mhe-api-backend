@@ -1,14 +1,24 @@
-from rest_framework.decorators import api_view
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
-from django.core import serializers
 import json
 import ast
 from datetime import datetime
+from django.core import serializers
 from django.db.models import Q
 from django.forms.models import model_to_dict
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics
+from rest_framework.decorators import api_view
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+
 from apps.doctors.models import Doctor
+from apps.doctors.serializers import (DoctorSerializer,
+                                      HospitalDetailSerializer,
+                                      HospitalSerializer,
+                                      SpecialisationDetailSerializer)
 from apps.master_data.models import Hospital, Specialisation
 from apps.doctors.serializers import DoctorSerializer, HospitalDetailSerializer, SpecialisationDetailSerializer,SpecialisationDetailSerializer,HospitalSerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -73,6 +83,7 @@ class DoctorsAPIView(generics.ListCreateAPIView):
     
 
 class LocationAPIView(generics.ListAPIView):
+    permission_classes = [AllowAny]
     queryset          = Hospital.objects.all()
     serializer_class  = HospitalSerializer
 
