@@ -27,11 +27,11 @@ class SpecialisationDetailSerializer(serializers.ModelSerializer):
 
 
 class DoctorSerializer(serializers.ModelSerializer):
-    linked_hospitals = HospitalSerializer(read_only=True, many=True)
-    specialisations = SpecialisationSerializer(read_only=True, many=True)
+    linked_hospitals = HospitalSerializer( many=True)
+    specialisations = SpecialisationSerializer(many=True)
     class Meta:
         model = Doctor
-        fields = ['code','id','first_name' ,'linked_hospitals', 'specialisations', 'designation', 'awards_and_achievements', 'start_date', 'end_date', 'profile_image']
+        fields = ['code','id','first_name', 'experience' ,'linked_hospitals', 'specialisations', 'designation', 'awards_and_achievements', 'start_date', 'end_date', 'profile_image']
 
 
 class DoctorSpecificSerializer(serializers.ModelSerializer):

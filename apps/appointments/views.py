@@ -14,7 +14,7 @@ from rest_framework import generics
 from rest_framework import filters
 from rest_framework.decorators import api_view
 from apps.doctors.models import Doctor
-from apps.master_data.models import Hospital
+from apps.master_data.models import Hospital,Specialisation
 from apps.patients.models import Patient
 from apps.users.models import BaseUser
 import xml.etree.ElementTree as ET
@@ -109,9 +109,11 @@ def CreateAppointment(request):
     appointment_date = data.get("appointment_date")
     appointment_slot = data.get("appointment_slot")
     appointment_date_time = data.get("appointment_date_time")
+    speciality_id = data.get("speciality_code")
     doctor = Doctor.objects.filter(id = doctor_id).first()
     user = BaseUser.objects.filter(id= patient_id).first()
     hospital = Hospital.objects.filter(id = hospital_id).first()
+    speciality = Specialisation.objects.filter(id = speciality_id)
     """
     h, m , s = appointment_slot.split(":")
     appointment_slot = datetime.time(h,m,s)
