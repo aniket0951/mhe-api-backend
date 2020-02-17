@@ -27,19 +27,19 @@ def login(request):
                 raise Exception
        except Exception as e:
            return Response({'message': "Invalid username/password"}, status="400")
-       if admin:
-           payload = jwt_payload_handler(admin)
-           jwt_token = jwt_encode_handler(payload)
-           admin_data = AdminSerializer(ManipalAdmin.objects.all(), many = True)
-           response = {}
-           response["admin_data"] = admin_data.data
-           response['token'] = jwt_token
-           return Response({"data": response, "message": "logged in successfully", "status": 200})
+
+       payload = jwt_payload_handler(admin)
+       jwt_token = jwt_encode_handler(payload)
+       admin_data = AdminSerializer([admin], many = True)
+       response = {}
+       response["admin_data"] = admin_data.data
+       response['token'] = jwt_token
+       return Response({"data": response, "message": "logged in successfully", "status": 200})
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def reset_password(request):
+def change_password(request):
     data = request.data
     password = data.get("password")
     email = data.get("email_id")
