@@ -20,6 +20,18 @@ import requests
 import xml.etree.ElementTree as ET
 import ast
 
+headers = {
+    'Content-Type': "application/xml",
+    'User-Agent': "PostmanRuntime/7.20.1",
+    'Accept': "*/*",
+    'Cache-Control': "no-cache",
+    'Postman-Token': "c3ab8054-cca3-45d3-afe0-59936599cc57,211fe54d-707f-48b5-b6a4-8b953006078b",
+    'Host': "172.16.241.227:789",
+    'Accept-Encoding': "gzip, deflate",
+    'Content-Length': "177",
+    'Connection': "keep-alive",
+    'cache-control': "no-cache"
+    }
 
 """
 class DoctorViewSet(ModelViewset):
@@ -131,18 +143,6 @@ def DoctorDetailView(request):
     doctor_code = doctor[0].code
     location_code = hospital.code
     speciality_code = specialisation.code
-    headers = {
-    'Content-Type': "application/xml",
-    'User-Agent': "PostmanRuntime/7.20.1",
-    'Accept': "*/*",
-    'Cache-Control': "no-cache",
-    'Postman-Token': "c3ab8054-cca3-45d3-afe0-59936599cc57,211fe54d-707f-48b5-b6a4-8b953006078b",
-    'Host': "172.16.241.227:789",
-    'Accept-Encoding': "gzip, deflate",
-    'Content-Length': "177",
-    'Connection': "keep-alive",
-    'cache-control': "no-cache"
-    }
     url = "https://localhost:8080/Common.svc/getDoctorPriceAndSchedule"
     payload = "<DoctorParam><doctorCode>{0}</doctorCode><locationCode>{1}</locationCode><scheduleDate>{2}</scheduleDate><visitType>Appiontment</visitType><appointmentType>New</appointmentType><reasonForVisitCode>CONSULT</reasonForVisitCode><specialtyCode>{3}</specialtyCode><mobileNo>1</mobileNo><pdiscountAmount>1</pdiscountAmount><promocode>AA</promocode></DoctorParam>".format(doctor_code, location_code,date, speciality_code)
     response = requests.request("POST", url, data=payload, headers=headers, verify = False)
@@ -156,11 +156,12 @@ def DoctorDetailView(request):
     evening_slot = []
     for slot in slot_list:
         if slot['startTime'][-2] == 'A':
-            time = slot['startTime'][13:-3]
+            time = slot['startTime'][13:]
             morning_slot.append(time)
         else:
             time = slot['startTime'][13:-3]
             date = datetime.strptime(time, '%H:%M:%S')
+            time = slot['startTime'][13:]
             if (date.hour < 5) or (date.hour == 12):
                 afternoon_slot.append(time)
             else:
