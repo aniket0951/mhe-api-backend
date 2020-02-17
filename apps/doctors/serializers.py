@@ -19,13 +19,6 @@ class SpecialisationSerializer(serializers.ModelSerializer):
         model = Specialisation
         fields = '__all__'
 
-class SpecialisationDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Specialisation
-        fields = '__all__'
-
-
-
 class DoctorSerializer(serializers.ModelSerializer):
     linked_hospitals = HospitalSerializer( many=True)
     specialisations = SpecialisationSerializer(many=True)

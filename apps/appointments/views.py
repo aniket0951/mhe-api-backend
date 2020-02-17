@@ -1,25 +1,25 @@
+import base64
+import datetime
+import hashlib
+import xml.etree.ElementTree as ET
+
+import requests
 from django.shortcuts import render
-from .models import Appointment
-from .serializers import AppointmentSerializer , AppointmentDoctorSerializer
 
 # Create your views here.
 import rest_framework
-import base64
-import hashlib
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
-from rest_framework.filters import OrderingFilter
-from rest_framework.response import Response
-from rest_framework import generics
-from rest_framework import filters
-from rest_framework.decorators import api_view
 from apps.doctors.models import Doctor
-from apps.master_data.models import Hospital,Specialisation
+from apps.master_data.models import Hospital, Specialisation
 from apps.patients.models import Patient
 from apps.users.models import BaseUser
-import xml.etree.ElementTree as ET
-import requests
-import datetime
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics, status, viewsets
+from rest_framework.decorators import api_view
+from rest_framework.filters import OrderingFilter
+from rest_framework.response import Response
+
+from .models import Appointment
+from .serializers import AppointmentDoctorSerializer, AppointmentSerializer
 
 headers = {
     'Content-Type': "application/xml",
@@ -222,16 +222,3 @@ def get_checksum(user, key, processing_id, mid, secret_key):
     hash_string = user + "|" + key + "|" + processing_id + "|"+ mid + "|" + secret_key
     checksum = base64.b64encode(hashlib.sha256(hash_string.encode("utf-8")).digest())
     return checksum
-
-
-    
-
-
-
-
-
-      
-        
-        
-
-

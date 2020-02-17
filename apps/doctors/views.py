@@ -1,35 +1,28 @@
-import json
 import ast
+import json
+import xml.etree.ElementTree as ET
 from datetime import datetime
+
+import requests
 from django.core import serializers
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics
-from rest_framework.decorators import api_view
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       HospitalDetailSerializer,
                                       HospitalSerializer,
-                                      SpecialisationDetailSerializer)
+                                      SpecialisationSerializer)
 from apps.master_data.models import Hospital, Specialisation
-from apps.doctors.serializers import DoctorSerializer, HospitalDetailSerializer, SpecialisationDetailSerializer,SpecialisationDetailSerializer,HospitalSerializer
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.viewsets import ModelViewSet
-from rest_framework import generics
-from rest_framework import filters
+from rest_framework import filters, generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
-import requests
-import xml.etree.ElementTree as ET
-import ast
+from rest_framework.viewsets import ModelViewSet
 
 headers = {
     'Content-Type': "application/xml",
@@ -73,14 +66,18 @@ class DoctorsAPIView(generics.ListCreateAPIView):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
 
-    
-    def list(self, request, *args, **kwargs):
+    def get_queryset(self):
+        qs = super().get_queryset() 
         location_id= self.request.query_params.get('location_id', None)
         date = self.request.query_params.get('date', None)
-        queryset = Doctor.objects.filter(linked_hospitals__id = location_id).filter(Q(end_date__gte = date) | Q(end_date__isnull=True))
-        serializer = self.get_serializer(queryset, many=True)
-        doctors= {}
-        doctors["doctor"] = serializer.data
+        qs = Doctor.objects.filter(linked_hospitals__id = location_id).filter(Q(end_date__gte = date) | Q(end_date__isnull=True))
+        return qs
+
+    
+    def list(self, request, *args, **kwargs):
+        doctor = super().list(request)
+        doctors = {}
+        doctors["doctors"] = doctor.data
         return Response({"data": doctors, "status": 200, "message":"List of all the doctors"})
     
 
@@ -114,11 +111,11 @@ class PreferredLocationView(APIView):
 class SpecialisationAPIView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     queryset          = Specialisation.objects.all()
-    serializer_class  = SpecialisationDetailSerializer
+    serializer_class  = SpecialisationSerializer
 
     def list(self, request):
         queryset = Specialisation.objects.all()
-        serializer = SpecialisationDetailSerializer(queryset, many=True)
+        serializer = SpecialisationSerializer(queryset, many=True)
         return Response({"data": serializer.data, "status" : 200})
 
 
@@ -186,20 +183,3 @@ def DoctorDetailView(request):
     json_to_be_returned["afternoon_slot"] = afternoon_slot
     json_to_be_returned["evening_slot"] = evening_slot
     return Response({"data":json_to_be_returned, "message":"Available slot", "status": 200})
-
-
-
-    
-
-    
-    
-    
-
-
-
-    
-    
-    
-    
-
-    
