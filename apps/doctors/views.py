@@ -10,6 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics
 from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
@@ -58,6 +59,7 @@ class DoctorViewSet(ModelViewset):
 """
 
 class DoctorsListView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
     search_fields = ['specialisations__code', 'first_name', 'linked_hospitals__profit_center']
     filter_backends = (filters.SearchFilter,)
     queryset = Doctor.objects.all()
@@ -65,7 +67,7 @@ class DoctorsListView(generics.ListCreateAPIView):
 
 
 class DoctorsAPIView(generics.ListCreateAPIView):
-    
+    permission_classes = [AllowAny]
     search_fields = ['specialisations__code', 'first_name', 'linked_hospitals__profit_center']
     filter_backends = (filters.SearchFilter,)
     queryset = Doctor.objects.all()
@@ -95,6 +97,7 @@ class LocationAPIView(generics.ListAPIView):
 
 
 class PreferredLocationView(APIView):
+    permission_classes = [AllowAny]
     serializers_class = HospitalSerializer
     queryset = Hospital.objects.all()
 
@@ -109,6 +112,7 @@ class PreferredLocationView(APIView):
 
 
 class SpecialisationAPIView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
     queryset          = Specialisation.objects.all()
     serializer_class  = SpecialisationDetailSerializer
 
@@ -131,6 +135,7 @@ class DoctorDetailAPIView(generics.RetrieveAPIView):
 """
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def DoctorDetailView(request):
     data = request.query_params
     doctor_id = data.get("doctor_id")
