@@ -1,9 +1,11 @@
 from django.db import models
-from apps.patients.models import Patient
+
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
+from apps.users.models import BaseUser
 
 # Create your models here.
+
 
 class Appointment(models.Model):
     CONFIRMED = 1
@@ -16,10 +18,11 @@ class Appointment(models.Model):
     )
     appointment_date = models.DateField()
     time_slot_from = models.TimeField()
-    token_no = models.IntegerField()
+    appointmentIdentifier = models.IntegerField(null = True)
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
-    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
-    
-
+    req_patient = models.ForeignKey(
+        BaseUser, on_delete=models.CASCADE, related_name='req_patient')
+    doctor = models.ForeignKey(
+        Doctor, on_delete=models.CASCADE, related_name='doctor')
+    hospital = models.ForeignKey(
+        Hospital, on_delete=models.CASCADE, related_name='hospital')

@@ -38,4 +38,4 @@ class Doctor(BaseUser):
         permissions = ()
 
     def __str__(self):
-        return self.code
+        return self.first_name

@@ -17,7 +17,7 @@ class HospitalDetailSerializer(serializers.ModelSerializer):
 class SpecialisationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialisation
-        fields = ['code']
+        fields = '__all__'
 
 class SpecialisationDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,7 +31,7 @@ class DoctorSerializer(serializers.ModelSerializer):
     specialisations = SpecialisationSerializer(read_only=True, many=True)
     class Meta:
         model = Doctor
-        fields = ['first_name' ,'linked_hospitals', 'specialisations', 'designation', 'awards_and_achievements', 'start_date', 'end_date']
+        fields = ['id','first_name' ,'linked_hospitals', 'specialisations', 'designation', 'awards_and_achievements', 'start_date', 'end_date', 'profile_image']
 
 
 class DoctorSpecificSerializer(serializers.ModelSerializer):

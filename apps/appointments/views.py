@@ -16,6 +16,23 @@ from rest_framework.decorators import api_view
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 from apps.patients.models import Patient
+from apps.users.models import BaseUser
+import xml.etree.ElementTree as ET
+import requests
+import datetime
+
+headers = {
+    'Content-Type': "application/xml",
+    'User-Agent': "PostmanRuntime/7.20.1",
+    'Accept': "*/*",
+    'Cache-Control': "no-cache",
+    'Postman-Token': "c3ab8054-cca3-45d3-afe0-59936599cc57,211fe54d-707f-48b5-b6a4-8b953006078b",
+    'Host': "172.16.241.227:789",
+    'Accept-Encoding': "gzip, deflate",
+    'Content-Length': "177",
+    'Connection': "keep-alive",
+    'cache-control': "no-cache"
+    }
 
 
 """
@@ -86,34 +103,73 @@ class AppointmentsAPIView(generics.ListCreateAPIView):
 @api_view(['POST'])
 def CreateAppointment(request):
     data = request.data
-    patient_id = data.get("patient_id")
+    patient_id = data.get("user_id")
     hospital_id = data.get("hospital_id")
     doctor_id = data.get("doctor_id")
-    slot = data.get("slot")
-    appointment_date = data.get("appintment_date")
-    doctor = Doctor.objects.filter(first_name = doctor_id).first()
-    patient = Patient.objects.filter(unique_identifier = patient_id).first()
-    print(patient)
-    hospital = Hospital.objects.filter(code = hospital_id).first()
-
+    appointment_date = data.get("appointment_date")
+    appointment_slot = data.get("appointment_slot")
+    appointment_date_time = data.get("appointment_date_time")
+    doctor = Doctor.objects.filter(id = doctor_id).first()
+    user = BaseUser.objects.filter(id= patient_id).first()
+    hospital = Hospital.objects.filter(id = hospital_id).first()
     """
-    Call the Booking API  here and get all the status and create a entry in Database
-
+    h, m , s = appointment_slot.split(":")
+    appointment_slot = datetime.time(h,m,s)
     """
-
-    appointment = Appointment(appointment_date= appointment_date ,time_slot_from = slot, token_no = 7, status= 1, patient = patient , doctor = doctor ,hospital = hospital)
+    y, m , d = appointment_date.split("-")
+    date = y+m+d
+    doctor = Doctor.objects.filter(id = doctor_id).first()
+    hospital = Hospital.objects.filter(id = hospital_id).first()
+    user = BaseUser.objects.filter(id = patient_id).first()
+    doctor_code = doctor.code
+    appointment_date_time = appointment_date_time
+    location_code = hospital.code
+    name = user.first_name
+    mobile = user.mobile
+    email = user.email
+    specialty_code = "MHBDCAR"
+    type = "NEW"
+    url = "https://localhost:8080/Common.svc/bookAppointment"
+    payload = """<IbookAppointmentParam>
+    <doctorCode>{0}</doctorCode>
+    <appointmentDateTime>{1}</appointmentDateTime>
+    <mrn></mrn>
+    <locationCode>{2}</locationCode>
+    <patientName>{3}</patientName>
+    <mobile>{4}</mobile>
+    <email>{5}</email>
+    <duration>10</duration>
+    <visitType>A</visitType>
+    <appointmentType>{6}</appointmentType>
+    <reasonForVisitCode>CONSULT</reasonForVisitCode>
+    <chiefComplaint>NA</chiefComplaint>
+    <fastCareID>PatientApp</fastCareID>
+    <specialtyCode>{7}</specialtyCode>
+    <title>Mr.</title>
+</IbookAppointmentParam>""".format(doctor_code, appointment_date_time, location_code, name, mobile, email,type , specialty_code)
+    print(payload)
+    response = requests.request("POST", url, data=payload, headers=headers, verify = False)
+    print(response.content)
+    root = ET.fromstring(response.content)
+    appointmentIdentifier = root.find("appointmentIdentifier").text
+    appointment = Appointment(appointment_date= appointment_date ,time_slot_from = appointment_slot,appointmentIdentifier = appointmentIdentifier, status= 1, req_patient = user , doctor = doctor ,hospital = hospital)
     appointment.save()
-    return Response("Appointment has been created", status=200)
+    return Response({"message": "Appointment has been created", "status": 200, "id": appointmentIdentifier})
 
 @api_view(['POST'])
 def CancelAppointment(request):
     data = request.data
     appointment_id = data.get("appointment_id")
-    print(appointment_id)
-    instance = Appointment.objects.filter(id = appointment_id).first()
-    """
-    Call the API for cancellation and once confirm update the record
-    """
+    location_id = data.get("location_id")
+    instance = Appointment.objects.filter(appointmentIdentifier = appointment_id).first()
+    location_code = "MHB"
+    appointmentIdentifier = "1454504"
+    payload = """
+    <CancelAppointments>
+    <appointmentIdentifier>{0}</appointmentIdentifier>
+    <locationCode>{1}</locationCode>
+    </CancelAppointments>""".format(appointmentIdentifier, location_code)
+    response = requests.request("POST", url, data=payload, headers=headers, verify = False)
     instance.status = 2
     instance.save()
     return Response({"message": "Appointment has been cancelled"}, status = 2)
