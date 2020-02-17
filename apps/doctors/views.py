@@ -34,6 +34,14 @@ class DoctorViewSet(ModelViewset):
 
 
 """
+
+class DoctorsListView(generics.ListCreateAPIView):
+    search_fields = ['specialisations__code', 'first_name', 'linked_hospitals__profit_center']
+    filter_backends = (filters.SearchFilter,)
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
+
 class DoctorsAPIView(generics.ListCreateAPIView):
     
     search_fields = ['specialisations__code', 'first_name', 'linked_hospitals__profit_center']
@@ -102,25 +110,27 @@ class DoctorDetailAPIView(generics.RetrieveAPIView):
 @api_view(['GET'])
 def DoctorDetailView(request):
     data = request.query_params
-    id = data.get("id")
+    doctor_id = data.get("doctor_id")
     date = data.get("date")
-    hospital_code = data.get("hospital_code")
-    specialisation_code = data.get("specialisation_code")
-    results = Doctor.objects.filter(id = id, linked_hospitals__id = hospital_code, specialisations__id = specialisation_code).filter(Q(end_date__gte = date) | Q(end_date__isnull=True))
-    if not results:
+    hospital_id = data.get("hospital_id")
+    specialisation_id = data.get("specialisation_id")
+    hospital = Hospital.objects.filter(id = hospital_id).first()
+    specialisation = Specialisation.objects.filter(id = specialisation_id).first()
+    doctor = Doctor.objects.filter(id = doctor_id, linked_hospitals__id = hospital_id, specialisations__id = specialisation_id).filter(Q(end_date__gte = date) | Q(end_date__isnull=True))
+    if not doctor:
         return Response({"message":"Doctor is not available on this date", "status": 402})
-    tmpJson = serializers.serialize("json",results)
+    tmpJson = serializers.serialize("json",doctor)
     tmpObj = json.loads(tmpJson)
     if(len(tmpObj) == 0):
         return Response({"message":"Doctor is not available on this date", "status" : 400})
     json_to_be_returned = tmpObj[0]
     print(tmpObj[0]["fields"])
     y, m , d = date.split("-")
-    date = d + m + y
-    date = "14032020"
-    doctor_code = "MHBDC9775"
-    location_code = "MHB"
-    speciality_code = "MHBDCAR"
+    date_concat = d + m + y
+    date = date_concat
+    doctor_code = doctor[0].code
+    location_code = hospital.code
+    speciality_code = specialisation.code
     headers = {
     'Content-Type': "application/xml",
     'User-Agent': "PostmanRuntime/7.20.1",

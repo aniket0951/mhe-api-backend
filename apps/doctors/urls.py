@@ -8,5 +8,7 @@ urlpatterns = [
     path('specialisation/', views.SpecialisationAPIView.as_view()),
     path('doctorDetails/', views.DoctorDetailView, name = "doctorview"),
     path('PreferredLocation/', views.PreferredLocationView, name = "PreferredLocationView"),
+    path('doctorsListView/', views.DoctorsListView.as_view()),
+
 ]
 
