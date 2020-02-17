@@ -1,25 +1,17 @@
 import json
-from uuid import UUID
 from django.conf import settings
 from rest_framework.response import Response
 from django.http import HttpResponse
+from django.core import serializers
 from django.contrib.auth.hashers import check_password
-from rest_framework_jwt.utils import jwt_encode_handler
+from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 
 from apps.manipal_admin.models import ManipalAdmin
+from apps.manipal_admin.serializers import AdminSerializer
 
 # Create your views here.
-
-class UUIDEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, UUID):
-            # if the obj is uuid, we simply return the value of uuid
-            return obj.hex
-        return json.JSONEncoder.default(self, obj)
-
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
@@ -36,26 +28,13 @@ def login(request):
        except Exception as e:
            return Response({'message': "Invalid username/password"}, status="400")
        if admin:
-           payload = {
-               'id': admin.id,
-               'email': admin.email,
-               'password': admin.password,
-               'role': admin.role,
-               'first_name': admin.first_name,
-               'middle_name': admin.middle_name,
-               'last_name': admin.last_name
-           }
-           payload = json.loads(json.dumps(payload, cls = UUIDEncoder))
-           jwt_token = {"token": jwt_encode_handler(payload)}
-           jwt_token['first_name'] = admin.first_name
-           jwt_token['middle_name'] = admin.middle_name
-           jwt_token['last_name'] = admin.last_name
-           jwt_token['role'] = admin.role
-           return HttpResponse(
-             json.dumps(jwt_token),
-             status=200,
-             content_type="application/json"
-           )
+           payload = jwt_payload_handler(admin)
+           jwt_token = jwt_encode_handler(payload)
+           admin_data = AdminSerializer(ManipalAdmin.objects.all(), many = True)
+           response = {}
+           response["admin_data"] = admin_data.data
+           response['token'] = jwt_token
+           return Response({"data": response, "message": "logged in successfully", "status": 200})
 
 
 @api_view(['POST'])
