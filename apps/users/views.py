@@ -228,7 +228,7 @@ def otp_verification(request):
         return Response({"message": "Please try again", "status" : 400})
 
     user = authenticate(username=mobile_exist.mobile, password=user_otp)
-    if  user or (user_otp == "0000"):
+    if  user:
         mobile_exist.mobile_verified = True
         mobile_exist.otp = None
         mobile_exist.set_password(randint(1000, 9999))
@@ -507,6 +507,7 @@ def list_family_members(request):
     user_id = data.get("user_id")
         
     user_data = BaseUser.objects.filter(id = user_id).values()[0]
+    user_data["profile_url"] = generate_pre_signed_url(BaseUser.objects.filter(id = user_id).first().profile_image)
     user_data["family_members"] = list_family_member(user_id)
     return Response({"data": user_data, "message": "family is sent", "status": 200})
 
