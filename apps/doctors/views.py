@@ -165,7 +165,7 @@ def DoctorDetailView(request):
     doctor_code = doctor[0].code
     location_code = hospital.code
     speciality_code = specialisation.code
-    url = "https://localhost:8080/Common.svc/getDoctorPriceAndSchedule"
+    url = "https://172.16.241.227:789/Common.svc/getDoctorPriceAndSchedule"
     payload = "<DoctorParam><doctorCode>{0}</doctorCode><locationCode>{1}</locationCode><scheduleDate>{2}</scheduleDate><visitType>Appiontment</visitType><appointmentType>New</appointmentType><reasonForVisitCode>CONSULT</reasonForVisitCode><specialtyCode>{3}</specialtyCode><mobileNo>1</mobileNo><pdiscountAmount>1</pdiscountAmount><promocode>AA</promocode></DoctorParam>".format(doctor_code, location_code,date, speciality_code)
     response = requests.request("POST", url, data=payload, headers=headers, verify = False)
     root = ET.fromstring(response.content)
