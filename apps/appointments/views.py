@@ -129,9 +129,9 @@ def CreateAppointment(request):
     name = user.first_name
     mobile = user.mobile
     email = user.email
-    specialty_code = "MHBDCAR"
+    specialty_code = speciality.code
     type = "NEW"
-    url = "https://localhost:8080/Common.svc/bookAppointment"
+    url = "https://172.16.241.227:789/Common.svc/bookAppointment"
     payload = """<IbookAppointmentParam>
     <doctorCode>{0}</doctorCode>
     <appointmentDateTime>{1}</appointmentDateTime>
@@ -171,6 +171,7 @@ def CancelAppointment(request):
     <appointmentIdentifier>{0}</appointmentIdentifier>
     <locationCode>{1}</locationCode>
     </CancelAppointments>""".format(appointmentIdentifier, location_code)
+    url = "https://172.16.241.227:789/Common.svc/cancelAppointment"
     response = requests.request("POST", url, data=payload, headers=headers, verify = False)
     instance.status = 2
     instance.save()
