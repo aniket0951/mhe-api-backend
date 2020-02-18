@@ -75,10 +75,13 @@ class DoctorsAPIView(generics.ListCreateAPIView):
 
     
     def list(self, request, *args, **kwargs):
-        doctor = super().list(request)
-        doctors = {}
-        doctors["doctors"] = doctor.data
-        return Response({"data": doctors, "status": 200, "message":"List of all the doctors"})
+        doctor = super().list(request, *args, **kwargs)
+        if doctor.status_code == 200:
+            doctors = {}
+            doctors["doctors"] = doctor.data
+            return Response({"data": doctors, "status": 200, "message":"List of all the doctors"})
+        else:
+            return Response({"status": doctor.code, "message": "No Doctor is Available"})
     
 
 class LocationAPIView(generics.ListAPIView):
@@ -87,10 +90,14 @@ class LocationAPIView(generics.ListAPIView):
     serializer_class  = HospitalSerializer
 
 
-    def list(self, request):
-        queryset = Hospital.objects.all()
-        serializer = HospitalSerializer(queryset, many=True)
-        return Response({"data": serializer.data, "status" : 200})
+    def list(self, request,*args, **kwargs):
+        location = super().list(request, *args, **kwargs)
+        if location.status_code == 200:
+            locations = {}
+            locations["locations"] = location.data
+            return Response({"data": locations, "status": 200, "message":"List of all the locations"})
+        else:
+            return Response({"status": location.code, "message": "No Location is Available"})
 
 
 class PreferredLocationView(APIView):
@@ -99,8 +106,6 @@ class PreferredLocationView(APIView):
     queryset = Hospital.objects.all()
 
     def get(request):
-        long = self.request.query_params.get('long', None)
-        lat =  self.request.query_params.get('lat', None)
         hospital = HospitalSerializer.objects.all()
         serializer = HospitalSerializer(hospital)
         context = {'status' : 200, 'data':serializer.data}
@@ -113,10 +118,14 @@ class SpecialisationAPIView(generics.ListCreateAPIView):
     queryset          = Specialisation.objects.all()
     serializer_class  = SpecialisationSerializer
 
-    def list(self, request):
-        queryset = Specialisation.objects.all()
-        serializer = SpecialisationSerializer(queryset, many=True)
-        return Response({"data": serializer.data, "status" : 200})
+    def list(self, request,*args, **kwargs):
+        specialisation = super().list(request, *args, **kwargs)
+        if specialisation.status_code == 200:
+            specialisations = {}
+            specialisations["specialisations"] = specialisation.data
+            return Response({"data": specialisations, "status": 200, "message":"List of all the Specialisations"})
+        else:
+            return Response({"status": specialisation.code, "message": "No Specialisation is Available"})
 
 
 """

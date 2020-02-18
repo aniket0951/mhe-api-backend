@@ -18,7 +18,7 @@ class Appointment(models.Model):
     )
     appointment_date = models.DateField()
     time_slot_from = models.TimeField()
-    appointmentIdentifier = models.IntegerField(null = True)
+    appointmentIdentifier = models.IntegerField()
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     req_patient = models.ForeignKey(
         BaseUser, on_delete=models.CASCADE, related_name='req_patient')
