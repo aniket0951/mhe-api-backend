@@ -37,7 +37,7 @@ def login(request):
     jwt_token = jwt_encode_handler(payload)
     data = AdminSerializer(admin)
     admin_data = data.data
-    return Response({"data": admin_data, "token": jwt_token, "message": "logged in successfully", "status": 200})
+    return Response({"data": admin_data, "token": jwt_token, "message": "Successfully logged in.", "status": 200})
 
 
 @api_view(['POST'])
@@ -52,10 +52,9 @@ def change_password(request):
         hash_password = admin.password
         match_password = check_password(password, hash_password)
         if not match_password:
-            return Response({"message": "old password didn't match", "status": 400})
-        else:
-            admin.set_password(new_password)
-            admin.save()
-            return Response({"message": "password set successfully", "status": 200})
+            return Response({"message": "Current password didn't match.", "status": 400})
+        admin.set_password(new_password)
+        admin.save()
+        return Response({"message": "Successfully changed password.", "status": 200})
     except Exception as e:
-        return Response({"message": "given email id is not found", "status": 400})
+        return Response({"message": "Email id is incorrect.", "status": 400})
