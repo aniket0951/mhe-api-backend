@@ -21,8 +21,8 @@ class Appointment(models.Model):
     appointmentIdentifier = models.IntegerField()
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     req_patient = models.ForeignKey(
-        BaseUser, on_delete=models.CASCADE, related_name='req_patient')
+        BaseUser, on_delete=models.PROTECT, related_name='req_patient')
     doctor = models.ForeignKey(
-        Doctor, on_delete=models.CASCADE, related_name='doctor')
+        Doctor, on_delete=models.PROTECT, related_name='doctor')
     hospital = models.ForeignKey(
-        Hospital, on_delete=models.CASCADE, related_name='hospital')
+        Hospital, on_delete=models.PROTECT, related_name='hospital')

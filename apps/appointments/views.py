@@ -32,7 +32,7 @@ headers = {
     'Content-Length': "177",
     'Connection': "keep-alive",
     'cache-control': "no-cache"
-    }
+}
 
 
 """
@@ -84,8 +84,10 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         return queryset
 """
 
+
 class AppointmentsAPIView(generics.ListCreateAPIView):
-    search_fields = ['patient__first_name', 'doctor__first_name', 'hospital__profit_center']
+    search_fields = ['patient__first_name',
+                     'doctor__first_name', 'hospital__profit_center']
     filter_backends = (filters.SearchFilter,)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
@@ -94,7 +96,7 @@ class AppointmentsAPIView(generics.ListCreateAPIView):
         queryset = Appointment.objects.all()
         patient_id = self.request.query_params.get('patient_id', None)
         if patient_id is not None:
-            queryset = queryset.filter(patient_id = patient_id)
+            queryset = queryset.filter(patient_id=patient_id)
             return queryset
         else:
             return queryset
@@ -110,15 +112,15 @@ def CreateAppointment(request):
     appointment_slot = data.get("appointment_slot")
     appointment_date_time = data.get("appointment_date_time")
     speciality_id = data.get("speciality_code")
-    user = BaseUser.objects.filter(id= patient_id).first()
-    speciality = Specialisation.objects.filter(id = speciality_id).first()
-    hospital = Hospital.objects.filter(id = hospital_id).first()
-    doctor = Doctor.objects.filter(id = doctor_id).first()
+    user = BaseUser.objects.filter(id=patient_id).first()
+    speciality = Specialisation.objects.filter(id=speciality_id).first()
+    hospital = Hospital.objects.filter(id=hospital_id).first()
+    doctor = Doctor.objects.filter(id=doctor_id).first()
     """
     h, m , s = appointment_slot.split(":")
     appointment_slot = datetime.time(h,m,s)
     """
-    y, m , d = appointment_date.split("-")
+    y, m, d = appointment_date.split("-")
     date = y+m+d
     doctor_code = doctor.code
     appointment_date_time = appointment_date_time
@@ -145,22 +147,25 @@ def CreateAppointment(request):
     <fastCareID>PatientApp</fastCareID>
     <specialtyCode>{7}</specialtyCode>
     <title>Mr.</title>
-</IbookAppointmentParam>""".format(doctor_code, appointment_date_time, location_code, name, mobile, email,type , specialty_code)
-    print(payload)
-    response = requests.request("POST", url, data=payload, headers=headers, verify = False)
+</IbookAppointmentParam>""".format(doctor_code, appointment_date_time, location_code, name, mobile, email, type, specialty_code)
+    response = requests.request(
+        "POST", url, data=payload, headers=headers, verify=False)
     print(response.content)
     root = ET.fromstring(response.content)
     appointmentIdentifier = root.find("appointmentIdentifier").text
-    appointment = Appointment(appointment_date= appointment_date ,time_slot_from = appointment_slot,appointmentIdentifier = appointmentIdentifier, status= 1, req_patient = user , doctor = doctor ,hospital = hospital)
+    appointment = Appointment(appointment_date=appointment_date, time_slot_from=appointment_slot,
+                              appointmentIdentifier=appointmentIdentifier, status=1, req_patient=user, doctor=doctor, hospital=hospital)
     appointment.save()
     return Response({"message": "Appointment has been created", "status": 200, "id": appointmentIdentifier})
+
 
 @api_view(['POST'])
 def CancelAppointment(request):
     data = request.data
     appointment_id = data.get("appointment_id")
     location_id = data.get("location_id")
-    instance = Appointment.objects.filter(appointmentIdentifier = appointment_id).first()
+    instance = Appointment.objects.filter(
+        appointmentIdentifier=appointment_id).first()
     location_code = "MHB"
     appointmentIdentifier = "1454504"
     payload = """
@@ -169,25 +174,27 @@ def CancelAppointment(request):
     <locationCode>{1}</locationCode>
     </CancelAppointments>""".format(appointmentIdentifier, location_code)
     url = "https://172.16.241.227:789/Common.svc/cancelAppointment"
-    response = requests.request("POST", url, data=payload, headers=headers, verify = False)
+    response = requests.request(
+        "POST", url, data=payload, headers=headers, verify=False)
     instance.status = 2
     instance.save()
-    return Response({"message": "Appointment has been cancelled"}, status = 2)
+    return Response({"message": "Appointment has been cancelled"}, status=2)
+
 
 class RecentlyVisitedDoctorlistView(generics.ListCreateAPIView):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentDoctorSerializer
-    
 
     def get_queryset(self):
         queryset = Appointment.objects.all()
         patient_id = self.request.query_params.get('patient_id', None)
-        
+
         if patient_id is not None:
-            queryset = queryset.filter(patient_id = patient_id)
+            queryset = queryset.filter(patient_id=patient_id)
             return queryset
         else:
             return queryset
+
 
 @api_view(['GET'])
 def get_data(request):
@@ -199,24 +206,28 @@ def get_data(request):
     token["username"] = "Patient"
     token["accounts"] = []
     account = {
-           "patient_name": "Jane Doe",
-           "account_number": "ACC1",
-           "amount": "150.25",
-           "email": "abc@xyz.com",
-           "phone": "9876543210"
-       }
+        "patient_name": "Jane Doe",
+        "account_number": "ACC1",
+        "amount": "150.25",
+        "email": "abc@xyz.com",
+        "phone": "9876543210"
+    }
     token["accounts"].append(account)
     token["processing_id"] = "TESTAPPID819"
-    token["paymode"] =  ""
-    token["response_url"]  =  ""
-    token["return_url"]  = ""
+    token["paymode"] = ""
+    token["response_url"] = ""
+    token["return_url"] = ""
     param["token"] = token
-    param["check_sum_hash"] = get_checksum(token["auth"]["user"], token["auth"]["key"], token["processing_id"] ,"mid", "bDp0YXGlb0s4PEqdl2cEWhgGN0kFFEPD")
+    param["check_sum_hash"] = get_checksum(
+        token["auth"]["user"], token["auth"]["key"], token["processing_id"], "mid", "bDp0YXGlb0s4PEqdl2cEWhgGN0kFFEPD")
     param["mid"] = "ydLf7fPe"
-    
-    return Response(data = param)
+
+    return Response(data=param)
+
 
 def get_checksum(user, key, processing_id, mid, secret_key):
-    hash_string = user + "|" + key + "|" + processing_id + "|"+ mid + "|" + secret_key
-    checksum = base64.b64encode(hashlib.sha256(hash_string.encode("utf-8")).digest())
+    hash_string = user + "|" + key + "|" + \
+        processing_id + "|" + mid + "|" + secret_key
+    checksum = base64.b64encode(hashlib.sha256(
+        hash_string.encode("utf-8")).digest())
     return checksum
