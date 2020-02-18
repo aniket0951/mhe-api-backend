@@ -9,13 +9,6 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-
-from apps.doctors.models import Doctor
-from apps.doctors.serializers import (DoctorSerializer,
-                                      HospitalDetailSerializer,
-                                      HospitalSerializer,
-                                      SpecialisationSerializer)
-from apps.master_data.models import Hospital, Specialisation
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics
 from rest_framework.decorators import api_view, permission_classes
@@ -23,6 +16,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+
+from apps.doctors.models import Doctor
+from apps.doctors.serializers import (DepartmentDetailSerializer,
+                                      DoctorSerializer,
+                                      HospitalDetailSerializer,
+                                      HospitalSerializer,
+                                      SpecialisationSerializer)
+from apps.master_data.models import Department, Hospital, Specialisation
 
 headers = {
     'Content-Type': "application/xml",
@@ -137,7 +138,7 @@ class DoctorDetailAPIView(generics.RetrieveAPIView):
     
     def get(self, request, pk, *args, **kwargs):
         doctor = Doctor.objects.get(pk=pk)
-        serializer = SpecialisationDetailSerializer(doctor)
+        serializer = DepartmentDetailSerializer(doctor)
         return Response(serializer.data)
 """
 

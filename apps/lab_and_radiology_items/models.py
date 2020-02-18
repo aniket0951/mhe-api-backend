@@ -3,10 +3,9 @@ from django.db import models
 from apps.master_data.models import BillingGroup, BillingSubGroup, Hospital
 from apps.meta_app.models import MyBaseModel
 
-# Create your models here.
 
 
-class HealthTest(MyBaseModel):
+class LabRadiologyItem(MyBaseModel):
 
     code = models.SlugField(max_length=200,
                             unique=True,
@@ -30,19 +29,19 @@ class HealthTest(MyBaseModel):
         blank=True)
 
     class Meta:
-        verbose_name = "Health Test"
-        verbose_name_plural = "Health Tests"
+        verbose_name = "LabRadiology Item"
+        verbose_name_plural = "LabRadiology Items"
 
     def __str__(self):
         return self.code
 
     def save(self, *args, **kwargs):
-        super(HealthTest, self).save(*args, **kwargs)
+        super(LabRadiologyItem, self).save(*args, **kwargs)
 
 
-class HealthTestPricing(MyBaseModel):
+class LabRadiologyItemPricing(MyBaseModel):
 
-    health_test = models.ForeignKey(HealthTest,
+    item = models.ForeignKey(LabRadiologyItem,
                                     on_delete=models.PROTECT,
                                     null=False,
                                     blank=False)
@@ -63,10 +62,10 @@ class HealthTestPricing(MyBaseModel):
     class Meta:
         verbose_name = "Health Test Pricing"
         verbose_name_plural = "Health Test Pricing"
-        unique_together = [['health_test', 'hospital'], ]
+        unique_together = [['item', 'hospital'], ]
 
     def __str__(self):
-        return self.health_test.code
+        return self.item.code
 
     def save(self, *args, **kwargs):
-        super(HealthTestPricing, self).save(*args, **kwargs)
+        super(LabRadiologyItemPricing, self).save(*args, **kwargs)
