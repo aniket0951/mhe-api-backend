@@ -1,16 +1,16 @@
 import json
 
+from apps.manipal_admin.models import ManipalAdmin
+from apps.manipal_admin.serializers import AdminSerializer
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core import serializers
 from django.http import HttpResponse
-
-from apps.manipal_admin.models import ManipalAdmin
-from apps.manipal_admin.serializers import AdminSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+
 
 # Create your views here.
 
@@ -35,11 +35,9 @@ def login(request):
     payload['mobile'] = payload['mobile'].raw_input
     payload['username'] = payload['username'].raw_input
     jwt_token = jwt_encode_handler(payload)
-    admin_data = AdminSerializer(admin)
-    response = {}
-    response["admin_data"] = admin_data.data
-    response['token'] = jwt_token
-    return Response({"data": response, "message": "logged in successfully", "status": 200})
+    data = AdminSerializer(admin)
+    admin_data = data.data
+    return Response({"data": admin_data, "token": jwt_token, "message": "logged in successfully", "status": 200})
 
 
 @api_view(['POST'])
@@ -55,9 +53,9 @@ def change_password(request):
         match_password = check_password(password, hash_password)
         if not match_password:
             return Response({"message": "old password didn't match", "status": 400})
-
+        else:
+            admin.set_password(new_password)
+            admin.save()
+            return Response({"message": "password set successfully", "status": 200})
     except Exception as e:
         return Response({"message": "given email id is not found", "status": 400})
-    admin.set_password(new_password)
-    admin.save()
-    return Response({"message": "password set successfully", "status": 200})
