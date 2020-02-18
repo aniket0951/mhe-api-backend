@@ -110,19 +110,16 @@ def CreateAppointment(request):
     appointment_slot = data.get("appointment_slot")
     appointment_date_time = data.get("appointment_date_time")
     speciality_id = data.get("speciality_code")
-    doctor = Doctor.objects.filter(id = doctor_id).first()
     user = BaseUser.objects.filter(id= patient_id).first()
+    speciality = Specialisation.objects.filter(id = speciality_id).first()
     hospital = Hospital.objects.filter(id = hospital_id).first()
-    speciality = Specialisation.objects.filter(id = speciality_id)
+    doctor = Doctor.objects.filter(id = doctor_id).first()
     """
     h, m , s = appointment_slot.split(":")
     appointment_slot = datetime.time(h,m,s)
     """
     y, m , d = appointment_date.split("-")
     date = y+m+d
-    doctor = Doctor.objects.filter(id = doctor_id).first()
-    hospital = Hospital.objects.filter(id = hospital_id).first()
-    user = BaseUser.objects.filter(id = patient_id).first()
     doctor_code = doctor.code
     appointment_date_time = appointment_date_time
     location_code = hospital.code
