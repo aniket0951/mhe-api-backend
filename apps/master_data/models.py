@@ -1,5 +1,6 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+
 from apps.meta_app.models import MyBaseModel
 
 
@@ -28,24 +29,76 @@ class Hospital(MyBaseModel):
         verbose_name_plural = "Hospitals"
 
     def __str__(self):
-        return self.profit_center
+        return self.code
 
     def save(self, *args, **kwargs):
         super(Hospital, self).save(*args, **kwargs)
 
 
-class Specialisation(MyBaseModel):
+class Department(MyBaseModel):
 
-    code = models.SlugField(unique=True,
+    code = models.SlugField(max_length=200,
+                            unique=True,
                             blank=True,
                             null=True)
 
-    description = models.TextField(blank=True,
-                                   null=True)
+    name = models.CharField(max_length=200,
+                            null=True,
+                            blank=True,)
+
+    class Meta:
+        verbose_name = "Department"
+        verbose_name_plural = "Departments"
+
+    def __str__(self):
+        return self.code
+
+    def save(self, *args, **kwargs):
+        super(Department, self).save(*args, **kwargs)
+
+
+class HospitalDepartment(MyBaseModel):
+
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 )
+
+    department = models.ForeignKey(Department,
+                                   on_delete=models.PROTECT,
+                                   )
+    start_date = models.DateField()
+
+    end_date = models.DateField(null=True,
+                                blank=True
+                                )
+
+    class Meta:
+        verbose_name = "Hospital Department"
+        verbose_name_plural = "Hospital Department"
+
+    def __str__(self):
+        return self.hospital.code
+
+    def save(self, *args, **kwargs):
+        super(HospitalDepartment, self).save(*args, **kwargs)
+
+
+class Specialisation(MyBaseModel):
+
+    code = models.SlugField(max_length=200,
+                            unique=True,
+                            blank=True,
+                            null=True)
+
+    description = models.CharField(max_length=200,
+                            null=True,
+                            blank=True,)
 
     start_date = models.DateField()
 
-    end_date = models.DateField()
+    end_date = models.DateField(null=True,
+                                blank=True
+                                )
 
     class Meta:
         verbose_name = "Specialisation"

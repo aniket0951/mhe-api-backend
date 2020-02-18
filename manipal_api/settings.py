@@ -37,10 +37,7 @@ AWS_SNS_TOPIC_REGION = env('SNS_TOPIC_REGION')
 AWS_SNS_Topic_ARN = env('SNS_Topic_ARN')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-"""
-env('DEBUG')
-"""
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = ['*']
 
@@ -67,6 +64,7 @@ CUSTOM_APPS = [
     'apps.health_tests',
     'apps.doctors',
     'apps.appointments',
+    'apps.lab_and_radiology_items',
 
 ]
 
@@ -223,5 +221,5 @@ REST_PROXY = {
 
     # Perform a SSL Cert Verification on URI requests are being proxied to
     'VERIFY_SSL': False,
-    
+
 }

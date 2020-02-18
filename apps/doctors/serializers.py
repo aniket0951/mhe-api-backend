@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.doctors.models import Doctor
-from apps.master_data.models import Hospital, Specialisation
+from apps.master_data.models import Hospital, Department
 from apps.patients.models import Patient
 
 class HospitalSerializer(serializers.ModelSerializer):
@@ -14,21 +14,21 @@ class HospitalDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SpecialisationSerializer(serializers.ModelSerializer):
+class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Specialisation
+        model = Department
         fields = ['code']
 
-class SpecialisationDetailSerializer(serializers.ModelSerializer):
+class DepartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Specialisation
+        model = Department
         fields = '__all__'
 
 
 
 class DoctorSerializer(serializers.ModelSerializer):
     linked_hospitals = HospitalSerializer(read_only=True, many=True)
-    specialisations = SpecialisationSerializer(read_only=True, many=True)
+    specialisations = DepartmentSerializer(read_only=True, many=True)
     class Meta:
         model = Doctor
         fields = ['first_name' ,'linked_hospitals', 'specialisations', 'designation', 'awards_and_achievements', 'start_date', 'end_date']

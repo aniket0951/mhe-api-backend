@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='HealthTest',
+            name='LabRadiologyItem',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
@@ -26,12 +26,12 @@ class Migration(migrations.Migration):
                 ('billing_sub_group', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='master_data.BillingSubGroup')),
             ],
             options={
-                'verbose_name': 'Health Test',
-                'verbose_name_plural': 'Health Tests',
+                'verbose_name': 'LabRadiology Item',
+                'verbose_name_plural': 'LabRadiology Items',
             },
         ),
         migrations.CreateModel(
-            name='HealthTestPricing',
+            name='LabRadiologyItemPricing',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
@@ -39,13 +39,13 @@ class Migration(migrations.Migration):
                 ('price', models.IntegerField()),
                 ('start_date', models.DateField()),
                 ('end_date', models.DateField(blank=True, null=True)),
-                ('health_test', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='health_tests.HealthTest')),
                 ('hospital', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='master_data.Hospital')),
+                ('item', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='lab_and_radiology_items.LabRadiologyItem')),
             ],
             options={
                 'verbose_name': 'Health Test Pricing',
                 'verbose_name_plural': 'Health Test Pricing',
-                'unique_together': {('health_test', 'hospital')},
+                'unique_together': {('item', 'hospital')},
             },
         ),
     ]

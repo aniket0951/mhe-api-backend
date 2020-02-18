@@ -7,8 +7,8 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from rest_framework.response import Response
 from apps.doctors.models import Doctor
-from apps.master_data.models import Hospital, Specialisation
-from apps.doctors.serializers import DoctorSerializer, HospitalDetailSerializer, SpecialisationDetailSerializer,SpecialisationDetailSerializer,HospitalSerializer
+from apps.master_data.models import Hospital, Department
+from apps.doctors.serializers import DoctorSerializer, HospitalDetailSerializer, DepartmentDetailSerializer,DepartmentDetailSerializer,HospitalSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import generics
@@ -65,9 +65,9 @@ class PreferredLocationView(APIView):
 
 
 
-class SpecialisationAPIView(generics.ListCreateAPIView):
-    queryset          = Specialisation.objects.all()
-    serializer_class  = SpecialisationDetailSerializer
+class DepartmentAPIView(generics.ListCreateAPIView):
+    queryset          = Department.objects.all()
+    serializer_class  = DepartmentDetailSerializer
 
 
 """
@@ -78,7 +78,7 @@ class DoctorDetailAPIView(generics.RetrieveAPIView):
     
     def get(self, request, pk, *args, **kwargs):
         doctor = Doctor.objects.get(pk=pk)
-        serializer = SpecialisationDetailSerializer(doctor)
+        serializer = DepartmentDetailSerializer(doctor)
         return Response(serializer.data)
 """
 

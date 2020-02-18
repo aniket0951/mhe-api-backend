@@ -1,5 +1,6 @@
 import json
-import xml.etree.ElementTree as et 
+import xml.etree.ElementTree as et
+
 
 class JsonSerializer:
     def __init__(self):
@@ -30,8 +31,6 @@ class XmlSerializer:
 
     def to_str(self):
         return et.tostring(self._element, encoding='unicode')
-
-
 
 
 class SerializerFactory:
