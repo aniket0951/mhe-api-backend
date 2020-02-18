@@ -21,8 +21,7 @@ from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DepartmentDetailSerializer,
                                       DoctorSerializer,
                                       HospitalDetailSerializer,
-                                      HospitalSerializer,
-                                      SpecialisationSerializer)
+                                      HospitalSerializer)
 from apps.master_data.models import Department, Hospital, Specialisation
 
 headers = {
@@ -113,34 +112,6 @@ class PreferredLocationView(APIView):
         serializer = HospitalSerializer(hospital)
         context = {'status': 200, 'data': serializer.data}
         return Response(context)
-
-
-class SpecialisationAPIView(generics.ListCreateAPIView):
-    permission_classes = [AllowAny]
-    queryset = Specialisation.objects.all()
-    serializer_class = SpecialisationSerializer
-
-    def list(self, request, *args, **kwargs):
-        specialisation = super().list(request, *args, **kwargs)
-        if specialisation.status_code == 200:
-            specialisations = {}
-            specialisations["specialisations"] = specialisation.data
-            return Response({"data": specialisations, "status": 200, "message": "List of all the Specialisations"})
-        else:
-            return Response({"status": specialisation.code, "message": "No Specialisation is Available"})
-
-
-"""
-class DoctorDetailAPIView(generics.RetrieveAPIView):
-    
-    queryset          = Doctor.objects.all()
-    serializer_class  = DoctorDetailSerializer
-    
-    def get(self, request, pk, *args, **kwargs):
-        doctor = Doctor.objects.get(pk=pk)
-        serializer = DepartmentDetailSerializer(doctor)
-        return Response(serializer.data)
-"""
 
 
 @api_view(['GET'])

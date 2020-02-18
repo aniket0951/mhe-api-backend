@@ -37,7 +37,6 @@ ALLOWED_HOSTS = ['*']
 
 
 INBUILT_APPS = [
-    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,7 +55,7 @@ CUSTOM_APPS = [
     'apps.health_tests',
     'apps.doctors',
     'apps.appointments',
-    'apps.manipal_admin'
+    'apps.manipal_admin',
     'apps.lab_and_radiology_items',
 
 ]
