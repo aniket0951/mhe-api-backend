@@ -4,7 +4,7 @@ from apps.doctors.serializers import DoctorSerializer, DoctorSpecificSerializer,
 from apps.patients.serializers import PatientSerializer
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
-from apps.patients.models import Patient
+from apps.users.serializers import UserSerializer
 
 class AppointmentDoctorSerializer(serializers.ModelSerializer):
     doctor = DoctorSpecificSerializer(read_only=True)
@@ -16,12 +16,11 @@ class AppointmentDoctorSerializer(serializers.ModelSerializer):
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    doctor = DoctorSpecificSerializer(read_only=True)
-    patient = PatientSpecificSerializer(read_only = True)
-    hospital = HospitalSpecificSerializer(read_only = True)
+    doctor= DoctorSpecificSerializer()
+    hospital = HospitalSpecificSerializer()
     class Meta:
         model = Appointment
-        fields = ('id','patient', 'token_no' , 'doctor' , 'hospital' ,'time_slot_from' , 'appointment_date', 'status')
+        fields = ('id','req_patient','appointmentIdentifier' , 'doctor' ,'hospital' ,'time_slot_from' , 'appointment_date', 'status')
     
     """
     def create(self, validated_data):
