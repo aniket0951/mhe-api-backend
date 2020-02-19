@@ -1,27 +1,33 @@
-from .models import Appointment
-from rest_framework import serializers
-from apps.doctors.serializers import DoctorSerializer, DoctorSpecificSerializer, PatientSpecificSerializer, HospitalSpecificSerializer
-from apps.patients.serializers import PatientSerializer
 from apps.doctors.models import Doctor
+from apps.doctors.serializers import (DoctorSerializer,
+                                      DoctorSpecificSerializer,
+                                      HospitalSpecificSerializer,
+                                      PatientSpecificSerializer)
 from apps.master_data.models import Hospital
+from apps.patients.serializers import PatientSerializer
 from apps.users.serializers import UserSerializer
+from rest_framework import serializers
+
+from .models import Appointment
+
 
 class AppointmentDoctorSerializer(serializers.ModelSerializer):
     doctor = DoctorSpecificSerializer(read_only=True)
 
     class Meta:
-        model  = Appointment
-        fields  =  ['doctor']
-
+        model = Appointment
+        fields = ['doctor']
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    doctor= DoctorSpecificSerializer()
+    doctor = DoctorSpecificSerializer()
     hospital = HospitalSpecificSerializer()
+
     class Meta:
         model = Appointment
-        fields = ('id','req_patient','appointmentIdentifier' , 'doctor' ,'hospital' ,'time_slot_from' , 'appointment_date', 'status')
-    
+        fields = ('id', 'req_patient', 'appointmentIdentifier', 'doctor',
+                  'hospital', 'time_slot_from', 'appointment_date', 'status')
+
     """
     def create(self, validated_data):
         hospital_data = validated_data['hospital']
@@ -33,5 +39,3 @@ class AppointmentSerializer(serializers.ModelSerializer):
         Patient.objects.create(appointment=appointment, **patient_data)
         return appointment
     """
-
-    
