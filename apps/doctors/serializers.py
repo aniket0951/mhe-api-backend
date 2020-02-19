@@ -1,7 +1,7 @@
-from rest_framework import serializers
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital, Specialisation
 from apps.patients.models import Patient
+from rest_framework import serializers
 
 
 class HospitalSerializer(serializers.ModelSerializer):
@@ -35,7 +35,8 @@ class DoctorSerializer(serializers.ModelSerializer):
 class DoctorSpecificSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
-        fields = ['id', 'first_name', 'experience']
+        fields = ['id', 'first_name', 'experience',
+                  'profile_image', 'designation']
 
 
 class HospitalSpecificSerializer(serializers.ModelSerializer):
