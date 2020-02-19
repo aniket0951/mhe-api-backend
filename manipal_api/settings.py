@@ -56,8 +56,7 @@ CUSTOM_APPS = [
     'apps.doctors',
     'apps.appointments',
     'apps.manipal_admin',
-    'apps.lab_and_radiology_items',
-
+    'apps.lab_and_radiology_items'
 ]
 
 THIRD_PARTY_APPS = [
@@ -66,11 +65,10 @@ THIRD_PARTY_APPS = [
     'django_filters',
     'phonenumber_field',
     'import_export',
-    'django_extensions',
+    'django_extensions'
 ]
 
 # Application definition
-
 INSTALLED_APPS = INBUILT_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
 
 # Created USER MODEL for authorisation
@@ -119,8 +117,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'manipal_api.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 # Database (Postgresql) Settings
 DATABASES = {
     'default': {
@@ -135,8 +131,6 @@ DATABASES = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -154,8 +148,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/3.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -166,6 +158,7 @@ USE_L10N = True
 
 USE_TZ = True
 
+# JWT authentication
 JWT_AUTH = {
     'JWT_VERIFY_EXPIRATION': True,
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=90),
@@ -173,6 +166,7 @@ JWT_AUTH = {
     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=90),
 }
 
+# DRF settings
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
@@ -193,13 +187,13 @@ REST_FRAMEWORK = {
 }
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
-
 STATIC_URL = '/static/'
 
 #  Created setting, hosts that are allowed to do cross-site requests
 CORS_ORIGIN_ALLOW_ALL = True
 
+
+# Manipal Proxy API settings
 MANIPAL_API_URL = env('MANIPAL_API_URL')
 
 REST_PROXY = {
