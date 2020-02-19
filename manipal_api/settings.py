@@ -60,10 +60,7 @@ CUSTOM_APPS = [
     'apps.health_tests',
     'apps.doctors',
     'apps.appointments',
-
-
-
-
+    'apps.manipal_admin'
 ]
 
 THIRD_PARTY_APPS = [

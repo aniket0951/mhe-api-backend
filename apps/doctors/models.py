@@ -30,7 +30,7 @@ class Doctor(BaseUser):
 
     start_date = models.DateField()
 
-    end_date = models.DateField(auto_now_add=True)
+    end_date = models.DateField(null = True, blank = True)
 
     class Meta:
         verbose_name = "Doctor"
@@ -38,4 +38,4 @@ class Doctor(BaseUser):
         permissions = ()
 
     def __str__(self):
-        return self.code
+        return self.first_name

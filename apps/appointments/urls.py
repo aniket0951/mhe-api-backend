@@ -7,7 +7,7 @@ urlpatterns = [
     path('allAppointments/', AppointmentsAPIView.as_view()),
     path('createAppointment/',CreateAppointment, name = "CreateAppointment"),
     path('cancelAppointment/',CancelAppointment, name = "cancelAppointment"),
-    path('RecentlyVisitedDoctor/',RecentlyVisitedDoctorlistView.as_view()),
+    path('recentlyVisitedDoctor/',RecentlyVisitedDoctorlistView.as_view()),
     path('getdata/',get_data, name = "get_data")
 ]
 

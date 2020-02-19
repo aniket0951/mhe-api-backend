@@ -1,25 +1,41 @@
+import ast
 import json
+import xml.etree.ElementTree as ET
+from datetime import datetime
 
+import requests
 from django.core import serializers
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics
-from rest_framework.decorators import api_view
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       HospitalDetailSerializer,
                                       HospitalSerializer,
-                                      SpecialisationDetailSerializer)
+                                      SpecialisationSerializer)
 from apps.master_data.models import Hospital, Specialisation
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
+headers = {
+    'Content-Type': "application/xml",
+    'User-Agent': "PostmanRuntime/7.20.1",
+    'Accept': "*/*",
+    'Cache-Control': "no-cache",
+    'Postman-Token': "c3ab8054-cca3-45d3-afe0-59936599cc57,211fe54d-707f-48b5-b6a4-8b953006078b",
+    'Host': "172.16.241.227:789",
+    'Accept-Encoding': "gzip, deflate",
+    'Content-Length': "177",
+    'Connection': "keep-alive",
+    'cache-control': "no-cache"
+}
 
 """
 class DoctorViewSet(ModelViewset):
@@ -34,46 +50,83 @@ class DoctorViewSet(ModelViewset):
 
 
 """
-class DoctorsAPIView(generics.ListCreateAPIView):
-    
-    search_fields = ['specialisations__code', 'first_name', 'linked_hospitals__profit_center']
+
+
+class DoctorsListView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    search_fields = ['specialisations__code',
+                     'first_name', 'linked_hospitals__profit_center', 'specialisations__description']
     filter_backends = (filters.SearchFilter,)
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
-    """
+
+
+class DoctorsAPIView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    search_fields = ['specialisations__code',
+                     'first_name', 'linked_hospitals__profit_center', 'specialisations__description']
+    filter_backends = (filters.SearchFilter,)
+    queryset = Doctor.objects.all()
+    serializer_class = DoctorSerializer
+
     def get_queryset(self):
-        qs = super().get_queryset() 
-        location = self.request.GET.get('location')
-        return qs.filter(linked_hospitals__code = location)
-    """
+        qs = super().get_queryset()
+        location_id = self.request.query_params.get('location_id', None)
+        date = self.request.query_params.get('date', None)
+        qs = Doctor.objects.filter(linked_hospitals__id=location_id).filter(
+            Q(end_date__gte=date) | Q(end_date__isnull=True))
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        doctor = super().list(request, *args, **kwargs)
+        if doctor.status_code == 200:
+            doctors = {}
+            doctors["doctors"] = doctor.data
+            return Response({"data": doctors, "status": 200, "message": "List of all the doctors"})
+        else:
+            return Response({"status": doctor.code, "message": "No Doctor is Available"})
+
+
 class LocationAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
-    queryset          = Hospital.objects.all()
-    serializer_class  = HospitalSerializer
+    queryset = Hospital.objects.all()
+    serializer_class = HospitalSerializer
 
-    def list(self, request):
-        queryset = Hospital.objects.all()
-        serializer = HospitalSerializer(queryset, many=True)
-        return Response({"data": serializer.data, "status" : 200})
+    def list(self, request, *args, **kwargs):
+        location = super().list(request, *args, **kwargs)
+        if location.status_code == 200:
+            locations = {}
+            locations["locations"] = location.data
+            return Response({"data": locations, "status": 200, "message": "List of all the locations"})
+        else:
+            return Response({"status": location.code, "message": "No Location is Available"})
 
 
 class PreferredLocationView(APIView):
+    permission_classes = [AllowAny]
     serializers_class = HospitalSerializer
     queryset = Hospital.objects.all()
 
     def get(request):
-        long = self.request.query_params.get('long', None)
-        lat =  self.request.query_params.get('lat', None)
         hospital = HospitalSerializer.objects.all()
         serializer = HospitalSerializer(hospital)
-        context = {'status' : 200, "data": serializer.data}
-        return Response(context) 
-
+        context = {'status': 200, 'data': serializer.data}
+        return Response(context)
 
 
 class SpecialisationAPIView(generics.ListCreateAPIView):
-    queryset          = Specialisation.objects.all()
-    serializer_class  = SpecialisationDetailSerializer
+    permission_classes = [AllowAny]
+    queryset = Specialisation.objects.all()
+    serializer_class = SpecialisationSerializer
+
+    def list(self, request, *args, **kwargs):
+        specialisation = super().list(request, *args, **kwargs)
+        if specialisation.status_code == 200:
+            specialisations = {}
+            specialisations["specialisations"] = specialisation.data
+            return Response({"data": specialisations, "status": 200, "message": "List of all the Specialisations"})
+        else:
+            return Response({"status": specialisation.code, "message": "No Specialisation is Available"})
 
 
 """
@@ -88,22 +141,60 @@ class DoctorDetailAPIView(generics.RetrieveAPIView):
         return Response(serializer.data)
 """
 
+
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def DoctorDetailView(request):
     data = request.query_params
-    code = data.get("code")
+    doctor_id = data.get("doctor_id")
     date = data.get("date")
-    hospital_code = data.get("hospital_code")
-    specialisation_code = data.get("specialisation_code")
-    results = Doctor.objects.filter(code = code, linked_hospitals__profit_center = hospital_code, specialisations__code = specialisation_code).filter(Q(end_date__gte = date) | Q(end_date__isnull=True))
-    tmpJson = serializers.serialize("json",results)
+    hospital_id = data.get("hospital_id")
+    specialisation_id = data.get("specialisation_id")
+    hospital = Hospital.objects.filter(id=hospital_id).first()
+    specialisation = Specialisation.objects.filter(
+        id=specialisation_id).first()
+    doctor = Doctor.objects.filter(id=doctor_id, linked_hospitals__id=hospital_id, specialisations__id=specialisation_id).filter(
+        Q(end_date__gte=date) | Q(end_date__isnull=True))
+    if not doctor:
+        return Response({"message": "Doctor is not available on this date", "status": 402})
+    tmpJson = serializers.serialize("json", doctor)
     tmpObj = json.loads(tmpJson)
     if(len(tmpObj) == 0):
-        return Response("Doctor is not available on this date")
+        return Response({"message": "Doctor is not available on this date", "status": 400})
     json_to_be_returned = tmpObj[0]
-
-    """
-    Call API for available slot and store all the slots in below Variable
-    """
-    json_to_be_returned["available_slot"] = ["5:50- 6:50", "7:50- 9:50"]
-    return HttpResponse(json.dumps(json_to_be_returned))
+    print(tmpObj[0]["fields"])
+    y, m, d = date.split("-")
+    date_concat = d + m + y
+    date = date_concat
+    doctor_code = doctor[0].code
+    location_code = hospital.code
+    speciality_code = specialisation.code
+    url = "https://172.16.241.227:789/Common.svc/getDoctorPriceAndSchedule"
+    payload = "<DoctorParam><doctorCode>{0}</doctorCode><locationCode>{1}</locationCode><scheduleDate>{2}</scheduleDate><visitType>Appiontment</visitType><appointmentType>New</appointmentType><reasonForVisitCode>CONSULT</reasonForVisitCode><specialtyCode>{3}</specialtyCode><mobileNo>1</mobileNo><pdiscountAmount>1</pdiscountAmount><promocode>AA</promocode></DoctorParam>".format(
+        doctor_code, location_code, date, speciality_code)
+    response = requests.request(
+        "POST", url, data=payload, headers=headers, verify=False)
+    root = ET.fromstring(response.content)
+    print(response.content)
+    slots = root.find("timeSlots")
+    price = root.find("price").text
+    slot_list = ast.literal_eval(slots.text)
+    morning_slot = []
+    afternoon_slot = []
+    evening_slot = []
+    for slot in slot_list:
+        if slot['startTime'][-2] == 'A':
+            time = slot['startTime'][13:]
+            morning_slot.append(time)
+        else:
+            time = slot['startTime'][13:-3]
+            date = datetime.strptime(time, '%H:%M:%S')
+            time = slot['startTime'][13:]
+            if (date.hour < 5) or (date.hour == 12):
+                afternoon_slot.append(time)
+            else:
+                evening_slot.append(time)
+    json_to_be_returned["morning_slot"] = morning_slot
+    json_to_be_returned["afternoon_slot"] = afternoon_slot
+    json_to_be_returned["evening_slot"] = evening_slot
+    return Response({"data": json_to_be_returned, "message": "Available slot", "status": 200})

@@ -22,20 +22,20 @@ class UserManager(BaseUserManager):
         user_object -- This will override the default model manager and returns user object.
     """
 
-    def create_user(self, email, password=None):
-        if email is None:
-            raise TypeError('Users must have an email address.')
+    def create_user(self, mobile=None, password=None):
+        if mobile is None:
+            raise TypeError('Users must have mobile number.')
 
-        user = self.model(email=email, password=password)
+        user = self.model(mobile=mobile, password=password)
         user.set_password(password)
         # user.is_active = True     Defualt value is True
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password):
+    def create_superuser(self, mobile, password):
         if password is None:
             raise TypeError('Superusers must have a password.')
-        user = self.create_user(email=email, password=password)
+        user = self.create_user(mobile=mobile, password=password)
         # user.is_active = True     Defualt value is True
         user.is_staff = True
         user.is_superuser = True
