@@ -4,8 +4,10 @@ import hashlib
 import xml.etree.ElementTree as ET
 
 import requests
+from django.conf import settings
 from django.shortcuts import render
 
+import boto3
 import rest_framework
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital, Specialisation
@@ -21,6 +23,12 @@ from rest_framework.response import Response
 
 from .models import Appointment
 from .serializers import AppointmentDoctorSerializer, AppointmentSerializer
+
+AWS_ACCESS_KEY = settings.AWS_ACCESS_KEY
+AWS_SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
+REGION_NAME = settings.AWS_SNS_TOPIC_REGION
+S3_BUCKET_NAME = settings.AWS_S3_BUCKET_NAME
+S3_REGION_NAME = settings.AWS_S3_REGION_NAME
 
 headers = {
     'Content-Type': "application/xml",
@@ -113,7 +121,7 @@ class AppointmentsAPIView(generics.ListAPIView):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, Is_legit_user])
+@permission_classes([AllowAny])
 def CreateAppointment(request):
     data = request.data
     patient_id = data.get("user_id")
@@ -125,6 +133,7 @@ def CreateAppointment(request):
     speciality_id = data.get("speciality_id")
     type = data.get("type")
     user = BaseUser.objects.filter(id=patient_id).first()
+    mobile = user.mobile
     speciality = Specialisation.objects.filter(id=speciality_id).first()
     hospital = Hospital.objects.filter(id=hospital_id).first()
     doctor = Doctor.objects.filter(id=doctor_id).first()
@@ -135,6 +144,7 @@ def CreateAppointment(request):
     y, m, d = appointment_date.split("-")
     date = y+m+d
     doctor_code = doctor.code
+    doctor_name = doctor.first_name
     appointment_date_time = appointment_date_time
     location_code = hospital.code
     name = user.first_name
@@ -142,7 +152,7 @@ def CreateAppointment(request):
     email = user.email
     specialty_code = speciality.code
     type = type
-    url = "https://172.16.241.227:789/Common.svc/bookAppointment"
+    url = "https://localhost:8080/Common.svc/bookAppointment"
     payload = """<IbookAppointmentParam>
     <doctorCode>{0}</doctorCode>
     <appointmentDateTime>{1}</appointmentDateTime>
@@ -172,6 +182,18 @@ def CreateAppointment(request):
             appointment = Appointment(appointment_date=appointment_date, time_slot_from=appointment_slot,
                                       appointmentIdentifier=appointmentIdentifier, status=1, req_patient=user, doctor=doctor, hospital=hospital)
             appointment.save()
+            user_message = "Dear {0}, Your Appointment has been booked with {1} on {2} at {3} with appointment id:{4}".format( user.first_name,
+                doctor_name, appointment_date, appointment_slot, appointmentIdentifier)
+            client = boto3.client("sns",
+                                  aws_access_key_id=AWS_ACCESS_KEY,
+                                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                                  region_name=REGION_NAME)
+            response = client.publish(PhoneNumber=str(mobile), Message=user_message, MessageAttributes={
+                'AWS.SNS.SMS.SMSType': {
+                    'DataType': 'String',
+                    'StringValue': 'Transactional'
+                }
+            })
             return Response({"message": "Appointment has been created", "status": 200, "id": appointmentIdentifier})
     else:
         return Response({"message": "Unable to Book the Appointment. Please try again", "status": 403})
