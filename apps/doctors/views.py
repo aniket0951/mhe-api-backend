@@ -162,7 +162,6 @@ def DoctorDetailView(request):
     if(len(tmpObj) == 0):
         return Response({"message": "Doctor is not available on this date", "status": 400})
     json_to_be_returned = tmpObj[0]
-    print(tmpObj[0]["fields"])
     y, m, d = date.split("-")
     date_concat = d + m + y
     date = date_concat
@@ -176,9 +175,11 @@ def DoctorDetailView(request):
         "POST", url, data=payload, headers=headers, verify=False)
     root = ET.fromstring(response.content)
     print(response.content)
-    slots = root.find("timeSlots")
+    slots = root.find("timeSlots").text
     price = root.find("price").text
-    slot_list = ast.literal_eval(slots.text)
+    slot_list = []
+    if slots:
+        slot_list = ast.literal_eval(slots)
     morning_slot = []
     afternoon_slot = []
     evening_slot = []
