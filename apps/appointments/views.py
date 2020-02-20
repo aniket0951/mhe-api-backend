@@ -121,7 +121,7 @@ class AppointmentsAPIView(generics.ListAPIView):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated, Is_legit_user])
 def CreateAppointment(request):
     data = request.data
     patient_id = data.get("user_id")
