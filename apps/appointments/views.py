@@ -152,7 +152,7 @@ def CreateAppointment(request):
     email = user.email
     specialty_code = speciality.code
     type = type
-    url = "https://localhost:8080/Common.svc/bookAppointment"
+    url = "https://172.16.241.227:789/Common.svc/bookAppointment"
     payload = """<IbookAppointmentParam>
     <doctorCode>{0}</doctorCode>
     <appointmentDateTime>{1}</appointmentDateTime>
