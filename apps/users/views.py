@@ -162,18 +162,17 @@ def generate_otp(user_id, mobile):
     for i in range(4) : 
         OTP += digits[math.floor(random.random() * 10)]
     print(OTP)
-    """
+    user_message = "<#> Your OTP for Manipal App is {0} tN88+uu8iwz".format(OTP)
     client = boto3.client("sns",
         aws_access_key_id=AWS_ACCESS_KEY, 
         aws_secret_access_key= AWS_SECRET_ACCESS_KEY, 
-        region_name= REGION_NAME)  
-    response = client.publish(PhoneNumber=mobile, Message = OTP, MessageAttributes = {
+        region_name= REGION_NAME)
+    response = client.publish(PhoneNumber=mobile, Message = user_message, MessageAttributes = {
                    'AWS.SNS.SMS.SMSType': {
                        'DataType': 'String',
                        'StringValue': 'Transactional'
                    }
     })
-    """
     user = BaseUser.objects.filter(id = user_id).first()
     if not user:
         return 1, OTP 
