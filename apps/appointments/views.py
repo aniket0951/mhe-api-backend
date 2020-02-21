@@ -107,7 +107,7 @@ class AppointmentsAPIView(generics.ListAPIView):
         queryset = Appointment.objects.all()
         patient_id = self.request.query_params.get('user_id', None)
         if patient_id is not None:
-            queryset = queryset.filter(req_patient_id=patient_id)
+            queryset = queryset.filter(req_patient_id=patient_id).order_by('-appointment_date')
             return queryset
 
     def list(self, request, *args, **kwargs):
