@@ -189,3 +189,4 @@ STATIC_URL = '/static/'
 
 #  Created setting, hosts that are allowed to do cross-site requests
 CORS_ORIGIN_ALLOW_ALL = True
+MAX_UPLOAD_SIZE = 2621440

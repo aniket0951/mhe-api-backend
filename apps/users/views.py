@@ -28,7 +28,7 @@ AWS_SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
 REGION_NAME = settings.AWS_SNS_TOPIC_REGION
 S3_BUCKET_NAME = settings.AWS_S3_BUCKET_NAME
 S3_REGION_NAME = settings.AWS_S3_REGION_NAME
-
+MAX_IMAGE_SIZE = settings.MAX_UPLOAD_SIZE
 
 relationship_CHOICES = {'1': ['Father','2', '4'],
                         '2': ['Son', '1', '3'],
@@ -556,7 +556,12 @@ def generate_pre_signed_url(image_url):
 def set_profile_photo(request):
     data = request.data
     file = data.get("file")
+    if not file:
+       Response({"message": "File can not be null.", "status": 400})
     filename = file.name
+    image_size = file.size
+    if image_size > MAX_IMAGE_SIZE:
+        return Response({"message": "Image size should be less than 2.5 MB", "status": 400})
     user_id = data.get("user_id")
     s3_file_path = "users/{0}/profile_piture/{1}".format(user_id, filename)
     presigned_url, url = multi_part_upload_with_s3(file, s3_file_path)
