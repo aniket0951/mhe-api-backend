@@ -387,6 +387,7 @@ def add_family_member_verification(request):
         R1.save()
         family_list = list_family_member(user_id)
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
+        user_data["profile_url"] = generate_pre_signed_url(BaseUser.objects.filter(id = user_id).first().profile_image)
         user_data["family_members"] = family_list
         return Response({"data": user_data,"message": "Member has been added", "status": 200})
     else:
@@ -459,6 +460,7 @@ def delete_family_member(request):
         return Response({"message": "family member number is missing", "status": 402})
     Relationship.objects.filter(user_id_id = user_id, relative_user_id_id = member_id).delete()
     user_data = BaseUser.objects.filter(id = user_id).values()[0]
+    user_data["profile_url"] = generate_pre_signed_url(BaseUser.objects.filter(id = user_id).first().profile_image)
     user_data["family_members"] = list_family_member(user_id)
     return Response({"data": user_data,"message": "succesfully deleted", "status": 200}) 
 
