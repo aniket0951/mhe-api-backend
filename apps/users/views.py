@@ -527,7 +527,6 @@ def set_favorite_hospital(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
 def list_family_members(request):
     data = request.data
     user_id = data.get("user_id")
