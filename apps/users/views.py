@@ -624,7 +624,7 @@ class UsersListView(generics.ListCreateAPIView):
         user = super().list(request, *args, **kwargs)
         if user.status_code == 200:
             users = {}
-            users["doctors"] = user.data
+            users["users"] = user.data
             return Response({"data": users, "status": 200, "message": "List of all the users"})
         else:
             return Response({"status": user.code, "message": "No user is Available"})
