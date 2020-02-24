@@ -618,12 +618,3 @@ class UsersListView(generics.ListCreateAPIView):
     filter_backends = (filters.SearchFilter,)
     queryset = BaseUser.objects.all()
     serializer_class = UserSerializer
-
-    def list(self, request, *args, **kwargs):
-        user = super().list(request, *args, **kwargs)
-        if user.status_code == 200:
-            users = {}
-            users["users"] = user.data
-            return Response({"data": users, "status": 200, "message": "List of all the users"})
-        else:
-            return Response({"status": user.code, "message": "No user is Available"})
