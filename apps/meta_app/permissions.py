@@ -1,3 +1,4 @@
+from apps.manipal_admin.models import ManipalAdmin
 from apps.users.models import BaseUser, Relationship
 from rest_framework import permissions
 
@@ -33,9 +34,5 @@ class Is_legit_user(permissions.BasePermission):
 
 class Is_admin(permissions.BasePermission):
     def has_permission(self, request, view):
-        user_id = request.user.id
-        admin = BaseUser.objects.get(is_superuser=True)
-        if admin.id == user_id:
-            return True
-        else:
-            return False
+        admin_id = request.user.id
+        return ManipalAdmin.objects.filter(id=admin_id).exists()
