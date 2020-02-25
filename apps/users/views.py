@@ -9,6 +9,8 @@ from random import randint
 
 import boto3
 import requests
+from apps.doctors.models import Doctor
+from apps.meta_app.permissions import Is_admin
 from apps.users.models import BaseUser, Relationship
 from apps.users.serializers import UserSerializer
 from boto3.s3.transfer import TransferConfig
@@ -613,8 +615,8 @@ def user_profile_details(request):
 
 
 class UsersListView(generics.ListCreateAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [Is_admin]
     search_fields = ['first_name', 'last_name']
     filter_backends = (filters.SearchFilter,)
-    queryset = BaseUser.objects.all()
+    queryset = BaseUser.objects.filter(doctor__isnull=True, is_superuser = False)
     serializer_class = UserSerializer

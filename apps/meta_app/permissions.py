@@ -29,3 +29,13 @@ class Is_legit_user(permissions.BasePermission):
             return True
         else:
             return Relationship.objects.filter(relative_user_id=patient_id).exists()
+
+
+class Is_admin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user_id = request.user.id
+        admin = BaseUser.objects.get(is_superuser=True)
+        if admin.id == user_id:
+            return True
+        else:
+            return False
