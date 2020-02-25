@@ -10,7 +10,7 @@ from random import randint
 import boto3
 import requests
 from apps.doctors.models import Doctor
-from apps.meta_app.permissions import Is_admin
+from apps.meta_app.permissions import is_manipal_admin
 from apps.users.models import BaseUser, Relationship
 from apps.users.serializers import UserSerializer
 from boto3.s3.transfer import TransferConfig
@@ -614,8 +614,8 @@ def user_profile_details(request):
         return Response({"data": user_data, "message": "all details fethced", "status": 200})
 
 
-class UsersListView(generics.ListCreateAPIView):
-    permission_classes = [Is_admin]
+class users_list(generics.ListCreateAPIView):
+    permission_classes = [is_manipal_admin]
     search_fields = ['first_name', 'last_name']
     filter_backends = (filters.SearchFilter,)
     queryset = BaseUser.objects.filter(doctor__isnull=True, is_superuser = False)

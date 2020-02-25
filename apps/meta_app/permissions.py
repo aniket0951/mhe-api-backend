@@ -32,7 +32,7 @@ class Is_legit_user(permissions.BasePermission):
             return Relationship.objects.filter(relative_user_id=patient_id).exists()
 
 
-class Is_admin(permissions.BasePermission):
+class is_manipal_admin(permissions.BasePermission):
     def has_permission(self, request, view):
         admin_id = request.user.id
         return ManipalAdmin.objects.filter(id=admin_id).exists()
