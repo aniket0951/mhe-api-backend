@@ -4,16 +4,16 @@ import requests
 import six
 from django.http import HttpResponse
 from requests.exceptions import ConnectionError, SSLError, Timeout
-from rest_framework.exceptions import UnsupportedMediaType
-from rest_framework.response import Response
-from rest_framework.utils.mediatypes import media_type_matches
-from rest_framework.views import APIView
 from six import BytesIO as StringIO
 
 from manipal_api.settings import REST_PROXY as manipal_api_proxy_settings
 from proxy.custom_serializables import \
     SyncAPIRequest as serializable_SyncAPIRequest
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from rest_framework.exceptions import UnsupportedMediaType
+from rest_framework.response import Response
+from rest_framework.utils.mediatypes import media_type_matches
+from rest_framework.views import APIView
 
 
 class BaseProxyView(APIView):
@@ -56,8 +56,8 @@ class ProxyView(BaseProxyView):
 
     def get_sync_request_data(self, request):
         request.data['sync_method'] = self.sync_method
-        health_packages = serializable_SyncAPIRequest(**request.data)
-        request_data = custom_serializer().serialize(health_packages, 'XML')
+        serializable_object = serializable_SyncAPIRequest(**request.data)
+        request_data = custom_serializer().serialize(serializable_object, 'XML')
         return request_data
 
     def get_request_data(self, request):
@@ -132,8 +132,8 @@ class ProxyView(BaseProxyView):
             return parsed.data
         except AttributeError:
             return parsed
-        
-    def custom_success_response(self, success=False, message=None, data=None, error= None):
+
+    def custom_success_response(self, success=False, message=None, data=None, error=None):
         custom_response = dict()
         custom_response['success'] = success
         custom_response['message'] = message
@@ -150,7 +150,7 @@ class ProxyView(BaseProxyView):
         if status >= 400:
             body = {
                 'code': status,
-                'success' : False,
+                'success': False,
                 'error': response.reason,
             }
         else:
@@ -182,7 +182,7 @@ class ProxyView(BaseProxyView):
         except (ConnectionError, SSLError) as e:
             status = requests.status_codes.codes.bad_gateway
             return self.create_error_response({
-                'success' : False,
+                'success': False,
                 'code': status,
                 'message': 'Bad gateway, please contact our helpdesk.',
             }, status)
@@ -190,7 +190,7 @@ class ProxyView(BaseProxyView):
         except (Timeout):
             status = requests.status_codes.codes.gateway_timeout
             return self.create_error_response({
-                'success' : False,
+                'success': False,
                 'code': status,
                 'message': 'Gateway timed out, please contact our helpdesk.',
             }, status)

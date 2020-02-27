@@ -9,20 +9,25 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+
+from apps.doctors.models import Doctor
+from apps.doctors.serializers import (DepartmentSerializer,
+                                      DepartmentSpecificSerializer,
+                                      DoctorSerializer,
+                                      HospitalDetailSerializer,
+                                      HospitalSerializer)
+from apps.master_data.models import Department, Hospital, Specialisation
 from django_filters.rest_framework import DjangoFilterBackend
+from proxy.custom_serializables import \
+    SlotAvailability as serializable_SlotAvailability
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_views import ProxyView
 from rest_framework import filters, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-
-from apps.doctors.models import Doctor
-from apps.doctors.serializers import (DepartmentDetailSerializer,
-                                      DoctorSerializer,
-                                      HospitalDetailSerializer,
-                                      HospitalSerializer)
-from apps.master_data.models import Department, Hospital, Specialisation
 
 headers = {
     'Content-Type': "application/xml",
@@ -54,8 +59,8 @@ class DoctorViewSet(ModelViewset):
 
 class DoctorsListView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
-    search_fields = ['specialisations__code',
-                     'first_name', 'linked_hospitals__profit_center', 'specialisations__description']
+    search_fields = ['first_name',
+                     'hospital_departments__department__name', 'code']
     filter_backends = (filters.SearchFilter,)
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
@@ -63,8 +68,7 @@ class DoctorsListView(generics.ListCreateAPIView):
 
 class DoctorsAPIView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
-    search_fields = ['specialisations__code',
-                     'first_name', 'linked_hospitals__profit_center', 'specialisations__description']
+    search_fields = ['first_name', 'hospital_departments__department__name']
     filter_backends = (filters.SearchFilter,)
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
@@ -73,7 +77,7 @@ class DoctorsAPIView(generics.ListCreateAPIView):
         qs = super().get_queryset()
         location_id = self.request.query_params.get('location_id', None)
         date = self.request.query_params.get('date', None)
-        qs = Doctor.objects.filter(linked_hospitals__id=location_id).filter(
+        qs = Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
             Q(end_date__gte=date) | Q(end_date__isnull=True))
         return qs
 
@@ -112,6 +116,87 @@ class PreferredLocationView(APIView):
         serializer = HospitalSerializer(hospital)
         context = {'status': 200, 'data': serializer.data}
         return Response(context)
+
+
+class DepartmentAPIView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSpecificSerializer
+
+    def list(self, request, *args, **kwargs):
+        department = super().list(request, *args, **kwargs)
+        if department.status_code == 200:
+            departments = {}
+            departments["departments"] = department.data
+            return Response({"data": departments, "status": 200, "message": "List of all the Departments"})
+        else:
+            return Response({"status": department.code, "message": "No Department is Available"})
+
+
+class DoctorSlotAvailability(ProxyView):
+    sync_method = 'getDoctorPriceAndSchedule'
+
+    def get_request_data(self, request):
+        data = request.data
+        doctor_id = data.get("doctor_id")
+        date = data.get("date")
+        hospital_id = data.get("hospital_id")
+        department_id = data.get("specialisation_id")
+        doctor = Doctor.objects.filter(id=doctor_id, hospital_departments__hospital__id=hospital_id, hospital_departments__department__id=department_id).filter(
+            Q(end_date__gte=date) | Q(end_date__isnull=True))
+        print(doctor)
+        # TODO: Global custom exception handler needs to be implemented
+        # if not doctor:
+        #     self.custom_success_response(message='No Doctor is available',
+        #                                         success=False, data=None)
+        hospital = Hospital.objects.filter(id=hospital_id).first()
+        department = Department.objects.filter(id=department_id).first()
+        y, m, d = date.split("-")
+        date = d + m + y
+        slots = serializable_SlotAvailability(
+            doctor_code=doctor[0].code, location_code=hospital.code, schedule_date=date, speciality_code=department.code)
+        request_data = custom_serializer().serialize(slots, 'XML')
+        return request_data
+
+    def get_request_url(self, request):
+        host = self.get_proxy_host()
+        path = self.sync_method
+        if path:
+            return '/'.join([host, path])
+        return host
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        slots = root.find("timeSlots").text
+        price = root.find("price").text
+        slot_list = []
+        if slots:
+            slot_list = ast.literal_eval(slots)
+        morning_slot = []
+        afternoon_slot = []
+        evening_slot = []
+        response = {}
+        for slot in slot_list:
+            if slot['startTime'][-2] == 'A':
+                time = slot['startTime'][12:]
+                morning_slot.append(time.strip())
+            else:
+                time = slot['startTime'][12:-3]
+                date = datetime.strptime(time.strip(), '%H:%M:%S')
+                time = slot['startTime'][13:]
+                if (date.hour < 5) or (date.hour == 12):
+                    afternoon_slot.append(time)
+                else:
+                    evening_slot.append(time)
+        response["morning_slot"] = morning_slot
+        response["afternoon_slot"] = afternoon_slot
+        response["evening_slot"] = evening_slot
+        response["price"] = price
+        return self.custom_success_response(message='Available slots',
+                                            success=True, data=response)
 
 
 @api_view(['GET'])

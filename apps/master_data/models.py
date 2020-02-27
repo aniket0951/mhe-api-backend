@@ -91,8 +91,8 @@ class Specialisation(MyBaseModel):
                             null=True)
 
     description = models.CharField(max_length=200,
-                            null=True,
-                            blank=True,)
+                                   null=True,
+                                   blank=True,)
 
     start_date = models.DateField()
 

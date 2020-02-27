@@ -3,8 +3,6 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from django.shortcuts import render
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
@@ -13,11 +11,13 @@ from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
-    ItemTaiffPrice as serializable_ItemTariffPrice
+    ItemTariffPrice as serializable_ItemTariffPrice
 from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
@@ -321,14 +321,14 @@ class LabRadiologyItemsView(ProxyView):
 
         all_lab_radiology_items = list()
         lab_radiology_items_sorted_keys = ['billing_group',
-                                       'billing_subgroup',
-                                       'start_date',
-                                       'end_date',
-                                       'hospital_code',
-                                       'code',
-                                       'description',
-                                       'price',
-                                       ]
+                                           'billing_subgroup',
+                                           'start_date',
+                                           'end_date',
+                                           'hospital_code',
+                                           'code',
+                                           'description',
+                                           'price',
+                                           ]
         for each_lab_radiology_item in response_content:
             hospital_lab_radiology_item_details = dict()
             for index, key in enumerate(sorted(each_lab_radiology_item.keys())):
@@ -340,7 +340,7 @@ class LabRadiologyItemsView(ProxyView):
                         each_lab_radiology_item[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
                 hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
-                                       ] = each_lab_radiology_item[key]
+                                                    ] = each_lab_radiology_item[key]
 
             lab_radiology_item_kwargs = dict()
             lab_radiology_item_details = dict()
@@ -368,7 +368,8 @@ class LabRadiologyItemsView(ProxyView):
             lab_radiology_item, lab_radiology_item_created = LabRadiologyItem.objects.update_or_create(
                 **lab_radiology_item_kwargs, defaults=lab_radiology_item_details)
 
-            hospital_code = hospital_lab_radiology_item_details.pop('hospital_code')
+            hospital_code = hospital_lab_radiology_item_details.pop(
+                'hospital_code')
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
             hospital_lab_radiology_item_kwargs['item'] = lab_radiology_item

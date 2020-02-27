@@ -5,7 +5,7 @@ import environ
 
 root = environ.Path(__file__) - 2
 # set default values and casting
-env = environ.Env(DEBUG=(bool, False),)
+env = environ.Env(DEBUG=(bool, True),)
 # reading .env file
 environ.Env.read_env('.env')
 

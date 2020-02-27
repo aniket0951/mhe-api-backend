@@ -1,8 +1,21 @@
+from apps.doctors.models import Doctor
+from apps.master_data.models import (Department, Hospital, HospitalDepartment,
+                                     Specialisation)
+from apps.patients.models import Patient
 from rest_framework import serializers
 
-from apps.doctors.models import Doctor
-from apps.master_data.models import Department, Hospital
-from apps.patients.models import Patient
+
+class DepartmentSpecificSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = '__all__'
+
+
+class SpecialisationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Specialisation
+        fields = '__all__'
 
 
 class HospitalSerializer(serializers.ModelSerializer):
@@ -18,25 +31,22 @@ class HospitalDetailSerializer(serializers.ModelSerializer):
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Department
-        fields = ['code']
+    hospital = HospitalSerializer()
+    department = DepartmentSpecificSerializer()
 
-
-class DepartmentDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Department
+        model = HospitalDepartment
         fields = '__all__'
 
 
 class DoctorSerializer(serializers.ModelSerializer):
-    linked_hospitals = HospitalSerializer(read_only=True, many=True)
-    specialisations = DepartmentSerializer(read_only=True, many=True)
+    hospital_departments = DepartmentSerializer(many=True)
+    specialisations = SpecialisationSerializer(many=True)
 
     class Meta:
         model = Doctor
-        fields = ['code', 'id', 'first_name', 'experience', 'linked_hospitals', 'specialisations',
-                  'designation', 'awards_and_achievements', 'start_date', 'end_date', 'profile_image']
+        fields = ['id', 'code', 'first_name', 'hospital', 'hospital_departments',
+                  'specialisations', 'qualification', 'educational_degrees', 'experience', 'profile_image']
 
 
 class DoctorSpecificSerializer(serializers.ModelSerializer):

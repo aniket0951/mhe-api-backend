@@ -1,15 +1,16 @@
 
-from django.urls import path, include
+from django.urls import include, path
+
 from rest_framework import routers
+
 from .views import *
 
 urlpatterns = [
-    path('allAppointments/', AppointmentsAPIView.as_view()),
-    path('createAppointment/',CreateAppointment, name = "CreateAppointment"),
-    path('cancelAppointment/',CancelAppointment, name = "cancelAppointment"),
-    path('recentlyVisitedDoctor/',RecentlyVisitedDoctorlistView.as_view()),
-    path('getdata/',get_data, name = "get_data")
+    path('all_appointments/', AppointmentsAPIView.as_view()),
+    path('recently_visited_doctor/', RecentlyVisitedDoctorlistView.as_view()),
+    path('cancel_appointment/', CancelMyAppointment.as_view()),
+    path('create_appointment/', CreateMyAppointment.as_view()),
+    path('show_appointment/', ShowAppointmentView.as_view()),
+    path('get_data/', get_data, name="get_data"),
+
 ]
-
-
-

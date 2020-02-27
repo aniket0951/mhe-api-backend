@@ -388,6 +388,7 @@ def add_family_member_verification(request):
         R1.save()
         family_list = list_family_member(user_id)
         user_data = BaseUser.objects.filter(id = user_id).values()[0]
+        user_data["profile_url"] = generate_pre_signed_url(family_user_exists.profile_image)
         user_data["family_members"] = family_list
         return Response({"data": user_data,"message": "Member has been added", "status": 200})
     else:

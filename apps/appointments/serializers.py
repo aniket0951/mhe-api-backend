@@ -1,28 +1,34 @@
-from .models import Appointment
-from rest_framework import serializers
-from apps.doctors.serializers import DoctorSerializer, DoctorSpecificSerializer, PatientSpecificSerializer, HospitalSpecificSerializer
-from apps.patients.serializers import PatientSerializer
 from apps.doctors.models import Doctor
+from apps.doctors.serializers import (DoctorSerializer,
+                                      DoctorSpecificSerializer,
+                                      HospitalDetailSerializer,
+                                      PatientSpecificSerializer)
 from apps.master_data.models import Hospital
 from apps.patients.models import Patient
+from apps.users.serializers import UserSerializer
+from rest_framework import serializers
+
+from .models import Appointment
+
 
 class AppointmentDoctorSerializer(serializers.ModelSerializer):
     doctor = DoctorSpecificSerializer(read_only=True)
 
     class Meta:
-        model  = Appointment
-        fields  =  ['doctor']
-
+        model = Appointment
+        fields = ['doctor']
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    doctor = DoctorSpecificSerializer(read_only=True)
-    patient = PatientSpecificSerializer(read_only = True)
-    hospital = HospitalSpecificSerializer(read_only = True)
+    doctor = DoctorSerializer(read_only=True)
+    hospital = HospitalDetailSerializer(read_only=True)
+    req_patient = UserSerializer(read_only=True)
+
     class Meta:
         model = Appointment
-        fields = ('id','patient', 'token_no' , 'doctor' , 'hospital' ,'time_slot_from' , 'appointment_date', 'status')
-    
+        fields = ('id', 'appointmentIdentifier', 'req_patient', 'doctor',
+                  'hospital', 'time_slot_from', 'appointment_date', 'status')
+
     """
     def create(self, validated_data):
         hospital_data = validated_data['hospital']
@@ -34,5 +40,3 @@ class AppointmentSerializer(serializers.ModelSerializer):
         Patient.objects.create(appointment=appointment, **patient_data)
         return appointment
     """
-
-    
