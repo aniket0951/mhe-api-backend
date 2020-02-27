@@ -155,7 +155,7 @@ class DoctorsView(ProxyView):
                               'department_name',
                               'code',
                               'educational_degrees',
-                              'first_name',
+                              'name',
                               'notes',
                               'profile',
                               'qualification',

@@ -30,3 +30,9 @@ class PatientOTPExceededLimitException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'otp_limit_exceeded'
     default_detail = 'You have exceeded your OTP limit, please login after some time.'
+
+
+class InvalidUHID(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_uhid'
+    default_detail = 'You have entered an invalid UHID.'

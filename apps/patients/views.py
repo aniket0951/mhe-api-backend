@@ -10,21 +10,25 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.test import APIRequestFactory
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
+from apps.master_data.views import ValidateUHIDView, ValidateOTPView
 from manipal_api.settings import JWT_AUTH, OTP_EXPIRATION_TIME
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser,
                                       SelfUserAccess)
 from utils.custom_sms import send_sms
+from utils.utils import patient_user_object
 
-from .exceptions import (PatientDoesNotExistsValidationException,
+from .exceptions import (InvalidUHID, PatientDoesNotExistsValidationException,
                          PatientInvalidCredentialsException,
                          PatientMobileExistsValidationException,
                          PatientOTPExceededLimitException,
                          PatientOTPExpiredException)
-from .models import FamilyMember, Patient
+from .models import FamilyMember, Patient, PatientUHID
 from .serializers import FamilyMemberSerializer, PatientSerializer
 
 
@@ -179,7 +183,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     model = FamilyMember
     queryset = FamilyMember.objects.all()
     serializer_class = FamilyMemberSerializer
-    create_success_message = 'Your registration completed successfully!'
+    create_success_message = 'Your family member has been added successfully!'
     list_success_message = 'Family members list returned successfully!'
     retrieve_success_message = 'Information returned successfully!'
     update_success_message = 'Information updated successfully!'
@@ -190,7 +194,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     ordering_fields = ('-created_at',)
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'generate_family_member_uhid_otp',
+        'validate_family_member_uhid_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -206,3 +211,62 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def get_queryset(self):
         return FamilyMember.objects.filter(patient_info__id=self.request.user.id)
+
+    @action(detail=False, methods=['POST'])
+    def generate_family_member_uhid_otp(self, request):
+        uhid_number = request.data.get('uhid_number')
+        if not uhid_number:
+            raise ValidationError('UHID is missing!')
+
+        factory = APIRequestFactory()
+        proxy_request = factory.post('', {"uhid":uhid_number}, format='json')
+        response = ValidateUHIDView().as_view()(proxy_request)
+
+        if not (response.status_code == 200  and response.data['success']):
+            raise ValidationError(response.data['message'])
+
+
+        otp_expiration_time = datetime.now() + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        PatientUHID.objects.create(patient_info=patient_user_object(request),uhid_number=uhid_number, otp_expiration_time=otp_expiration_time)
+
+        data = {
+            "data": None,
+            "message": response.data['message'],
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+    @action(detail=False, methods=['POST'])
+    def validate_family_member_uhid_otp(self, request):
+        uhid_number = request.data.get('uhid_number')
+        otp = str(request.data.get('otp'))
+        if not (uhid_number and otp):
+            raise ValidationError('UHID or OTP is missing!')
+
+        factory = APIRequestFactory()
+        proxy_request = factory.post('', {"uhid":uhid_number, "otp":otp}, format='json')
+        response = ValidateOTPView().as_view()(proxy_request)
+        import pdb; pdb.set_trace()
+        if not (response.status_code == 200  and response.data['success']):
+            raise ValidationError(response.data['message'])
+        
+        sorted_keys = ['age', 'DOB', 'email', 'HospNo', 'mobile', 'first_name', 'gender', 'Status']
+        family_member_info = {}
+        for index, key  in enumerate(sorted(response.data['data'].keys())):
+                if key in ['Age', 'DOB', 'HospNo', 'Status']:
+                    continue
+                if not response.data['data'][key]:
+                    family_member_info[key] = None
+
+                family_member_info[sorted_keys[index]] = response.data['data'][key]
+        family_member_info['uhid_number'] = uhid_number
+        family_member_info['patient_info'] = patient_user_object(request)
+        family_member_info['raw_info_from_manipal_API'] = response.data['data']
+        family_member_obj = self.model.objects.create(**family_member_info)
+        serializer = self.get_serializer(family_member_obj)
+        data = {
+            "data": serializer.data,
+            "message": "Your family member is added successfully!"
+        }
+        return Response(data, status=status.HTTP_201_CREATED)
+

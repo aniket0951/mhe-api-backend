@@ -83,14 +83,13 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = FamilyMember
         fields = '__all__'
+        exclude = ('raw_info_from_manipal_API',)
 
         extra_kwargs = {
             'relation_name': {"error_messages":
                               {"required": "Enter your relationship with the person whom you are linking."}}}
-        validators = [
-                    serializers.UniqueTogetherValidator(
-                        queryset=FamilyMember.objects.all(),
-                        fields=('uhid_number', 'patient_info'),
-                        message="You have already linked this UHID with one of your existing family members."
-                    )
-                ]
+    
+    def create(self, validated_data):
+        if 'uhid_number' in validated_data:
+            _ = validated_data.pop('uhid_number')
+        return super().create(validated_data)
