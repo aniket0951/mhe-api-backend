@@ -1,3 +1,208 @@
-from django.shortcuts import render
+from datetime import datetime, timedelta
 
-# Create your views here.
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import update_last_login
+from django.shortcuts import render
+from django.utils.crypto import get_random_string
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ParseError
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+
+from manipal_api.settings import JWT_AUTH, OTP_EXPIRATION_TIME
+from utils import custom_viewsets
+from utils.custom_permissions import (BlacklistUpdateMethodPermission,
+                                      IsManipalAdminUser, IsPatientUser,
+                                      SelfUserAccess)
+from utils.custom_sms import send_sms
+
+from .exceptions import (PatientDoesNotExistsValidationException,
+                         PatientInvalidCredentialsException,
+                         PatientMobileExistsValidationException,
+                         PatientOTPExceededLimitException,
+                         PatientOTPExpiredException)
+from .models import FamilyMember, Patient
+from .serializers import FamilyMemberSerializer, PatientSerializer
+
+
+class PatientViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = Patient
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+    create_success_message = 'Your registration completed successfully!'
+    list_success_message = 'Patients list returned successfully!'
+    retrieve_success_message = 'Information returned successfully!'
+    update_success_message = 'Information updated successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['first_name', ]
+    ordering_fields = ('-created_at',)
+
+    def get_permissions(self):
+        if self.action in ['create', 'verify_login_otp', 'generate_login_otp', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'list':
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'retrieve':
+            permission_classes = [SelfUserAccess]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def perform_create(self, serializer):
+        if self.get_queryset().filter(mobile=self.request.data.get('mobile')).exists():
+            raise PatientMobileExistsValidationException
+        random_password = get_random_string(
+            length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+        user_obj = serializer.save(
+            otp_expiration_time=otp_expiration_time, is_primary_account=True)
+        user_obj.set_password(random_password)
+        user_obj.save()
+        message = "OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+            random_password, OTP_EXPIRATION_TIME)
+        is_message_sent = send_sms(mobile_number=str(
+            user_obj.mobile.raw_input), message=message)
+        if is_message_sent:
+            self.create_success_message = 'Your registration is completed successfully, please enter OTP which we have sent to activate your account.'
+        else:
+            self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
+
+    @action(detail=False, methods=['POST'])
+    def verify_login_otp(self, request):
+        authenticated_patient = authenticate(username=request.data.get('mobile'),
+                                             password=request.data.get('password'))
+        if not authenticated_patient:
+            raise PatientInvalidCredentialsException
+        if datetime.now().timestamp() > \
+                authenticated_patient.otp_expiration_time.timestamp():
+            raise PatientOTPExpiredException
+        message = "Login successful!"
+
+        update_last_login(None, authenticated_patient)
+        if not authenticated_patient.is_active:
+            authenticated_patient.is_active = True
+            message = "Your account is activated successfully!"
+        random_password = get_random_string(
+            length=4, allowed_chars='0123456789')
+        authenticated_patient.set_password(random_password)
+        authenticated_patient.save()
+        serializer = self.get_serializer(authenticated_patient)
+
+        payload = jwt_payload_handler(authenticated_patient)
+        payload['username'] = payload['username'].raw_input
+        payload['mobile'] = payload['mobile'].raw_input
+        token = jwt_encode_handler(payload)
+        expiration = datetime.utcnow(
+        ) + JWT_AUTH['JWT_EXPIRATION_DELTA']
+        expiration_epoch = expiration.timestamp()
+
+        data = {
+            "data": serializer.data,
+            "message": message,
+            "token": token,
+            "token_expiration": expiration_epoch
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def generate_login_otp(self, request):
+        mobile = request.data.get('mobile')
+        facebook_id = request.data.get('facebook_id')
+        google_id = request.data.get('google_id')
+
+        if not (mobile or facebook_id or google_id):
+            raise PatientDoesNotExistsValidationException
+
+        if mobile:
+            request_patient = self.get_queryset().filter(
+                mobile=mobile).first()
+        if facebook_id:
+            request_patient = self.get_queryset().filter(
+                google_id=facebook_id).first()
+        if google_id:
+            request_patient = self.get_queryset().filter(
+                google_id=google_id).first()
+
+        if not request_patient:
+            raise PatientDoesNotExistsValidationException
+
+        if datetime.now().timestamp() < \
+                request_patient.otp_expiration_time.timestamp():
+            raise PatientOTPExceededLimitException
+
+        random_password = get_random_string(
+            length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+        request_patient.otp_expiration_time = otp_expiration_time
+        request_patient.set_password(random_password)
+        request_patient.save()
+
+        message = "OTP to login into your accout is {}, this OTP will expire in {} seconds".format(
+            random_password, OTP_EXPIRATION_TIME)
+        if not request_patient.is_active:
+            message = "OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+                random_password, OTP_EXPIRATION_TIME)
+
+        is_message_sent = send_sms(mobile_number=str(
+            request_patient.mobile.raw_input), message=message)
+
+        if is_message_sent:
+            response_message = 'Please enter OTP which we have sent to login into your account.'
+            if not request_patient.is_active:
+                response_message = 'Please enter OTP which we have sent to activate your account.'
+        else:
+            response_message = 'We are unable to send OTP to your number, please try again after sometime.'
+
+        data = {
+            "data": {"mobile": str(request_patient.mobile.raw_input), },
+            "message": response_message,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = FamilyMember
+    queryset = FamilyMember.objects.all()
+    serializer_class = FamilyMemberSerializer
+    create_success_message = 'Your registration completed successfully!'
+    list_success_message = 'Family members list returned successfully!'
+    retrieve_success_message = 'Information returned successfully!'
+    update_success_message = 'Information updated successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['first_name', ]
+    ordering_fields = ('-created_at',)
+
+    def get_permissions(self):
+        if self.action == 'create':
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'list':
+            permission_classes = [IsManipalAdminUser | IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'retrieve':
+            permission_classes = [SelfUserAccess]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        return FamilyMember.objects.filter(patient_info__id=self.request.user.id)

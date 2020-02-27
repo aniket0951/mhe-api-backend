@@ -18,9 +18,28 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from utils import custom_viewsets
 
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
+from .serializers import HospitalSerializer
+
+
+class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = Hospital
+    queryset = Hospital.objects.all()
+    serializer_class = HospitalSerializer
+    create_success_message = None
+    list_success_message = 'Hospitals list returned successfully!'
+    retrieve_success_message = 'Hospital information returned successfully!'
+    update_success_message = None
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+        return super().get_permissions()
 
 
 class DepartmentsView(ProxyView):
@@ -98,6 +117,8 @@ class DepartmentsView(ProxyView):
 
 class DoctorsView(ProxyView):
     # permission_classes = [IsAuthenticated]
+    # permission_classes = [AllowAny]
+
     source = SYNC_SERVICE
     success_msg = 'Doctors list returned successfully'
     sync_method = 'doctor'
@@ -187,7 +208,7 @@ class DoctorsView(ProxyView):
 
 
 class HealthPackagesView(ProxyView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Health Packages list returned successfully'
     sync_method = 'healthcheck'
@@ -296,7 +317,7 @@ class HealthPackagesView(ProxyView):
 
 
 class LabRadiologyItemsView(ProxyView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'labraditems'

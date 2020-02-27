@@ -1,17 +1,19 @@
-from rest_framework.views import exception_handler
-from rest_framework.serializers import ValidationError
-from rest_framework.exceptions import APIException
-from rest_framework import status
 from django.contrib.humanize.templatetags.humanize import ordinal
+from rest_framework import status
+from rest_framework.exceptions import APIException
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import exception_handler
 
 
 def custom_exception_handler(exc, context):
+
     # Call REST framework's default exception handler first,
     # to get the standard error response.
     response = exception_handler(exc, context)
+    customized_response = {'errors': []}
 
     if response is not None:
-        customized_response = {'errors': []}
 
         if isinstance(exc, ValidationError):
 
@@ -44,7 +46,7 @@ def custom_exception_handler(exc, context):
 
             try:
                 generate_error_responses(response.data)
-            except (Exception, TypeError) as e:
+            except (Exception, TypeError):
                 customized_response = response.data
         else:
             if hasattr(exc, 'detail') and isinstance(exc.detail, str):
@@ -55,9 +57,14 @@ def custom_exception_handler(exc, context):
 
         response.data = customized_response
 
-    # If validation error, set status code to '422 Unprocessable Entity'
-    # see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
-    if isinstance(exc, ValidationError):
-        response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    # # If validation error, set status code to '422 Unprocessable Entity'
+    # # see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
+    # if isinstance(exc, ValidationError):
+    #     response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    else:
+        error = {'field': 'debug', 'message': "Internal server error, please try again after sometime",
+        "exception" : str(exc)}
+        customized_response['errors'].append(error)
+        response = Response(customized_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return response

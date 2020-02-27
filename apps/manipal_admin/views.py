@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+from rest_framework_jwt.utils import jwt_encode_handler,   jwt_payload_handler
 
 
 # Create your views here.
