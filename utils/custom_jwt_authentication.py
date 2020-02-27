@@ -57,7 +57,8 @@ class BaseJSONWebTokenAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed(msg)
 
         try:
-            user_info = Patient.objects.get(mobile=username, is_primary_account=True)
+            
+            user_info = Patient.objects.filter(mobile=username, is_primary_account=True).first()
             if not user_info:
                 user_info = ManipalAdmin.objects.get(mobile=username)
 

@@ -13,8 +13,7 @@ class IsManipalAdminUser(permissions.BasePermission):
         Checking if the user is Manipal administartor.
         """ 
         try:
-            if hasattr(request.user, 'email'):
-                if ManipalAdmin.objects.filter(email=request.user.email).exists():
+            if ManipalAdmin.objects.filter(id=request.user.id).exists():
                     return True
         except Exception as e:
             print(e)
