@@ -8,6 +8,7 @@ from rest_framework.authentication import (
     BaseAuthentication, get_authorization_header
 )
 from apps.patients.models import Patient
+from apps.manipal_admin.models import ManipalAdmin
 from rest_framework_jwt.settings import api_settings
 
 
@@ -56,11 +57,14 @@ class BaseJSONWebTokenAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed(msg)
 
         try:
-            patient = Patient.objects.get(mobile=username, is_primary_account=True)
-            if not patient:
+            user_info = Patient.objects.get(mobile=username, is_primary_account=True)
+            if not user_info:
+                user_info = ManipalAdmin.objects.get(mobile=username)
+
+            if not user_info:
                 msg = _('Invalid signature.')
                 raise exceptions.AuthenticationFailed(msg)
-            user = User.objects.get(id=patient.id)
+            user = User.objects.get(id=user_info.id)
 
         except User.DoesNotExist:
             msg = _('Invalid signature.')
