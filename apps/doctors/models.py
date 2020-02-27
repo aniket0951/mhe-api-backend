@@ -9,6 +9,11 @@ from apps.users.models import BaseUser
 
 class Doctor(BaseUser):
 
+    name = models.CharField(max_length=200,
+                            blank=False,
+                            null=False,
+                            verbose_name='First Name')
+
     code = models.CharField(max_length=300,
                             null=False,
                             blank=False,
@@ -49,6 +54,10 @@ class Doctor(BaseUser):
     end_date = models.DateField(blank=True,
                                 null=True)
 
+    @property
+    def representation(self):
+        return 'Name: {} Code: {} Hospital: {}'.format(self.name, self.code, self.hospital.description)
+
     class Meta:
         verbose_name = "Doctor"
         verbose_name_plural = "Doctors"
@@ -56,4 +65,4 @@ class Doctor(BaseUser):
         unique_together = [['code', 'hospital'], ]
 
     def __str__(self):
-        return self.first_name
+        return self.representation

@@ -3,14 +3,15 @@ from django.urls import include, path
 
 from apps.appointments import views
 from rest_framework import routers
+from rest_framework_jwt.views import refresh_jwt_token
 
 urlpatterns = [
-    path('', include(('apps.users.urls', 'users'), namespace='users')),
-    path('', include(('apps.manipal_admin.urls',
-                      'manipal_admin'), namespace='manipal_admin')),
-    path('admin/', admin.site.urls),
-    path('api/appointment/', include('apps.doctors.urls')),
-    path('api/my_appointment/', include('apps.appointments.urls')),
+    path('api/admin/', admin.site.urls),
+    path('api/refresh', refresh_jwt_token),
+    path('api/patients/', include('apps.patients.urls')),
+    path('api/manipal_admin/', include('apps.manipal_admin.urls')),
+    path('api/doctors/', include('apps.doctors.urls')),
+    path('api/appointments/', include('apps.appointments.urls')),
     path('api/master_data/', include('apps.master_data.urls')),
 
 ]

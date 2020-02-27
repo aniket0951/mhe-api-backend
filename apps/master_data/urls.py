@@ -2,12 +2,13 @@ from django.conf.urls import url
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import (DoctorsView, HealthPackagesView, ItemsTarrifPriceView,
-                    LabRadiologyItemsView, DepartmentsView,
-                    ValidateOTPView, ValidateUHIDView)
+from .views import (DepartmentsView, DoctorsView, HealthPackagesView,
+                    HospitalViewSet, ItemsTarrifPriceView,
+                    LabRadiologyItemsView, ValidateOTPView, ValidateUHIDView)
 
 router = DefaultRouter(trailing_slash=False)
 
+router.register('hospitals', HospitalViewSet)
 
 urlpatterns = [
 
@@ -23,7 +24,7 @@ urlpatterns = [
     url('^lab_and_radiology_items', LabRadiologyItemsView.as_view(),
         name="lab_and_radiology"),
 
-   url('^items_tariff_price', ItemsTarrifPriceView.as_view(),
+    url('^items_tariff_price', ItemsTarrifPriceView.as_view(),
         name="lab_and_radiology"),
 
     url('^validate_uhid', ValidateUHIDView.as_view(),
