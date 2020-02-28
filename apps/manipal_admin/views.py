@@ -23,7 +23,7 @@ from utils.utils import manipal_admin_object
 
 
 @api_view(['POST'])
-@permission_classes([IsManipalAdminUser])
+@permission_classes([AllowAny])
 def login(request):
     email = request.data.get('email_id')
     password = request.data.get('password')
