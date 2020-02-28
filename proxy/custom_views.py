@@ -56,8 +56,8 @@ class ProxyView(BaseProxyView):
 
     def get_sync_request_data(self, request):
         request.data['sync_method'] = self.sync_method
-        serializable_object = serializable_SyncAPIRequest(**request.data)
-        request_data = custom_serializer().serialize(serializable_object, 'XML')
+        serializable_data = serializable_SyncAPIRequest(**request.data)
+        request_data = custom_serializer().serialize(serializable_data, 'XML')
         return request_data
 
     def get_request_data(self, request):
@@ -184,7 +184,7 @@ class ProxyView(BaseProxyView):
             return self.create_error_response({
                 'success': False,
                 'code': status,
-                'message': 'Bad gateway, please contact our helpdesk.',
+                'message': 'We are unable to reach our servers, please try after sometime.'
             }, status)
 
         except (Timeout):

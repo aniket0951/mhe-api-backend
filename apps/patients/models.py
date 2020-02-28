@@ -1,6 +1,7 @@
 import os
 import uuid
 
+from django.contrib.postgres.fields import JSONField
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
@@ -92,9 +93,7 @@ class Patient(BaseUser):
                                           verbose_name='Mobile Verified')
 
     email_verified = models.BooleanField(default=False,
-                                          verbose_name='Email Verified')
-
-    is_primary_account = models.BooleanField(default=False)
+                                         verbose_name='Email Verified')
 
     favorite_hospital = models.ForeignKey(Hospital,
                                           on_delete=models.PROTECT,
@@ -174,6 +173,35 @@ class FamilyMember(MyBaseModel):
 
     age = models.IntegerField(blank=True, null=True)
 
+    email = models.EmailField(null=True,
+                              blank=True)
+
+    mobile_verified = models.BooleanField(default=False,
+                                          verbose_name='Mobile Verified')
+
+    email_verified = models.BooleanField(default=False,
+                                         verbose_name='Email Verified')
+
+    raw_info_from_manipal_API = JSONField(blank=True,
+                                          null=True
+                                          )
+
+    mobile_verification_otp = models.CharField(blank=True, null=True,
+                                               max_length=10)
+
+    email_verification_otp = models.CharField(blank=True, null=True,
+                                              max_length=10)
+
+    mobile_otp_expiration_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Mobile OTP Key Expiration DateTime')
+
+    email_otp_expiration_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Email OTP Key Expiration DateTime')
+
     @property
     def representation(self):
         return 'Patient name: {} Patient family member name: {} Relation Name: {}'\
@@ -183,7 +211,7 @@ class FamilyMember(MyBaseModel):
     class Meta:
         verbose_name = "Family Member"
         verbose_name_plural = "Family Members"
-        unique_together = [['uhid_number', 'patient_info'], ]
+        # unique_together = [['uhid_number', 'patient_info'], ]
 
     def __str__(self):
         return self.representation

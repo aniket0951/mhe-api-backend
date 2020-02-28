@@ -3,6 +3,10 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
@@ -16,16 +20,12 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-<<<<<<< HEAD
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
-=======
 from utils import custom_viewsets
->>>>>>> 93f4a0cddcac82cbf6c5607a08076be4191daa78
 
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
-from .serializers import HospitalSerializer
+from .serializers import (DepartmentSerializer, HospitalSerializer,
+                          SpecialisationSerializer)
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -37,12 +37,59 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
     list_success_message = 'Hospitals list returned successfully!'
     retrieve_success_message = 'Hospital information returned successfully!'
     update_success_message = None
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['code', 'description', 'address',]
+    ordering_fields = ('code',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
         return super().get_permissions()
+
+
+class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = Department
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+    create_success_message = None
+    list_success_message = 'Departments list returned successfully!'
+    retrieve_success_message = 'Department information returned successfully!'
+    update_success_message = None
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    # search_fields = ['code', 'description', 'address',]
+    # ordering_fields = ('code',)
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+        return super().get_permissions()
+
+
+class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = Specialisation
+    queryset = Specialisation.objects.all()
+    serializer_class = SpecialisationSerializer
+    create_success_message = None
+    list_success_message = 'Specialisations list returned successfully!'
+    retrieve_success_message = 'Specialisation information returned successfully!'
+    update_success_message = None
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['code', 'description',]
+    ordering_fields = ('code',)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+        return super().get_permissions()
+
 
 
 class DepartmentsView(ProxyView):
@@ -158,7 +205,7 @@ class DoctorsView(ProxyView):
                               'department_name',
                               'code',
                               'educational_degrees',
-                              'first_name',
+                              'name',
                               'notes',
                               'profile',
                               'qualification',
@@ -419,8 +466,8 @@ class ItemsTarrifPriceView(ProxyView):
 
     def get_request_data(self, request):
         request.data['sync_method'] = self.sync_method
-        health_packages = serializable_ItemTariffPrice(**request.data)
-        request_data = custom_serializer().serialize(health_packages, 'XML')
+        item_tariff_prices = serializable_ItemTariffPrice(**request.data)
+        request_data = custom_serializer().serialize(item_tariff_prices, 'XML')
         return request_data
 
     def post(self, request, *args, **kwargs):
