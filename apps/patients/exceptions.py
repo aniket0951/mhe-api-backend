@@ -20,7 +20,7 @@ class InvalidCredentialsException(APIException):
     default_detail = 'Your have entered invalid credentials!'
 
 
-class PatientOTPExpiredException(APIException):
+class OTPExpiredException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'otp_expired'
     default_detail = 'OTP is expired!'

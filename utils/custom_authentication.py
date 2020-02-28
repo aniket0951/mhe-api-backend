@@ -15,7 +15,7 @@ class CustomPatientAuthBackend(BaseBackend):
         try:
             # Try to find a user matching your username
             patient = Patient.objects.get(
-                mobile=username, is_primary_account=True)
+                mobile=username)
             match_password = check_password(password, patient.password)
             if match_password:
                 # user_instance = get_user_model().objects.get(id=patient.id)

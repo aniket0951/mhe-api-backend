@@ -56,8 +56,8 @@ class ProxyView(BaseProxyView):
 
     def get_sync_request_data(self, request):
         request.data['sync_method'] = self.sync_method
-        health_packages = serializable_SyncAPIRequest(**request.data)
-        request_data = custom_serializer().serialize(health_packages, 'XML')
+        serializable_data = serializable_SyncAPIRequest(**request.data)
+        request_data = custom_serializer().serialize(serializable_data, 'XML')
         return request_data
 
     def get_request_data(self, request):

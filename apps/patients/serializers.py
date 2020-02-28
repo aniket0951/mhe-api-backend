@@ -5,9 +5,10 @@ from rest_framework import serializers
 
 from apps.master_data.models import Hospital
 from apps.master_data.serializers import HospitalSerializer
-from .models import Patient, FamilyMember
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
+
+from .models import FamilyMember, Patient
 
 
 class PatientSerializer(DynamicFieldsModelSerializer):
@@ -19,7 +20,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                    'user_permissions', 'groups', 'password')
 
         read_only_fields = ('id', 'last_login', 'created_at', 'updated_at',
-                            'is_active', 'mobile_verified', 'is_primary_account',
+                            'is_active', 'mobile_verified',
                             )
 
         extra_kwargs = {
@@ -47,13 +48,13 @@ class PatientSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = None
 
         return response_object
-    
+
     def create(self, validated_data):
         # TODO: Writable but not updatable
         if 'uhid_number' in validated_data:
             _ = validated_data.pop('uhid_number')
         return super().create(validated_data)
-        
+
     def update(self, instance, validated_data):
         # TODO: Writable but not updatable
         if 'mobile' in validated_data:
@@ -83,12 +84,14 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = FamilyMember
         # fields = '__all__'
-        exclude = ('raw_info_from_manipal_API',)
+        exclude = ('raw_info_from_manipal_API', 'mobile_verification_otp',
+                   'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
+                   'created_at', 'updated_at')
 
         extra_kwargs = {
             'relation_name': {"error_messages":
                               {"required": "Enter your relationship with the person whom you are linking."}}}
-    
+
     def create(self, validated_data):
         if 'uhid_number' in validated_data:
             _ = validated_data.pop('uhid_number')

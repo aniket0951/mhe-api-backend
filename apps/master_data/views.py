@@ -465,8 +465,8 @@ class ItemsTarrifPriceView(ProxyView):
 
     def get_request_data(self, request):
         request.data['sync_method'] = self.sync_method
-        health_packages = serializable_ItemTariffPrice(**request.data)
-        request_data = custom_serializer().serialize(health_packages, 'XML')
+        item_tariff_prices = serializable_ItemTariffPrice(**request.data)
+        request_data = custom_serializer().serialize(item_tariff_prices, 'XML')
         return request_data
 
     def post(self, request, *args, **kwargs):
