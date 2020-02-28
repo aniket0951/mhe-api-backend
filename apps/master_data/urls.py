@@ -31,10 +31,10 @@ urlpatterns = [
     url('^items_tariff_price', ItemsTarrifPriceView.as_view(),
         name="lab_and_radiology"),
 
-    url('^validate_uhid', ValidateUHIDView.as_view(),
+    url('^generate_uhid_otp', ValidateUHIDView.as_view(),
         name="validate_uhid"),
 
-    url('^validate_otp', ValidateOTPView.as_view(),
+    url('^validate_uhid_otp', ValidateOTPView.as_view(),
         name="validate_otp"),
 
     *router.urls

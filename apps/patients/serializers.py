@@ -82,7 +82,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = FamilyMember
-        fields = '__all__'
+        # fields = '__all__'
         exclude = ('raw_info_from_manipal_API',)
 
         extra_kwargs = {

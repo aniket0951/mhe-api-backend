@@ -14,7 +14,7 @@ class PatientDoesNotExistsValidationException(APIException):
     default_detail = 'Your are not registered us!'
 
 
-class PatientInvalidCredentialsException(APIException):
+class InvalidCredentialsException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_credentials'
     default_detail = 'Your have entered invalid credentials!'
@@ -23,7 +23,7 @@ class PatientInvalidCredentialsException(APIException):
 class PatientOTPExpiredException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'otp_expired'
-    default_detail = 'Login OTP is expired!'
+    default_detail = 'OTP is expired!'
 
 
 class PatientOTPExceededLimitException(APIException):

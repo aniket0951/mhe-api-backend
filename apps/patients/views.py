@@ -24,7 +24,7 @@ from utils.custom_sms import send_sms
 from utils.utils import patient_user_object
 
 from .exceptions import (InvalidUHID, PatientDoesNotExistsValidationException,
-                         PatientInvalidCredentialsException,
+                         InvalidCredentialsException,
                          PatientMobileExistsValidationException,
                          PatientOTPExceededLimitException,
                          PatientOTPExpiredException)
@@ -85,10 +85,15 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
-        authenticated_patient = authenticate(username=request.data.get('mobile'),
-                                             password=request.data.get('password'))
+        username = request.data.get('mobile'),
+        password = request.data.get('password')
+        if not (username and password):
+            raise InvalidCredentialsException
+
+        authenticated_patient = authenticate(username=username,
+                                             password=password)
         if not authenticated_patient:
-            raise PatientInvalidCredentialsException
+            raise InvalidCredentialsException
         if datetime.now().timestamp() > \
                 authenticated_patient.otp_expiration_time.timestamp():
             raise PatientOTPExpiredException
@@ -142,9 +147,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not request_patient:
             raise PatientDoesNotExistsValidationException
 
-        if datetime.now().timestamp() < \
-                request_patient.otp_expiration_time.timestamp():
-            raise PatientOTPExceededLimitException
+        # if datetime.now().timestamp() < \
+        #         request_patient.otp_expiration_time.timestamp():
+        #     raise PatientOTPExceededLimitException
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -177,6 +182,61 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['POST'])
+    def generate_uhid_otp(self, request):
+        uhid_number = request.data.get('uhid_number')
+        if not uhid_number:
+            raise ValidationError('UHID is missing!')
+
+        factory = APIRequestFactory()
+        proxy_request = factory.post('', {"uhid": uhid_number}, format='json')
+        response = ValidateUHIDView().as_view()(proxy_request)
+
+        if not (response.status_code == 200 and response.data['success']):
+            raise ValidationError(response.data['message'])
+
+        data = {
+            "data": None,
+            "message": response.data['message'],
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+    @action(detail=False, methods=['POST'])
+    def validate_uhid_otp(self, request):
+        uhid_number = request.data.get('uhid_number')
+        otp = str(request.data.get('otp'))
+        if not (uhid_number and otp):
+            raise ValidationError('UHID or OTP is missing!')
+
+        factory = APIRequestFactory()
+        proxy_request = factory.post(
+            '', {"uhid": uhid_number, "otp": otp}, format='json')
+        response = ValidateOTPView().as_view()(proxy_request)
+
+        if not (response.status_code == 200 and response.data['success']):
+            raise ValidationError(response.data['message'])
+
+        sorted_keys = ['age', 'DOB', 'email', 'HospNo',
+                       'mobile', 'first_name', 'gender', 'Status']
+        uhid_user_info = {}
+        for index, key in enumerate(sorted(response.data['data'].keys())):
+            if key in ['Age', 'DOB', 'HospNo', 'Status']:
+                continue
+            if not response.data['data'][key]:
+                uhid_user_info[key] = None
+
+            uhid_user_info[sorted_keys[index]] = response.data['data'][key]
+            
+        uhid_user_info['uhid_number'] = uhid_number
+        uhid_user_info['raw_info_from_manipal_API'] = response.data['data']
+
+        data = {
+            "data": uhid_user_info,
+            "message": "Fetched user details!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -195,7 +255,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'generate_family_member_uhid_otp',
-        'validate_family_member_uhid_otp']:
+                           'validate_family_member_uhid_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -213,54 +273,38 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         return FamilyMember.objects.filter(patient_info__id=self.request.user.id)
 
     @action(detail=False, methods=['POST'])
-    def generate_family_member_uhid_otp(self, request):
-        uhid_number = request.data.get('uhid_number')
-        if not uhid_number:
-            raise ValidationError('UHID is missing!')
-
-        factory = APIRequestFactory()
-        proxy_request = factory.post('', {"uhid":uhid_number}, format='json')
-        response = ValidateUHIDView().as_view()(proxy_request)
-
-        if not (response.status_code == 200  and response.data['success']):
-            raise ValidationError(response.data['message'])
-
-
-        otp_expiration_time = datetime.now() + timedelta(seconds=int(OTP_EXPIRATION_TIME))
-        PatientUHID.objects.create(patient_info=patient_user_object(request),uhid_number=uhid_number, otp_expiration_time=otp_expiration_time)
-
-        data = {
-            "data": None,
-            "message": response.data['message'],
-        }
-        return Response(data, status=status.HTTP_200_OK)
-
-
-    @action(detail=False, methods=['POST'])
-    def validate_family_member_uhid_otp(self, request):
+    def validate_new_family_member_uhid_otp(self, request):
         uhid_number = request.data.get('uhid_number')
         otp = str(request.data.get('otp'))
         if not (uhid_number and otp):
             raise ValidationError('UHID or OTP is missing!')
 
-        factory = APIRequestFactory()
-        proxy_request = factory.post('', {"uhid":uhid_number, "otp":otp}, format='json')
-        response = ValidateOTPView().as_view()(proxy_request)
-        import pdb; pdb.set_trace()
-        if not (response.status_code == 200  and response.data['success']):
-            raise ValidationError(response.data['message'])
-        
-        sorted_keys = ['age', 'DOB', 'email', 'HospNo', 'mobile', 'first_name', 'gender', 'Status']
-        family_member_info = {}
-        for index, key  in enumerate(sorted(response.data['data'].keys())):
-                if key in ['Age', 'DOB', 'HospNo', 'Status']:
-                    continue
-                if not response.data['data'][key]:
-                    family_member_info[key] = None
+        patient_info = patient_user_object(request)
+        if self.model.objects.filter(patient_info=patient_info,
+                                     uhid_number=uhid_number).exists():
+            raise ValidationError(
+                "You have an existing family member with this UHID.")
 
-                family_member_info[sorted_keys[index]] = response.data['data'][key]
+        factory = APIRequestFactory()
+        proxy_request = factory.post(
+            '', {"uhid": uhid_number, "otp": otp}, format='json')
+        response = ValidateOTPView().as_view()(proxy_request)
+
+        if not (response.status_code == 200 and response.data['success']):
+            raise ValidationError(response.data['message'])
+
+        sorted_keys = ['age', 'DOB', 'email', 'HospNo',
+                       'mobile', 'first_name', 'gender', 'Status']
+        family_member_info = {}
+        for index, key in enumerate(sorted(response.data['data'].keys())):
+            if key in ['Age', 'DOB', 'HospNo', 'Status']:
+                continue
+            if not response.data['data'][key]:
+                family_member_info[key] = None
+
+            family_member_info[sorted_keys[index]] = response.data['data'][key]
         family_member_info['uhid_number'] = uhid_number
-        family_member_info['patient_info'] = patient_user_object(request)
+        family_member_info['patient_info'] = patient_info
         family_member_info['raw_info_from_manipal_API'] = response.data['data']
         family_member_obj = self.model.objects.create(**family_member_info)
         serializer = self.get_serializer(family_member_obj)
@@ -269,4 +313,5 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "message": "Your family member is added successfully!"
         }
         return Response(data, status=status.HTTP_201_CREATED)
+
 

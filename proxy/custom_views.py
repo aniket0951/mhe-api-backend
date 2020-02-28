@@ -184,7 +184,7 @@ class ProxyView(BaseProxyView):
             return self.create_error_response({
                 'success' : False,
                 'code': status,
-                'message': 'Bad gateway, please contact our helpdesk.',
+                'message': 'We are unable to reach our servers, please try after sometime.'
             }, status)
 
         except (Timeout):
