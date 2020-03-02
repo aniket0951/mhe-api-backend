@@ -21,6 +21,9 @@ from proxy.custom_serializables import \
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from utils import custom_viewsets
+from utils.custom_permissions import (BlacklistDestroyMethodPermission,
+                                      BlacklistUpdateMethodPermission,
+                                      IsManipalAdminUser)
 
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
@@ -46,6 +49,7 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
+            
         return super().get_permissions()
 
 
@@ -70,7 +74,7 @@ class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return super().get_permissions()
 
 
-class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class SpecialisationViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = Specialisation
     queryset = Specialisation.objects.all()
@@ -88,9 +92,20 @@ class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
+
+        if self.action == 'partial_update':
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+                           
         return super().get_permissions()
-
-
 
 class DepartmentsView(ProxyView):
     # permission_classes = [IsAuthenticated]
