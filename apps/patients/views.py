@@ -7,7 +7,7 @@ from django.utils.crypto import get_random_string
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -21,13 +21,13 @@ from utils.custom_permissions import (BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser,
                                       SelfUserAccess)
 from utils.custom_sms import send_sms
-from utils.utils import patient_user_object
+from utils.utils import manipal_admin_object, patient_user_object
 
 from .exceptions import (InvalidCredentialsException, InvalidUHID,
+                         OTPExpiredException,
                          PatientDoesNotExistsValidationException,
                          PatientMobileExistsValidationException,
-                         PatientOTPExceededLimitException,
-                         OTPExpiredException)
+                         PatientOTPExceededLimitException)
 from .models import FamilyMember, Patient
 from .serializers import FamilyMemberSerializer, PatientSerializer
 from .utils import fetch_uhid_user_details
@@ -90,8 +90,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
-        username = request.data.get('mobile'),
+        username = request.data.get('mobile')
         password = request.data.get('password')
+
         if not (username and password):
             raise InvalidCredentialsException
 
@@ -233,7 +234,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'generate_family_member_uhid_otp',
-                           'validate_family_member_uhid_otp']:
+                           'validate_family_member_uhid_otp',
+                           'generate_family_member_mobile_verification_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -248,8 +250,20 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        return FamilyMember.objects.filter(patient_info__id=self.request.user.id,
-                                           mobile_verified=True)
+        qs = FamilyMember.objects.filter(patient_info__id=self.request.user.id,
+                                         mobile_verified=True)
+        if manipal_admin_object(self.request):
+            try:
+                request_patient_info = Patient.objects.get(
+                    id=self.request.query_params.get('patient_id'))
+            except:
+                if not request_patient_info:
+                    raise ValidationError(
+                        "Invalid patient information.")
+
+            qs = FamilyMember.objects.filter(
+                patient_info__id=request_patient_info.id, mobile_verified=True)
+        return qs
 
     def perform_create(self, serializer):
 
@@ -263,7 +277,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         is_mobile_to_be_verified = True
         request_patient = patient_user_object(self.request)
 
-        if serializer.validated_data['mobile'].raw_input == self.request.user.mobile.raw_input:
+        if serializer.validated_data['mobile'] == request_patient.mobile:
             is_mobile_to_be_verified = False
 
         user_obj = serializer.save(
@@ -272,10 +286,10 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             mobile_verification_otp=random_mobile_password,
             email_verification_otp=random_email_password,
             mobile_verified=not is_mobile_to_be_verified
-            )
+        )
 
         self.create_success_message = "Family member is added successfully!"
-        
+
         if is_mobile_to_be_verified:
             message = "You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
@@ -287,6 +301,39 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 self.create_success_message = 'Please enter OTP which we have sent to your family member.'
             else:
                 self.create_success_message = 'We are unable to send OTP to your family member. Please try after sometime.'
+
+    def perform_update(self, serializer):
+        request_patient = patient_user_object(self.request)
+        is_mobile_to_be_verified = False
+
+        if 'mobile' in serializer.validated_data and \
+                not self.get_object().mobile == serializer.validated_data['mobile'] and \
+                not serializer.validated_data['mobile'] == request_patient.mobile:
+            is_mobile_to_be_verified = True
+
+        family_member_object = serializer.save(
+            mobile_verified=not is_mobile_to_be_verified)
+
+        if is_mobile_to_be_verified:
+            random_mobile_password = get_random_string(
+                length=4, allowed_chars='0123456789')
+            otp_expiration_time = datetime.now(
+            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+            family_member_object.mobile_verification_otp = random_mobile_password,
+            family_member_object.mobile_otp_expiration_time = otp_expiration_time,
+            family_member_object.save()
+
+            message = "Your mobile number has been added on Manipal Hospital application by\
+            {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+                request_patient.first_name,
+                random_mobile_password, OTP_EXPIRATION_TIME)
+            is_message_sent = send_sms(mobile_number=str(
+                family_member_object.mobile.raw_input), message=message)
+            if is_message_sent:
+                self.update_success_message = 'Family member details updated successfully, please enter OTP which we have sent to your family member.'
+            else:
+                self.update_success_message = 'Family member detials updated successfully, we are unable to send OTP to your family member. Please try after sometime.'
 
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
@@ -331,14 +378,16 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_201_CREATED)
 
-
     @action(detail=True, methods=['PATCH'])
     def verify_family_member_otp(self, request, pk=None):
         mobile_otp = request.data.get('mobile_otp')
         if not mobile_otp:
             raise ValidationError("Enter OTP to verify family member!")
-            
-        family_member = self.get_object()
+        try:
+            # TODO: self.get_object() doesn't seem to work
+            family_member = self.model.objects.get(pk=pk)
+        except:
+            raise NotFound(detail='Requested information not found!')
 
         if not family_member.mobile_verification_otp == mobile_otp:
             raise ValidationError("Invalid OTP is entered!")
@@ -360,5 +409,44 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         data = {
             "data": serializer.data,
             "message": message,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['GET'])
+    def generate_family_member_mobile_verification_otp(self, request, pk=None):
+        try:
+            # TODO: self.get_object() doesn't seem to work
+            family_member = self.model.objects.get(pk=pk)
+        except:
+            raise NotFound(detail='Requested information not found!')
+
+        if family_member.mobile_verified:
+            raise ValidationError("Invalid request!")
+
+        random_password = get_random_string(
+            length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+        family_member.mobile_verification_otp = random_password
+        family_member.mobile_otp_expiration_time = otp_expiration_time
+        family_member.save()
+
+        request_patient = patient_user_object(self.request)
+
+        message = "You have been added as a family member on Manipal Hospital application by\
+            {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+            request_patient.first_name,
+            random_password, OTP_EXPIRATION_TIME)
+        is_message_sent = send_sms(mobile_number=str(
+            family_member.mobile.raw_input), message=message)
+        if is_message_sent:
+            response_message = 'Please enter OTP which we have sent to your family member.'
+        else:
+            response_message = 'We are unable to send OTP to your family member. Please try after sometime.'
+
+        data = {
+            "data": {"mobile": str(family_member.mobile.raw_input), },
+            "message": response_message,
         }
         return Response(data, status=status.HTTP_200_OK)
