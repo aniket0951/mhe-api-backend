@@ -5,13 +5,13 @@ from rest_framework import status
 class PatientMobileExistsValidationException(APIException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     default_code = 'mobile_number_exists'
-    default_detail = 'Your mobile number is already registered us!'
+    default_detail = 'Your mobile number is already registered with us!'
 
 
 class PatientDoesNotExistsValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
-    default_code = 'invalid_mobile_number'
-    default_detail = 'Your are not registered us!'
+    default_code = 'invalid_patient'
+    default_detail = 'Your are not registered with us!'
 
 
 class InvalidCredentialsException(APIException):
