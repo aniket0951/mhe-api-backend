@@ -17,7 +17,8 @@ from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from apps.master_data.views import ValidateUHIDView
 from manipal_api.settings import JWT_AUTH, OTP_EXPIRATION_TIME
 from utils import custom_viewsets
-from utils.custom_permissions import (BlacklistUpdateMethodPermission,
+from utils.custom_permissions import (BlacklistDestroyMethodPermission,
+                                      BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser,
                                       SelfUserAccess)
 from utils.custom_sms import send_sms
@@ -49,6 +50,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     ordering_fields = ('-created_at',)
 
     def get_permissions(self):
+    
         if self.action in ['create', 'verify_login_otp', 'generate_login_otp', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
@@ -64,7 +66,19 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if self.action == 'retrieve':
             permission_classes = [SelfUserAccess]
             return [permission() for permission in permission_classes]
+        
+        if self.action == 'partial_update':
+            permission_classes = [SelfUserAccess]
+            return [permission() for permission in permission_classes]
+            
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
 
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+                 
         return super().get_permissions()
 
     def perform_create(self, serializer):
@@ -188,6 +202,36 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+
+    @action(detail=True, methods=['PATCH'])
+    def update_uhid(self, request, pk=None):
+        uhid_number = request.data.get('uhid_number')
+        uhid_user_info = fetch_uhid_user_details(request)
+
+        patient_info = patient_user_object(request)
+        if patient_info.uhid_number == uhid_number:
+            raise ValidationError("Invalid request!")
+
+        if self.model.objects.filter(uhid_number=uhid_number).exists():
+            raise ValidationError(
+                "There is an exisiting user  on our platform with this UHID.")
+
+        if FamilyMember.objects.filter(patient_info=patient_info,
+                                     uhid_number=uhid_number).exists():
+            raise ValidationError(
+                "You have an existing family member with this UHID.")
+            
+        patient_user_obj = self.get_object()
+        patient_user_obj.uhid_number = uhid_number
+        patient_user_obj.save()
+
+        data = {
+            "data": uhid_user_info,
+            "message": "Your UHID is updated successfully!"
+        }
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
     @action(detail=False, methods=['POST'])
     def generate_uhid_otp(self, request):
         uhid_number = request.data.get('uhid_number')
@@ -243,10 +287,10 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             permission_classes = [IsManipalAdminUser | IsPatientUser]
             return [permission() for permission in permission_classes]
 
-        if self.action == 'retrieve':
-            permission_classes = [SelfUserAccess]
+        if self.action == 'partial_update':
+            permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
-
+                
         return super().get_permissions()
 
     def get_queryset(self):

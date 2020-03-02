@@ -42,14 +42,14 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['code', 'description', 'address',]
+    search_fields = ['code', 'description', 'address', ]
     ordering_fields = ('code',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
-            
+
         return super().get_permissions()
 
 
@@ -66,7 +66,7 @@ class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     # search_fields = ['code', 'description', 'address',]
     # ordering_fields = ('code',)
-    
+
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
@@ -79,13 +79,13 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
     model = Specialisation
     queryset = Specialisation.objects.all()
     serializer_class = SpecialisationSerializer
-    create_success_message = None
+    create_success_message = "New specialisation is added successfully."
     list_success_message = 'Specialisations list returned successfully!'
     retrieve_success_message = 'Specialisation information returned successfully!'
-    update_success_message = None
+    update_success_message = 'Information is updated successfuly!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['code', 'description',]
+    search_fields = ['code', 'description', ]
     ordering_fields = ('code',)
 
     def get_permissions(self):
@@ -104,8 +104,9 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
         if self.action == 'destroy':
             permission_classes = [BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]
-                           
+
         return super().get_permissions()
+
 
 class DepartmentsView(ProxyView):
     # permission_classes = [IsAuthenticated]
@@ -407,14 +408,14 @@ class LabRadiologyItemsView(ProxyView):
 
         all_lab_radiology_items = list()
         lab_radiology_items_sorted_keys = ['billing_group',
-                                       'billing_subgroup',
-                                       'start_date',
-                                       'end_date',
-                                       'hospital_code',
-                                       'code',
-                                       'description',
-                                       'price',
-                                       ]
+                                           'billing_subgroup',
+                                           'start_date',
+                                           'end_date',
+                                           'hospital_code',
+                                           'code',
+                                           'description',
+                                           'price',
+                                           ]
         for each_lab_radiology_item in response_content:
             hospital_lab_radiology_item_details = dict()
             for index, key in enumerate(sorted(each_lab_radiology_item.keys())):
@@ -426,7 +427,7 @@ class LabRadiologyItemsView(ProxyView):
                         each_lab_radiology_item[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
                 hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
-                                       ] = each_lab_radiology_item[key]
+                                                    ] = each_lab_radiology_item[key]
 
             lab_radiology_item_kwargs = dict()
             lab_radiology_item_details = dict()
@@ -454,7 +455,8 @@ class LabRadiologyItemsView(ProxyView):
             lab_radiology_item, lab_radiology_item_created = LabRadiologyItem.objects.update_or_create(
                 **lab_radiology_item_kwargs, defaults=lab_radiology_item_details)
 
-            hospital_code = hospital_lab_radiology_item_details.pop('hospital_code')
+            hospital_code = hospital_lab_radiology_item_details.pop(
+                'hospital_code')
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
             hospital_lab_radiology_item_kwargs['item'] = lab_radiology_item
