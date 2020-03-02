@@ -93,7 +93,7 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
-        if self.action == 'partial_update':
+        if self.action in ['partial_update', 'create']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
