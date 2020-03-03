@@ -15,7 +15,8 @@ from rest_framework.test import APIRequestFactory
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
 from apps.master_data.views import ValidateUHIDView
-from manipal_api.settings import JWT_AUTH, OTP_EXPIRATION_TIME
+from manipal_api.settings import (ANDROID_SMS_RETRIEVER_API_KEY, JWT_AUTH,
+                                  OTP_EXPIRATION_TIME)
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -50,7 +51,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     ordering_fields = ('-created_at',)
 
     def get_permissions(self):
-    
+
         if self.action in ['create', 'verify_login_otp', 'generate_login_otp', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
@@ -66,11 +67,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if self.action == 'retrieve':
             permission_classes = [SelfUserAccess]
             return [permission() for permission in permission_classes]
-        
+
         if self.action == 'partial_update':
             permission_classes = [SelfUserAccess]
             return [permission() for permission in permission_classes]
-            
+
         if self.action == 'update':
             permission_classes = [BlacklistUpdateMethodPermission]
             return [permission() for permission in permission_classes]
@@ -78,7 +79,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if self.action == 'destroy':
             permission_classes = [BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]
-                 
+
         return super().get_permissions()
 
     def perform_create(self, serializer):
@@ -93,8 +94,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             otp_expiration_time=otp_expiration_time)
         user_obj.set_password(random_password)
         user_obj.save()
-        message = "OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+        message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
             random_password, OTP_EXPIRATION_TIME)
+        if self.request.query_params.get('is_android'):
+            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             user_obj.mobile.raw_input), message=message)
         if is_message_sent:
@@ -186,6 +189,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             message = "OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
                 random_password, OTP_EXPIRATION_TIME)
 
+        if self.request.query_params.get('is_android'):
+            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             request_patient.mobile.raw_input), message=message)
 
@@ -202,7 +207,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
-
     @action(detail=True, methods=['PATCH'])
     def update_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
@@ -217,10 +221,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 "There is an exisiting user  on our platform with this UHID.")
 
         if FamilyMember.objects.filter(patient_info=patient_info,
-                                     uhid_number=uhid_number).exists():
+                                       uhid_number=uhid_number).exists():
             raise ValidationError(
                 "You have an existing family member with this UHID.")
-            
+
         patient_user_obj = self.get_object()
         patient_user_obj.uhid_number = uhid_number
         patient_user_obj.save()
@@ -230,7 +234,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": "Your UHID is updated successfully!"
         }
         return Response(data, status=status.HTTP_201_CREATED)
-
 
     @action(detail=False, methods=['POST'])
     def generate_uhid_otp(self, request):
@@ -290,7 +293,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         if self.action == 'partial_update':
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
-                
+
         return super().get_permissions()
 
     def get_queryset(self):
@@ -339,6 +342,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
                 request_patient.first_name,
                 random_mobile_password, OTP_EXPIRATION_TIME)
+
+            if self.request.query_params.get('is_android'):
+                message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
             is_message_sent = send_sms(mobile_number=str(
                 user_obj.mobile.raw_input), message=message)
             if is_message_sent:
@@ -372,6 +378,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
                 request_patient.first_name,
                 random_mobile_password, OTP_EXPIRATION_TIME)
+
+            if self.request.query_params.get('is_android'):
+                message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
             is_message_sent = send_sms(mobile_number=str(
                 family_member_object.mobile.raw_input), message=message)
             if is_message_sent:
@@ -482,6 +491,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
             request_patient.first_name,
             random_password, OTP_EXPIRATION_TIME)
+
+        if self.request.query_params.get('is_android'):
+            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             family_member.mobile.raw_input), message=message)
         if is_message_sent:
