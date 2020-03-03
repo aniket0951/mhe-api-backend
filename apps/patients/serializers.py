@@ -96,3 +96,15 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         if 'uhid_number' in validated_data:
             _ = validated_data.pop('uhid_number')
         return super().create(validated_data)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            response_object['display_picture'] = generate_pre_signed_url(
+                instance.display_picture.url)
+        except Exception as error:
+            print(error)
+            response_object['display_picture'] = None
+
+        return response_object
