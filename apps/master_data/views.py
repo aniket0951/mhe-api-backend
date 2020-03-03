@@ -24,6 +24,9 @@ from rest_framework import filters
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
+from utils.custom_permissions import (BlacklistDestroyMethodPermission,
+                                      BlacklistUpdateMethodPermission,
+                                      IsManipalAdminUser)
 
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
@@ -42,13 +45,14 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['code', 'description', 'address',]
+    search_fields = ['code', 'description', 'address', ]
     ordering_fields = ('code',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
+
         return super().get_permissions()
 
 
@@ -67,7 +71,7 @@ class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     # search_fields = ['code', 'description', 'address',]
     # ordering_fields = ('code',)
-    
+
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
@@ -76,18 +80,18 @@ class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     
 
 
-class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class SpecialisationViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = Specialisation
     queryset = Specialisation.objects.all()
     serializer_class = SpecialisationSerializer
-    create_success_message = None
+    create_success_message = "New specialisation is added successfully."
     list_success_message = 'Specialisations list returned successfully!'
     retrieve_success_message = 'Specialisation information returned successfully!'
-    update_success_message = None
+    update_success_message = 'Information is updated successfuly!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['code', 'description',]
+    search_fields = ['code', 'description', ]
     ordering_fields = ('code',)
 
         
@@ -96,8 +100,20 @@ class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
-        return super().get_permissions()
 
+        if self.action in ['partial_update', 'create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
 
 
 class DepartmentsView(ProxyView):

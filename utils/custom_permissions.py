@@ -1,7 +1,9 @@
 from rest_framework import permissions
 
 from apps.manipal_admin.models import ManipalAdmin
-from apps.patients.models import  Patient
+from apps.patients.models import Patient
+
+
 class IsManipalAdminUser(permissions.BasePermission):
     """
     Is Manipal Admin User
@@ -11,10 +13,10 @@ class IsManipalAdminUser(permissions.BasePermission):
     def has_permission(self, request, view):
         """
         Checking if the user is Manipal administartor.
-        """ 
+        """
         try:
             if ManipalAdmin.objects.filter(id=request.user.id).exists():
-                    return True
+                return True
         except Exception as e:
             print(e)
             pass
@@ -31,7 +33,7 @@ class IsPatientUser(permissions.BasePermission):
     def has_permission(self, request, view):
         """
         Checking if the user is Patient.
-        """ 
+        """
         try:
             if hasattr(request.user, 'mobile'):
                 if Patient.objects.filter(mobile=request.user.mobile).exists():
@@ -42,11 +44,13 @@ class IsPatientUser(permissions.BasePermission):
         self.message = 'Patient has the permission to perform this action.'
         return False
 
+
 class SelfUserAccess(permissions.BasePermission):
     message = 'You do not have permission to access this object.'
 
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.id
+
 
 class BlacklistUpdateMethodPermission(permissions.BasePermission):
     """
@@ -59,3 +63,16 @@ class BlacklistUpdateMethodPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.method != 'PUT'
+
+
+class BlacklistDestroyMethodPermission(permissions.BasePermission):
+    """
+    Global permission check for blacklisted UPDATE method.
+    """
+    message = 'You do not have permission to do this action.'
+
+    def has_permission(self, request, view):
+        return request.method != 'DELETE'
+
+    def has_object_permission(self, request, view, obj):
+        return request.method != 'DELETE'

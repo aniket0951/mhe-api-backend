@@ -4,15 +4,14 @@ from rest_framework.test import APIRequestFactory
 from apps.master_data.views import ValidateOTPView
 
 
-
 def fetch_uhid_user_details(request):
-
     uhid_number = request.data.get('uhid_number')
-    otp = str(request.data.get('otp'))
+    otp = request.data.get('otp')
 
     if not (uhid_number and otp):
         raise ValidationError('UHID or OTP is missing!')
-
+        
+    otp = str(otp)
     factory = APIRequestFactory()
     proxy_request = factory.post(
         '', {"uhid": uhid_number, "otp": otp}, format='json')

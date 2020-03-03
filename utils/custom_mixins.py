@@ -56,7 +56,7 @@ class ListModelMixin:
             "message": self.list_success_message,
             "pagination_data": pagination_data
         }
-        return Response(data, status=status.HTTP_201_CREATED)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class RetrieveModelMixin:

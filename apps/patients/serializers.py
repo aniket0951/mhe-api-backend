@@ -29,8 +29,8 @@ class PatientSerializer(DynamicFieldsModelSerializer):
             # 'mobile': {"error_messages": {"required": "Mobile number is mandatory to create your account."}},
             'facebook_id': {'write_only': True, },
             'google_id': {'write_only': True, },
-            'first_name': {"error_messages": {"required": "First name is mandatory to create your \
-                account."}}
+            'first_name': {"error_messages": {"required": "First name is mandatory to create your account."}},
+            'email': {"error_messages": {"required": "Email is mandatory to create your account."}}
         }
 
     def to_representation(self, instance):
