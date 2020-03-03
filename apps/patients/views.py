@@ -101,7 +101,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         is_message_sent = send_sms(mobile_number=str(
             user_obj.mobile.raw_input), message=message)
         if is_message_sent:
-            self.create_success_message = 'Your registration is completed successfully, please enter OTP which we have sent to activate your account.'
+            self.create_success_message = 'Your registration is completed successfully. Activate your account by entering the OTP which we have sent to your mobile number.'
         else:
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
 
@@ -210,7 +210,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['PATCH'])
     def update_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
-        uhid_user_info = fetch_uhid_user_details(request)
+
+        if not uhid_number:
+            raise ValidationError(
+                "Enter valid UHID number.")
 
         patient_info = patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
@@ -224,6 +227,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                                        uhid_number=uhid_number).exists():
             raise ValidationError(
                 "You have an existing family member with this UHID.")
+        uhid_user_info = fetch_uhid_user_details(request)
 
         patient_user_obj = self.get_object()
         patient_user_obj.uhid_number = uhid_number
@@ -396,14 +400,21 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
         uhid_number = request.data.get('uhid_number')
-        uhid_user_info = fetch_uhid_user_details(request)
-        uhid_user_info['mobile_verified'] = True
+        if not uhid_number:
+            raise ValidationError(
+                "Enter valid UHID number.")
+
         patient_info = patient_user_object(request)
+        if patient_info.uhid_number == uhid_number:
+            raise ValidationError(
+                "Your cannnot associate your UHID number to your family member.")
+
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number).exists():
             raise ValidationError(
                 "You have an existing family member with this UHID.")
-
+        uhid_user_info = fetch_uhid_user_details(request)
+        uhid_user_info['mobile_verified'] = True
         uhid_user_info['patient_info'] = patient_info
         family_member_obj = self.model.objects.create(**uhid_user_info)
         # serializer = self.get_serializer(family_member_obj)
@@ -418,13 +429,22 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['PATCH'])
     def update_family_member_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
-        uhid_user_info = fetch_uhid_user_details(request)
+
+        if not uhid_number:
+            raise ValidationError(
+                "Enter valid UHID number.")
 
         patient_info = patient_user_object(request)
+        if patient_info.uhid_number == uhid_number:
+            raise ValidationError(
+                "Your cannnot associate your UHID number to your family member.")
+
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number).exists():
             raise ValidationError(
                 "You have an existing family member with this UHID.")
+
+        uhid_user_info = fetch_uhid_user_details(request)
 
         family_member = self.get_object()
         family_member.uhid_number = uhid_number
