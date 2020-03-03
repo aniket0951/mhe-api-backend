@@ -13,7 +13,7 @@ import rest_framework
 from apps.doctors.models import Doctor
 from apps.master_data.models import Department, Hospital, Specialisation
 from apps.meta_app.permissions import IsLegitUser
-from apps.patients.models import Patient, FamilyMember
+from apps.patients.models import FamilyMember, Patient
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
@@ -27,8 +27,9 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from utils import custom_viewsets
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
+                                      SelfUserAccess, IsSelfUserOrFamilyMember)
 from utils.custom_sms import send_sms
-from utils.custom_permissions import IsPatientUser, SelfUserAccess, IsManipalAdminUser
 
 from .exceptions import (AppointmentDoesNotExistsValidationException,
                          DepartmentDoesNotExistsValidationException,
@@ -45,7 +46,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (filters.SearchFilter,)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
-    permission_classes = [IsManipalAdminUser | IsLegitUser]
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
 
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
@@ -60,15 +61,15 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if ManipalAdmin.objects.filter(id=request.user.id).exists():
             return qs
         elif (family_member is not None):
-            return  qs.filter(family_member_id=family_member).order_by(
+            return qs.filter(family_member_id=family_member).order_by(
                 '-appointment_date', '-appointment_slot')
         else:
-            return qs.filter(patient_id= self.request.user.id).order_by(
+            return qs.filter(patient_id=self.request.user.id).order_by(
                 '-appointment_date', '-appointment_slot')
 
 
 class CreateMyAppointment(ProxyView):
-    permission_classes = [IsLegitUser]
+    permission_classes = [IsSelfUserOrFamilyMember]
     sync_method = 'bookAppointment'
 
     def get_request_data(self, request):
@@ -181,7 +182,7 @@ class CreateMyAppointment(ProxyView):
 
 class CancelMyAppointment(ProxyView):
     sync_method = 'cancelAppointment'
-    permission_classes = [IsLegitUser]
+    permission_classes = [IsSelfUserOrFamilyMember]
 
     def get_request_data(self, request):
         data = request.data
@@ -222,16 +223,20 @@ class CancelMyAppointment(ProxyView):
                 instance.save()
                 if instance.family_member:
                     user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled by {5}".format(instance.family_member.first_name,
-                                                                                                                                                         instance.doctor.name, instance.appointment_date, instance.time_slot_from, instance.appointmentIdentifier, instance.patient.first_name)
+                                                                                                                                                instance.doctor.name, instance.appointment_date, instance.time_slot_from, instance.appointmentIdentifier, instance.patient.first_name)
                     if str(instance.family_member.mobile) == str(instance.patient.mobile):
-                        send_sms(mobile_number=str(instance.patient.mobile.raw_input), message=user_message)
+                        send_sms(mobile_number=str(
+                            instance.patient.mobile.raw_input), message=user_message)
                     else:
-                        send_sms(mobile_number=str(instance.patient.mobile.raw_input), message=user_message)
-                        send_sms(mobile_number=str(instance.family_member.mobile.raw_input), message=user_message)
+                        send_sms(mobile_number=str(
+                            instance.patient.mobile.raw_input), message=user_message)
+                        send_sms(mobile_number=str(
+                            instance.family_member.mobile.raw_input), message=user_message)
                 else:
                     user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled as per your request".format(instance.patient.first_name,
-                                                                                                                                                         instance.doctor.name, instance.appointment_date, instance.time_slot_from, instance.appointmentIdentifier)
-                    send_sms(mobile_number=str(instance.patient.mobile.raw_input), message=user_message)
+                                                                                                                                                             instance.doctor.name, instance.appointment_date, instance.time_slot_from, instance.appointmentIdentifier)
+                    send_sms(mobile_number=str(
+                        instance.patient.mobile.raw_input), message=user_message)
                 return self.custom_success_response(message=status,
                                                     success=True, data=message)
             else:

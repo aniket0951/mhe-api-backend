@@ -1,15 +1,16 @@
+import datetime
+from datetime import datetime
+
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
                                       HospitalSerializer)
 from apps.master_data.models import Hospital
 from apps.patients.models import Patient
-from apps.patients.serializers import PatientSerializer, FamilyMemberSerializer
+from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
 
 from .models import Appointment
-import datetime
-from datetime import datetime
 
 
 class AppointmentDoctorSerializer(serializers.ModelSerializer):
@@ -28,5 +29,5 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ('id', 'appointmentIdentifier', 'patient', 'family_member','doctor',
+        fields = ('id', 'appointmentIdentifier', 'patient', 'family_member', 'doctor',
                   'hospital', 'appointment_date', 'appointment_date', 'status')

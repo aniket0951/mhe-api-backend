@@ -2,7 +2,7 @@ from django.db import models
 
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
-from apps.patients.models import Patient, FamilyMember
+from apps.patients.models import FamilyMember, Patient
 
 # Create your models here.
 
@@ -21,9 +21,9 @@ class Appointment(models.Model):
     appointmentIdentifier = models.IntegerField()
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     patient = models.ForeignKey(
-        Patient, on_delete=models.PROTECT, related_name='patient_appointment' )
-    family_member = models.ForeignKey( FamilyMember, on_delete=models.PROTECT, related_name='family_appointment', blank=True,
-        null=True)
+        Patient, on_delete=models.PROTECT, related_name='patient_appointment')
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.PROTECT, related_name='family_appointment', blank=True,
+                                      null=True)
     doctor = models.ForeignKey(
         Doctor, on_delete=models.PROTECT, related_name='doctor_appointment')
     hospital = models.ForeignKey(

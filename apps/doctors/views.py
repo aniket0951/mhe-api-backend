@@ -15,7 +15,6 @@ from django.shortcuts import render
 
 from apps.appointments.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
-from utils.custom_permissions import IsPatientUser
 from apps.doctors.serializers import (DepartmentSerializer,
                                       DepartmentSpecificSerializer,
                                       DoctorSerializer, HospitalSerializer)
@@ -32,6 +31,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from utils import custom_viewsets
+from utils.custom_permissions import IsPatientUser
 
 
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -54,7 +54,7 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             location_id = self.request.query_params.get('location_id', None)
             date = self.request.query_params.get('date', None)
             qs = Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
-                            Q(end_date__gte=date) | Q(end_date__isnull=True))
+                Q(end_date__gte=date) | Q(end_date__isnull=True))
             return qs
 
 
