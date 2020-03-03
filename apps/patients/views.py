@@ -273,6 +273,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     list_success_message = 'Family members list returned successfully!'
     retrieve_success_message = 'Information returned successfully!'
     update_success_message = 'Information updated successfully!'
+    delete_success_message = 'Your family member account is deleted successfully!'
 
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
@@ -292,6 +293,10 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         if self.action == 'partial_update':
             permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
