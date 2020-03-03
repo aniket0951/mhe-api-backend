@@ -271,7 +271,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = FamilyMember
-    queryset = FamilyMember.objects.all().order_by('-created_at')
+    queryset = FamilyMember.objects.all().order_by('created_at')
     serializer_class = FamilyMemberSerializer
     create_success_message = 'Your family member has been added successfully!'
     list_success_message = 'Family members list returned successfully!'
