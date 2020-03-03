@@ -397,7 +397,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     def validate_new_family_member_uhid_otp(self, request):
         uhid_number = request.data.get('uhid_number')
         uhid_user_info = fetch_uhid_user_details(request)
-
+        uhid_user_info['mobile_verified'] = True
         patient_info = patient_user_object(request)
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number).exists():
