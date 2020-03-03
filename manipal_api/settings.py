@@ -93,7 +93,8 @@ THIRD_PARTY_APPS = [
     'django_filters',
     'phonenumber_field',
     'import_export',
-    'django_extensions'
+    'django_extensions',
+    'django.contrib.gis'
 ]
 
 # Application definition
@@ -150,7 +151,7 @@ WSGI_APPLICATION = 'manipal_api.wsgi.application'
 # Database (Postgresql) Settings
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': env('MANIPAL_DB_NAME'),
         'USER': env('MANIPAL_DB_USER'),
         'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),

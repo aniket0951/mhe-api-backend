@@ -2,15 +2,20 @@
 from django.urls import include, path
 
 from rest_framework import routers
+from rest_framework.routers import DefaultRouter
 
 from .views import *
 
+router = DefaultRouter(trailing_slash=False)
+
+router.register('all_appointments/', AppointmentsAPIView)
+router.register('recently_visited_doctor/', RecentlyVisitedDoctorlistView)
+
+
 urlpatterns = [
-    path('all_appointments/', AppointmentsAPIView.as_view()),
-    path('recently_visited_doctor/', RecentlyVisitedDoctorlistView.as_view()),
     path('cancel_appointment/', CancelMyAppointment.as_view()),
     path('create_appointment/', CreateMyAppointment.as_view()),
-    path('show_appointment/', ShowAppointmentView.as_view()),
     path('get_data/', get_data, name="get_data"),
+    *router.urls
 
 ]

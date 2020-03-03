@@ -19,15 +19,12 @@ class SpecialisationSerializer(serializers.ModelSerializer):
 
 
 class HospitalSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Hospital
         fields = '__all__'
 
 
-class HospitalDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Hospital
-        fields = '__all__'
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -45,23 +42,13 @@ class DoctorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Doctor
-        fields = ['id', 'code', 'first_name', 'hospital', 'hospital_departments',
-                  'specialisations', 'qualification', 'educational_degrees', 'experience', 'profile_image']
+        fields = ['id', 'code', 'name', 'hospital', 'hospital_departments',
+                  'specialisations', 'qualification', 'educational_degrees', 'experience']
 
 
 class DoctorSpecificSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
-        fields = ['id', 'first_name', 'experience']
+        fields = ['id', 'name', 'experience']
 
 
-class HospitalSpecificSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Hospital
-        fields = ['id']
-
-
-class PatientSpecificSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Patient
-        fields = ['id']

@@ -1,14 +1,15 @@
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
-                                      HospitalDetailSerializer,
-                                      PatientSpecificSerializer)
+                                      HospitalSerializer)
 from apps.master_data.models import Hospital
 from apps.patients.models import Patient
-from apps.users.serializers import UserSerializer
+from apps.patients.serializers import PatientSerializer, FamilyMemberSerializer
 from rest_framework import serializers
 
 from .models import Appointment
+import datetime
+from datetime import datetime
 
 
 class AppointmentDoctorSerializer(serializers.ModelSerializer):
@@ -16,27 +17,16 @@ class AppointmentDoctorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ['doctor']
+        fields = ['doctor', 'appointment_date']
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
     doctor = DoctorSerializer(read_only=True)
-    hospital = HospitalDetailSerializer(read_only=True)
-    req_patient = UserSerializer(read_only=True)
+    hospital = HospitalSerializer(read_only=True)
+    patient = PatientSerializer(read_only=True)
+    family_member = FamilyMemberSerializer(read_only=True)
 
     class Meta:
         model = Appointment
-        fields = ('id', 'appointmentIdentifier', 'req_patient', 'doctor',
-                  'hospital', 'time_slot_from', 'appointment_date', 'status')
-
-    """
-    def create(self, validated_data):
-        hospital_data = validated_data['hospital']
-        doctor_data = validated_data['doctor']
-        patient_data = validated_data.pop['patient']
-        appointment = Appointment.objects.create(**validated_data)
-        Hospital.objects.create(appointment=appointment, **hospital_data)
-        Doctor.objects.create(appointment=appointment, **doctor_data)
-        Patient.objects.create(appointment=appointment, **patient_data)
-        return appointment
-    """
+        fields = ('id', 'appointmentIdentifier', 'patient', 'family_member','doctor',
+                  'hospital', 'appointment_date', 'appointment_date', 'status')

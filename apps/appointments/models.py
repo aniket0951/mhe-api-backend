@@ -2,7 +2,7 @@ from django.db import models
 
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
-from apps.users.models import BaseUser
+from apps.patients.models import Patient, FamilyMember
 
 # Create your models here.
 
@@ -17,11 +17,13 @@ class Appointment(models.Model):
         (WAITING, 'Waiting'),
     )
     appointment_date = models.DateField()
-    time_slot_from = models.TimeField()
+    appointment_slot = models.TimeField()
     appointmentIdentifier = models.IntegerField()
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
-    req_patient = models.ForeignKey(
-        BaseUser, on_delete=models.PROTECT, related_name='patient_appointment')
+    patient = models.ForeignKey(
+        Patient, on_delete=models.PROTECT, related_name='patient_appointment' )
+    family_member = models.ForeignKey( FamilyMember, on_delete=models.PROTECT, related_name='family_appointment', blank=True,
+        null=True)
     doctor = models.ForeignKey(
         Doctor, on_delete=models.PROTECT, related_name='doctor_appointment')
     hospital = models.ForeignKey(

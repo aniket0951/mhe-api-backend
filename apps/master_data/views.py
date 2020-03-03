@@ -3,16 +3,16 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from django.shortcuts import render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import fromstr
+from django.contrib.gis.db.models.functions import Distance as Django_Distance
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -20,6 +20,9 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
 
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
@@ -49,6 +52,8 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return super().get_permissions()
 
 
+
+
 class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     model = Department
@@ -68,6 +73,7 @@ class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
         return super().get_permissions()
+    
 
 
 class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -84,6 +90,8 @@ class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['code', 'description',]
     ordering_fields = ('code',)
 
+        
+
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
@@ -93,7 +101,7 @@ class SpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class DepartmentsView(ProxyView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Departments list returned successfully'
     sync_method = 'department'
@@ -167,7 +175,7 @@ class DepartmentsView(ProxyView):
 
 class DoctorsView(ProxyView):
     # permission_classes = [IsAuthenticated]
-    # permission_classes = [AllowAny]
+    permission_classes = [AllowAny]
 
     source = SYNC_SERVICE
     success_msg = 'Doctors list returned successfully'
@@ -243,7 +251,6 @@ class DoctorsView(ProxyView):
             if specialisation_code:
                 specialisation_obj = Specialisation.objects.filter(
                     code=specialisation_code).first()
-
             doctor, doctor_created = Doctor.objects.update_or_create(
                 **doctor_kwargs, defaults=doctor_details)
             doctor_details['doctor_created'] = doctor_created
@@ -459,7 +466,7 @@ class LabRadiologyItemsView(ProxyView):
 
 
 class ItemsTarrifPriceView(ProxyView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'tariff'

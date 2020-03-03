@@ -90,7 +90,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
-        username = request.data.get('mobile'),
+        username = request.data.get('mobile')
         password = request.data.get('password')
         if not (username and password):
             raise InvalidCredentialsException
