@@ -271,7 +271,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = FamilyMember
-    queryset = FamilyMember.objects.all()
+    queryset = FamilyMember.objects.all().order_by('-created_at')
     serializer_class = FamilyMemberSerializer
     create_success_message = 'Your family member has been added successfully!'
     list_success_message = 'Family members list returned successfully!'
@@ -306,7 +306,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        qs = FamilyMember.objects.filter(patient_info__id=self.request.user.id,
+        qs = super().get_queryset().filter(patient_info__id=self.request.user.id,
                                          mobile_verified=True)
         if manipal_admin_object(self.request):
             try:
