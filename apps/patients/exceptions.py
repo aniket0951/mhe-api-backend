@@ -14,6 +14,12 @@ class PatientDoesNotExistsValidationException(APIException):
     default_detail = 'Your are not registered with us!'
 
 
+class PatientMobileDoesNotExistsValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_patient_mobile'
+    default_detail = 'Your are not registered with us!'
+
+
 class InvalidCredentialsException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_credentials'

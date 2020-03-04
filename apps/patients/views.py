@@ -28,6 +28,7 @@ from utils.utils import manipal_admin_object, patient_user_object
 from .exceptions import (InvalidCredentialsException, InvalidUHID,
                          OTPExpiredException,
                          PatientDoesNotExistsValidationException,
+                         PatientMobileDoesNotExistsValidationException,
                          PatientMobileExistsValidationException,
                          PatientOTPExceededLimitException)
 from .models import FamilyMember, Patient
@@ -161,6 +162,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if mobile:
             request_patient = self.get_queryset().filter(
                 mobile=mobile).first()
+            if not request_patient:
+                raise PatientMobileDoesNotExistsValidationException
+            
         if facebook_id:
             request_patient = self.get_queryset().filter(
                 google_id=facebook_id).first()
@@ -237,6 +241,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if is_capture_details_enabled:
             patient_user_obj.email_verified = True
             patient_user_obj.first_name = uhid_user_info['first_name']
+            patient_user_obj.last_name = None
+            patient_user_obj.middle_name = None
             patient_user_obj.email = uhid_user_info['email']
             patient_user_obj.gender = uhid_user_info['gender']
 
@@ -464,6 +470,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             family_member.mobile_verified = True
             family_member.email_verified = True
             family_member.first_name = uhid_user_info['first_name']
+            patient_user_obj.last_name = None
+            patient_user_obj.middle_name = None
             family_member.mobile = uhid_user_info['mobile']
             family_member.email = uhid_user_info['email']
             family_member.gender = uhid_user_info['gender']
