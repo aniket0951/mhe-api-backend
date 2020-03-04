@@ -1,8 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from apps.appointments import views
-from rest_framework import routers
 from rest_framework_jwt.views import refresh_jwt_token
 
 urlpatterns = [

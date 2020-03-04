@@ -4,8 +4,6 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import requests
-from django.contrib.gis.db.models.functions import Distance as Django_Distance
-from django.contrib.gis.geos import Point, fromstr
 from django.core import serializers
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -13,11 +11,12 @@ from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
-from apps.appointments.exceptions import DoctorDoesNotExistsValidationException
+from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DepartmentSerializer,
                                       DepartmentSpecificSerializer,
                                       DoctorSerializer, HospitalSerializer)
+from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.models import Department, Hospital, Specialisation
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
@@ -48,14 +47,14 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if ManipalAdmin.objects.filter(id=request.user.id).exists():
-            return qs
+        location_id = self.request.query_params.get('location_id', None)
+        date = self.request.query_params.get('date', None)
+        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            pass
         else:
-            location_id = self.request.query_params.get('location_id', None)
-            date = self.request.query_params.get('date', None)
             qs = Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
                 Q(end_date__gte=date) | Q(end_date__isnull=True))
-            return qs
+        return qs
 
 
 class DoctorSlotAvailability(ProxyView):

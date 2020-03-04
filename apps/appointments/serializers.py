@@ -6,14 +6,15 @@ from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
                                       HospitalSerializer)
 from apps.master_data.models import Hospital
-from apps.patients.models import Patient
+from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
+from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import Appointment
 
 
-class AppointmentDoctorSerializer(serializers.ModelSerializer):
+class AppointmentDoctorSerializer(DynamicFieldsModelSerializer):
     doctor = DoctorSpecificSerializer(read_only=True)
 
     class Meta:
@@ -21,13 +22,30 @@ class AppointmentDoctorSerializer(serializers.ModelSerializer):
         fields = ['doctor', 'appointment_date']
 
 
-class AppointmentSerializer(serializers.ModelSerializer):
-    doctor = DoctorSerializer(read_only=True)
-    hospital = HospitalSerializer(read_only=True)
-    patient = PatientSerializer(read_only=True)
-    family_member = FamilyMemberSerializer(read_only=True)
+class AppointmentSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ('id', 'appointmentIdentifier', 'patient', 'family_member', 'doctor',
-                  'hospital', 'appointment_date', 'appointment_date', 'status')
+        fields = ('id', 'appointment_identifier', 'patient', 'family_member', 'doctor',
+                  'hospital', 'appointment_date', 'appointment_slot', 'status')
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        if response_object['doctor']:
+            response_object['doctor'] = DoctorSerializer(
+                Doctor.objects.get(id=str(response_object['doctor']))).data
+
+        if response_object['patient']:
+            response_object['patient'] = PatientSerializer(
+                Patient.objects.get(id=str(response_object['patient']))).data
+
+        if response_object['family_member']:
+            response_object['family_member'] = PatientSerializer(
+                FamilyMember.objects.get(id=str(response_object['family_member']))).data
+
+        if response_object['hospital']:
+            response_object['hospital'] = HospitalSerializer(
+                Hospital.objects.get(id=str(response_object['hospital']))).data
+
+        return response_object

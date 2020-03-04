@@ -2,10 +2,9 @@ import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
-from django.shortcuts import render
-from django.contrib.gis.geos import Point
-from django.contrib.gis.geos import fromstr
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
+from django.contrib.gis.geos import Point, fromstr
+from django.shortcuts import render
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
@@ -56,8 +55,6 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return super().get_permissions()
 
 
-
-
 class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     model = Department
@@ -77,7 +74,6 @@ class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
         return super().get_permissions()
-    
 
 
 class SpecialisationViewSet(custom_viewsets.ModelViewSet):
@@ -93,8 +89,6 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', ]
     ordering_fields = ('code',)
-
-        
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
@@ -117,7 +111,7 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
 
 
 class DepartmentsView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     source = SYNC_SERVICE
     success_msg = 'Departments list returned successfully'
     sync_method = 'department'
@@ -190,8 +184,8 @@ class DepartmentsView(ProxyView):
 
 
 class DoctorsView(ProxyView):
-    # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+    #permission_classes = [AllowAny]
 
     source = SYNC_SERVICE
     success_msg = 'Doctors list returned successfully'
@@ -281,7 +275,7 @@ class DoctorsView(ProxyView):
 
 
 class HealthPackagesView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     source = SYNC_SERVICE
     success_msg = 'Health Packages list returned successfully'
     sync_method = 'healthcheck'
@@ -390,7 +384,7 @@ class HealthPackagesView(ProxyView):
 
 
 class LabRadiologyItemsView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'labraditems'
@@ -482,7 +476,7 @@ class LabRadiologyItemsView(ProxyView):
 
 
 class ItemsTarrifPriceView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'tariff'

@@ -5,7 +5,6 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import Point
 
 from apps.meta_app.models import MyBaseModel
-p = Point(1, 1)
 class Hospital(MyBaseModel):
 
     code = models.SlugField(unique=True,
@@ -25,7 +24,7 @@ class Hospital(MyBaseModel):
     address = models.TextField(blank=True,
                                null=True,
                                max_length=100)
-    location = models.PointField(default = p,null=True, blank=True,)
+    location = models.PointField(default = Point(1, 1),null=True, blank=True,)
     
 
     class Meta:

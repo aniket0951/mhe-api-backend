@@ -15,7 +15,6 @@ router.register('recently_visited_doctor/', RecentlyVisitedDoctorlistView)
 urlpatterns = [
     path('cancel_appointment/', CancelMyAppointment.as_view()),
     path('create_appointment/', CreateMyAppointment.as_view()),
-    path('get_data/', get_data, name="get_data"),
     *router.urls
 
 ]
