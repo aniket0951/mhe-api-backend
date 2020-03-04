@@ -1,9 +1,10 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+from django.contrib.gis.db import models
+from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import Point
 
 from apps.meta_app.models import MyBaseModel
-
-
 class Hospital(MyBaseModel):
 
     code = models.SlugField(unique=True,
@@ -23,6 +24,8 @@ class Hospital(MyBaseModel):
     address = models.TextField(blank=True,
                                null=True,
                                max_length=100)
+    location = models.PointField(default = Point(1, 1),null=True, blank=True,)
+    
 
     class Meta:
         verbose_name = "Hospital"
@@ -91,8 +94,8 @@ class Specialisation(MyBaseModel):
                             null=True)
 
     description = models.CharField(max_length=200,
-                            null=True,
-                            blank=True,)
+                                   null=True,
+                                   blank=True,)
 
     start_date = models.DateField()
 
