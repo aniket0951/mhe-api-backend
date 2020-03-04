@@ -235,10 +235,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         patient_user_obj = self.get_object()
 
         if is_capture_details_enabled:
-            patient_user_obj.mobile_verified = True
             patient_user_obj.email_verified = True
             patient_user_obj.first_name = uhid_user_info['first_name']
-            patient_user_obj.mobile = uhid_user_info['mobile']
             patient_user_obj.email = uhid_user_info['email']
             patient_user_obj.gender = uhid_user_info['gender']
 
