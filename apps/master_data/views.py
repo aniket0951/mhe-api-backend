@@ -3,8 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
-from django.contrib.gis.geos import Point, fromstr
-from django.shortcuts import render
+from django.contrib.gis.geos import Point
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing

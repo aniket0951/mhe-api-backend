@@ -7,10 +7,10 @@ from . import views
 
 router = DefaultRouter(trailing_slash=False)
 
-router.register('doctors/', views.DoctorsAPIView)
+router.register('doctors', views.DoctorsAPIView)
 
 urlpatterns = [
-    path('doctor_details/', views.DoctorSlotAvailability.as_view()),
+    path('doctor_details', views.DoctorSlotAvailability.as_view()),
     *router.urls
 
 ]

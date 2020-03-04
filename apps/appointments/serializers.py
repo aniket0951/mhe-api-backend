@@ -1,4 +1,3 @@
-import datetime
 from datetime import datetime
 
 from apps.doctors.models import Doctor
@@ -14,7 +13,7 @@ from utils.serializers import DynamicFieldsModelSerializer
 from .models import Appointment
 
 
-class AppointmentDoctorSerializer(DynamicFieldsModelSerializer):
+class DoctorAppointmentSerializer(DynamicFieldsModelSerializer):
     doctor = DoctorSpecificSerializer(read_only=True)
 
     class Meta:

@@ -1,5 +1,5 @@
 from apps.manipal_admin.models import ManipalAdmin
-from apps.patients.models import Patient, FamilyMember
+from apps.patients.models import FamilyMember, Patient
 from rest_framework import permissions
 
 
@@ -80,12 +80,14 @@ class BlacklistDestroyMethodPermission(permissions.BasePermission):
 class IsSelfUserOrFamilyMember(permissions.BasePermission):
 
     message = 'You do not have permission to do this action.'
+
     def has_permission(self, request, view):
+        patient_id = None
         user = request.user.id
         if request.method == "POST":
-            patient_id = request.data.get("user_id")
+            patient_id = request.data.get("user_id", None)
         if request.method == "GET":
-            patient_id = request.query_params.get("user_id")
+            patient_id = request.query_params.get("user_id", None)
         if (patient_id is None) or (str(user) == patient_id):
             return True
         else:

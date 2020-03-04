@@ -37,7 +37,7 @@ from utils.custom_sms import send_sms
 
 from .exceptions import AppointmentDoesNotExistsValidationException
 from .models import Appointment
-from .serializers import AppointmentDoctorSerializer, AppointmentSerializer
+from .serializers import AppointmentSerializer, DoctorAppointmentSerializer
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -47,7 +47,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-
+    ordering_fields = ('-appointment_date', '-appointment_slot',)
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
@@ -56,22 +56,17 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         user = self.request.user.id
         family_member = self.request.query_params.get("user_id", None)
-        qs = super().get_queryset().order_by('-appointment_date', '-appointment_slot')
-
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
-            pass
+            return super().get_queryset()
         elif (family_member is not None):
-            qs = qs.filter(family_member_id=family_member).order_by(
-                '-appointment_date', '-appointment_slot')
+            return super().get_queryset().filter(family_member_id=family_member)
         else:
-            qs = qs.filter(patient_id=self.request.user.id).order_by(
-                '-appointment_date', '-appointment_slot')
-        return qs
+            return super().get_queryset().filter(patient_id=self.request.user.id)
 
 
 class CreateMyAppointment(ProxyView):
     permission_classes = [IsSelfUserOrFamilyMember]
-    sync_method = 'bookAppointment'
+    source = 'bookAppointment'
 
     def get_request_data(self, request):
 
@@ -116,13 +111,6 @@ class CreateMyAppointment(ProxyView):
         request.data["doctor"] = doctor
         return request_data
 
-    def get_request_url(self, request):
-        host = self.get_proxy_host()
-        path = self.sync_method
-        if path:
-            return '/'.join([host, path])
-        return host
-
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
@@ -153,12 +141,10 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
                 appointment = AppointmentSerializer(data=new_appointment)
-                if appointment.is_valid():
-                    appointment.save()
-                else:
+                if not appointment.is_valid():
                     return self.custom_success_response(message=appointment.errors,
                                                         success=False, data=data)
-
+                appointment.save()
                 appointment_data = appointment.data
                 if appointment_data["family_member"]:
                     user_message = "Dear {0}, Your Appointment has been booked by {6} with {1} on {2} at {3} with appointment id:{4} at {5}".format(appointment_data["family_member"]["first_name"], appointment_data["doctor"][
@@ -185,7 +171,7 @@ class CreateMyAppointment(ProxyView):
 
 
 class CancelMyAppointment(ProxyView):
-    sync_method = 'cancelAppointment'
+    source = 'cancelAppointment'
     permission_classes = [IsSelfUserOrFamilyMember]
 
     def get_request_data(self, request):
@@ -200,13 +186,6 @@ class CancelMyAppointment(ProxyView):
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
         return request_data
-
-    def get_request_url(self, request):
-        host = self.get_proxy_host()
-        path = self.sync_method
-        if path:
-            return '/'.join([host, path])
-        return host
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
@@ -228,9 +207,10 @@ class CancelMyAppointment(ProxyView):
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
                 instance.save()
+                success_status = True
                 if instance.family_member:
                     user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled by {5}".format(instance.family_member.first_name,
-                                                                                                                                                instance.doctor.name, instance.appointment_date, instance.time_slot_from, instance.appointment_identifier, instance.patient.first_name)
+                                                                                                                                                instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier, instance.patient.first_name)
                     if str(instance.family_member.mobile) == str(instance.patient.mobile):
                         send_sms(mobile_number=str(
                             instance.patient.mobile.raw_input), message=user_message)
@@ -241,10 +221,9 @@ class CancelMyAppointment(ProxyView):
                             instance.family_member.mobile.raw_input), message=user_message)
                 else:
                     user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled as per your request".format(instance.patient.first_name,
-                                                                                                                                                             instance.doctor.name, instance.appointment_date, instance.time_slot_from, instance.appointment_identifier)
+                                                                                                                                                             instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier)
                     send_sms(mobile_number=str(
                         instance.patient.mobile.raw_input), message=user_message)
-                    success_status = True
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=None)
@@ -252,7 +231,7 @@ class CancelMyAppointment(ProxyView):
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
-    serializer_class = AppointmentDoctorSerializer
+    serializer_class = DoctorAppointmentSerializer
     permission_classes = [IsPatientUser]
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'

@@ -31,6 +31,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
+from utils.exceptions import InvalidRequest
 
 
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -64,8 +65,12 @@ class DoctorSlotAvailability(ProxyView):
     def get_request_data(self, request):
         data = request.data
         date = data.pop("date")
-        doctor = Doctor.objects.filter(id=data.pop("doctor_id"), hospital_departments__hospital__id=data.get("hospital_id"), hospital_departments__department__id=data.get("specialisation_id")).filter(
-            Q(end_date__gte=date) | Q(end_date__isnull=True))
+        try:
+            doctor = Doctor.objects.filter(id=data.pop("doctor_id"), hospital_departments__hospital__id=data.get("hospital_id"), hospital_departments__department__id=data.get("specialisation_id")).filter(
+                Q(end_date__gte=date) | Q(end_date__isnull=True))
+        except Exception as e:
+            raise InvalidRequest
+
         if not doctor:
             raise DoctorDoesNotExistsValidationException
         hospital = Hospital.objects.filter(id=data.pop("hospital_id")).first()

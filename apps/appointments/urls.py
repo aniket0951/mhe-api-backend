@@ -8,13 +8,13 @@ from .views import *
 
 router = DefaultRouter(trailing_slash=False)
 
-router.register('all_appointments/', AppointmentsAPIView)
-router.register('recently_visited_doctor/', RecentlyVisitedDoctorlistView)
+router.register('all_appointments', AppointmentsAPIView)
+router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 
 
 urlpatterns = [
-    path('cancel_appointment/', CancelMyAppointment.as_view()),
-    path('create_appointment/', CreateMyAppointment.as_view()),
+    path('cancel_appointment', CancelMyAppointment.as_view()),
+    path('create_appointment', CreateMyAppointment.as_view()),
     *router.urls
 
 ]
