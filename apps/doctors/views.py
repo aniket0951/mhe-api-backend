@@ -66,7 +66,7 @@ class DoctorSlotAvailability(ProxyView):
         data = request.data
         date = data.pop("date")
         try:
-            doctor = Doctor.objects.filter(id=data.pop("doctor_id"), hospital_departments__hospital__id=data.get("hospital_id"), hospital_departments__department__id=data.get("specialisation_id")).filter(
+            doctor = Doctor.objects.filter(id=data.pop("doctor_id"), hospital_departments__hospital__id=data.get("hospital_id"), hospital_departments__department__id=data.get("department_id")).filter(
                 Q(end_date__gte=date) | Q(end_date__isnull=True))
         except Exception as e:
             raise InvalidRequest
@@ -75,7 +75,7 @@ class DoctorSlotAvailability(ProxyView):
             raise DoctorDoesNotExistsValidationException
         hospital = Hospital.objects.filter(id=data.pop("hospital_id")).first()
         department = Department.objects.filter(
-            id=data.pop("specialisation_id")).first()
+            id=data.pop("department_id")).first()
         y, m, d = date.split("-")
         data["schedule_date"] = d + m + y
         data["doctor_code"] = doctor[0].code
