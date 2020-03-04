@@ -23,7 +23,7 @@ def validate_file_authenticity(value):
 
     possible_file_extensions = mimetypes.guess_all_extensions(mime_type)
 
-    if os.path.splitext(value.name)[1] not in possible_file_extensions:
+    if os.path.splitext(value.name)[1].lower() not in possible_file_extensions:
         # logger.error("Corrupted file is uploaded!")
         raise ValidationError('Corrupted file is uploaded!')
 

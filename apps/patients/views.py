@@ -91,7 +91,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
         user_obj = serializer.save(
-            otp_expiration_time=otp_expiration_time)
+            otp_expiration_time=otp_expiration_time,
+            is_active=True)
         user_obj.set_password(random_password)
         user_obj.save()
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
@@ -210,6 +211,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['PATCH'])
     def update_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
+        is_capture_details_enabled = request.data.get(
+            'is_capture_details_enabled', False)
 
         if not uhid_number:
             raise ValidationError(
@@ -230,6 +233,15 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info = fetch_uhid_user_details(request)
 
         patient_user_obj = self.get_object()
+
+        if is_capture_details_enabled:
+            patient_user_obj.mobile_verified = True
+            patient_user_obj.email_verified = True
+            patient_user_obj.first_name = uhid_user_info['first_name']
+            patient_user_obj.mobile = uhid_user_info['mobile']
+            patient_user_obj.email = uhid_user_info['email']
+            patient_user_obj.gender = uhid_user_info['gender']
+
         patient_user_obj.uhid_number = uhid_number
         patient_user_obj.save()
 
@@ -307,7 +319,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset().filter(patient_info__id=self.request.user.id,
-                                         mobile_verified=True)
+                                           mobile_verified=True)
         if manipal_admin_object(self.request):
             try:
                 request_patient_info = Patient.objects.get(
@@ -429,6 +441,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['PATCH'])
     def update_family_member_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
+        is_capture_details_enabled = request.data.get(
+            'is_capture_details_enabled', False)
 
         if not uhid_number:
             raise ValidationError(
@@ -447,14 +461,24 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info = fetch_uhid_user_details(request)
 
         family_member = self.get_object()
+
+        if is_capture_details_enabled:
+            family_member.mobile_verified = True
+            family_member.email_verified = True
+            family_member.first_name = uhid_user_info['first_name']
+            family_member.mobile = uhid_user_info['mobile']
+            family_member.email = uhid_user_info['email']
+            family_member.gender = uhid_user_info['gender']
+
         family_member.uhid_number = uhid_number
         family_member.save()
 
+        serializer = self.get_serializer(self.get_queryset(), many=True)
         data = {
-            "data": uhid_user_info,
+            "data": serializer.data,
             "message": "Your family member UHID is updated successfully!"
         }
-        return Response(data, status=status.HTTP_201_CREATED)
+        return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['PATCH'])
     def verify_family_member_otp(self, request, pk=None):
