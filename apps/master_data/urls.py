@@ -2,7 +2,7 @@ from django.conf.urls import url
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import (DepartmentsView, DepartmentViewSet, DoctorsView,
+from .views import (DepartmentsView, HospitalDepartmentViewSet, DoctorsView,
                     HealthPackagesView, HospitalViewSet, ItemsTarrifPriceView,
                     LabRadiologyItemsView, SpecialisationViewSet,
                     ValidateOTPView, ValidateUHIDView)
@@ -10,7 +10,7 @@ from .views import (DepartmentsView, DepartmentViewSet, DoctorsView,
 router = DefaultRouter(trailing_slash=False)
 
 router.register('all_hospitals', HospitalViewSet)
-router.register('all_departments', DepartmentViewSet)
+router.register('all_hospital_departments', HospitalDepartmentViewSet)
 router.register('all_specialisations', SpecialisationViewSet)
 
 

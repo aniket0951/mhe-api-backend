@@ -1,16 +1,20 @@
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
+from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
-from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -18,9 +22,6 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -28,8 +29,8 @@ from utils.custom_permissions import (BlacklistDestroyMethodPermission,
 
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
-from .serializers import (DepartmentSerializer, HospitalSerializer,
-                          SpecialisationSerializer)
+from .serializers import (DepartmentSerializer, HospitalDepartmentSerializer,
+                          HospitalSerializer, SpecialisationSerializer)
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -54,17 +55,18 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return super().get_permissions()
 
 
-class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
-    model = Department
-    queryset = Department.objects.all()
-    serializer_class = DepartmentSerializer
+    model = HospitalDepartment
+    queryset = HospitalDepartment.objects.all()
+    serializer_class = HospitalDepartmentSerializer
     create_success_message = None
-    list_success_message = 'Departments list returned successfully!'
-    retrieve_success_message = 'Department information returned successfully!'
+    list_success_message = 'Hospital departments list returned successfully!'
+    retrieve_success_message = 'Hospital department information returned successfully!'
     update_success_message = None
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
+    filter_fields = ('hospital__id',)
     # search_fields = ['code', 'description', 'address',]
     # ordering_fields = ('code',)
 
@@ -74,6 +76,9 @@ class DepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
             return [permission() for permission in permission_classes]
         return super().get_permissions()
 
+    def get_queryset(self):
+        return super().get_queryset().filter(
+                Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True))
 
 class SpecialisationViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
