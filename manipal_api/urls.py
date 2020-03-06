@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.urls import include, path
-
 from rest_framework_jwt.views import refresh_jwt_token
 
 urlpatterns = [
@@ -11,5 +10,7 @@ urlpatterns = [
     path('api/doctors/', include('apps.doctors.urls')),
     path('api/appointments/', include('apps.appointments.urls')),
     path('api/master_data/', include('apps.master_data.urls')),
+    path('api/health_packages/', include('apps.health_packages.urls')),
+
 
 ]

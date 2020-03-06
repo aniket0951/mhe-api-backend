@@ -164,7 +164,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 mobile=mobile).first()
             if not request_patient:
                 raise PatientMobileDoesNotExistsValidationException
-            
+
         if facebook_id:
             request_patient = self.get_queryset().filter(
                 google_id=facebook_id).first()
@@ -188,10 +188,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         request_patient.set_password(random_password)
         request_patient.save()
 
-        message = "OTP to login into your accout is {}, this OTP will expire in {} seconds".format(
+        message = "OTP to login into your account is {}, this OTP will expire in {} seconds".format(
             random_password, OTP_EXPIRATION_TIME)
         if not request_patient.is_active:
-            message = "OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+            message = "OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 random_password, OTP_EXPIRATION_TIME)
 
         if self.request.query_params.get('is_android'):
@@ -364,7 +364,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         if is_mobile_to_be_verified:
             message = "You have been added as a family member on Manipal Hospital application by\
-            {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+            {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 request_patient.first_name,
                 random_mobile_password, OTP_EXPIRATION_TIME)
 
@@ -400,7 +400,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             family_member_object.save()
 
             message = "Your mobile number has been added on Manipal Hospital application by\
-            {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+            {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 request_patient.first_name,
                 random_mobile_password, OTP_EXPIRATION_TIME)
 
@@ -543,7 +543,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         request_patient = patient_user_object(self.request)
 
         message = "You have been added as a family member on Manipal Hospital application by\
-            {}, OTP to activate your accout is {}, this OTP will expire in {} seconds".format(
+            {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
             request_patient.first_name,
             random_password, OTP_EXPIRATION_TIME)
 

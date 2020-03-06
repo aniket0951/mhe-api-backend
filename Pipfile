@@ -32,6 +32,7 @@ django-cors-headers = "*"
 djangorestframework-jwt = "*"
 autopep8 = "*"
 pylint = "*"
+gdal = "*"
 
 [requires]
 python_version = "3.8"
