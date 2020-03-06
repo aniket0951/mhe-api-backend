@@ -1,4 +1,3 @@
-
 from django.urls import include, path
 
 from rest_framework import routers
@@ -15,6 +14,7 @@ router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 urlpatterns = [
     path('cancel_appointment', CancelMyAppointment.as_view()),
     path('create_appointment', CreateMyAppointment.as_view()),
+    path('cancellation_reason',CancellationReasonlistView.as_view({'get': 'list'})),
     *router.urls
 
 ]
