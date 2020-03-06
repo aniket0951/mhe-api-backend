@@ -4,7 +4,11 @@ from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 
-# Create your models here.
+class CancellationReason(models.Model):
+
+    reason = models.TextField(blank=False,
+                              null=False,
+                              max_length=100)
 
 
 class Appointment(models.Model):
@@ -28,3 +32,5 @@ class Appointment(models.Model):
         Doctor, on_delete=models.PROTECT, related_name='doctor_appointment')
     hospital = models.ForeignKey(
         Hospital, on_delete=models.PROTECT, related_name='hospital_appointment')
+    reason = models.ForeignKey(
+        CancellationReason, on_delete=models.PROTECT, related_name='cancellation_reason_appointment', null=True, blank=True)

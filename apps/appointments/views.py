@@ -5,10 +5,16 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import requests
+import rest_framework
 from django.conf import settings
 from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics, status, viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-import rest_framework
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.manipal_admin.models import ManipalAdmin
@@ -19,25 +25,20 @@ from apps.master_data.models import Department, Hospital, Specialisation
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.users.models import BaseUser
-from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters, generics, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 from utils.custom_sms import send_sms
 
 from .exceptions import AppointmentDoesNotExistsValidationException
-from .models import Appointment
-from .serializers import AppointmentSerializer, DoctorAppointmentSerializer
+from .models import Appointment, CancellationReason
+from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
+                          DoctorAppointmentSerializer)
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -207,6 +208,7 @@ class CancelMyAppointment(ProxyView):
                 if not instance:
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
+                instance.reason_id = self.request.data.get("reason")
                 instance.save()
                 success_status = True
                 if instance.family_member:
@@ -242,11 +244,12 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         return queryset.filter(patient_id=self.request.user.id).distinct('doctor').order_by('-appointment_date')
-        
+
+
 class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = CancellationReason.objects.all()
     serializer_class = CancellationReasonSerializer
     permission_classes = [AllowAny]
-    
+
     list_success_message = 'Cancellation Reason list returned successfully!'
     retrieve_success_message = 'Cancellation Reason returned successfully!'
