@@ -176,6 +176,7 @@ class CancelMyAppointment(ProxyView):
 
     def get_request_data(self, request):
         data = request.data
+        cancellation_reason = data.pop("reason_id")
         appointment_id = data.get("appointment_identifier")
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
@@ -241,3 +242,11 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         return queryset.filter(patient_id=self.request.user.id).distinct('doctor').order_by('-appointment_date')
+        
+class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
+    queryset = CancellationReason.objects.all()
+    serializer_class = CancellationReasonSerializer
+    permission_classes = [AllowAny]
+    
+    list_success_message = 'Cancellation Reason list returned successfully!'
+    retrieve_success_message = 'Cancellation Reason returned successfully!'
