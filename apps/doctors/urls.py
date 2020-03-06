@@ -7,7 +7,7 @@ from . import views
 
 router = DefaultRouter(trailing_slash=False)
 
-router.register('doctors', views.DoctorsAPIView)
+router.register('', views.DoctorsAPIView)
 
 urlpatterns = [
     path('doctor_details', views.DoctorSlotAvailability.as_view()),
