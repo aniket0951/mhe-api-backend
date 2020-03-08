@@ -129,6 +129,7 @@ class CreateMyAppointment(ProxyView):
                                                     success=False, data=None)
             else:
                 data = self.request.data
+                family_member = data.get("family_member")
                 new_appointment = {}
                 appointment_date_time = data.pop("appointment_date_time")
                 datetime_object = datetime.strptime(
@@ -138,7 +139,8 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["status"] = 1
                 new_appointment["appointment_identifier"] = appointmentIdentifier
                 new_appointment["patient"] = data.get("patient").id
-                new_appointment["family_member"] = data.get("family_member").id
+                if family_member:
+                    new_appointment["family_member"] = family_member.id
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
                 appointment = AppointmentSerializer(data=new_appointment)
