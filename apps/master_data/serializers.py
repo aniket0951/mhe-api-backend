@@ -15,16 +15,17 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
 
 
     def get_distance(self, obj):
-        if not 'request' in self.context: return None
-        request_data = self.context['request']
-        longitude = float(request_data.query_params.get("longitude"))
-        latitude = float(request_data.query_params.get("latitude"))
-        if not (latitude or longitude):
-            return None
-        user_location = Point(longitude, latitude, srid=4326)
-        distance = obj.location.distance(user_location)
-        return distance*100
-
+        try:
+            request_data = self.context['request']
+            longitude = float(request_data.query_params.get("longitude", 0))
+            latitude = float(request_data.query_params.get("latitude", 0))
+            user_location = Point(longitude, latitude, srid=4326)
+            distance = obj.location.distance(user_location)
+            return distance*100
+        except Exception as e:
+            print(e)
+        return None
+        
 class SpecialisationSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Specialisation
