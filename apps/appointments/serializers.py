@@ -1,41 +1,57 @@
+from datetime import datetime
+
+from rest_framework import serializers
+
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
-                                      HospitalSpecificSerializer,
-                                      PatientSpecificSerializer)
+                                      HospitalSerializer)
 from apps.master_data.models import Hospital
-from apps.patients.serializers import PatientSerializer
-from apps.users.serializers import UserSerializer
-from rest_framework import serializers
+from apps.patients.models import FamilyMember, Patient
+from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import Appointment
+from .models import Appointment, CancellationReason
 
 
-class AppointmentDoctorSerializer(serializers.ModelSerializer):
+class CancellationReasonSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = CancellationReason
+        fields = '__all__'
+
+
+class DoctorAppointmentSerializer(DynamicFieldsModelSerializer):
     doctor = DoctorSpecificSerializer(read_only=True)
 
     class Meta:
         model = Appointment
-        fields = ['doctor']
+        fields = ['doctor', 'appointment_date']
 
 
-class AppointmentSerializer(serializers.ModelSerializer):
-    doctor = DoctorSpecificSerializer()
-    hospital = HospitalSpecificSerializer()
+class AppointmentSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ('id', 'req_patient', 'appointmentIdentifier', 'doctor',
-                  'hospital', 'time_slot_from', 'appointment_date', 'status')
+        fields = ('id', 'appointment_identifier', 'patient', 'family_member', 'doctor',
+                  'hospital', 'appointment_date', 'appointment_slot', 'status')
 
-    """
-    def create(self, validated_data):
-        hospital_data = validated_data['hospital']
-        doctor_data = validated_data['doctor']
-        patient_data = validated_data.pop['patient']
-        appointment = Appointment.objects.create(**validated_data)
-        Hospital.objects.create(appointment=appointment, **hospital_data)
-        Doctor.objects.create(appointment=appointment, **doctor_data)
-        Patient.objects.create(appointment=appointment, **patient_data)
-        return appointment
-    """
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        if response_object['doctor']:
+            response_object['doctor'] = DoctorSerializer(
+                Doctor.objects.get(id=str(response_object['doctor']))).data
+
+        if response_object['patient']:
+            response_object['patient'] = PatientSerializer(
+                Patient.objects.get(id=str(response_object['patient']))).data
+
+        if response_object['family_member']:
+            response_object['family_member'] = PatientSerializer(
+                FamilyMember.objects.get(id=str(response_object['family_member']))).data
+
+        if response_object['hospital']:
+            response_object['hospital'] = HospitalSerializer(
+                Hospital.objects.get(id=str(response_object['hospital']))).data
+
+        return response_object

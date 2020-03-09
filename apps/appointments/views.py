@@ -2,18 +2,12 @@ import base64
 import datetime
 import hashlib
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 import requests
+import rest_framework
 from django.conf import settings
 from django.shortcuts import render
-
-import boto3
-import rest_framework
-from apps.doctors.models import Doctor
-from apps.master_data.models import Hospital, Specialisation
-from apps.meta_app.permissions import Is_legit_user
-from apps.patients.models import Patient
-from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
@@ -21,275 +15,243 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Appointment
-from .serializers import AppointmentDoctorSerializer, AppointmentSerializer
+from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
+from apps.doctors.models import Doctor
+from apps.manipal_admin.models import ManipalAdmin
+from apps.master_data.exceptions import (
+    DepartmentDoesNotExistsValidationException,
+    HospitalDoesNotExistsValidationException)
+from apps.master_data.models import Department, Hospital, Specialisation
+from apps.patients.exceptions import PatientDoesNotExistsValidationException
+from apps.patients.models import FamilyMember, Patient
+from apps.users.models import BaseUser
+from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
+from proxy.custom_serializables import \
+    CancelAppointmentRequest as serializable_CancelAppointmentRequest
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_views import ProxyView
+from utils import custom_viewsets
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
+                                      IsSelfUserOrFamilyMember, SelfUserAccess)
+from utils.custom_sms import send_sms
 
-AWS_ACCESS_KEY = settings.AWS_ACCESS_KEY
-AWS_SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
-REGION_NAME = settings.AWS_SNS_TOPIC_REGION
-S3_BUCKET_NAME = settings.AWS_S3_BUCKET_NAME
-S3_REGION_NAME = settings.AWS_S3_REGION_NAME
-
-headers = {
-    'Content-Type': "application/xml",
-    'User-Agent': "PostmanRuntime/7.20.1",
-    'Accept': "*/*",
-    'Cache-Control': "no-cache",
-    'Postman-Token': "c3ab8054-cca3-45d3-afe0-59936599cc57,211fe54d-707f-48b5-b6a4-8b953006078b",
-    'Host': "172.16.241.227:789",
-    'Accept-Encoding': "gzip, deflate",
-    'Content-Length': "177",
-    'Connection': "keep-alive",
-    'cache-control': "no-cache"
-}
-
-
-"""
-class AppointmentViewSet(viewsets.ModelViewSet):
-    
-    retrieve:
-    Return the given Appointment.    
-    
-    list:
-    Return a list of all the existing Appointments.    
-    
-    create:
-    Create a new Appointment instance.
-    
-    queryset = Appointment.objects.all()
-    serializer_class = Appointment
-    filter_backends = (DjangoFilterBackend, OrderingFilter,)
-    ordering_fields = '__all__'
-     
-    
-    def get_serializer_class(self):
-        
-        Determins which serializer to user `list` or `detail`
-        
-        if self.action == 'retrieve':
-            if hasattr(self , 'detail_serializer_class'):
-                return self.detail_serializer_class
-        return super().get_serializer_class()
-    
-
-    def get_queryset(self):
-        
-        Optionally restricts the returned queries by filtering against
-        patient, hospital, Doctor  query parameter in the URL.
-        
-        queryset = Appointment.objects.all()
-        patient = self.request.query_params.get('patient', None)
-        hospital = self.request.query_params.get('hospital', None)
-        doctor = self.request.query_params.get('doctor', None)
-        if patient is not None:
-            patient_name = patient.name
-            queryset = queryset.filter(name = patient_name)
-        if hospital is not None:
-            hospital_name = hospital.description
-            queryset = queryset.filter(description = hospital_name)
-        if doctor is not None:
-            doctor_name = doctor.name
-            queryset = queryset.filter(name = doctor_name)
-        return queryset
-"""
+from .exceptions import AppointmentDoesNotExistsValidationException
+from .models import Appointment, CancellationReason
+from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
+                          DoctorAppointmentSerializer)
 
 
-class AppointmentsAPIView(generics.ListAPIView):
+class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name',
-                     'doctor__first_name', 'hospital__profit_center']
+                     'doctor__name', 'family_member__first_name']
     filter_backends = (filters.SearchFilter,)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
-    permission_classes = [IsAuthenticated, Is_legit_user]
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    ordering_fields = ('-appointment_date', '-appointment_slot',)
+    create_success_message = None
+    list_success_message = 'Appointment list returned successfully!'
+    retrieve_success_message = 'Appointment information returned successfully!'
+    update_success_message = None
 
     def get_queryset(self):
-
-        queryset = Appointment.objects.all()
-        patient_id = self.request.query_params.get('user_id', None)
-        if patient_id is not None:
-            queryset = queryset.filter(req_patient_id=patient_id).order_by('-appointment_date')
-            return queryset
-
-    def list(self, request, *args, **kwargs):
-        appointment = super().list(request, *args, **kwargs)
-        if appointment.status_code == 200:
-            appointments = {}
-            appointments["appointments"] = appointment.data
-            return Response({"data": appointments, "status": 200, "message": "List of all the doctors"})
+        user = self.request.user.id
+        family_member = self.request.query_params.get("user_id", None)
+        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            return super().get_queryset()
+        elif (family_member is not None):
+            return super().get_queryset().filter(family_member_id=family_member)
         else:
-            return Response({"status": appointment.code, "message": "No appointment is Available"})
+            return super().get_queryset().filter(patient_id=self.request.user.id)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated, Is_legit_user])
-def CreateAppointment(request):
-    data = request.data
-    patient_id = data.get("user_id")
-    hospital_id = data.get("hospital_id")
-    doctor_id = data.get("doctor_id")
-    appointment_date = data.get("appointment_date")
-    appointment_slot = data.get("appointment_slot")
-    appointment_date_time = data.get("appointment_date_time")
-    speciality_id = data.get("speciality_id")
-    type = data.get("type")
-    user = BaseUser.objects.filter(id=patient_id).first()
-    mobile = user.mobile
-    speciality = Specialisation.objects.filter(id=speciality_id).first()
-    hospital = Hospital.objects.filter(id=hospital_id).first()
-    doctor = Doctor.objects.filter(id=doctor_id).first()
-    """
-    h, m , s = appointment_slot.split(":")
-    appointment_slot = datetime.time(h,m,s)
-    """
-    y, m, d = appointment_date.split("-")
-    date = y+m+d
-    doctor_code = doctor.code
-    doctor_name = doctor.first_name
-    appointment_date_time = appointment_date_time
-    location_code = hospital.code
-    name = user.first_name
-    mobile = user.mobile
-    email = user.email
-    specialty_code = speciality.code
-    type = type
-    url = "https://172.16.241.227:789/Common.svc/bookAppointment"
-    payload = """<IbookAppointmentParam>
-    <doctorCode>{0}</doctorCode>
-    <appointmentDateTime>{1}</appointmentDateTime>
-    <mrn></mrn>
-    <locationCode>{2}</locationCode>
-    <patientName>{3}</patientName>
-    <mobile>{4}</mobile>
-    <email>{5}</email>
-    <duration>10</duration>
-    <visitType>A</visitType>
-    <appointmentType>{6}</appointmentType>
-    <reasonForVisitCode>CONSULT</reasonForVisitCode>
-    <chiefComplaint>NA</chiefComplaint>
-    <fastCareID>PatientApp</fastCareID>
-    <specialtyCode>{7}</specialtyCode>
-    <title>Mr.</title>
-</IbookAppointmentParam>""".format(doctor_code, appointment_date_time, location_code, name, mobile, email, type, specialty_code)
-    response = requests.request(
-        "POST", url, data=payload, headers=headers, verify=False)
-    if response.status_code == 200:
+class CreateMyAppointment(ProxyView):
+    permission_classes = [IsSelfUserOrFamilyMember]
+    source = 'bookAppointment'
+
+    def get_request_data(self, request):
+
+        patient_id = request.user.id
+        family_member_id = request.data.pop("user_id", None)
+        patient = Patient.objects.filter(id=patient_id).first()
+        family_member = FamilyMember.objects.filter(
+            id=family_member_id).first()
+        if not patient:
+            raise PatientDoesNotExistsValidationException
+        hospital = Hospital.objects.filter(
+            id=request.data.pop("hospital_id")).first()
+        if not hospital:
+            raise HospitalDoesNotExistsValidationException
+        doctor = Doctor.objects.filter(
+            id=request.data.pop("doctor_id")).first()
+        if not doctor:
+            raise DoctorDoesNotExistsValidationException
+        department = Department.objects.filter(
+            id=request.data.pop("department_id")).first()
+        if not department:
+            raise DepartmentDoesNotExistsValidationException
+
+        if family_member:
+            user = family_member
+        else:
+            user = patient
+
+        request.data['doctor_code'] = doctor.code
+        request.data['location_code'] = hospital.code
+        request.data['patient_name'] = user.first_name
+        request.data['mobile'] = str(user.mobile)
+        request.data['email'] = str(user.email)
+        request.data['speciality_code'] = department.code
+
+        slot_book = serializable_BookMySlot(**request.data)
+        request_data = custom_serializer().serialize(slot_book, 'XML')
+
+        request.data["patient"] = patient
+        request.data["family_member"] = family_member
+        request.data["hospital"] = hospital
+        request.data["doctor"] = doctor
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        response_message = "Unable to Book the Appointment. Please try again"
+        response_data = {}
+        response_success = False
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            appointmentIdentifier = root.find("appointmentIdentifier").text
+            status = root.find("Status").text
+            if status == "FAILED":
+                message = root.find("Message").text
+                return self.custom_success_response(message=message,
+                                                    success=False, data=None)
+            else:
+                data = self.request.data
+                family_member = data.get("family_member")
+                new_appointment = {}
+                appointment_date_time = data.pop("appointment_date_time")
+                datetime_object = datetime.strptime(
+                    appointment_date_time, '%Y%m%d%H%M%S')
+                new_appointment["appointment_date"] = datetime_object.date()
+                new_appointment["appointment_slot"] = datetime_object.time()
+                new_appointment["status"] = 1
+                new_appointment["appointment_identifier"] = appointmentIdentifier
+                new_appointment["patient"] = data.get("patient").id
+                if family_member:
+                    new_appointment["family_member"] = family_member.id
+                new_appointment["doctor"] = data.get("doctor").id
+                new_appointment["hospital"] = data.get("hospital").id
+                appointment = AppointmentSerializer(data=new_appointment)
+                if not appointment.is_valid():
+                    return self.custom_success_response(message=appointment.errors,
+                                                        success=False, data=data)
+                appointment.save()
+                appointment_data = appointment.data
+                if appointment_data["family_member"]:
+                    user_message = "Dear {0}, Your Appointment has been booked by {6} with {1} on {2} at {3} with appointment id:{4} at {5}".format(appointment_data["family_member"]["first_name"], appointment_data["doctor"][
+                                                                                                                                                    "name"], appointment_data["appointment_date"], appointment_data["appointment_slot"], appointment_data["appointment_identifier"], appointment_data["hospital"]["address"], appointment_data["patient"]["first_name"])
+                    if str(appointment_data["family_member"]["mobile"]) == str(appointment_data["patient"]["mobile"]):
+                        send_sms(mobile_number=str(
+                            appointment_data["family_member"]["mobile"]), message=user_message)
+                    else:
+                        send_sms(mobile_number=str(
+                            appointment_data["patient"]["mobile"]), message=user_message)
+                        send_sms(mobile_number=str(
+                            appointment_data["family_member"]["mobile"]), message=user_message)
+                else:
+                    user_message = "Dear {0}, Your Appointment has been booked with {1} on {2} at {3} with appointment id:{4} at {5}".format(
+                        appointment_data["patient"]["first_name"], appointment_data["doctor"]["name"], appointment_data["appointment_date"], appointment_data["appointment_slot"], appointment_data["appointment_identifier"], appointment_data["hospital"]["address"])
+                    send_sms(mobile_number=str(
+                        appointment_data["patient"]["mobile"]), message=user_message)
+                response_success = True
+                response_message = "Appointment has been created"
+                response_data["appointmentIdentifier"] = appointmentIdentifier
+
+        return self.custom_success_response(message=response_message,
+                                            success=response_success, data=response_data)
+
+
+class CancelMyAppointment(ProxyView):
+    source = 'cancelAppointment'
+    permission_classes = [IsSelfUserOrFamilyMember]
+
+    def get_request_data(self, request):
+        data = request.data
+        cancellation_reason = data.pop("reason_id")
+        appointment_id = data.get("appointment_identifier")
+        instance = Appointment.objects.filter(
+            appointment_identifier=appointment_id).first()
+        if not instance:
+            raise AppointmentDoesNotExistsValidationException
+        request.data["location_code"] = instance.hospital.code
+        cancel_appointment = serializable_CancelAppointmentRequest(
+            **request.data)
+        request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        appointment_id = self.request.data.get("appointment_identifier")
         root = ET.fromstring(response.content)
-        appointmentIdentifier = root.find("appointmentIdentifier").text
-        status = root.find("Status").text
-        if status == "FAILED":
-            return Response({"message": "Unable to Book the Appointment. Please try again", "status": 403})
-        else:
-            appointment = Appointment(appointment_date=appointment_date, time_slot_from=appointment_slot,
-                                      appointmentIdentifier=appointmentIdentifier, status=1, req_patient=user, doctor=doctor, hospital=hospital)
-            appointment.save()
-            user_message = "Dear {0}, Your Appointment has been booked with {1} on {2} at {3} with appointment id:{4}".format( user.first_name,
-                doctor_name, appointment_date, appointment_slot, appointmentIdentifier)
-            client = boto3.client("sns",
-                                  aws_access_key_id=AWS_ACCESS_KEY,
-                                  aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                  region_name=REGION_NAME)
-            response = client.publish(PhoneNumber=str(mobile), Message=user_message, MessageAttributes={
-                'AWS.SNS.SMS.SMSType': {
-                    'DataType': 'String',
-                    'StringValue': 'Transactional'
-                }
-            })
-            return Response({"message": "Appointment has been created", "status": 200, "id": appointmentIdentifier})
-    else:
-        return Response({"message": "Unable to Book the Appointment. Please try again", "status": 403})
+        response_message = "We are unable to cancel the appointment. Please Try again"
+        success_status = False
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            status = root.find("Status").text
+            message = root.find("Message").text
+            response_message = status
+            if status == "SUCCESS":
+                instance = Appointment.objects.filter(
+                    appointment_identifier=appointment_id).first()
+                if not instance:
+                    raise AppointmentDoesNotExistsValidationException
+                instance.status = 2
+                instance.reason_id = self.request.data.get("reason")
+                instance.save()
+                success_status = True
+                if instance.family_member:
+                    user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled by {5}".format(instance.family_member.first_name,
+                                                                                                                                                instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier, instance.patient.first_name)
+                    if str(instance.family_member.mobile) == str(instance.patient.mobile):
+                        send_sms(mobile_number=str(
+                            instance.patient.mobile.raw_input), message=user_message)
+                    else:
+                        send_sms(mobile_number=str(
+                            instance.patient.mobile.raw_input), message=user_message)
+                        send_sms(mobile_number=str(
+                            instance.family_member.mobile.raw_input), message=user_message)
+                else:
+                    user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled as per your request".format(instance.patient.first_name,
+                                                                                                                                                             instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier)
+                    send_sms(mobile_number=str(
+                        instance.patient.mobile.raw_input), message=user_message)
+
+        return self.custom_success_response(message=response_message,
+                                            success=success_status, data=None)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated, Is_legit_user])
-def CancelAppointment(request):
-    data = request.data
-    appointment_id = data.get("appointment_id")
-    hospital_id = data.get("hospital_id")
-    hospital = Hospital.objects.filter(id=hospital_id).first()
-    instance = Appointment.objects.filter(
-        appointmentIdentifier=appointment_id).first()
-    location_code = hospital.code
-    appointmentIdentifier = appointment_id
-    payload = """
-    <CancelAppointments>
-    <appointmentIdentifier>{0}</appointmentIdentifier>
-    <locationCode>{1}</locationCode>
-    </CancelAppointments>""".format(appointmentIdentifier, location_code)
-    print(payload)
-    url = "https://172.16.241.227:789/Common.svc/cancelAppointment"
-    response = requests.request(
-        "POST", url, data=payload, headers=headers, verify=False)
-    print(response.content)
-    if response.status_code == 200:
-        root = ET.fromstring(response.content)
-        status = root.find("Status").text
-        message = root.find("Message").text
-        if status == "SUCCESS":
-            instance.status = 2
-            instance.save()
-            return Response({"message": "Appointment has been cancelled", "status": 200})
-        else:
-            return Response({"message": "Couldn't Process the request. Please try again", "status": 403})
-
-
-class RecentlyVisitedDoctorlistView(generics.ListAPIView):
+class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
-    serializer_class = AppointmentDoctorSerializer
-    permission_classes = [IsAuthenticated, Is_legit_user]
+    serializer_class = DoctorAppointmentSerializer
+    permission_classes = [IsPatientUser]
+    create_success_message = None
+    list_success_message = 'Appointment list returned successfully!'
+    retrieve_success_message = 'Appointment information returned successfully!'
+    update_success_message = None
 
     def get_queryset(self):
-        queryset = Appointment.objects.all()
-        patient_id = self.request.query_params.get('user_id', None)
-
-        if patient_id is not None:
-            queryset = queryset.filter(
-                req_patient_id=patient_id).distinct('doctor')
-            return queryset
-        else:
-            return Response({"message": "Patient does not exist", "status": 403})
-
-    def list(self, request, *args, **kwargs):
-        doctor = super().list(request, *args, **kwargs)
-        if doctor.status_code == 200:
-            doctors = {}
-            doctors["doctors"] = doctor.data
-            return Response({"data": doctors, "status": 200, "message": "List of all the doctors"})
-        else:
-            return Response({"status": doctor.code, "message": "No doctor is Available"})
+        queryset = super().get_queryset()
+        return queryset.filter(patient_id=self.request.user.id).distinct('doctor')
 
 
-@api_view(['GET'])
-def get_data(request):
-    param = {}
-    token = {}
-    token["auth"] = {}
-    token["auth"]["user"] = "manipalhospitaladmin"
-    token["auth"]["key"] = "ldyVqN8Jr1GPfmwBflC2uQcKX2uflbRP"
-    token["username"] = "Patient"
-    token["accounts"] = []
-    account = {
-        "patient_name": "Jane Doe",
-        "account_number": "ACC1",
-        "amount": "150.25",
-        "email": "abc@xyz.com",
-        "phone": "9876543210"
-    }
-    token["accounts"].append(account)
-    token["processing_id"] = "TESTAPPID819"
-    token["paymode"] = ""
-    token["response_url"] = ""
-    token["return_url"] = ""
-    param["token"] = token
-    param["check_sum_hash"] = get_checksum(
-        token["auth"]["user"], token["auth"]["key"], token["processing_id"], "mid", "bDp0YXGlb0s4PEqdl2cEWhgGN0kFFEPD")
-    param["mid"] = "ydLf7fPe"
+class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
+    queryset = CancellationReason.objects.all()
+    serializer_class = CancellationReasonSerializer
+    permission_classes = [AllowAny]
 
-    return Response(data=param)
-
-
-def get_checksum(user, key, processing_id, mid, secret_key):
-    hash_string = user + "|" + key + "|" + \
-        processing_id + "|" + mid + "|" + secret_key
-    checksum = base64.b64encode(hashlib.sha256(
-        hash_string.encode("utf-8")).digest())
-    return checksum
+    list_success_message = 'Cancellation Reason list returned successfully!'
+    retrieve_success_message = 'Cancellation Reason returned successfully!'

@@ -2,9 +2,13 @@ from django.db import models
 
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
-from apps.users.models import BaseUser
+from apps.patients.models import FamilyMember, Patient
 
-# Create your models here.
+class CancellationReason(models.Model):
+
+    reason = models.TextField(blank=False,
+                              null=False,
+                              max_length=100)
 
 
 class Appointment(models.Model):
@@ -17,12 +21,16 @@ class Appointment(models.Model):
         (WAITING, 'Waiting'),
     )
     appointment_date = models.DateField()
-    time_slot_from = models.TimeField()
-    appointmentIdentifier = models.IntegerField()
+    appointment_slot = models.TimeField()
+    appointment_identifier = models.IntegerField()
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
-    req_patient = models.ForeignKey(
-        BaseUser, on_delete=models.PROTECT, related_name='patient_appointment')
+    patient = models.ForeignKey(
+        Patient, on_delete=models.PROTECT, related_name='patient_appointment')
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.PROTECT, related_name='family_appointment', blank=True,
+                                      null=True)
     doctor = models.ForeignKey(
         Doctor, on_delete=models.PROTECT, related_name='doctor_appointment')
     hospital = models.ForeignKey(
         Hospital, on_delete=models.PROTECT, related_name='hospital_appointment')
+    reason = models.ForeignKey(
+        CancellationReason, on_delete=models.PROTECT, related_name='cancellation_reason_appointment', null=True, blank=True)

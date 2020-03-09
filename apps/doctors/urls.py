@@ -1,14 +1,16 @@
 from django.conf.urls import url
-from . import views
 from django.urls import path
 
+from rest_framework.routers import DefaultRouter
+
+from . import views
+
+router = DefaultRouter(trailing_slash=False)
+
+router.register('', views.DoctorsAPIView)
+
 urlpatterns = [
-    path('doctors/', views.DoctorsAPIView.as_view()),
-    path('location/', views.LocationAPIView.as_view()),
-    path('specialisation/', views.SpecialisationAPIView.as_view()),
-    path('doctorDetails/', views.DoctorDetailView, name = "doctorview"),
-    path('PreferredLocation/', views.PreferredLocationView, name = "PreferredLocationView"),
-    path('doctorsListView/', views.DoctorsListView.as_view()),
+    path('doctor_details', views.DoctorSlotAvailability.as_view()),
+    *router.urls
 
 ]
-

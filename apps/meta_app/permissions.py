@@ -1,3 +1,4 @@
+from apps.manipal_admin.models import ManipalAdmin
 from apps.users.models import BaseUser, Relationship
 from rest_framework import permissions
 
@@ -29,3 +30,9 @@ class Is_legit_user(permissions.BasePermission):
             return True
         else:
             return Relationship.objects.filter(relative_user_id=patient_id).exists()
+
+
+class IsManipalAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        admin_id = request.user.id
+        return ManipalAdmin.objects.filter(id=admin_id).exists()

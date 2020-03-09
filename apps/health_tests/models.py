@@ -8,37 +8,33 @@ from apps.meta_app.models import MyBaseModel
 
 class HealthTest(MyBaseModel):
 
-    name = models.CharField(max_length=50,
-                            null=False,
-                            blank=False,
-                            )
-
-    description = models.TextField()
-
-    remarks = models.TextField()
-
-    code = models.SlugField(unique=True,
+    code = models.SlugField(max_length=200,
+                            unique=True,
                             blank=True,
                             null=True)
 
-    billing_group = models.ForeignKey(
-        BillingGroup,
-        on_delete=models.PROTECT,
-        null=False,
-        blank=False)
+    description = models.CharField(max_length=300,
+                                   null=False,
+                                   blank=False,
+                                   )
+
+    billing_group = models.ForeignKey(BillingGroup,
+                                      on_delete=models.PROTECT,
+                                      null=True,
+                                      blank=True)
 
     billing_sub_group = models.ForeignKey(
         BillingSubGroup,
         on_delete=models.PROTECT,
-        null=False,
-        blank=False)
+        null=True,
+        blank=True)
 
     class Meta:
         verbose_name = "Health Test"
         verbose_name_plural = "Health Tests"
 
     def __str__(self):
-        return self.name
+        return self.code
 
     def save(self, *args, **kwargs):
         super(HealthTest, self).save(*args, **kwargs)
@@ -46,24 +42,31 @@ class HealthTest(MyBaseModel):
 
 class HealthTestPricing(MyBaseModel):
 
-    health_test = models.ForeignKey(
-        HealthTest,
-        on_delete=models.PROTECT,
-        null=False,
-        blank=False)
-    hospital = models.ForeignKey(
-        Hospital,
-        on_delete=models.PROTECT,
-        null=False,
-        blank=False)
+    health_test = models.ForeignKey(HealthTest,
+                                    on_delete=models.PROTECT,
+                                    null=False,
+                                    blank=False)
+
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 null=False,
+                                 blank=False)
+
     price = models.IntegerField()
+
+    start_date = models.DateField()
+
+    end_date = models.DateField(null=True,
+                                blank=True
+                                )
 
     class Meta:
         verbose_name = "Health Test Pricing"
         verbose_name_plural = "Health Test Pricing"
+        unique_together = [['health_test', 'hospital'], ]
 
     def __str__(self):
-        return self.name
+        return self.health_test.code
 
     def save(self, *args, **kwargs):
         super(HealthTestPricing, self).save(*args, **kwargs)

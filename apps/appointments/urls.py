@@ -1,15 +1,20 @@
+from django.urls import include, path
 
-from django.urls import path, include
 from rest_framework import routers
+from rest_framework.routers import DefaultRouter
+
 from .views import *
 
+router = DefaultRouter(trailing_slash=False)
+
+router.register('all_appointments', AppointmentsAPIView)
+router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
+
+
 urlpatterns = [
-    path('allAppointments/', AppointmentsAPIView.as_view()),
-    path('createAppointment/',CreateAppointment, name = "CreateAppointment"),
-    path('cancelAppointment/',CancelAppointment, name = "cancelAppointment"),
-    path('recentlyVisitedDoctor/',RecentlyVisitedDoctorlistView.as_view()),
-    path('getdata/',get_data, name = "get_data")
+    path('cancel_appointment', CancelMyAppointment.as_view()),
+    path('create_appointment', CreateMyAppointment.as_view()),
+    path('cancellation_reason',CancellationReasonlistView.as_view({'get': 'list'})),
+    *router.urls
+
 ]
-
-
-
