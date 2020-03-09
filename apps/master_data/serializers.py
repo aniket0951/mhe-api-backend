@@ -15,6 +15,7 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
 
 
     def get_distance(self, obj):
+        if not 'request' in self.context: return None
         request_data = self.context['request']
         longitude = float(request_data.query_params.get("longitude"))
         latitude = float(request_data.query_params.get("latitude"))
