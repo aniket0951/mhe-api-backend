@@ -62,7 +62,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         elif (family_member is not None):
             return super().get_queryset().filter(family_member_id=family_member)
         else:
-            return super().get_queryset().filter(patient_id=self.request.user.id)
+            return super().get_queryset().filter(patient_id=self.request.user.id,
+                                                 family_member__isnull=True)
 
 
 class CreateMyAppointment(ProxyView):
