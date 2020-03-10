@@ -98,7 +98,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         user_obj.save()
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
             random_password, OTP_EXPIRATION_TIME)
-        if self.request.query_params.get('is_android'):
+        if self.request.query_params.get('is_android', True):
             message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             user_obj.mobile.raw_input), message=message)
@@ -194,7 +194,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             message = "OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 random_password, OTP_EXPIRATION_TIME)
 
-        if self.request.query_params.get('is_android'):
+        if self.request.query_params.get('is_android', True):
             message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             request_patient.mobile.raw_input), message=message)
@@ -368,7 +368,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 request_patient.first_name,
                 random_mobile_password, OTP_EXPIRATION_TIME)
 
-            if self.request.query_params.get('is_android'):
+            if self.request.query_params.get('is_android', True):
                 message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
             is_message_sent = send_sms(mobile_number=str(
                 user_obj.mobile.raw_input), message=message)
@@ -404,7 +404,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 request_patient.first_name,
                 random_mobile_password, OTP_EXPIRATION_TIME)
 
-            if self.request.query_params.get('is_android'):
+            if self.request.query_params.get('is_android', True):
                 message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
             is_message_sent = send_sms(mobile_number=str(
                 family_member_object.mobile.raw_input), message=message)
@@ -547,7 +547,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             request_patient.first_name,
             random_password, OTP_EXPIRATION_TIME)
 
-        if self.request.query_params.get('is_android'):
+        if self.request.query_params.get('is_android', True):
             message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             family_member.mobile.raw_input), message=message)
