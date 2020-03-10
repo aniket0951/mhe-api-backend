@@ -32,7 +32,6 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = 'Health package specialisation information is updated successfuly!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    # search_fields = ['description', ]
     ordering_fields = ('description',)
 
     def get_permissions(self):
@@ -73,7 +72,6 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
     filter_class = HealthPackageFilter
     search_fields = ['name', ]
     ordering_fields = ('health_package_pricing__price',)
-    # filter_fields = ('specialisation',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
@@ -95,9 +93,8 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
-            if hasattr(self, 'detail_serializer_class'):
-                return self.detail_serializer_class
+        if self.action == 'retrieve' and hasattr(self, 'detail_serializer_class'):
+            return self.detail_serializer_class
         return super().get_serializer_class()
 
     def get_queryset(self):

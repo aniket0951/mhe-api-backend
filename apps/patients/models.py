@@ -211,7 +211,6 @@ class FamilyMember(MyBaseModel):
     class Meta:
         verbose_name = "Family Member"
         verbose_name_plural = "Family Members"
-        # unique_together = [['uhid_number', 'patient_info'], ]
 
     def __str__(self):
         return self.representation

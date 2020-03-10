@@ -22,7 +22,8 @@ class Command(BaseCommand):
                     each_hospital.code))
                 if each_hospital.code == 'MMH':
                     continue
-                response = client.post('/api/master_data/doctors',
+                
+                client.post('/api/master_data/doctors',
                                        json.dumps({'location_code': each_hospital.code}), content_type='application/json')
                 print(
                     "Completed loading doctors of {} hospital.\n------------".

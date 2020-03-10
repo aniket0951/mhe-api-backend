@@ -218,9 +218,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'utils.custom_jwt_authentication.JSONWebTokenAuthentication',
-        # 'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-        # 'rest_framework.authentication.SessionAuthentication',
-        # 'rest_framework.authentication.BasicAuthentication',
     ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'DEFAULT_FILTER_BACKENDS': (
@@ -228,9 +225,9 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'utils.exception_handler.custom_exception_handler',
 }
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
-
 STATIC_URL = '/static/'
 
 

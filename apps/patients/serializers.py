@@ -83,7 +83,6 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = FamilyMember
-        # fields = '__all__'
         exclude = ('raw_info_from_manipal_API', 'mobile_verification_otp',
                    'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
                    'created_at', 'updated_at')

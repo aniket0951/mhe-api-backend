@@ -18,7 +18,6 @@ class IsManipalAdminUser(permissions.BasePermission):
                 return True
         except Exception as e:
             print(e)
-            pass
         self.message = 'Manipal Administrator has the permission to perform this action.'
         return False
 
@@ -34,12 +33,10 @@ class IsPatientUser(permissions.BasePermission):
         Checking if the user is Patient.
         """
         try:
-            if hasattr(request.user, 'mobile'):
-                if Patient.objects.filter(mobile=request.user.mobile).exists():
-                    return True
+            if hasattr(request.user, 'mobile') and Patient.objects.filter(mobile=request.user.mobile).exists():
+                return True
         except Exception as e:
             print(e)
-            pass
         self.message = 'Patient has the permission to perform this action.'
         return False
 

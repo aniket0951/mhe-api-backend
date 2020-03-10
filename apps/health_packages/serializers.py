@@ -12,7 +12,6 @@ class HealthTestSerializer(DynamicFieldsModelSerializer):
         model = HealthTest
         exclude = ('created_at', 'updated_at',
                    'billing_sub_group', 'billing_group')
-        # fields = ('code', 'description', 'id')
 
 
 class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
@@ -22,7 +21,6 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
 
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
-    # pricing = HealthPackagePricingSerializer(source='health_package_pricing', many=True)
     included_health_tests = HealthTestSerializer(many=True)
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
@@ -40,8 +38,6 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
 
 
 class HealthPackageSerializer(DynamicFieldsModelSerializer):
-    # pricing = HealthPackagePricingSerializer(source='health_package_pricing', many=True)
-    # included_health_tests = HealthTestSerializer(many=True)
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
 
@@ -58,7 +54,6 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
 
 
 class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
-    # packages = HealthPackageSerializer(source='health_package', many=True)
     packages = serializers.SerializerMethodField()
 
     class Meta:

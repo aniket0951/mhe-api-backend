@@ -33,11 +33,6 @@ class Command(BaseCommand):
                 exit()
 
             app_file = open(os.path.abspath(options['file']), 'rb')
-            new_billing_groups = File(app_file)
-
-            
-
-            app_file = open(os.path.abspath(options['file']), 'rb')
             new_billing_sub_groups = File(app_file)
 
             billing_sub_group_resource = BillingSubGroupResource()

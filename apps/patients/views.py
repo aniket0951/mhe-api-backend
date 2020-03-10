@@ -175,10 +175,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not request_patient:
             raise PatientDoesNotExistsValidationException
 
-        # if datetime.now().timestamp() < \
-        #         request_patient.otp_expiration_time.timestamp():
-        #     raise PatientOTPExceededLimitException
-
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
@@ -432,8 +428,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info = fetch_uhid_user_details(request)
         uhid_user_info['mobile_verified'] = True
         uhid_user_info['patient_info'] = patient_info
-        family_member_obj = self.model.objects.create(**uhid_user_info)
-        # serializer = self.get_serializer(family_member_obj)
+
+        self.model.objects.create(**uhid_user_info)
+        
         serializer = self.get_serializer(self.get_queryset(), many=True)
 
         data = {

@@ -55,7 +55,6 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
 
     def get_queryset(self):
-        user = self.request.user.id
         family_member = self.request.query_params.get("user_id", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset()
@@ -180,7 +179,6 @@ class CancelMyAppointment(ProxyView):
 
     def get_request_data(self, request):
         data = request.data
-        cancellation_reason = data.pop("reason_id")
         appointment_id = data.get("appointment_identifier")
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()

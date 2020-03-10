@@ -36,8 +36,6 @@ class DepartmentSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Department
         exclude = ('created_at', 'updated_at',)
-        # exclude = ('created_at', 'updated_at',)
-        # fields = ('id', 'description', 'distance')
 
 
 

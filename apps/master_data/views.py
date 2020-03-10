@@ -67,8 +67,6 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_fields = ('hospital__id',)
-    # search_fields = ['code', 'description', 'address',]
-    # ordering_fields = ('code',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
@@ -177,7 +175,7 @@ class DepartmentsView(ProxyView):
             hospital_department_kwargs['department'] = department
             hospital_department_details.update(hospital_department_kwargs)
 
-            hospital_department, hospital_department_created = HospitalDepartment.objects.update_or_create(
+            _, hospital_department_created = HospitalDepartment.objects.update_or_create(
                 **hospital_department_kwargs, defaults=hospital_department_details)
             department_details['hospital_department_created'] = hospital_department_created
 
@@ -210,7 +208,7 @@ class DoctorsView(ProxyView):
 
         try:
             response_content = json.loads(item.text)
-        except Exception as e:
+        except Exception:
             print("------------------------\nFailed!\n----------------")
             return self.custom_success_response(message="Couldn't process the doctors at this location.",
                                                 success=False, data=None, error=str(item.text))
@@ -298,7 +296,7 @@ class HealthPackagesView(ProxyView):
                                                 success=False, data=None, error=str(item.text))
         try:
             response_content = json.loads(item.text, strict=False)
-        except Exception as e:
+        except Exception:
             return self.custom_success_response(message='Looks like you have entered an invalid location code.',
                                                 success=False, data=None, error=str(item.text))
 
@@ -389,7 +387,7 @@ class HealthPackagesView(ProxyView):
             hospital_health_package_details.update(
                 hospital_health_package_kwargs)
 
-            hospital_health_package, hospital_health_package_created = HealthPackagePricing.objects.update_or_create(
+            _, hospital_health_package_created = HealthPackagePricing.objects.update_or_create(
                 **hospital_health_package_kwargs, defaults=hospital_health_package_details)
 
             health_package_details['health_test_created'] = health_test_created
@@ -452,8 +450,6 @@ class LabRadiologyItemsView(ProxyView):
             lab_radiology_item_kwargs = dict()
             lab_radiology_item_details = dict()
             hospital_lab_radiology_item_kwargs = dict()
-            lab_radiology_item_billing_group = None
-            lab_radiology_item_billing_subgroup = None
 
             lab_radiology_item_details['billing_group'] = hospital_lab_radiology_item_details.pop(
                 'billing_group')

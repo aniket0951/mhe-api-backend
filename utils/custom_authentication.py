@@ -4,9 +4,6 @@ from django.contrib.auth.hashers import check_password
 
 from apps.patients.models import Patient
 
-# from apps.patients.exceptions import PatientMobileDoesNotExistsValidationException
-
-
 class CustomPatientAuthBackend(BaseBackend):
 
     # Create an authentication method
@@ -20,8 +17,6 @@ class CustomPatientAuthBackend(BaseBackend):
             if match_password:
                 # user_instance = get_user_model().objects.get(id=patient.id)
                 return patient
-        # except Patient.DoesNotExist:
-        #         raise PatientMobileDoesNotExistsValidationException
         except Exception as e:
             print(e)
         return None

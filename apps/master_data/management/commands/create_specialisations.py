@@ -32,9 +32,11 @@ class Command(BaseCommand):
             new_specialisations = File(app_file)
 
             specialisation_resource = SpecialisationResource()
+
             dataset = Dataset()
-            imported_data = dataset.load(
-                new_specialisations.read().decode('utf-8'), format='csv')
+            dataset.load(new_specialisations.read().decode(
+                'utf-8'), format='csv')
+
             result = specialisation_resource.import_data(
                 dataset, dry_run=True)  # Test the data import
 
