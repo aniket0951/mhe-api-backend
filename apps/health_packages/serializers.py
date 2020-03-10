@@ -2,8 +2,8 @@ from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
 from utils.serializers import DynamicFieldsModelSerializer
-
-from .models import (HealthPackage, HealthPackageCategory,
+from apps.master_data.models import Specialisation
+from .models import (HealthPackage,
                      HealthPackagePricing, HealthTest)
 
 
@@ -22,7 +22,7 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
 
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
-    # pricing = HealthPackagePricingSerializer(source='healthpackagepricing_set', many=True)
+    # pricing = HealthPackagePricingSerializer(source='health_package_pricing', many=True)
     included_health_tests = HealthTestSerializer(many=True)
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
@@ -33,14 +33,14 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
 
     def get_pricing(self, instance):
         hospital_id = self.context['request'].query_params.get('hospital__id')
-        return HealthPackagePricingSerializer(instance.healthpackagepricing_set.get(hospital_id=hospital_id)).data
+        return HealthPackagePricingSerializer(instance.health_package_pricing.get(hospital_id=hospital_id)).data
 
     def get_included_health_tests_count(self, instance):
         return instance.included_health_tests.count()
 
 
 class HealthPackageSerializer(DynamicFieldsModelSerializer):
-    # pricing = HealthPackagePricingSerializer(source='healthpackagepricing_set', many=True)
+    # pricing = HealthPackagePricingSerializer(source='health_package_pricing', many=True)
     # included_health_tests = HealthTestSerializer(many=True)
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
@@ -51,18 +51,18 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
 
     def get_pricing(self, instance):
         hospital_id = self.context['request'].query_params.get('hospital__id')
-        return HealthPackagePricingSerializer(instance.healthpackagepricing_set.get(hospital_id=hospital_id)).data
+        return HealthPackagePricingSerializer(instance.health_package_pricing.get(hospital_id=hospital_id)).data
 
     def get_included_health_tests_count(self, instance):
         return instance.included_health_tests.count()
 
 
-class HealthPackageCategoryDetailSerializer(DynamicFieldsModelSerializer):
+class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
     # packages = HealthPackageSerializer(source='health_package', many=True)
     packages = serializers.SerializerMethodField()
 
     class Meta:
-        model = HealthPackageCategory
+        model = Specialisation
         exclude = ('created_at', 'updated_at',)
 
     def get_packages(self, instance):
@@ -77,8 +77,8 @@ class HealthPackageCategoryDetailSerializer(DynamicFieldsModelSerializer):
                                        context=self.context).data
 
 
-class HealthPackageCategorySerializer(DynamicFieldsModelSerializer):
+class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
-        model = HealthPackageCategory
+        model = Specialisation
         exclude = ('created_at', 'updated_at',)

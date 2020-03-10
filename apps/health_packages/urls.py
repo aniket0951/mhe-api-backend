@@ -1,13 +1,13 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import HealthPackageCategoryViewSet, HealthPackageViewSet
+from .views import HealthPackageSpecialisationViewSet, HealthPackageViewSet
 
 app_name = 'health_package'
 
 router = DefaultRouter(trailing_slash=False)
 
-router.register('category', HealthPackageCategoryViewSet)
+router.register('specialisation', HealthPackageSpecialisationViewSet)
 router.register('', HealthPackageViewSet)
 
 

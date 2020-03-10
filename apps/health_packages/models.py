@@ -1,30 +1,9 @@
 from django.db import models
 
 from apps.health_tests.models import HealthTest
-from apps.master_data.models import BillingGroup, BillingSubGroup, Hospital
+from apps.master_data.models import (BillingGroup, BillingSubGroup, Hospital,
+                                     Specialisation)
 from apps.meta_app.models import MyBaseModel
-
-
-class HealthPackageCategory(MyBaseModel):
-
-    code = models.SlugField(unique=True,
-                            blank=True,
-                            null=True)
-
-    name = models.CharField(max_length=200,
-                            null=False,
-                            blank=False,
-                            )
-
-    class Meta:
-        verbose_name = "Health Package Category"
-        verbose_name_plural = "Health Package Categories"
-
-    def __str__(self):
-        return self.code
-
-    def save(self, *args, **kwargs):
-        super(HealthPackageCategory, self).save(*args, **kwargs)
 
 
 class HealthPackage(MyBaseModel):
@@ -37,12 +16,24 @@ class HealthPackage(MyBaseModel):
                             null=False,
                             blank=False,
                             )
+    
+    age_group = models.CharField(max_length=50,
+                            null=True,
+                            blank=True,
+                            default='All age groups'
+                            )
 
-    category = models.ForeignKey(HealthPackageCategory,
-                                 related_name='health_package',
-                                 on_delete=models.PROTECT,
-                                 null=True,
-                                 blank=True)
+    gender = models.CharField(max_length=50,
+                            null=True,
+                            blank=True,
+                            default='Men and Women'
+                            )
+
+    specialisation = models.ForeignKey(Specialisation,
+                                       related_name='health_package',
+                                       on_delete=models.PROTECT,
+                                       null=True,
+                                       blank=True)
 
     included_health_tests = models.ManyToManyField(HealthTest,
                                                    related_name='health_package'
@@ -63,6 +54,7 @@ class HealthPackagePricing(MyBaseModel):
 
     health_package = models.ForeignKey(
         HealthPackage,
+        related_name='health_package_pricing',
         on_delete=models.PROTECT,
         null=False,
         blank=False)

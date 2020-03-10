@@ -279,7 +279,7 @@ class DoctorsView(ProxyView):
 
 
 class HealthPackagesView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Health Packages list returned successfully'
     sync_method = 'healthcheck'
@@ -303,17 +303,22 @@ class HealthPackagesView(ProxyView):
                                                 success=False, data=None, error=str(item.text))
 
         all_health_packages = list()
-        health_packages_sorted_keys = ['billing_group',
+        health_packages_sorted_keys = [
+                                        'age_group',
+                                        'billing_group',
                                        'billing_subgroup',
                                        'start_date',
                                        'end_date',
+                                       'gender',
                                        'hospital_code',
                                        'item_code',
                                        'item_description',
                                        'code',
                                        'name',
                                        'price',
+                                       'specialisation_name'
                                        ]
+
         for each_health_package in response_content:
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
@@ -332,8 +337,6 @@ class HealthPackagesView(ProxyView):
             hospital_health_package_kwargs = dict()
             health_test_details = dict()
             health_test_kwargs = dict()
-            health_test_billing_group = None
-            health_test_billing_subgroup = None
             health_test_details['billing_group'] = health_package_details.pop(
                 'billing_group')
             health_test_details['billing_sub_group'] = health_package_details.pop(
@@ -365,6 +368,18 @@ class HealthPackagesView(ProxyView):
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
             health_package_kwargs['code'] = health_package_details['code']
+
+            if health_package_details['age_group']:
+                health_package_kwargs['age_group'] = health_package_details['age_group']
+
+            if health_package_details['gender']:
+                health_package_kwargs['gender'] = health_package_details['gender']
+
+            specialisation_name = health_package_details.pop('specialisation_name')
+            if specialisation_name:
+                health_package_details['specialisation']= Specialisation.objects.filter(
+                    description=specialisation_name).first()
+
             health_package, health_package_created = HealthPackage.objects.update_or_create(
                 **health_package_kwargs, defaults=health_package_details)
             health_package.included_health_tests.add(health_test)
