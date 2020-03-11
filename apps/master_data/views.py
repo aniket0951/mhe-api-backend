@@ -187,7 +187,6 @@ class DepartmentsView(ProxyView):
 
 class DoctorsView(ProxyView):
     permission_classes = [IsAuthenticated]
-    #permission_classes = [AllowAny]
 
     source = SYNC_SERVICE
     success_msg = 'Doctors list returned successfully'

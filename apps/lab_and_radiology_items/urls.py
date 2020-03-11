@@ -1,15 +1,14 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from apps.patients.views import FamilyMemberViewSet, PatientViewSet, PatientAddressViewSet
+from .views import HomeCollectionViewSet
 
-app_name = 'patients'
+app_name = 'home_care'
 
 router = DefaultRouter(trailing_slash=False)
 
-router.register('family_members', FamilyMemberViewSet)
-router.register('address', PatientAddressViewSet)
-router.register('', PatientViewSet)
+router.register('home_collection', HomeCollectionViewSet)
+
 
 urlpatterns = [
     # path('change_password', UsersChangePasswordView.as_view(),

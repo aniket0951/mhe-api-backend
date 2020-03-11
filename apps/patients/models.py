@@ -1,8 +1,11 @@
 import os
 import uuid
 
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
 from django.contrib.postgres.fields import JSONField
-from django.core.validators import FileExtensionValidator
+from django.core.validators import (FileExtensionValidator, MaxValueValidator,
+                                    MinValueValidator)
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -211,6 +214,54 @@ class FamilyMember(MyBaseModel):
     class Meta:
         verbose_name = "Family Member"
         verbose_name_plural = "Family Members"
+
+    def __str__(self):
+        return self.representation
+
+
+
+class PatientAddress(MyBaseModel):
+    ADDRESS_CHOICES = (
+        ('Home Address', 'Home Address'),
+        ('Work/Office Address', 'Work/Office Address')
+    )
+
+    pincode_number = models.PositiveIntegerField(
+        validators=[MinValueValidator(100000),MaxValueValidator(999999)],
+                                  blank=False,
+                                  null=False)
+
+    house_details = models.CharField(max_length=500,
+                                   blank=False,
+                                   null=False)
+
+    area_details = models.CharField(max_length=500,
+                                   blank=False,
+                                   null=False)
+
+
+    address_type = models.CharField(choices=ADDRESS_CHOICES,
+                              blank=True,
+                              null=True,
+                              max_length=20,
+                              default="Home Address"
+                              )
+
+    patient_info = models.ForeignKey(Patient,
+                                     on_delete=models.PROTECT,
+                                     null=True,
+                                     blank=True,
+                                     related_name='patient_address_info')
+
+    location = gis_models.PointField(default = Point(1, 1),null=True, blank=True,)
+
+    @property
+    def representation(self):
+        return 'Patient name {}'.format(self.patient_info.first_name)
+
+    class Meta:
+        verbose_name = "Patient Address"
+        verbose_name_plural = "Patient Addresses"
 
     def __str__(self):
         return self.representation

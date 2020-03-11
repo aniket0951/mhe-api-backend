@@ -89,3 +89,11 @@ class IsSelfUserOrFamilyMember(permissions.BasePermission):
             return True
         else:
             return FamilyMember.objects.filter(patient_info=user, id=patient_id).exists()
+
+
+class IsSelfAddress(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.id == obj.patient_info.id
