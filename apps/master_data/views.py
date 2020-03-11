@@ -54,7 +54,6 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
         return super().get_permissions()
 
-
 class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     model = HospitalDepartment
