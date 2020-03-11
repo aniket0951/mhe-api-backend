@@ -121,7 +121,7 @@ class CreateMyAppointment(ProxyView):
         response_success = False
         if response.status_code == 200:
             root = ET.fromstring(response.content)
-            appointmentIdentifier = root.find("appointmentIdentifier").text
+            appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
                 message = root.find("Message").text
@@ -137,7 +137,7 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["appointment_date"] = datetime_object.date()
                 new_appointment["appointment_slot"] = datetime_object.time()
                 new_appointment["status"] = 1
-                new_appointment["appointment_identifier"] = appointmentIdentifier
+                new_appointment["appointmentIdentifier"] = appointment_identifier
                 new_appointment["patient"] = data.get("patient").id
                 if family_member:
                     new_appointment["family_member"] = family_member.id
@@ -167,7 +167,7 @@ class CreateMyAppointment(ProxyView):
                         appointment_data["patient"]["mobile"]), message=user_message)
                 response_success = True
                 response_message = "Appointment has been created"
-                response_data["appointmentIdentifier"] = appointmentIdentifier
+                response_data["appointmentIdentifier"] = appointment_identifier
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)

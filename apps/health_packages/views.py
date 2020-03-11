@@ -42,9 +42,8 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
-            if hasattr(self, 'detail_serializer_class'):
-                return self.detail_serializer_class
+        if self.action == 'retrieve' and  hasattr(self, 'detail_serializer_class'):
+            return self.detail_serializer_class
         return super().get_serializer_class()
 
     def get_queryset(self):

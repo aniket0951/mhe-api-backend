@@ -15,7 +15,6 @@ class CustomPatientAuthBackend(BaseBackend):
                 mobile=username)
             match_password = check_password(password, patient.password)
             if match_password:
-                # user_instance = get_user_model().objects.get(id=patient.id)
                 return patient
         except Exception as e:
             print(e)

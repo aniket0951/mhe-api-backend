@@ -93,7 +93,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
     def create(self, validated_data):
         if 'uhid_number' in validated_data:
-            _ = validated_data.pop('uhid_number')
+            validated_data.pop('uhid_number')
         return super().create(validated_data)
 
     def to_representation(self, instance):
