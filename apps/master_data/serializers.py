@@ -1,10 +1,11 @@
+from django.contrib.gis.db.models.functions import Distance as Django_Distance
+from django.contrib.gis.geos import Point, fromstr
 from rest_framework import serializers
+
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import Department, Hospital, Specialisation, HospitalDepartment
-from django.contrib.gis.geos import Point
-from django.contrib.gis.geos import fromstr
-from django.contrib.gis.db.models.functions import Distance as Django_Distance
+from .models import Department, Hospital, HospitalDepartment, Specialisation
+
 
 class HospitalSerializer(DynamicFieldsModelSerializer):
     distance = serializers.SerializerMethodField()
@@ -12,7 +13,6 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Hospital
         exclude = ('created_at', 'updated_at',)
-
 
     def get_distance(self, obj):
         try:
@@ -25,7 +25,8 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
         except Exception as e:
             print(e)
         return None
-        
+
+
 class SpecialisationSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Specialisation
@@ -38,9 +39,9 @@ class DepartmentSerializer(DynamicFieldsModelSerializer):
         exclude = ('created_at', 'updated_at',)
 
 
-
 class HospitalDepartmentSerializer(DynamicFieldsModelSerializer):
     department = DepartmentSerializer()
+
     class Meta:
         model = HospitalDepartment
         exclude = ('created_at', 'updated_at',)

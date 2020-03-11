@@ -3,14 +3,17 @@ from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.serializers import ValidationError
 
-from apps.master_data.models import BillingGroup
+from apps.master_data.models import BillingGroup, HomeCareService
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser)
+                                      IsManipalAdminUser, IsPatientUser)
 
-from .models import LabRadiologyItem, LabRadiologyItemPricing
-from .serializers import LabRadiologyItemSerializer
+from .models import (LabRadiologyItem, LabRadiologyItemPricing,
+                     PatientServiceAppointment)
+from .serializers import (HomeCareServiceSerializer,
+                          LabRadiologyItemSerializer,
+                          PatientServiceAppointmentSerializer)
 
 
 class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
@@ -22,7 +25,7 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
     create_success_message = "New health package is added successfully."
     list_success_message = 'Health package list returned successfully!'
     retrieve_success_message = 'Health package information returned successfully!'
-    update_success_message = 'hHealth package information is updated successfuly!'
+    update_success_message = 'Health package information is updated successfuly!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['name', ]
@@ -67,3 +70,57 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
 
         return LabRadiologyItem.objects.filter(id__in=hospital_related_items,
                                                billing_group=home_collection_billing_group)
+
+
+class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = HomeCareService
+    queryset = HomeCareService.objects.all()
+    serializer_class = HomeCareServiceSerializer
+    list_success_message = 'Home care services list returned successfully!'
+    retrieve_success_message = 'Home care service information returned successfully!'
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+        return super().get_permissions()
+
+
+class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = PatientServiceAppointment
+    queryset = PatientServiceAppointment.objects.all()
+    serializer_class = PatientServiceAppointmentSerializer
+    detail_serializer_class = PatientServiceAppointmentSerializer
+    create_success_message = "New service appointment is added successfully."
+    list_success_message = 'Service appointment list returned successfully!'
+    retrieve_success_message = 'Service appointment information returned successfully!'
+    update_success_message = 'Service appointment information is updated successfuly!'
+
+    def get_permissions(self):
+        if self.action in ['list', 'create', ]:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve']:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        family_member = self.request.query_params.get("user_id", None)
+        if family_member is not None:
+            return super().get_queryset().filter(family_member_id=family_member)
+        else:
+            return super().get_queryset().filter(patient_id=self.request.user.id,
+                                                 family_member__isnull=True)

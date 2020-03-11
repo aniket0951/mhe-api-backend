@@ -117,7 +117,7 @@ class PatientAddressSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = PatientAddress
-        fields = '__all__'
+        exclude = ('created_at', 'updated_at',)
 
         extra_kwargs = {
             'pincode_number': {"error_messages": {"required": "Enter your pin code."}},
