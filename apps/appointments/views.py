@@ -235,7 +235,7 @@ class CancelMyAppointment(ProxyView):
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
-    serializer_class = DoctorAppointmentSerializer
+    serializer_class = AppointmentSerializer
     permission_classes = [IsPatientUser]
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
