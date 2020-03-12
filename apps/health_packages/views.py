@@ -42,7 +42,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.action == 'retrieve' and  hasattr(self, 'detail_serializer_class'):
+        if self.action == 'retrieve' and hasattr(self, 'detail_serializer_class'):
             return self.detail_serializer_class
         return super().get_serializer_class()
 
@@ -53,7 +53,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
         return Specialisation.objects.filter(health_package__id__in=hospital_related_health_packages).filter(
-                Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)).distinct()
+            Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)).distinct()
 
 
 class HealthPackageViewSet(custom_viewsets.ModelViewSet):
@@ -70,7 +70,7 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_class = HealthPackageFilter
     search_fields = ['name', ]
-    ordering_fields = ('health_package_pricing__price',)
+    ordering_fields = ('health_package_pricing__price', 'name')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
