@@ -53,7 +53,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
         return Specialisation.objects.filter(health_package__id__in=hospital_related_health_packages).filter(
-                Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True))
+                Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)).distinct()
 
 
 class HealthPackageViewSet(custom_viewsets.ModelViewSet):
@@ -102,4 +102,4 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Hospital ID is missiing!")
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
-        return HealthPackage.objects.filter(id__in=hospital_related_health_packages)
+        return HealthPackage.objects.filter(id__in=hospital_related_health_packages).distinct()
