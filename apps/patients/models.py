@@ -40,6 +40,10 @@ class Patient(BaseUser):
                                    blank=True,
                                    null=True)
 
+    pre_registration_number = models.CharField(max_length=20,
+                                               blank=True,
+                                               null=True)
+
     first_name = models.CharField(max_length=200,
                                   blank=False,
                                   null=False,
@@ -144,6 +148,10 @@ class FamilyMember(MyBaseModel):
                                    blank=True,
                                    null=True)
 
+    pre_registration_number = models.CharField(max_length=20,
+                                               blank=True,
+                                               null=True)
+
     first_name = models.CharField(max_length=200,
                                   blank=True,
                                   null=True,
@@ -219,7 +227,6 @@ class FamilyMember(MyBaseModel):
         return self.representation
 
 
-
 class PatientAddress(MyBaseModel):
     ADDRESS_CHOICES = (
         ('Home Address', 'Home Address'),
@@ -227,25 +234,24 @@ class PatientAddress(MyBaseModel):
     )
 
     pincode_number = models.PositiveIntegerField(
-        validators=[MinValueValidator(100000),MaxValueValidator(999999)],
-                                  blank=False,
-                                  null=False)
+        validators=[MinValueValidator(100000), MaxValueValidator(999999)],
+        blank=False,
+        null=False)
 
     house_details = models.CharField(max_length=500,
-                                   blank=False,
-                                   null=False)
+                                     blank=False,
+                                     null=False)
 
     area_details = models.CharField(max_length=500,
-                                   blank=False,
-                                   null=False)
-
+                                    blank=False,
+                                    null=False)
 
     address_type = models.CharField(choices=ADDRESS_CHOICES,
-                              blank=True,
-                              null=True,
-                              max_length=20,
-                              default="Home Address"
-                              )
+                                    blank=True,
+                                    null=True,
+                                    max_length=20,
+                                    default="Home Address"
+                                    )
 
     patient_info = models.ForeignKey(Patient,
                                      on_delete=models.PROTECT,
@@ -253,7 +259,8 @@ class PatientAddress(MyBaseModel):
                                      blank=True,
                                      related_name='patient_address_info')
 
-    location = gis_models.PointField(default = Point(1, 1),null=True, blank=True,)
+    location = gis_models.PointField(
+        default=Point(1, 1), null=True, blank=True,)
 
     @property
     def representation(self):

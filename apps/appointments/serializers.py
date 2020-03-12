@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from rest_framework import serializers
-
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
@@ -9,6 +7,7 @@ from apps.doctors.serializers import (DoctorSerializer,
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import Appointment, CancellationReason
@@ -18,14 +17,6 @@ class CancellationReasonSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = CancellationReason
         fields = '__all__'
-
-
-class DoctorAppointmentSerializer(DynamicFieldsModelSerializer):
-    doctor = DoctorSpecificSerializer(read_only=True)
-
-    class Meta:
-        model = Appointment
-        fields = ['doctor', 'appointment_date']
 
 
 class AppointmentSerializer(DynamicFieldsModelSerializer):
