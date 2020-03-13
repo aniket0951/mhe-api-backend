@@ -35,7 +35,7 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 from utils.custom_sms import send_sms
 
-from .exceptions import AppointmentDoesNotExistsValidationException
+from .exceptions import AppointmentDoesNotExistsValidationException, AppointmentAlreadyExistsException
 from .models import Appointment, CancellationReason
 from .serializers import AppointmentSerializer, CancellationReasonSerializer
 
@@ -123,9 +123,7 @@ class CreateMyAppointment(ProxyView):
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
-                message = root.find("Message").text
-                return self.custom_success_response(message=message,
-                                                    success=False, data=None)
+                raise AppointmentAlreadyExistsException
             else:
                 data = self.request.data
                 family_member = data.get("family_member")
