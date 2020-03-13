@@ -15,7 +15,7 @@ from .serializers import (CountrySerializer, GenderSerializer,
 
 
 class RegistrationAPIView(ListAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsPatientUser]
 
     def list(self, request, *args, **kwargs):
         registration_details = {}
