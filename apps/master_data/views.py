@@ -31,6 +31,7 @@ from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
 from .serializers import (DepartmentSerializer, HospitalDepartmentSerializer,
                           HospitalSerializer, SpecialisationSerializer)
+from .exceptions import HospitalDoesNotExistsValidationException,HospitalCodeMissingValidationException, LocationCodeMissingValidationException
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -128,13 +129,11 @@ class DepartmentsView(ProxyView):
         item = root.find('SyncResponse')
 
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing hospital location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text)
         except Exception:
-            return self.custom_success_response(message='Looks like you have entered an invalid location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalDoesNotExistsValidationException
 
         all_departments = list()
         department_sorted_keys = ['start_date',
@@ -201,19 +200,17 @@ class DoctorsView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing doctors location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise LocationCodeMissingValidationException
 
         try:
             response_content = json.loads(item.text)
         except Exception:
             print("------------------------\nFailed!\n----------------")
-            return self.custom_success_response(message="Couldn't process the doctors at this location.",
-                                                success=False, data=None, error=str(item.text))
+            raise LocationCodeMissingValidationException
+            
 
         if not response_content:
-            return self.custom_success_response(message='Invalid doctors location code.',
-                                                success=False, data=None)
+            raise LocationCodeMissingValidationException
 
         all_doctors = list()
         doctor_sorted_keys = ['consultation_charges',
@@ -290,13 +287,11 @@ class HealthPackagesView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text, strict=False)
         except Exception:
-            return self.custom_success_response(message='Looks like you have entered an invalid location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalDoesNotExistsValidationException
 
         all_health_packages = list()
         health_packages_sorted_keys = [
@@ -414,13 +409,11 @@ class LabRadiologyItemsView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text)
         except Exception:
-            return self.custom_success_response(message='Looks like you have entered an invalid location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalDoesNotExistsValidationException
 
         all_lab_radiology_items = list()
         lab_radiology_items_sorted_keys = ['billing_group',
@@ -510,8 +503,7 @@ class ItemsTarrifPriceView(ProxyView):
         try:
             response_content = json.loads(item.text)
         except Exception:
-            return self.custom_success_response(message='Something went wrong, enter valid location code and item code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalCodeMissingValidationException
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=response_content)
