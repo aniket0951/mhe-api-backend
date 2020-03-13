@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.exceptions import APIException
 
+
 class HospitalDoesNotExistsValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_Hospital_id'
@@ -11,3 +12,15 @@ class DepartmentDoesNotExistsValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_department_id'
     default_detail = 'Deparment does not Exist'
+
+
+class HospitalCodeMissingValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'Missing hospital location code'
+    default_detail = 'Missing hospital location code'
+
+
+class LocationCodeMissingValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'Missing location code.'
+    default_detail = 'Missing location code.'
