@@ -34,12 +34,12 @@ class Doctor(BaseUser):
     consultation_charges = models.IntegerField(default=0,
                                                null=True)
 
-    qualification = models.CharField(max_length=500,
+    qualification = models.CharField(max_length=800,
                                      null=True,
                                      blank=True,
                                      )
 
-    designation = models.CharField(max_length=300,
+    designation = models.CharField(max_length=500,
                                    null=True,
                                    blank=True,
                                    )
@@ -49,7 +49,7 @@ class Doctor(BaseUser):
         blank=True,
     )
 
-    languages_spoken = models.CharField(max_length=300,
+    languages_spoken = models.CharField(max_length=500,
                                         null=True,
                                         blank=True,
                                         )
