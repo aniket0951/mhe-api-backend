@@ -8,5 +8,5 @@ class AppointmentDoesNotExistsValidationException(APIException):
 
 class AppointmentAlreadyExistsException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
-    default_code = 'You have already booked an Appointment for this date'
-    default_detail = 'You have already booked an Appointment for this date'
+    default_code = 'You have already booked an appointment for this date'
+    default_detail = 'You have already booked an appointment for this date'
