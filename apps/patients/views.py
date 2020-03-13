@@ -392,8 +392,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             otp_expiration_time = datetime.now(
             ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
-            family_member_object.mobile_verification_otp = random_mobile_password,
-            family_member_object.mobile_otp_expiration_time = otp_expiration_time,
+            family_member_object.mobile_verification_otp = random_mobile_password
+            family_member_object.mobile_otp_expiration_time = otp_expiration_time
             family_member_object.save()
 
             message = "Your mobile number has been added on Manipal Hospital application by\
