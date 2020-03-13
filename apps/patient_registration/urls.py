@@ -8,7 +8,7 @@ from .views import RegistrationAPIView
 router = DefaultRouter(trailing_slash=False)
 
 urlpatterns = [
-    path('', RegistrationAPIView.as_view()),
+    path('form_details', RegistrationAPIView.as_view()),
     
     *router.urls
 
