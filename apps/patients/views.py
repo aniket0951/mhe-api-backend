@@ -222,7 +222,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         patient_info = patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError("Invalid request!")
+            raise ValidationError("This UHID is already linked to your account!")
 
         if self.model.objects.filter(uhid_number=uhid_number).exists():
             raise ValidationError(
@@ -246,9 +246,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         patient_user_obj.uhid_number = uhid_number
         patient_user_obj.save()
-
         data = {
-            "data": uhid_user_info,
+            "data": self.get_serializer(self.get_object()).data,
             "message": "Your UHID is updated successfully!"
         }
         return Response(data, status=status.HTTP_201_CREATED)
