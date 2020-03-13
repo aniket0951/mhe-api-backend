@@ -5,16 +5,14 @@ from datetime import datetime, timedelta
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Q
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -22,16 +20,23 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser)
 
+from .exceptions import (DoctorHospitalCodeMissingValidationException,
+                         HospitalCodeMissingValidationException,
+                         HospitalDoesNotExistsValidationException,
+                         InvalidHospitalCodeValidationException,
+                         ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
 from .serializers import (DepartmentSerializer, HospitalDepartmentSerializer,
                           HospitalSerializer, SpecialisationSerializer)
-from .exceptions import HospitalDoesNotExistsValidationException,HospitalCodeMissingValidationException, LocationCodeMissingValidationException
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -55,6 +60,7 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
         return super().get_permissions()
 
+
 class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     model = HospitalDepartment
@@ -76,7 +82,8 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-                Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True))
+            Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True))
+
 
 class SpecialisationViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -133,7 +140,7 @@ class DepartmentsView(ProxyView):
         try:
             response_content = json.loads(item.text)
         except Exception:
-            raise HospitalDoesNotExistsValidationException
+            raise InvalidHospitalCodeValidationException
 
         all_departments = list()
         department_sorted_keys = ['start_date',
@@ -200,17 +207,16 @@ class DoctorsView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
-            raise LocationCodeMissingValidationException
+            raise DoctorHospitalCodeMissingValidationException
 
         try:
             response_content = json.loads(item.text)
         except Exception:
             print("------------------------\nFailed!\n----------------")
-            raise LocationCodeMissingValidationException
-            
+            raise DoctorDoesNotExistsValidationException
 
         if not response_content:
-            raise LocationCodeMissingValidationException
+            raise InvalidHospitalCodeValidationException
 
         all_doctors = list()
         doctor_sorted_keys = ['consultation_charges',
@@ -295,20 +301,20 @@ class HealthPackagesView(ProxyView):
 
         all_health_packages = list()
         health_packages_sorted_keys = [
-                                        'age_group',
-                                        'billing_group',
-                                       'billing_subgroup',
-                                       'start_date',
-                                       'end_date',
-                                       'gender',
-                                       'hospital_code',
-                                       'item_code',
-                                       'item_description',
-                                       'code',
-                                       'name',
-                                       'price',
-                                       'specialisation_name'
-                                       ]
+            'age_group',
+            'billing_group',
+            'billing_subgroup',
+            'start_date',
+            'end_date',
+            'gender',
+            'hospital_code',
+            'item_code',
+            'item_description',
+            'code',
+            'name',
+            'price',
+            'specialisation_name'
+        ]
 
         for each_health_package in response_content:
             health_package_details = dict()
@@ -366,9 +372,10 @@ class HealthPackagesView(ProxyView):
             if health_package_details['gender']:
                 health_package_kwargs['gender'] = health_package_details['gender']
 
-            specialisation_name = health_package_details.pop('specialisation_name')
+            specialisation_name = health_package_details.pop(
+                'specialisation_name')
             if specialisation_name:
-                health_package_details['specialisation']= Specialisation.objects.filter(
+                health_package_details['specialisation'] = Specialisation.objects.filter(
                     description=specialisation_name).first()
 
             health_package, health_package_created = HealthPackage.objects.update_or_create(
@@ -503,7 +510,7 @@ class ItemsTarrifPriceView(ProxyView):
         try:
             response_content = json.loads(item.text)
         except Exception:
-            raise HospitalCodeMissingValidationException
+            raise ItemOrDepartmentDoesNotExistsValidationException
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=response_content)

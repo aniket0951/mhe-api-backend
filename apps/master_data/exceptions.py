@@ -14,13 +14,25 @@ class DepartmentDoesNotExistsValidationException(APIException):
     default_detail = 'Deparment does not Exist'
 
 
+class InvalidHospitalCodeValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'Invalid location code'
+    default_detail = 'Invalid location code'
+
+
 class HospitalCodeMissingValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'Missing hospital location code'
     default_detail = 'Missing hospital location code'
 
 
-class LocationCodeMissingValidationException(APIException):
+class DoctorHospitalCodeMissingValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
-    default_code = 'Missing location code.'
-    default_detail = 'Missing location code.'
+    default_code = 'Missing doctors location code.'
+    default_detail = 'Missing doctors location code.'
+
+
+class ItemOrDepartmentDoesNotExistsValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'Invalid location or item code.'
+    default_detail = 'Invalid location or item code.'
