@@ -34,15 +34,45 @@ class Doctor(BaseUser):
     consultation_charges = models.IntegerField(default=0,
                                                null=True)
 
-    qualification = models.CharField(max_length=300,
+    qualification = models.CharField(max_length=500,
                                      null=True,
                                      blank=True,
                                      )
 
+    designation = models.CharField(max_length=300,
+                                   null=True,
+                                   blank=True,
+                                   )
+
+    field_expertise = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    languages_spoken = models.CharField(max_length=300,
+                                        null=True,
+                                        blank=True,
+                                        )
+
+    awards_achievements = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    fellowship_membership = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    photo = models.URLField(max_length=300,
+                            null=True,
+                            blank=True,
+                            )
     educational_degrees = models.CharField(max_length=300,
                                            null=True,
                                            blank=True,
                                            )
+
     notes = models.TextField(blank=True,
                              null=True)
 
