@@ -148,7 +148,7 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
                 appointment = AppointmentSerializer(data=new_appointment)
-                serializer.is_valid(raise_exception=True)
+                appointment.is_valid(raise_exception=True)
                 appointment.save()
                 appointment_data = appointment.data
                 if appointment_data["family_member"]:
