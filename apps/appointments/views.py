@@ -35,7 +35,8 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 from utils.custom_sms import send_sms
 
-from .exceptions import AppointmentDoesNotExistsValidationException
+from .exceptions import (AppointmentAlreadyExistsException,
+                         AppointmentDoesNotExistsValidationException)
 from .models import Appointment, CancellationReason
 from .serializers import AppointmentSerializer, CancellationReasonSerializer
 
@@ -47,7 +48,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    ordering_fields = ('-appointment_date', '-appointment_slot',)
+    ordering_fields = ('-appointment_date', '-appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
@@ -55,13 +56,17 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         family_member = self.request.query_params.get("user_id", None)
+        is_upcoming = self.request.query_params.get("is_upcoming", False)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset()
         elif (family_member is not None):
-            return super().get_queryset().filter(family_member_id=family_member)
+            if is_upcoming:
+                return super().get_queryset.filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), status=1, family_member_id=family_member)
+            return super().get_queryset().filter(appointment_date__lt=datetime.now().date(), family_member_id=family_member)
         else:
-            return super().get_queryset().filter(patient_id=self.request.user.id,
-                                                 family_member__isnull=True)
+            if is_upcoming:
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), patient_id=self.request.user.id, family_member__isnull=True, status=1)
+            return super().get_queryset().filter(appointment_date__lt=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True)
 
 
 class CreateMyAppointment(ProxyView):
@@ -123,9 +128,7 @@ class CreateMyAppointment(ProxyView):
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
-                message = root.find("Message").text
-                return self.custom_success_response(message=message,
-                                                    success=False, data=None)
+                raise AppointmentAlreadyExistsException
             else:
                 data = self.request.data
                 family_member = data.get("family_member")
@@ -145,9 +148,7 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
                 appointment = AppointmentSerializer(data=new_appointment)
-                if not appointment.is_valid():
-                    return self.custom_success_response(message=appointment.errors,
-                                                        success=False, data=data)
+                serializer.is_valid(raise_exception=True)
                 appointment.save()
                 appointment_data = appointment.data
                 if appointment_data["family_member"]:
