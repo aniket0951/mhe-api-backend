@@ -33,7 +33,8 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('description',)
-
+    search_fields = ('description',)
+    
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
