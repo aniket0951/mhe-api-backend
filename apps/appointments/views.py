@@ -61,7 +61,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             return super().get_queryset()
         elif (family_member is not None):
             if is_upcoming:
-                return super().get_queryset.filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), status=1, family_member_id=family_member)
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), status=1, family_member_id=family_member)
             return super().get_queryset().filter(appointment_date__lt=datetime.now().date(), family_member_id=family_member)
         else:
             if is_upcoming:
