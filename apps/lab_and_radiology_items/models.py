@@ -43,6 +43,7 @@ class LabRadiologyItem(MyBaseModel):
 class LabRadiologyItemPricing(MyBaseModel):
 
     item = models.ForeignKey(LabRadiologyItem,
+                        related_name='lab_radiology_item_pricing',
                              on_delete=models.PROTECT,
                              null=False,
                              blank=False)

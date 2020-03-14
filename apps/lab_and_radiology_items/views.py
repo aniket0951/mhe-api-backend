@@ -22,14 +22,14 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
     queryset = LabRadiologyItem.objects.all()
     serializer_class = LabRadiologyItemSerializer
     detail_serializer_class = LabRadiologyItemSerializer
-    create_success_message = "New health package is added successfully."
-    list_success_message = 'Health package list returned successfully!'
-    retrieve_success_message = 'Health package information returned successfully!'
-    update_success_message = 'Health package information is updated successfuly!'
+    create_success_message = "New home collection is added successfully."
+    list_success_message = 'Home collection list returned successfully!'
+    retrieve_success_message = 'Home collection information returned successfully!'
+    update_success_message = 'Home collection information is updated successfuly!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['name', ]
-    ordering_fields = ('health_package_pricing__price',)
+    search_fields = ['description', ]
+    ordering_fields = ('lab_radiology_item_pricing__price', 'description')
     # filter_fields = ('specialisation',)
 
     def get_permissions(self):
@@ -69,7 +69,7 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
             hospital=hospital_id).values_list('item_id', flat=True)
 
         return LabRadiologyItem.objects.filter(id__in=hospital_related_items,
-                                               billing_group=home_collection_billing_group)
+                                               billing_group=home_collection_billing_group).distinct()
 
 
 class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):

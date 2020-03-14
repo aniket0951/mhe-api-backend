@@ -26,7 +26,7 @@ class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
 
     def get_price(self, instance):
         hospital_id = self.context['request'].query_params.get('hospital__id')
-        return instance.labradiologyitempricing_set.get(hospital_id=hospital_id).price
+        return instance.lab_radiology_item_pricing.get(hospital_id=hospital_id).price
 
 class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
     class Meta:
