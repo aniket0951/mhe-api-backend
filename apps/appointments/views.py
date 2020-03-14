@@ -181,6 +181,7 @@ class CancelMyAppointment(ProxyView):
 
     def get_request_data(self, request):
         data = request.data
+        reason_id = data.pop("reason_id")
         appointment_id = data.get("appointment_identifier")
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
@@ -190,6 +191,7 @@ class CancelMyAppointment(ProxyView):
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+        data["reason_id"] = reason_id
         return request_data
 
     def post(self, request, *args, **kwargs):
