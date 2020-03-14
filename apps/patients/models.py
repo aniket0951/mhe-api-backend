@@ -12,7 +12,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
 from apps.users.models import BaseUser
-from manipal_api.settings import VALID_FILE_EXTENSIONS
+from manipal_api.settings import VALID_IMAGE_FILE_EXTENSIONS
 from utils.custom_storage import LocalFileStorage, MediaStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 
@@ -72,7 +72,7 @@ class Patient(BaseUser):
     display_picture = models.ImageField(upload_to=generate_display_picture_path,
                                         storage=MediaStorage(),
                                         validators=[FileExtensionValidator(
-                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
                                             validate_file_authenticity],
                                         blank=True,
                                         null=True,
@@ -170,7 +170,7 @@ class FamilyMember(MyBaseModel):
     display_picture = models.ImageField(upload_to=generate_family_member_display_picture_path,
                                         storage=MediaStorage(),
                                         validators=[FileExtensionValidator(
-                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
                                             validate_file_authenticity],
                                         blank=True,
                                         null=True,
