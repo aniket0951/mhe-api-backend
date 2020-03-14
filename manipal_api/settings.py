@@ -28,7 +28,7 @@ AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')  # e.g. us-east-2
 AWS_DEFAULT_ACL = 'private'
 AWS_S3_ENCRYPTION = env('AWS_S3_ENCRYPTION')
-    
+
 # Tell django-storages the domain to use to refer to static files.
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 
@@ -86,6 +86,8 @@ CUSTOM_APPS = [
     'apps.lab_and_radiology_items',
     'apps.patient_registration',
     'apps.personal_documents',
+    'apps.cart_items',
+
 
 ]
 
@@ -274,7 +276,8 @@ REST_PROXY = {
 MAX_FILE_UPLOAD_SIZE = int(env('MAX_FILE_UPLOAD_SIZE_IN_MB'))
 
 # Supported File Extensions
-VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(env('VALID_IMAGE_FILE_EXTENSIONS'))
+VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(
+    env('VALID_IMAGE_FILE_EXTENSIONS'))
 VALID_FILE_EXTENSIONS = ast.literal_eval(env('VALID_FILE_EXTENSIONS'))
 
 SMS_SENDER = env('SMS_SENDER')
@@ -287,6 +290,6 @@ OTP_EXPIRATION_TIME
 #  User OTP expiration time in seconds
 OTP_EXPIRATION_TIME = env('OTP_EXPIRATION_TIME')
 
-ANDROID_SMS_RETRIEVER_API_KEY=env('ANDROID_SMS_RETRIEVER_API_KEY')
+ANDROID_SMS_RETRIEVER_API_KEY = env('ANDROID_SMS_RETRIEVER_API_KEY')
 
 PATIENT_PROFILE_SYNC_API = env('PATIENT_PROFILE_SYNC_API')

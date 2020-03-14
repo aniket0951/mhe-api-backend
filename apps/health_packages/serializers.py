@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
 
-from utils.serializers import DynamicFieldsModelSerializer
 from apps.master_data.models import Specialisation
-from .models import (HealthPackage,
-                     HealthPackagePricing, HealthTest)
+from utils.serializers import DynamicFieldsModelSerializer
+
+from .models import HealthPackage, HealthPackagePricing, HealthTest
 
 
 class HealthTestSerializer(DynamicFieldsModelSerializer):
@@ -46,7 +46,11 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
         exclude = ('created_at', 'updated_at', 'included_health_tests')
 
     def get_pricing(self, instance):
-        hospital_id = self.context['request'].query_params.get('hospital__id')
+        if 'hospital__id' in self.context:
+            hospital_id = self.context['hospital__id']
+        else:
+            hospital_id = self.context['request'].query_params.get(
+                'hospital__id')
         return HealthPackagePricingSerializer(instance.health_package_pricing.get(hospital_id=hospital_id)).data
 
     def get_included_health_tests_count(self, instance):
