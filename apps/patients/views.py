@@ -250,7 +250,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         patient_user_obj.save()
 
         data = {
-            "data": uhid_user_info,
+            "data": self.get_serializer(self.get_object()).data,
             "message": "Your UHID is updated successfully!"
         }
         return Response(data, status=status.HTTP_201_CREATED)
@@ -395,8 +395,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             otp_expiration_time = datetime.now(
             ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
-            family_member_object.mobile_verification_otp = random_mobile_password,
-            family_member_object.mobile_otp_expiration_time = otp_expiration_time,
+            family_member_object.mobile_verification_otp = random_mobile_password
+            family_member_object.mobile_otp_expiration_time = otp_expiration_time
             family_member_object.save()
 
             message = "Your mobile number has been added on Manipal Hospital application by\
@@ -470,8 +470,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             family_member.mobile_verified = True
             family_member.email_verified = True
             family_member.first_name = uhid_user_info['first_name']
-            patient_user_obj.last_name = None
-            patient_user_obj.middle_name = None
+            family_member.last_name = None
+            family_member.middle_name = None
             family_member.mobile = uhid_user_info['mobile']
             family_member.email = uhid_user_info['email']
             family_member.gender = uhid_user_info['gender']
