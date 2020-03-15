@@ -468,8 +468,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             family_member.mobile_verified = True
             family_member.email_verified = True
             family_member.first_name = uhid_user_info['first_name']
-            patient_user_obj.last_name = None
-            patient_user_obj.middle_name = None
+            family_member.last_name = None
+            family_member.middle_name = None
             family_member.mobile = uhid_user_info['mobile']
             family_member.email = uhid_user_info['email']
             family_member.gender = uhid_user_info['gender']
