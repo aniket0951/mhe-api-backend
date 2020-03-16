@@ -85,7 +85,7 @@ CUSTOM_APPS = [
     'apps.appointments',
     'apps.manipal_admin',
     'apps.lab_and_radiology_items',
-    'apps.payments'
+    'apps.payments',
     'apps.patient_registration',
     'apps.personal_documents',
     'apps.cart_items',
