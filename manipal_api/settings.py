@@ -86,6 +86,10 @@ CUSTOM_APPS = [
     'apps.manipal_admin',
     'apps.lab_and_radiology_items',
     'apps.payments'
+    'apps.patient_registration',
+    'apps.personal_documents',
+    'apps.cart_items',
+
 
 ]
 
@@ -274,6 +278,8 @@ REST_PROXY = {
 MAX_FILE_UPLOAD_SIZE = int(env('MAX_FILE_UPLOAD_SIZE_IN_MB'))
 
 # Supported File Extensions
+VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(
+    env('VALID_IMAGE_FILE_EXTENSIONS'))
 VALID_FILE_EXTENSIONS = ast.literal_eval(env('VALID_FILE_EXTENSIONS'))
 
 SMS_SENDER = env('SMS_SENDER')
@@ -295,3 +301,4 @@ SALUCRO_RESPONSE_URL = env('SALUCRO_RESPONSE_URL')
 SALUCRO_RETURN_URL = env('SALUCRO_RETURN_URL')
 SALUCRO_MID = env('SALUCRO_MID')
 SALUCRO_SECRET_KEY = env('SALUCRO_SECRET_KEY')
+PATIENT_PROFILE_SYNC_API = env('PATIENT_PROFILE_SYNC_API')

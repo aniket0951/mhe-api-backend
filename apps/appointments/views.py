@@ -182,6 +182,7 @@ class CancelMyAppointment(ProxyView):
 
     def get_request_data(self, request):
         data = request.data
+        reason_id = data.pop("reason_id")
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
         instance = Appointment.objects.filter(

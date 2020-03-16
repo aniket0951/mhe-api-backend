@@ -2,12 +2,13 @@ from rest_framework import serializers
 
 from apps.master_data.models import HomeCareService
 from apps.patients.serializers import (CurrentPatientUserDefault,
-FamilyMemberSerializer,
+                                       FamilyMemberSerializer,
                                        PatientAddressSerializer)
 from utils.serializers import DynamicFieldsModelSerializer
+from utils.utils import generate_pre_signed_url
 
 from .models import (LabRadiologyItem, LabRadiologyItemPricing,
-                     PatientServiceAppointment)
+                     PatientServiceAppointment, UploadPrescription)
 
 
 class LabRadiologyItemPricingSerializer(DynamicFieldsModelSerializer):
@@ -26,7 +27,8 @@ class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
 
     def get_price(self, instance):
         hospital_id = self.context['request'].query_params.get('hospital__id')
-        return instance.labradiologyitempricing_set.get(hospital_id=hospital_id).price
+        return instance.lab_radiology_item_pricing.get(hospital_id=hospital_id).price
+
 
 class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -36,24 +38,55 @@ class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
 
 class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
     patient = serializers.UUIDField(write_only=True,
-                                         default=CurrentPatientUserDefault())
+                                    default=CurrentPatientUserDefault())
 
     class Meta:
         model = PatientServiceAppointment
         fields = '__all__'
 
-
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
 
         if instance.service:
-            response_object['service'] = HomeCareServiceSerializer(instance.service).data
+            response_object['service'] = HomeCareServiceSerializer(
+                instance.service).data
 
         if instance.address:
-            response_object['address'] = PatientAddressSerializer(instance.address).data
-            
+            response_object['address'] = PatientAddressSerializer(
+                instance.address).data
+
         if instance.family_member:
-            response_object['family_member'] = FamilyMemberSerializer(instance.family_member).data
-        
-        
+            response_object['family_member'] = FamilyMemberSerializer(
+                instance.family_member).data
+
+        return response_object
+
+
+class UploadPrescriptionSerializer(DynamicFieldsModelSerializer):
+    patient = serializers.UUIDField(write_only=True,
+                                    default=CurrentPatientUserDefault())
+
+    class Meta:
+        model = UploadPrescription
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.document:
+                response_object['document'] = generate_pre_signed_url(
+                    instance.document.url)
+        except Exception as error:
+            print(error)
+            response_object['display_picture'] = None
+
+        if instance.address:
+            response_object['address'] = PatientAddressSerializer(
+                instance.address).data
+
+        if instance.family_member:
+            response_object['family_member'] = FamilyMemberSerializer(
+                instance.family_member).data
+
         return response_object

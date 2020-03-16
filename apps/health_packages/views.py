@@ -33,7 +33,8 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('description',)
-
+    search_fields = ('description',)
+    
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
@@ -49,7 +50,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         hospital_id = self.request.query_params.get('hospital__id')
         if not hospital_id:
-            raise ValidationError("Hospital ID is missiing!")
+            raise ValidationError("Hospital ID is missing!")
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
         return Specialisation.objects.filter(health_package__id__in=hospital_related_health_packages).filter(
@@ -65,7 +66,7 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
     create_success_message = "New health package is added successfully."
     list_success_message = 'Health package list returned successfully!'
     retrieve_success_message = 'Health package information returned successfully!'
-    update_success_message = 'hHealth package information is updated successfuly!'
+    update_success_message = 'Health package information is updated successfuly!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_class = HealthPackageFilter

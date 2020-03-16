@@ -1,9 +1,21 @@
+import os
+
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.master_data.models import (BillingGroup, BillingSubGroup,
                                      HomeCareService, Hospital)
 from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient, PatientAddress
+from manipal_api.settings import VALID_FILE_EXTENSIONS
+from utils.custom_storage import FileStorage
+from utils.validators import validate_file_authenticity, validate_file_size
+
+
+def generate_prescription_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "users/{0}/prescription/{1}".format(self.id, obj_name)
 
 
 class LabRadiologyItem(MyBaseModel):
@@ -43,6 +55,7 @@ class LabRadiologyItem(MyBaseModel):
 class LabRadiologyItemPricing(MyBaseModel):
 
     item = models.ForeignKey(LabRadiologyItem,
+                             related_name='lab_radiology_item_pricing',
                              on_delete=models.PROTECT,
                              null=False,
                              blank=False)
@@ -79,24 +92,57 @@ class PatientServiceAppointment(MyBaseModel):
                                 null=False,
                                 blank=False,
                                 on_delete=models.PROTECT, related_name='patient_service_appointment')
-    
+
     patient = models.ForeignKey(Patient,
                                 null=True,
-                                blank=True, 
+                                blank=True,
                                 on_delete=models.PROTECT, related_name='patient_service_appointment')
-    
+
     family_member = models.ForeignKey(FamilyMember,
                                       on_delete=models.PROTECT,
                                       related_name='family_service_appointment',
                                       blank=True,
                                       null=True)
-    
+
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_service_appointment')
 
     class Meta:
         verbose_name = "Patient Service Appointment"
         verbose_name_plural = "Patient Service Appointments"
+
+    def __str__(self):
+        return self.patient.first_name
+
+
+class UploadPrescription(MyBaseModel):
+    appointment_date = models.DateField()
+
+    patient = models.ForeignKey(Patient,
+                                null=True,
+                                blank=True,
+                                on_delete=models.PROTECT, related_name='prescription')
+
+    family_member = models.ForeignKey(FamilyMember,
+                                      on_delete=models.PROTECT,
+                                      related_name='family_prescription',
+                                      blank=True,
+                                      null=True)
+
+    address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
+                                related_name='patient_prescription')
+
+    document = models.FileField(upload_to=generate_prescription_file_path,
+                                storage=FileStorage(),
+                                validators=[FileExtensionValidator(
+                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                blank=False,
+                                null=False)
+
+    class Meta:
+        verbose_name = "Prescription"
+        verbose_name_plural = "Prescriptions"
 
     def __str__(self):
         return self.patient.first_name

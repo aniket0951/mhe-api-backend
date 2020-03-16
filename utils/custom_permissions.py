@@ -1,6 +1,7 @@
+from rest_framework import permissions
+
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import FamilyMember, Patient
-from rest_framework import permissions
 
 
 class IsManipalAdminUser(permissions.BasePermission):
@@ -92,6 +93,22 @@ class IsSelfUserOrFamilyMember(permissions.BasePermission):
 
 
 class IsSelfAddress(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.id == obj.patient_info.id
+
+
+class IsSelfDocument(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.id == obj.patient_info.id
+
+
+class IsSelfHealthPackageCartItem(permissions.BasePermission):
 
     message = 'You do not have permission to do this action.'
 

@@ -41,8 +41,7 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Doctor
-        fields = ['id', 'code', 'name', 'hospital', 'hospital_departments',
-                  'specialisations', 'qualification', 'educational_degrees', 'experience', 'start_date', 'end_date']
+        fields = '__all__'
 
 
 class DoctorSpecificSerializer(DynamicFieldsModelSerializer):
