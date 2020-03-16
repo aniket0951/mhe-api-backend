@@ -5,7 +5,6 @@ from apps.doctors.models import Doctor
 from apps.patients.models import Patient
 from apps.meta_app.models import MyBaseModel
 
-# Create your models here.
 
 class Visit(MyBaseModel):
 
