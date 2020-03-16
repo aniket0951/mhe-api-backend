@@ -146,3 +146,36 @@ class UploadPrescription(MyBaseModel):
 
     def __str__(self):
         return self.patient.first_name
+
+
+class HomeCollectionAppointment(MyBaseModel):
+    appointment_date = models.DateField()
+
+    home_collections = models.ManyToManyField(LabRadiologyItem,
+                                              blank=False)
+
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 null=False,
+                                 blank=False)
+
+    patient = models.ForeignKey(Patient,
+                                null=True,
+                                blank=True,
+                                on_delete=models.PROTECT, related_name='patient_home_collection_appointment')
+
+    family_member = models.ForeignKey(FamilyMember,
+                                      on_delete=models.PROTECT,
+                                      related_name='family_home_collection_appointment',
+                                      blank=True,
+                                      null=True)
+
+    address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
+                                related_name='patient_home_collection_appointment')
+
+    class Meta:
+        verbose_name = "Home Collection Appointment"
+        verbose_name_plural = "Home Collection Appointments"
+
+    def __str__(self):
+        return self.patient.first_name

@@ -34,7 +34,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('description',)
     search_fields = ('description',)
-    
+
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
@@ -54,7 +54,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
         return Specialisation.objects.filter(health_package__id__in=hospital_related_health_packages).filter(
-            Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)).distinct()
+            Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)).distinct('description',)
 
 
 class HealthPackageViewSet(custom_viewsets.ModelViewSet):
