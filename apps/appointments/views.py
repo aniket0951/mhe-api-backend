@@ -6,6 +6,7 @@ from datetime import datetime
 
 import requests
 from django.conf import settings
+from django.db.models import Q
 from django.shortcuts import render
 
 import rest_framework
@@ -61,12 +62,12 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             return super().get_queryset()
         elif (family_member is not None):
             if is_upcoming:
-                return super().get_queryset.filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), status=1, family_member_id=family_member)
-            return super().get_queryset().filter(appointment_date__lt=datetime.now().date(), family_member_id=family_member)
+                return super().get_queryset.filter(appointment_date__gte=datetime.now().date(),status=1, family_member_id=family_member)
+            return super().get_queryset().filter(family_member_id=family_member).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
         else:
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), patient_id=self.request.user.id, family_member__isnull=True, status=1)
-            return super().get_queryset().filter(appointment_date__lt=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True)
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True, status=1)
+            return super().get_queryset().filter(patient_id=self.request.user.id, family_member__isnull=True).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
 
 
 class CreateMyAppointment(ProxyView):
@@ -148,7 +149,7 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
                 appointment = AppointmentSerializer(data=new_appointment)
-                serializer.is_valid(raise_exception=True)
+                appointment.is_valid(raise_exception=True)
                 appointment.save()
                 appointment_data = appointment.data
                 if appointment_data["family_member"]:
@@ -182,6 +183,7 @@ class CancelMyAppointment(ProxyView):
     def get_request_data(self, request):
         data = request.data
         appointment_id = data.get("appointment_identifier")
+        reason_id = data.pop("reason_id")
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
         if not instance:
@@ -190,6 +192,7 @@ class CancelMyAppointment(ProxyView):
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+        data["reason_id"] = reason_id
         return request_data
 
     def post(self, request, *args, **kwargs):

@@ -98,3 +98,16 @@ class ItemTariffPrice:
         serializer.add_property('SyncLocationCode', self.location_code)
         serializer.add_property('SyncMethod', self.sync_method)
         serializer.add_property('SyncItemCode', self.item_code)
+
+class DoctorSchedule:
+    def __init__(self, doctor_code=None, location_code=None, department_code = None):
+        self.doctor_code = doctor_code
+        self.location_code = location_code
+        self.department_code = department_code
+
+    def serialize(self, serializer):
+        serializer.start_object('weeklyScheduleParam')
+        serializer.add_property('DoctorCode',
+                                self.doctor_code)
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('DepartmentCode', self.department_code)
