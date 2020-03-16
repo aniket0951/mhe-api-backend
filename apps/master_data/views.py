@@ -5,16 +5,14 @@ from datetime import datetime, timedelta
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Q
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -22,11 +20,19 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser)
 
+from .exceptions import (DoctorHospitalCodeMissingValidationException,
+                         HospitalCodeMissingValidationException,
+                         HospitalDoesNotExistsValidationException,
+                         InvalidHospitalCodeValidationException,
+                         ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (BillingGroup, BillingSubGroup, Department, Hospital,
                      HospitalDepartment, Specialisation)
 from .serializers import (DepartmentSerializer, HospitalDepartmentSerializer,
@@ -67,8 +73,6 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_fields = ('hospital__id',)
-    # search_fields = ['code', 'description', 'address',]
-    # ordering_fields = ('code',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
@@ -78,7 +82,8 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-                Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True))
+            Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True))
+
 
 class SpecialisationViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -131,13 +136,11 @@ class DepartmentsView(ProxyView):
         item = root.find('SyncResponse')
 
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing hospital location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text)
         except Exception:
-            return self.custom_success_response(message='Looks like you have entered an invalid location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise InvalidHospitalCodeValidationException
 
         all_departments = list()
         department_sorted_keys = ['start_date',
@@ -177,7 +180,7 @@ class DepartmentsView(ProxyView):
             hospital_department_kwargs['department'] = department
             hospital_department_details.update(hospital_department_kwargs)
 
-            hospital_department, hospital_department_created = HospitalDepartment.objects.update_or_create(
+            _, hospital_department_created = HospitalDepartment.objects.update_or_create(
                 **hospital_department_kwargs, defaults=hospital_department_details)
             department_details['hospital_department_created'] = hospital_department_created
 
@@ -189,7 +192,6 @@ class DepartmentsView(ProxyView):
 
 class DoctorsView(ProxyView):
     permission_classes = [IsAuthenticated]
-    #permission_classes = [AllowAny]
 
     source = SYNC_SERVICE
     success_msg = 'Doctors list returned successfully'
@@ -205,19 +207,16 @@ class DoctorsView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing doctors location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise DoctorHospitalCodeMissingValidationException
 
         try:
             response_content = json.loads(item.text)
-        except Exception as e:
+        except Exception:
             print("------------------------\nFailed!\n----------------")
-            return self.custom_success_response(message="Couldn't process the doctors at this location.",
-                                                success=False, data=None, error=str(item.text))
+            raise DoctorDoesNotExistsValidationException
 
         if not response_content:
-            return self.custom_success_response(message='Invalid doctors location code.',
-                                                success=False, data=None)
+            raise InvalidHospitalCodeValidationException
 
         all_doctors = list()
         doctor_sorted_keys = ['consultation_charges',
@@ -279,7 +278,7 @@ class DoctorsView(ProxyView):
 
 
 class HealthPackagesView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Health Packages list returned successfully'
     sync_method = 'healthcheck'
@@ -294,26 +293,29 @@ class HealthPackagesView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text, strict=False)
-        except Exception as e:
-            return self.custom_success_response(message='Looks like you have entered an invalid location code.',
-                                                success=False, data=None, error=str(item.text))
+        except Exception:
+            raise HospitalDoesNotExistsValidationException
 
         all_health_packages = list()
-        health_packages_sorted_keys = ['billing_group',
-                                       'billing_subgroup',
-                                       'start_date',
-                                       'end_date',
-                                       'hospital_code',
-                                       'item_code',
-                                       'item_description',
-                                       'code',
-                                       'name',
-                                       'price',
-                                       ]
+        health_packages_sorted_keys = [
+            'age_group',
+            'billing_group',
+            'billing_subgroup',
+            'start_date',
+            'end_date',
+            'gender',
+            'hospital_code',
+            'item_code',
+            'item_description',
+            'code',
+            'name',
+            'price',
+            'specialisation_name'
+        ]
+
         for each_health_package in response_content:
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
@@ -332,8 +334,6 @@ class HealthPackagesView(ProxyView):
             hospital_health_package_kwargs = dict()
             health_test_details = dict()
             health_test_kwargs = dict()
-            health_test_billing_group = None
-            health_test_billing_subgroup = None
             health_test_details['billing_group'] = health_package_details.pop(
                 'billing_group')
             health_test_details['billing_sub_group'] = health_package_details.pop(
@@ -365,6 +365,19 @@ class HealthPackagesView(ProxyView):
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
             health_package_kwargs['code'] = health_package_details['code']
+
+            if health_package_details['age_group']:
+                health_package_kwargs['age_group'] = health_package_details['age_group']
+
+            if health_package_details['gender']:
+                health_package_kwargs['gender'] = health_package_details['gender']
+
+            specialisation_name = health_package_details.pop(
+                'specialisation_name')
+            if specialisation_name:
+                health_package_details['specialisation'] = Specialisation.objects.filter(
+                    description=specialisation_name).first()
+
             health_package, health_package_created = HealthPackage.objects.update_or_create(
                 **health_package_kwargs, defaults=health_package_details)
             health_package.included_health_tests.add(health_test)
@@ -374,7 +387,7 @@ class HealthPackagesView(ProxyView):
             hospital_health_package_details.update(
                 hospital_health_package_kwargs)
 
-            hospital_health_package, hospital_health_package_created = HealthPackagePricing.objects.update_or_create(
+            _, hospital_health_package_created = HealthPackagePricing.objects.update_or_create(
                 **hospital_health_package_kwargs, defaults=hospital_health_package_details)
 
             health_package_details['health_test_created'] = health_test_created
@@ -403,13 +416,11 @@ class LabRadiologyItemsView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
-            return self.custom_success_response(message='Missing location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text)
         except Exception:
-            return self.custom_success_response(message='Looks like you have entered an invalid location code.',
-                                                success=False, data=None, error=str(item.text))
+            raise HospitalDoesNotExistsValidationException
 
         all_lab_radiology_items = list()
         lab_radiology_items_sorted_keys = ['billing_group',
@@ -437,8 +448,6 @@ class LabRadiologyItemsView(ProxyView):
             lab_radiology_item_kwargs = dict()
             lab_radiology_item_details = dict()
             hospital_lab_radiology_item_kwargs = dict()
-            lab_radiology_item_billing_group = None
-            lab_radiology_item_billing_subgroup = None
 
             lab_radiology_item_details['billing_group'] = hospital_lab_radiology_item_details.pop(
                 'billing_group')
@@ -501,8 +510,7 @@ class ItemsTarrifPriceView(ProxyView):
         try:
             response_content = json.loads(item.text)
         except Exception:
-            return self.custom_success_response(message='Something went wrong, enter valid location code and item code.',
-                                                success=False, data=None, error=str(item.text))
+            raise ItemOrDepartmentDoesNotExistsValidationException
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=response_content)

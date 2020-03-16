@@ -6,8 +6,6 @@ import magic
 from django.core.exceptions import ValidationError
 from manipal_api.settings import MAX_FILE_UPLOAD_SIZE
 
-# logger = logging.getLogger('django')
-
 
 def validate_file_size(value):
     filesize = value.size
@@ -24,7 +22,6 @@ def validate_file_authenticity(value):
     possible_file_extensions = mimetypes.guess_all_extensions(mime_type)
 
     if os.path.splitext(value.name)[1].lower() not in possible_file_extensions:
-        # logger.error("Corrupted file is uploaded!")
         raise ValidationError('Corrupted file is uploaded!')
 
     return value

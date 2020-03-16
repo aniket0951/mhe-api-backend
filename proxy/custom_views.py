@@ -162,24 +162,18 @@ class ProxyView(BaseProxyView):
 
     def proxy(self, request, *args, **kwargs):
         url = self.get_request_url(request)
-        params = self.get_request_params(request)
         data = self.get_request_data(request)
-        files = self.get_request_files(request)
         headers = self.get_headers(request)
         verify_ssl = self.get_verify_ssl(request)
-        cookies = self.get_cookies(request)
 
         try:
             response = requests.request(request.method, url,
-                                        # params=params,
                                         data=data,
-                                        # files=files,
                                         headers=headers,
                                         timeout=self.proxy_settings['TIMEOUT'],
                                         verify=verify_ssl,
-                                        # cookies=cookies
                                         )
-        except (ConnectionError, SSLError) as e:
+        except (ConnectionError, SSLError):
             status = requests.status_codes.codes.bad_gateway
             return self.create_error_response({
                 'success': False,

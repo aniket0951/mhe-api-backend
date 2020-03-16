@@ -1,7 +1,6 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 from django.contrib.gis.db import models
-from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import Point
 
 from apps.meta_app.models import MyBaseModel
@@ -182,3 +181,17 @@ class BillingSubGroup(MyBaseModel):
 
     def save(self, *args, **kwargs):
         super(BillingSubGroup, self).save(*args, **kwargs)
+
+
+class HomeCareService(MyBaseModel):
+
+    name = models.CharField(max_length=200,
+                            null=True,
+                            blank=True,)
+
+    class Meta:
+        verbose_name = "Home Care Service"
+        verbose_name_plural = "Home Care Services"
+
+    def __str__(self):
+        return self.name

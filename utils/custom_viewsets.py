@@ -1,5 +1,7 @@
-from utils import custom_mixins
 from rest_framework import viewsets
+
+from utils import custom_mixins
+
 
 class ModelViewSet(custom_mixins.CreateModelMixin,
                    custom_mixins.RetrieveModelMixin,
@@ -19,5 +21,16 @@ class ReadOnlyModelViewSet(custom_mixins.RetrieveModelMixin,
                            viewsets.GenericViewSet):
     """
     A viewset that provides default `list()` and `retrieve()` actions.
+    """
+    pass
+
+
+class ListUpdateViewSet(
+        custom_mixins.UpdateModelMixin,
+        custom_mixins.ListModelMixin,
+        viewsets.GenericViewSet):
+    """
+    A viewset that provides default `create()`, `retrieve()`, `update()`,
+    `partial_update()`, `destroy()` and `list()` actions.
     """
     pass

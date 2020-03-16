@@ -1,13 +1,14 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from apps.patients.views import FamilyMemberViewSet, PatientViewSet
+from apps.patients.views import FamilyMemberViewSet, PatientViewSet, PatientAddressViewSet
 
 app_name = 'patients'
 
 router = DefaultRouter(trailing_slash=False)
 
 router.register('family_members', FamilyMemberViewSet)
+router.register('address', PatientAddressViewSet)
 router.register('', PatientViewSet)
 
 urlpatterns = [

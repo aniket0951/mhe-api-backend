@@ -32,9 +32,11 @@ class Command(BaseCommand):
             new_billing_groups = File(app_file)
 
             billing_group_resource = BillingGroupResource()
+
             dataset = Dataset()
-            imported_data = dataset.load(
+            dataset.load(
                 new_billing_groups.read().decode('utf-8'), format='csv')
+                
             result = billing_group_resource.import_data(
                 dataset, dry_run=True)  # Test the data import
 

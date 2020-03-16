@@ -1,15 +1,18 @@
 import os
 import uuid
 
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
 from django.contrib.postgres.fields import JSONField
-from django.core.validators import FileExtensionValidator
+from django.core.validators import (FileExtensionValidator, MaxValueValidator,
+                                    MinValueValidator)
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
 from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
 from apps.users.models import BaseUser
-from manipal_api.settings import VALID_FILE_EXTENSIONS
+from manipal_api.settings import VALID_IMAGE_FILE_EXTENSIONS
 from utils.custom_storage import LocalFileStorage, MediaStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 
@@ -36,6 +39,10 @@ class Patient(BaseUser):
     uhid_number = models.SlugField(unique=True,
                                    blank=True,
                                    null=True)
+
+    pre_registration_number = models.CharField(max_length=20,
+                                               blank=True,
+                                               null=True)
 
     first_name = models.CharField(max_length=200,
                                   blank=False,
@@ -65,7 +72,7 @@ class Patient(BaseUser):
     display_picture = models.ImageField(upload_to=generate_display_picture_path,
                                         storage=MediaStorage(),
                                         validators=[FileExtensionValidator(
-                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
                                             validate_file_authenticity],
                                         blank=True,
                                         null=True,
@@ -141,6 +148,10 @@ class FamilyMember(MyBaseModel):
                                    blank=True,
                                    null=True)
 
+    pre_registration_number = models.CharField(max_length=20,
+                                               blank=True,
+                                               null=True)
+
     first_name = models.CharField(max_length=200,
                                   blank=True,
                                   null=True,
@@ -159,7 +170,7 @@ class FamilyMember(MyBaseModel):
     display_picture = models.ImageField(upload_to=generate_family_member_display_picture_path,
                                         storage=MediaStorage(),
                                         validators=[FileExtensionValidator(
-                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
                                             validate_file_authenticity],
                                         blank=True,
                                         null=True,
@@ -211,7 +222,53 @@ class FamilyMember(MyBaseModel):
     class Meta:
         verbose_name = "Family Member"
         verbose_name_plural = "Family Members"
-        # unique_together = [['uhid_number', 'patient_info'], ]
+
+    def __str__(self):
+        return self.representation
+
+
+class PatientAddress(MyBaseModel):
+    ADDRESS_CHOICES = (
+        ('Home Address', 'Home Address'),
+        ('Work/Office Address', 'Work/Office Address')
+    )
+
+    pincode_number = models.PositiveIntegerField(
+        validators=[MinValueValidator(100000), MaxValueValidator(999999)],
+        blank=False,
+        null=False)
+
+    house_details = models.CharField(max_length=500,
+                                     blank=False,
+                                     null=False)
+
+    area_details = models.CharField(max_length=500,
+                                    blank=False,
+                                    null=False)
+
+    address_type = models.CharField(choices=ADDRESS_CHOICES,
+                                    blank=True,
+                                    null=True,
+                                    max_length=20,
+                                    default="Home Address"
+                                    )
+
+    patient_info = models.ForeignKey(Patient,
+                                     on_delete=models.PROTECT,
+                                     null=True,
+                                     blank=True,
+                                     related_name='patient_address_info')
+
+    location = gis_models.PointField(
+        default=Point(1, 1), null=True, blank=True,)
+
+    @property
+    def representation(self):
+        return 'Patient name {}'.format(self.patient_info.first_name)
+
+    class Meta:
+        verbose_name = "Patient Address"
+        verbose_name_plural = "Patient Addresses"
 
     def __str__(self):
         return self.representation

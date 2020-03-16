@@ -1,6 +1,7 @@
+from rest_framework import permissions
+
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import FamilyMember, Patient
-from rest_framework import permissions
 
 
 class IsManipalAdminUser(permissions.BasePermission):
@@ -18,7 +19,6 @@ class IsManipalAdminUser(permissions.BasePermission):
                 return True
         except Exception as e:
             print(e)
-            pass
         self.message = 'Manipal Administrator has the permission to perform this action.'
         return False
 
@@ -34,12 +34,10 @@ class IsPatientUser(permissions.BasePermission):
         Checking if the user is Patient.
         """
         try:
-            if hasattr(request.user, 'mobile'):
-                if Patient.objects.filter(mobile=request.user.mobile).exists():
-                    return True
+            if hasattr(request.user, 'mobile') and Patient.objects.filter(mobile=request.user.mobile).exists():
+                return True
         except Exception as e:
             print(e)
-            pass
         self.message = 'Patient has the permission to perform this action.'
         return False
 
@@ -92,3 +90,27 @@ class IsSelfUserOrFamilyMember(permissions.BasePermission):
             return True
         else:
             return FamilyMember.objects.filter(patient_info=user, id=patient_id).exists()
+
+
+class IsSelfAddress(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.id == obj.patient_info.id
+
+
+class IsSelfDocument(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.id == obj.patient_info.id
+
+
+class IsSelfHealthPackageCartItem(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.id == obj.patient_info.id

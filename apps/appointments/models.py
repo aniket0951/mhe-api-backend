@@ -4,6 +4,7 @@ from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 
+
 class CancellationReason(models.Model):
 
     reason = models.TextField(blank=False,
@@ -22,7 +23,9 @@ class Appointment(models.Model):
     )
     appointment_date = models.DateField()
     appointment_slot = models.TimeField()
-    appointment_identifier = models.IntegerField()
+    appointment_identifier = models.CharField(max_length=20,
+                                              blank=True,
+                                              null=True)
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     patient = models.ForeignKey(
         Patient, on_delete=models.PROTECT, related_name='patient_appointment')

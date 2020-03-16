@@ -5,16 +5,10 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import requests
-import rest_framework
 from django.conf import settings
 from django.shortcuts import render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 
+import rest_framework
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.manipal_admin.models import ManipalAdmin
@@ -25,20 +19,26 @@ from apps.master_data.models import Department, Hospital, Specialisation
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.users.models import BaseUser
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters, generics, status, viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.filters import OrderingFilter
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 from utils.custom_sms import send_sms
 
-from .exceptions import AppointmentDoesNotExistsValidationException
+from .exceptions import (AppointmentAlreadyExistsException,
+                         AppointmentDoesNotExistsValidationException)
 from .models import Appointment, CancellationReason
-from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
-                          DoctorAppointmentSerializer)
+from .serializers import AppointmentSerializer, CancellationReasonSerializer
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -48,21 +48,25 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    ordering_fields = ('-appointment_date', '-appointment_slot',)
+    ordering_fields = ('-appointment_date', '-appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
     update_success_message = None
 
     def get_queryset(self):
-        user = self.request.user.id
         family_member = self.request.query_params.get("user_id", None)
+        is_upcoming = self.request.query_params.get("is_upcoming", False)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset()
         elif (family_member is not None):
-            return super().get_queryset().filter(family_member_id=family_member)
+            if is_upcoming:
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), status=1, family_member_id=family_member)
+            return super().get_queryset().filter(appointment_date__lt=datetime.now().date(), family_member_id=family_member)
         else:
-            return super().get_queryset().filter(patient_id=self.request.user.id)
+            if is_upcoming:
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), appointment_slot__gte=datetime.now().time(), patient_id=self.request.user.id, family_member__isnull=True, status=1)
+            return super().get_queryset().filter(appointment_date__lt=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True)
 
 
 class CreateMyAppointment(ProxyView):
@@ -121,12 +125,10 @@ class CreateMyAppointment(ProxyView):
         response_success = False
         if response.status_code == 200:
             root = ET.fromstring(response.content)
-            appointmentIdentifier = root.find("appointmentIdentifier").text
+            appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
-                message = root.find("Message").text
-                return self.custom_success_response(message=message,
-                                                    success=False, data=None)
+                raise AppointmentAlreadyExistsException
             else:
                 data = self.request.data
                 family_member = data.get("family_member")
@@ -134,19 +136,19 @@ class CreateMyAppointment(ProxyView):
                 appointment_date_time = data.pop("appointment_date_time")
                 datetime_object = datetime.strptime(
                     appointment_date_time, '%Y%m%d%H%M%S')
+                time = datetime_object.time()
                 new_appointment["appointment_date"] = datetime_object.date()
-                new_appointment["appointment_slot"] = datetime_object.time()
+                new_appointment["appointment_slot"] = time.strftime(
+                    "%H:%M:%S %p")
                 new_appointment["status"] = 1
-                new_appointment["appointment_identifier"] = appointmentIdentifier
+                new_appointment["appointment_identifier"] = appointment_identifier
                 new_appointment["patient"] = data.get("patient").id
                 if family_member:
                     new_appointment["family_member"] = family_member.id
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
                 appointment = AppointmentSerializer(data=new_appointment)
-                if not appointment.is_valid():
-                    return self.custom_success_response(message=appointment.errors,
-                                                        success=False, data=data)
+                appointment.is_valid(raise_exception=True)
                 appointment.save()
                 appointment_data = appointment.data
                 if appointment_data["family_member"]:
@@ -167,7 +169,7 @@ class CreateMyAppointment(ProxyView):
                         appointment_data["patient"]["mobile"]), message=user_message)
                 response_success = True
                 response_message = "Appointment has been created"
-                response_data["appointmentIdentifier"] = appointmentIdentifier
+                response_data["appointment_identifier"] = appointment_identifier
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
@@ -179,7 +181,7 @@ class CancelMyAppointment(ProxyView):
 
     def get_request_data(self, request):
         data = request.data
-        cancellation_reason = data.pop("reason_id")
+        reason_id = data.pop("reason_id")
         appointment_id = data.get("appointment_identifier")
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
@@ -189,6 +191,7 @@ class CancelMyAppointment(ProxyView):
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+        data["reason_id"] = reason_id
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -236,7 +239,7 @@ class CancelMyAppointment(ProxyView):
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
-    serializer_class = DoctorAppointmentSerializer
+    serializer_class = AppointmentSerializer
     permission_classes = [IsPatientUser]
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'

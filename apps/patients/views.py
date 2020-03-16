@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
+from django.contrib.gis.geos import Point
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from django_filters.rest_framework import DjangoFilterBackend
@@ -20,7 +21,7 @@ from manipal_api.settings import (ANDROID_SMS_RETRIEVER_API_KEY, JWT_AUTH,
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser, IsPatientUser,
+                                      IsManipalAdminUser, IsPatientUser, IsSelfAddress,
                                       SelfUserAccess)
 from utils.custom_sms import send_sms
 from utils.utils import manipal_admin_object, patient_user_object
@@ -31,8 +32,9 @@ from .exceptions import (InvalidCredentialsException, InvalidUHID,
                          PatientMobileDoesNotExistsValidationException,
                          PatientMobileExistsValidationException,
                          PatientOTPExceededLimitException)
-from .models import FamilyMember, Patient
-from .serializers import FamilyMemberSerializer, PatientSerializer
+from .models import FamilyMember, Patient, PatientAddress
+from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
+                          PatientSerializer)
 from .utils import fetch_uhid_user_details
 
 
@@ -175,10 +177,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not request_patient:
             raise PatientDoesNotExistsValidationException
 
-        # if datetime.now().timestamp() < \
-        #         request_patient.otp_expiration_time.timestamp():
-        #     raise PatientOTPExceededLimitException
-
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
@@ -224,7 +222,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         patient_info = patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError("Invalid request!")
+            raise ValidationError("This UHID is already linked to your account!")
 
         if self.model.objects.filter(uhid_number=uhid_number).exists():
             raise ValidationError(
@@ -248,7 +246,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         patient_user_obj.uhid_number = uhid_number
         patient_user_obj.save()
-
         data = {
             "data": self.get_serializer(self.get_object()).data,
             "message": "Your UHID is updated successfully!"
@@ -432,8 +429,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info = fetch_uhid_user_details(request)
         uhid_user_info['mobile_verified'] = True
         uhid_user_info['patient_info'] = patient_info
-        family_member_obj = self.model.objects.create(**uhid_user_info)
-        # serializer = self.get_serializer(family_member_obj)
+
+        self.model.objects.create(**uhid_user_info)
+
         serializer = self.get_serializer(self.get_queryset(), many=True)
 
         data = {
@@ -561,3 +559,59 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "message": response_message,
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+class PatientAddressViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser]
+    model = PatientAddress
+    queryset = PatientAddress.objects.all()
+    serializer_class = PatientAddressSerializer
+    create_success_message = "New address is added successfully."
+    list_success_message = 'Addresses returned successfully!'
+    retrieve_success_message = 'Address information returned successfully!'
+    update_success_message = 'Information is updated successfuly!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['code', 'description', ]
+    ordering_fields = ('code',)
+
+    def get_permissions(self):
+        if self.action in ['list', 'create', ]:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve',]:
+            permission_classes = [IsSelfAddress]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        return super().get_queryset().filter(patient_info__id=self.request.user.id)
+
+    def perform_create(self, serializer):
+        request_data = self.request.data
+        longitude = float(request_data.get("longitude", 0))
+        latitude = float(request_data.get("latitude", 0))
+        if not (longitude and latitude):
+            raise ValidationError(
+                "Missing information about longitude and latitude!")
+        serializer.save(location=Point(longitude, latitude, srid=4326))
+
+    def perform_update(self, serializer):
+        request_data = self.request.data
+        longitude = float(request_data.get("longitude", 0))
+        latitude = float(request_data.get("latitude",0))
+        if longitude and latitude:
+            serializer.save(location=Point(longitude, latitude, srid=4326))
+            return
+        
+        serializer.save()

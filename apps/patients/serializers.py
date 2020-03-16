@@ -1,14 +1,14 @@
 from uuid import UUID
 
 from phonenumber_field.serializerfields import PhoneNumberField
+from rest_framework import serializers
 
 from apps.master_data.models import Hospital
 from apps.master_data.serializers import HospitalSerializer
-from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
 
-from .models import FamilyMember, Patient
+from .models import FamilyMember, Patient, PatientAddress
 
 
 class PatientSerializer(DynamicFieldsModelSerializer):
@@ -83,7 +83,6 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = FamilyMember
-        # fields = '__all__'
         exclude = ('raw_info_from_manipal_API', 'mobile_verification_otp',
                    'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
                    'created_at', 'updated_at')
@@ -94,7 +93,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
     def create(self, validated_data):
         if 'uhid_number' in validated_data:
-            _ = validated_data.pop('uhid_number')
+            validated_data.pop('uhid_number')
         return super().create(validated_data)
 
     def to_representation(self, instance):
@@ -108,3 +107,27 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = None
 
         return response_object
+
+
+
+
+class PatientAddressSerializer(DynamicFieldsModelSerializer):
+    patient_info = serializers.UUIDField(write_only=True,
+                                         default=CurrentPatientUserDefault())
+
+    class Meta:
+        model = PatientAddress
+        exclude = ('created_at', 'updated_at',)
+
+        extra_kwargs = {
+            'pincode_number': {"error_messages": {"required": "Enter your pin code."}},
+            'house_details': {"error_messages": {"required": "House number is mandatory to add address."}},
+            'area_details': {"error_messages": {"required": "Area/landmark details are mandatory to add address."}},
+        }
+
+    def to_representation(self, instance):
+        obj = super().to_representation(instance)
+        if instance.location:
+            obj['longitude'] = instance.location.x
+            obj['latitude'] = instance.location.y
+        return obj
