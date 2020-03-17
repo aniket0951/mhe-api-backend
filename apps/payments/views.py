@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from random import randint
 
 import requests
+from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
@@ -91,14 +92,24 @@ class PaymentResponse(APIView):
             payment_instance = Payment.objects.get(processing_id = processing_id)
         except Exception as e:
             raise ProcessingIdDoesNotExistsValidationException
+        payment = {}
         payment_response = response_token_json["payment_response"]
-        payment_instance.status = payment_response["status"]
-        payment_instance.transaction_id = payment_response["txnid"]
-        payment_instance.amount = payment_response["net_amount_debit"]
-        payment_instance.bank_ref_num = payment_response["bank_ref_num"]
-        payment_instance.raw_info_from_salucro_response = response_token_json
-        payment_instance.save()
-        payment_data = PaymentSerializer(payment_instance)
-        return Response(data=payment_data.data)
+        payment["status"] = payment_response["status"]
+        payment["transaction_id"] = payment_response["txnid"]
+        payment["amount"] = payment_response["net_amount_debit"]
+        payment["bank_ref_num"] = payment_response["bank_ref_num"]
+        payment["raw_info_from_salucro_response"] = response_token_json
+        payment_serializer = PaymentSerializer(payment_instance, data = payment, partial = True)
+        payment_serializer.is_valid(raise_exception=True)
+        payment_serializer.save()
+        return Response(payment_serializer.data)
+
+class PaymentReturn(APIView):
+    permission_classes = (AllowAny,)
+    parser_classes = [FormParser, MultiPartParser, JSONParser]
+
+    def post(self, request, format=None):
+        data = str(request.data)
+        return HttpResponseRedirect("https://mhedev.mantralabsglobal.com/payment-gateway" + "/" +data)
 
 
