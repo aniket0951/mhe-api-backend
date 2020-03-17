@@ -122,3 +122,10 @@ class IsSelfHomeCollectionCartItem(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.patient_info.id
+
+class InternalAPICall(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_permission(self, request, view):
+        return request.get_host() == 'testserver'
