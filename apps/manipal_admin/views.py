@@ -19,6 +19,8 @@ from manipal_api.settings import JWT_AUTH
 from utils.custom_permissions import IsManipalAdminUser
 from utils.utils import manipal_admin_object
 
+from .exceptions import ManipalAdminDoesNotExistsValidationException
+
 # Create your views here.
 
 
@@ -30,7 +32,9 @@ def login(request):
     if not (email and password):
         raise InvalidCredentialsException
 
-    admin = ManipalAdmin.objects.get(email=email)
+    admin = ManipalAdmin.objects.filter(email=email).first()
+    if not admin:
+        raise ManipalAdminDoesNotExistsValidationException
     hash_password = admin.password
     match_password = check_password(password, hash_password)
     if not match_password:

@@ -9,9 +9,11 @@ from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser)
 
-from .models import (LabRadiologyItem, LabRadiologyItemPricing,
-                     PatientServiceAppointment, UploadPrescription)
+from .models import (HomeCollectionAppointment, LabRadiologyItem,
+                     LabRadiologyItemPricing, PatientServiceAppointment,
+                     UploadPrescription)
 from .serializers import (HomeCareServiceSerializer,
+                          HomeCollectionAppointmentSerializer,
                           LabRadiologyItemSerializer,
                           PatientServiceAppointmentSerializer,
                           UploadPrescriptionSerializer)
@@ -100,7 +102,7 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('appointment_date',)
-    
+
     def get_permissions(self):
         if self.action in ['list', 'create', ]:
             permission_classes = [IsPatientUser]
@@ -129,7 +131,6 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
                                                  family_member__isnull=True)
 
 
-
 class UploadPrescriptionViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = UploadPrescription
@@ -149,6 +150,47 @@ class UploadPrescriptionViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action in ['partial_update', 'create']:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        family_member = self.request.query_params.get("user_id", None)
+        if family_member is not None:
+            return super().get_queryset().filter(family_member_id=family_member)
+        else:
+            return super().get_queryset().filter(patient_id=self.request.user.id,
+                                                 family_member__isnull=True)
+
+
+class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    model = HomeCollectionAppointment
+    queryset = HomeCollectionAppointment.objects.all()
+    serializer_class = HomeCollectionAppointmentSerializer
+    create_success_message = "New home collection appointment is added successfully."
+    list_success_message = 'Home collection appointment list returned successfully!'
+    retrieve_success_message = 'Home collection appointment information returned successfully!'
+    update_success_message = 'Home collection appointment information is updated successfuly!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    ordering_fields = ('appointment_date',)
+
+    def get_permissions(self):
+        if self.action in ['list', 'create', ]:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 

@@ -89,6 +89,8 @@ CUSTOM_APPS = [
     'apps.patient_registration',
     'apps.personal_documents',
     'apps.cart_items',
+    'apps.reports',
+
 
 
 ]
