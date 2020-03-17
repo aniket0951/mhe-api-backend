@@ -57,7 +57,7 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class DoctorSlotAvailability(ProxyView):
-    sync_method = 'getDoctorPriceAndSchedule'
+    source = 'getDoctorPriceAndSchedule'
     permission_classes = [IsPatientUser]
 
     def get_request_data(self, request):
@@ -82,22 +82,13 @@ class DoctorSlotAvailability(ProxyView):
 
         slots = serializable_SlotAvailability(**request.data)
         request_data = custom_serializer().serialize(slots, 'XML')
-        print(request_data)
         return request_data
-
-    def get_request_url(self, request):
-        host = self.get_proxy_host()
-        path = self.sync_method
-        if path:
-            return '/'.join([host, path])
-        return host
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response.content)
-        print(response.content)
         slots = root.find("timeSlots").text
         price = root.find("price").text
         slot_list = []
