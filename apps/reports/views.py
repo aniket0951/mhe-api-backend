@@ -5,7 +5,10 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
 
+from apps.patients.models import FamilyMember
 from utils import custom_viewsets
+from utils.custom_permissions import InternalAPICall, IsPatientUser
+from utils.utils import patient_user_object
 
 from .models import (NumericReportDetails, Report, StringReportDetails,
                      TextReportDetails)
@@ -14,7 +17,7 @@ from .serializers import (NumericReportDetailsSerializer, ReportSerializer,
                           TextReportDetailsSerializer)
 from .utils import (numeric_report_hanlder, report_handler,
                     string_report_hanlder, text_report_hanlder)
-from utils.custom_permissions import InternalAPICall, IsPatientUser
+
 
 class ReportViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [AllowAny]
@@ -35,13 +38,24 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
 
         return super().get_permissions()
 
-    # def get_queryset(self):
-    #     hospital_id = self.request.query_params.get('hospital__id')
-    #     if not hospital_id:
-    #         raise ValidationError("Hospital ID is missiing!")
-    #     hospital_related_health_packages = ReportPricing.objects.filter(
-    #         hospital=hospital_id).values_list('health_package_id', flat=True)
-    #     return Report.objects.filter(id__in=hospital_related_health_packages).distinct()
+    def get_queryset(self):
+        family_member_id = self.request.query_params.get('user_id', None)
+        request_patient_obj = patient_user_object(self.request)
+        if family_member_id:
+            family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,
+                                                        id=family_member_id).first()
+            if not family_member:
+                raise ValidationError("Family member not found!")
+
+            if family_member.uhid_number:
+                return Report.objects.filter(uhid=family_member.uhid_number).distinct()
+
+            raise ValidationError("UHID is not linked to your family member!")
+
+        if request_patient_obj.uhid_number:
+            return Report.objects.filter(uhid=request_patient_obj.uhid_number).distinct()
+
+        raise ValidationError("Your UHID is not linked!")
 
 
 class NumericReportDetailsViewSet(custom_viewsets.CreateViewSet):
