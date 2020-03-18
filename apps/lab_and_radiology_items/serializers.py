@@ -1,14 +1,16 @@
 from rest_framework import serializers
 
 from apps.master_data.models import HomeCareService
+from apps.master_data.serializers import HospitalSerializer
 from apps.patients.serializers import (CurrentPatientUserDefault,
                                        FamilyMemberSerializer,
                                        PatientAddressSerializer)
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
-from .models import (LabRadiologyItem, LabRadiologyItemPricing,
-                     PatientServiceAppointment, UploadPrescription)
+from .models import (HomeCollectionAppointment, LabRadiologyItem,
+                     LabRadiologyItemPricing, PatientServiceAppointment,
+                     UploadPrescription)
 
 
 class LabRadiologyItemPricingSerializer(DynamicFieldsModelSerializer):
@@ -26,7 +28,11 @@ class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
                    'billing_sub_group', 'billing_group')
 
     def get_price(self, instance):
-        hospital_id = self.context['request'].query_params.get('hospital__id')
+        if 'hospital__id' in self.context:
+            hospital_id = self.context['hospital__id']
+        else:
+            hospital_id = self.context['request'].query_params.get(
+                'hospital__id')
         return instance.lab_radiology_item_pricing.get(hospital_id=hospital_id).price
 
 
@@ -88,5 +94,36 @@ class UploadPrescriptionSerializer(DynamicFieldsModelSerializer):
         if instance.family_member:
             response_object['family_member'] = FamilyMemberSerializer(
                 instance.family_member).data
+
+        return response_object
+
+
+class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
+    patient = serializers.UUIDField(write_only=True,
+                                    default=CurrentPatientUserDefault())
+
+    class Meta:
+        model = HomeCollectionAppointment
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.home_collections:
+            response_object['home_collections'] = LabRadiologyItemSerializer(
+                instance.home_collections, many=True,
+                context={
+                    "hospital__id": instance.hospital_id
+                }).data
+        if instance.address:
+            response_object['address'] = PatientAddressSerializer(
+                instance.address).data
+
+        if instance.family_member:
+            response_object['family_member'] = FamilyMemberSerializer(
+                instance.family_member).data
+
+        if instance.hospital:
+            response_object['hospital'] = HospitalSerializer(
+                instance.hospital).data
 
         return response_object
