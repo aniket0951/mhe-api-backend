@@ -11,6 +11,7 @@ from django.shortcuts import redirect, render
 
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
+from apps.patients.serializers import PatientSerializer, FamilyMemberSerializer
 from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_MID, SALUCRO_RESPONSE_URL,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
@@ -100,6 +101,7 @@ class PaymentResponse(APIView):
             raise ProcessingIdDoesNotExistsValidationException
         payment = {}
         payment_response = response_token_json["payment_response"]
+        payment_account = response_token_json["accounts"]
         payment["status"] = payment_response["status"]
         payment["transaction_id"] = payment_response["txnid"]
         payment["amount"] = payment_response["net_amount_debit"]
@@ -109,6 +111,21 @@ class PaymentResponse(APIView):
             payment_instance, data=payment, partial=True)
         payment_serializer.is_valid(raise_exception=True)
         payment_serializer.save()
+        uhid_info = {}
+        uhid_info["uhid_number"] = payment_account["account_number"]
+        uhid_info["pre_registration_number"] = null
+        if (payment_instance.uhid_patient or payment_instance.uhid_family_member):
+            if payment_instance.uhid_patient:
+                patient = Patient.objects.filter(id = payment_instance.uhid_patient).first()
+                patient_serializer = PatientSerializer(patient, data = uhid_info, partial = True)
+                patient_serializer.is_valid(raise_exception = True)
+                patient_serializer.save()
+            else:
+                family_member = FamilyMember.objects.filter(id = payment_instance.uhid_family_member).first()
+                patient_serializer = FamilyMemberSerializer(family_member, data = uhid_info, partial = True)
+                patient_serializer.is_valid(raise_exception = True)
+                patient_serializer.save()
+
         return Response(payment_serializer.data)
 
 
