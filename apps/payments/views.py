@@ -91,7 +91,7 @@ class PaymentResponse(APIView):
     parser_classes = [FormParser, MultiPartParser, JSONParser]
 
     def post(self, request, format=None):
-        response_token = data["responseToken"]
+        response_token = request.data["responseToken"]
         response_token_json = json.loads(response_token)
         processing_id = response_token_json["processing_id"]
         try:
@@ -121,7 +121,7 @@ class PaymentReturn(APIView):
         response_token = data["responseToken"]
         response_token_json = json.loads(response_token)
         payment_response = response_token_json["payment_response"]
-        txnstatus = payment_response["status"]
+        txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
         param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
