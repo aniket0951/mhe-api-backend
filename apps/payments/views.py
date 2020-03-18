@@ -11,7 +11,7 @@ from django.shortcuts import redirect, render
 
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import PatientSerializer, FamilyMemberSerializer
+from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_MID, SALUCRO_RESPONSE_URL,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
@@ -28,8 +28,6 @@ from utils.payment_parameter_generator import get_payment_param
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment
 from .serializers import PaymentSerializer
-
-data = {"_token": "", "responseToken": "{\"status_code\":1200,\"status_message\":\"Request processed successfully\",\"username\":\"Patient\",\"processing_id\":\"7323374915f195ab9871a0cb72296bce\",\"accounts\":{\"patient_name\":\"Jane Doe\",\"account_number\":\"ACC1\",\"amount\":\"150.25\"},\"transaction_id\":\"ch_202003131906136027\",\"payment_method\":\"PAYU-CC\",\"payment_location\":null,\"custom\":\"\",\"payment_response\":{\"mihpayid\":\"403993715520714040\",\"request_id\":\"\",\"bank_ref_num\":\"202007396710134\",\"amt\":\"150.25\",\"transaction_amount\":\"150.25\",\"txnid\":\"ch_202003131906136027\",\"additional_charges\":\"0.00\",\"productinfo\":\"appPayment\",\"firstname\":\"Jane Doe\",\"bankcode\":\"CC\",\"udf1\":\"\",\"udf3\":\"\",\"udf4\":\"\",\"udf5\":\"\",\"field2\":\"000000\",\"field9\":\"No Error\",\"error_code\":\"E000\",\"addedon\":\"2020-03-13 19:06:03\",\"payment_source\":\"payu\",\"card_type\":\"MASTERCARD\",\"error_Message\":\"NO ERROR\",\"net_amount_debit\":150.25,\"disc\":\"0.00\",\"mode\":\"CC\",\"PG_TYPE\":\"HDFCPG\",\"card_no\":\"512345XXXXXX2346\",\"name_on_card\":\"Payu\",\"udf2\":\"\",\"status\":\"success\",\"unmappedstatus\":\"captured\",\"Merchant_UTR\":null,\"Settled_At\":\"0000-00-00 00:00:00\"},\"check_sum_hash\":\"MWNjOTY3ZDk1YjVkOGM0NTBjYTkyODk3ZGU3ZWMwM2ZjYjRmODVhNmMyMmQ3YWMzYjYzZTQ1MzIwMjhkN2U3NA==\"}"}
 
 
 class AppointmentPayment(APIView):
@@ -116,14 +114,18 @@ class PaymentResponse(APIView):
         uhid_info["pre_registration_number"] = null
         if (payment_instance.uhid_patient or payment_instance.uhid_family_member):
             if payment_instance.uhid_patient:
-                patient = Patient.objects.filter(id = payment_instance.uhid_patient).first()
-                patient_serializer = PatientSerializer(patient, data = uhid_info, partial = True)
-                patient_serializer.is_valid(raise_exception = True)
+                patient = Patient.objects.filter(
+                    id=payment_instance.uhid_patient).first()
+                patient_serializer = PatientSerializer(
+                    patient, data=uhid_info, partial=True)
+                patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
             else:
-                family_member = FamilyMember.objects.filter(id = payment_instance.uhid_family_member).first()
-                patient_serializer = FamilyMemberSerializer(family_member, data = uhid_info, partial = True)
-                patient_serializer.is_valid(raise_exception = True)
+                family_member = FamilyMember.objects.filter(
+                    id=payment_instance.uhid_family_member).first()
+                patient_serializer = FamilyMemberSerializer(
+                    family_member, data=uhid_info, partial=True)
+                patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
 
         return Response(payment_serializer.data)
