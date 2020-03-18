@@ -13,12 +13,13 @@ from .models import DashboardBanner
 from .serializers import DashboardBannerSerializer
 
 
-class DashboardBannerViewSet(custom_viewsets.CreateViewSet):
+class DashboardBannerViewSet(custom_viewsets.CreateDeleteViewSet):
     permission_classes = [IsManipalAdminUser]
     model = DashboardBanner
     queryset = DashboardBanner.objects.all()
     serializer_class = DashboardBannerSerializer
-    create_success_message = "New dashboard banner is banner added successfully."
+    create_success_message = "New dashboard banner added successfully."
+    delete_success_message = "Dashboard banner deleted successfully."
 
 
 class DashboardAPIView(ListAPIView):
