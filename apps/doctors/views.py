@@ -27,6 +27,8 @@ from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.models import Department, Hospital, Specialisation
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
+from proxy.custom_serializables import \
+    DoctorSchedule as serializable_DoctorSchedule
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from utils import custom_viewsets
@@ -113,3 +115,38 @@ class DoctorSlotAvailability(ProxyView):
         response["price"] = price
         return self.custom_success_response(message='Available slots',
                                             success=True, data=response)
+
+class DoctorScheduleView(ProxyView):
+    source = 'weeklySchedule'
+    permission_classes = [IsPatientUser]
+
+    def get_request_data(self, request):
+        data = request.data
+        schedule = serializable_DoctorSchedule(**request.data)
+        request_data = custom_serializer().serialize(schedule, 'XML')
+        print(request_data)
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        data = {}
+        root = ET.fromstring(response.content)
+        print(response.content)
+        schedule_lists = root.find("ScheduleList").text
+        schedule_list = []
+        records = {}
+        if schedule_lists:
+            schedule_list = ast.literal_eval(schedule_lists)
+        for record in schedule_list:
+            hospital = record["Hosp"]
+            hospital_description = Hospital.objects.filter(code = hospital).first().description
+            if hospital_description in records:
+                records[hospital_description].append(record)
+            else:
+                records[hospital_description] =[]
+                records[hospital_description].append(record)
+
+        return self.custom_success_response(message='Available slots',
+                                            success=True, data=records)
