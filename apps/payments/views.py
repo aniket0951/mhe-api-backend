@@ -111,7 +111,7 @@ class PaymentResponse(APIView):
         payment_serializer.save()
         uhid_info = {}
         uhid_info["uhid_number"] = payment_account["account_number"]
-        uhid_info["pre_registration_number"] = null
+        uhid_info["pre_registration_number"] = None
         if (payment_instance.uhid_patient or payment_instance.uhid_family_member):
             if payment_instance.uhid_patient:
                 patient = Patient.objects.filter(
