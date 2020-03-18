@@ -88,7 +88,7 @@ CUSTOM_APPS = [
     'apps.personal_documents',
     'apps.cart_items',
     'apps.reports',
-
+    'apps.dashboard',
 
 
 ]
