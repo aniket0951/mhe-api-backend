@@ -8,6 +8,7 @@ from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser)
+from utils.utils import manipal_admin_object
 
 from .models import (HomeCollectionAppointment, LabRadiologyItem,
                      LabRadiologyItemPricing, PatientServiceAppointment,
@@ -104,11 +105,11 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
     ordering_fields = ('appointment_date',)
 
     def get_permissions(self):
-        if self.action in ['list', 'create', ]:
-            permission_classes = [IsPatientUser]
+        if self.action in ['list', ]:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'retrieve']:
+        if self.action in ['partial_update', 'retrieve', 'create']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -123,6 +124,8 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
+        if manipal_admin_object(self.request):
+            return super().get_queryset()
         family_member = self.request.query_params.get("user_id", None)
         if family_member is not None:
             return super().get_queryset().filter(family_member_id=family_member)
@@ -146,7 +149,7 @@ class UploadPrescriptionViewSet(custom_viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
-            permission_classes = [IsPatientUser]
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action in ['partial_update', 'create']:
@@ -164,6 +167,8 @@ class UploadPrescriptionViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
+        if manipal_admin_object(self.request):
+            return super().get_queryset()
         family_member = self.request.query_params.get("user_id", None)
         if family_member is not None:
             return super().get_queryset().filter(family_member_id=family_member)
@@ -186,11 +191,11 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
     ordering_fields = ('appointment_date',)
 
     def get_permissions(self):
-        if self.action in ['list', 'create', ]:
-            permission_classes = [IsPatientUser]
+        if self.action in ['list', ]:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'retrieve']:
+        if self.action in ['partial_update', 'retrieve', 'create']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -205,6 +210,8 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
+        if manipal_admin_object(self.request):
+            return super().get_queryset()
         family_member = self.request.query_params.get("user_id", None)
         if family_member is not None:
             return super().get_queryset().filter(family_member_id=family_member)

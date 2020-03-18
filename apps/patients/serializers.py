@@ -13,6 +13,7 @@ from .models import FamilyMember, Patient, PatientAddress
 
 class PatientSerializer(DynamicFieldsModelSerializer):
     mobile = PhoneNumberField()
+    family_members_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
@@ -32,6 +33,10 @@ class PatientSerializer(DynamicFieldsModelSerializer):
             'first_name': {"error_messages": {"required": "First name is mandatory to create your account."}},
             'email': {"error_messages": {"required": "Email is mandatory to create your account."}}
         }
+
+    def get_family_members_count(self, instance):
+        return FamilyMember.objects.filter(patient_info__id=instance.id,
+                                           mobile_verified=True).count()
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
@@ -107,8 +112,6 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = None
 
         return response_object
-
-
 
 
 class PatientAddressSerializer(DynamicFieldsModelSerializer):
