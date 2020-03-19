@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 
+from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
@@ -17,15 +18,16 @@ from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
                                   SALUCRO_USERNAME)
 from proxy.custom_views import ProxyView
+from rest_framework import filters
 from rest_framework.decorators import (api_view, parser_classes,
                                        permission_classes)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from utils.custom_permissions import IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember
-from utils import custom_viewsets
-from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from utils import custom_viewsets
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
+                                      IsSelfUserOrFamilyMember)
 from utils.payment_parameter_generator import get_payment_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
@@ -153,6 +155,7 @@ class PaymentReturn(APIView):
             txnid, txnstatus, txnamount)
         return HttpResponseRedirect("https://mhedev.mantralabsglobal.com/redirect"+param)
 
+
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name']
     filter_backends = (filters.SearchFilter,)
@@ -162,4 +165,8 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     list_success_message = 'Payment list returned successfully!'
     retrieve_success_message = 'Payment information returned successfully!'
 
-
+    def get_queryset(self):
+        uhid = self.request.query_params.get("uhid", None)
+        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            return super().get_queryset()
+        return super().get_queryset().filter(uhid_number=uhid)
