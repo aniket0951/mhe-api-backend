@@ -7,6 +7,7 @@ from .views import *
 
 
 router = DefaultRouter(trailing_slash=False)
+router.register('all_payments', PaymentsAPIView)
 
 
 
@@ -18,6 +19,7 @@ urlpatterns = [
     path('payment_return', PaymentReturn.as_view()),
     path('health_package_payment', HealthPackagePayment.as_view()),
     path('uhid_payment', UHIDPayment.as_view()),
+    *router.urls
 
 ]
 

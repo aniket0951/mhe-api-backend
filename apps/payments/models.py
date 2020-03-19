@@ -29,6 +29,10 @@ class Payment(MyBaseModel):
 
     settled_at = models.DateField(null = True, blank = True)
 
+    uhid_number = models.CharField(max_length=20,
+                                blank=True,
+                                null=True)
+
     appointment = models.ForeignKey(Appointment,
                                     on_delete=models.PROTECT,
                                     blank=True,

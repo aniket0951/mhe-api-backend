@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 
+from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
@@ -17,17 +18,23 @@ from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
                                   SALUCRO_USERNAME)
 from proxy.custom_views import ProxyView
+from rest_framework import filters
 from rest_framework.decorators import (api_view, parser_classes,
                                        permission_classes)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from utils import custom_viewsets
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
+                                      IsSelfUserOrFamilyMember)
 from utils.payment_parameter_generator import get_payment_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment
 from .serializers import PaymentSerializer
+from apps.appointments.models import Appointment
+from apps.appointments.serializers import AppointmentSerializer
 
 
 class AppointmentPayment(APIView):
@@ -106,6 +113,7 @@ class PaymentResponse(APIView):
         payment["transaction_id"] = payment_response["txnid"]
         payment["amount"] = payment_response["net_amount_debit"]
         payment["bank_ref_num"] = payment_response["bank_ref_num"]
+        payment["uhid_number"] = payment_account["account_number"]
         payment["raw_info_from_salucro_response"] = response_token_json
         payment_serializer = PaymentSerializer(
             payment_instance, data=payment, partial=True)
@@ -129,6 +137,12 @@ class PaymentResponse(APIView):
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
+        if payment_instance.appointment_identifier:
+            appointment = Appointment.objects.filter(id = payment_instance.appointment_identifier_id)
+            update_data = {"payment_status": payment_response["status"]}
+            appointment_serializer = AppointmentSerializer(appointment, data = update_data, partial = True)
+            appointment_serializer.is_valid(raise_exception = True)
+            appointment_serializer.save()
 
         return Response(payment_serializer.data)
 
@@ -148,3 +162,19 @@ class PaymentReturn(APIView):
         param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
             txnid, txnstatus, txnamount)
         return HttpResponseRedirect("https://mhedev.mantralabsglobal.com/redirect"+param)
+
+
+class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
+    search_fields = ['patient__first_name']
+    filter_backends = (filters.SearchFilter,)
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    list_success_message = 'Payment list returned successfully!'
+    retrieve_success_message = 'Payment information returned successfully!'
+
+    def get_queryset(self):
+        uhid = self.request.query_params.get("uhid", None)
+        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            return super().get_queryset()
+        return super().get_queryset().filter(uhid_number=uhid)
