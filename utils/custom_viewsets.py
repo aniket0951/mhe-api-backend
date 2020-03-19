@@ -55,3 +55,14 @@ class CreateViewSet(
     `partial_update()`, `destroy()` and `list()` actions.
     """
     pass
+
+
+class CreateDeleteViewSet(
+        custom_mixins.CreateModelMixin,
+        custom_mixins.DestroyModelMixin,
+        viewsets.GenericViewSet):
+    """
+    A viewset that provides default `create()`, `retrieve()`, `update()`,
+    `partial_update()`, `destroy()` and `list()` actions.
+    """
+    pass

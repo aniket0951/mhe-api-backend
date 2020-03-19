@@ -1,3 +1,4 @@
+from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -54,7 +55,7 @@ class RegistrationAPIView(ListAPIView):
             Religion.objects.all(), many=True).data
         registration_details['title'] = TitleSerializer(
             Title.objects.all(), many=True).data
-        return Response(registration_details)
+        return Response(registration_details, status=status.HTTP_200_OK)
 
 class UHIDRegistrationView(ProxyView):
     source = 'SavePreRegistration'
