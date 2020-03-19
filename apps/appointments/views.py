@@ -66,12 +66,12 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             return super().get_queryset().order_by('-appointment_date')
         elif (family_member is not None):
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1, family_member_id=family_member).filter(appointment_slot__gte = datetime.now().time())
-            return super().get_queryset().filter(family_member_id=family_member).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2)).filter(appointment_slot__lt = datetime.now().time())
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1, family_member_id=family_member)
+            return super().get_queryset().filter(family_member_id=family_member).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
         else:
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True, status=1).filter(appointment_slot__gte = datetime.now().time())
-            return super().get_queryset().filter(patient_id=self.request.user.id, family_member__isnull=True).filter(Q(appointment_date__lte=datetime.now().date()) | Q(status=2)).filter(appointment_slot__lt = datetime.now().time())
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True, status=1)
+            return super().get_queryset().filter(patient_id=self.request.user.id, family_member__isnull=True).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
 
 
 class CreateMyAppointment(ProxyView):
