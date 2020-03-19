@@ -37,6 +37,7 @@ class AppointmentPayment(APIView):
         payment_data = {}
         param["token"]["appointment_id"] = appointment_id
         payment_data["processing_id"] = param["token"]["processing_id"]
+        param["token"]["transaction_type"] = "APP"
         payment_data["appointment_id"] = appointment_id
         payment_data["patient"] = request.user.id
         payment = PaymentSerializer(data=payment_data)
@@ -54,9 +55,10 @@ class HealthPackagePayment(APIView):
         package_id = request.data["package_id"]
         package_id_list = package_id.split(",")
         package_code_list = package_code.split(",")
-        package_code = "|".join(package_list)
+        package_code = "||".join(package_code_list)
         payment_data = {}
         param["token"]["package_code"] = package_code
+        param["token"]["transaction_type"] = "HC"
         payment_data["processing_id"] = param["token"]["processing_id"]
         payment_data["health_package"] = package_id_list
         payment_data["patient"] = request.user.id
