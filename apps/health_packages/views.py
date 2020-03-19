@@ -33,7 +33,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('description',)
-    search_fields = ('description',)
+    search_fields = ('description', 'code')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
@@ -70,7 +70,7 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_class = HealthPackageFilter
-    search_fields = ['name', ]
+    search_fields = ['name', 'code']
     ordering_fields = ('health_package_pricing__price', 'name')
 
     def get_permissions(self):
