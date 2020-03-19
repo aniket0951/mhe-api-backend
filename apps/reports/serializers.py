@@ -21,11 +21,13 @@ class TextReportDetailsSerializer(DynamicFieldsModelSerializer):
 
 
 class ReportSerializer(DynamicFieldsModelSerializer):
-    string_Reports = StringReportDetailsSerializer(source='stringreportdetails_set', many=True)
-    text_Reports = TextReportDetailsSerializer(source='textreportdetails_set', many=True)
-    numeric_Reports = NumericReportDetailsSerializer(source='numericreportdetails_set', many=True)
+    string_Reports = StringReportDetailsSerializer(
+        source='stringreportdetails_set', many=True, read_only=True)
+    text_Reports = TextReportDetailsSerializer(
+        source='textreportdetails_set', many=True, read_only=True)
+    numeric_Reports = NumericReportDetailsSerializer(
+        source='numericreportdetails_set', many=True, read_only=True)
 
     class Meta:
         model = Report
         exclude = ('created_at', 'updated_at',)
-
