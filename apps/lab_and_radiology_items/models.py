@@ -86,7 +86,7 @@ class LabRadiologyItemPricing(MyBaseModel):
 
 
 class PatientServiceAppointment(MyBaseModel):
-    appointment_date = models.DateTimeField()
+    appointment_date = models.DateField()
 
     service = models.ForeignKey(HomeCareService,
                                 null=False,
