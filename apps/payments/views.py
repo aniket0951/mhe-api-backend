@@ -33,6 +33,8 @@ from utils.payment_parameter_generator import get_payment_param
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment
 from .serializers import PaymentSerializer
+from apps.appointments.models import Appointment
+from apps.appointments.serializers import AppointmentSerializer
 
 
 class AppointmentPayment(APIView):
@@ -135,6 +137,12 @@ class PaymentResponse(APIView):
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
+        if payment_instance.appointment_identifier:
+            appointment = Appointment.objects.filter(id = payment_instance.appointment_identifier_id)
+            update_data = {"payment_status": payment_response["status"]}
+            appointment_serializer = AppointmentSerializer(appointment, data = update_data, partial = True)
+            appointment_serializer.is_valid(raise_exception = True)
+            appointment_serializer.save()
 
         return Response(payment_serializer.data)
 
