@@ -3,12 +3,13 @@ from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.serializers import ValidationError
 
+from apps.cart_items.models import HomeCollectionCart
 from apps.master_data.models import BillingGroup, HomeCareService
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser)
-from utils.utils import manipal_admin_object
+from utils.utils import manipal_admin_object, patient_user_object
 
 from .models import (HomeCollectionAppointment, LabRadiologyItem,
                      LabRadiologyItemPricing, PatientServiceAppointment,
@@ -218,3 +219,10 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
         else:
             return super().get_queryset().filter(patient_id=self.request.user.id,
                                                  family_member__isnull=True)
+
+    def perform_create(self, serializer):
+        serializer.save()
+        patient_user = patient_user_object(self.request)
+        cart_obj = HomeCollectionCart.objects.filter(
+            patient_info=patient_user).first()
+        cart_obj.home_collections.clear()
