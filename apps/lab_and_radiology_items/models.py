@@ -116,7 +116,7 @@ class PatientServiceAppointment(MyBaseModel):
 
 
 class UploadPrescription(MyBaseModel):
-    appointment_date = models.DateField()
+    appointment_date = models.DateTimeField()
 
     patient = models.ForeignKey(Patient,
                                 null=True,
@@ -149,7 +149,7 @@ class UploadPrescription(MyBaseModel):
 
 
 class HomeCollectionAppointment(MyBaseModel):
-    appointment_date = models.DateField()
+    appointment_date = models.DateTimeField()
 
     home_collections = models.ManyToManyField(LabRadiologyItem,
                                               blank=False)
