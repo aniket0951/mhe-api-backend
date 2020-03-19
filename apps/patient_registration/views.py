@@ -84,8 +84,6 @@ class UHIDRegistrationView(ProxyView):
             if status == "Failed":
                 raise FieldMissingValidationException
             pre_registration_number = root.find("PreRegistrationNumber").text
-            import pdb; pdb.set_trace()
-            print(pre_registration_number)
             response_status = True
             response_message = message
             response_data["pre_registration_number"] = pre_registration_number

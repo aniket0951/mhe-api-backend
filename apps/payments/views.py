@@ -21,6 +21,9 @@ from rest_framework.decorators import (api_view, parser_classes,
                                        permission_classes)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from utils.custom_permissions import IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember
+from utils import custom_viewsets
+from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from utils.payment_parameter_generator import get_payment_param
@@ -106,6 +109,7 @@ class PaymentResponse(APIView):
         payment["transaction_id"] = payment_response["txnid"]
         payment["amount"] = payment_response["net_amount_debit"]
         payment["bank_ref_num"] = payment_response["bank_ref_num"]
+        payment["uhid_number"] = payment_account["account_number"]
         payment["raw_info_from_salucro_response"] = response_token_json
         payment_serializer = PaymentSerializer(
             payment_instance, data=payment, partial=True)
@@ -148,3 +152,14 @@ class PaymentReturn(APIView):
         param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
             txnid, txnstatus, txnamount)
         return HttpResponseRedirect("https://mhedev.mantralabsglobal.com/redirect"+param)
+
+class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
+    search_fields = ['patient__first_name']
+    filter_backends = (filters.SearchFilter,)
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    list_success_message = 'Payment list returned successfully!'
+    retrieve_success_message = 'Payment information returned successfully!'
+
+
