@@ -166,9 +166,10 @@ class PaymentReturn(APIView):
 
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name']
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+    ordering = ('-created_at',)
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Payment list returned successfully!'
     retrieve_success_message = 'Payment information returned successfully!'

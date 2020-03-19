@@ -44,4 +44,8 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
             response_object['hospital'] = HospitalSerializer(
                 Hospital.objects.get(id=str(response_object['hospital']))).data
 
+        if response_object["reason"]:
+            response_object["reason"] = CancellationReasonSerializer(
+                CancellationReason.objects.get(id=str(response_object['reason']))).data
+
         return response_object

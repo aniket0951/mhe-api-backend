@@ -37,6 +37,7 @@ class Appointment(models.Model):
         Hospital, on_delete=models.PROTECT, related_name='hospital_appointment')
     reason = models.ForeignKey(
         CancellationReason, on_delete=models.PROTECT, related_name='cancellation_reason_appointment', null=True, blank=True)
-    payment_status =  models.CharField(max_length=10,
-                                    blank = True,
-                                    null = True)
+    payment_status = models.CharField(max_length=10,
+                                      blank=True,
+                                      null=True)
+    app_booked = models.BooleanField(default=True)
