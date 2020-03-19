@@ -41,7 +41,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
 
-        if response_object['favorite_hospital']:
+        if 'favorite_hospital' in response_object and response_object['favorite_hospital']:
             response_object['favorite_hospital'] = HospitalSerializer(
                 Hospital.objects.get(id=str(response_object['favorite_hospital']))).data
 
