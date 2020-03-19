@@ -38,11 +38,11 @@ from utils.exceptions import InvalidRequest
 
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
-    search_fields = ['name', 'hospital_departments__department__name']
-    filter_backends = (filters.SearchFilter,)
+    search_fields = ['name', 'hospital_departments__department__name', 'hospital__code', 'code']
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
-    ordering_fields = ('name',)
+    ordering = ('name',)
     create_success_message = None
     list_success_message = 'Doctors list returned successfully!'
     retrieve_success_message = 'Doctors information returned successfully!'

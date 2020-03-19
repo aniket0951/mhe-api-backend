@@ -43,13 +43,14 @@ from .serializers import AppointmentSerializer, CancellationReasonSerializer
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
-    search_fields = ['patient__first_name',
-                     'doctor__name', 'family_member__first_name']
-    filter_backends = (filters.SearchFilter,)
+    search_fields = ['patient__first_name','doctor__name', 'family_member__first_name', 
+                    'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number', 
+                    'patient__mobile', 'patient__email']
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    ordering_fields = ('-appointment_date', '-appointment_slot', 'status')
+    ordering = ('-appointment_date', '-appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
@@ -58,16 +59,19 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         family_member = self.request.query_params.get("user_id", None)
         is_upcoming = self.request.query_params.get("is_upcoming", False)
+        is_cancelled = self.request.query_params.get("is_cancelled", False)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
-            return super().get_queryset()
+            if is_cancelled:
+                return super().get_queryset().filter(status = 2).order_by('-appointment_date')
+            return super().get_queryset().order_by('-appointment_date')
         elif (family_member is not None):
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1, family_member_id=family_member)
-            return super().get_queryset().filter(family_member_id=family_member).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1, family_member_id=family_member).filter(appointment_slot__gte = datetime.now().time())
+            return super().get_queryset().filter(family_member_id=family_member).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2)).filter(appointment_slot__lt = datetime.now().time())
         else:
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True, status=1)
-            return super().get_queryset().filter(patient_id=self.request.user.id, family_member__isnull=True).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), patient_id=self.request.user.id, family_member__isnull=True, status=1).filter(appointment_slot__gte = datetime.now().time())
+            return super().get_queryset().filter(patient_id=self.request.user.id, family_member__isnull=True).filter(Q(appointment_date__lte=datetime.now().date()) | Q(status=2)).filter(appointment_slot__lt = datetime.now().time())
 
 
 class CreateMyAppointment(ProxyView):
