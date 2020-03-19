@@ -23,8 +23,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ('id', 'appointment_identifier', 'patient', 'family_member', 'doctor',
-                  'hospital', 'appointment_date', 'appointment_slot', 'status')
+        fields = '__all__'
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
