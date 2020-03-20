@@ -37,7 +37,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
                 Patient.objects.get(id=str(response_object['patient']))).data
 
         if response_object['family_member']:
-            response_object['family_member'] = PatientSerializer(
+            response_object['family_member'] = FamilyMemberSerializer(
                 FamilyMember.objects.get(id=str(response_object['family_member']))).data
 
         if response_object['hospital']:
