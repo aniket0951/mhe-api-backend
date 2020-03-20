@@ -83,7 +83,10 @@ class UHIDPayment(APIView):
     def post(self, request, format=None):
         payment_data = {}
         family_member = request.data.get("user_id", None)
+        location_code = request.data.get("location_code", None)
         param = get_payment_param(request.data)
+        param["token"]["transaction_type"] = "REG"
+        param["token"]["payment_location"] = location_code
         payment_data["processing_id"] = param["token"]["processing_id"]
         payment_data["patient"] = request.user.id
         if family_member is not None:
@@ -139,9 +142,9 @@ class PaymentResponse(APIView):
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
-        if payment_instance.appointment_identifier:
+        if payment_instance.appointment:
             appointment = Appointment.objects.filter(
-                appointment_identifier=payment_instance.appointment_identifier_id)
+                appointment_identifier=payment_instance.payment_instance.appointment)
             update_data = {"payment_status": payment_response["status"]}
             appointment_serializer = AppointmentSerializer(
                 appointment, data=update_data, partial=True)
