@@ -2,6 +2,7 @@ import base64
 import hashlib
 import json
 import xml.etree.ElementTree as ET
+from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
@@ -9,10 +10,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 
+from apps.appointments.models import Appointment
+from apps.appointments.serializers import AppointmentSerializer
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_MID, SALUCRO_RESPONSE_URL,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
@@ -33,8 +37,6 @@ from utils.payment_parameter_generator import get_payment_param
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment
 from .serializers import PaymentSerializer
-from apps.appointments.models import Appointment
-from apps.appointments.serializers import AppointmentSerializer
 
 
 class AppointmentPayment(APIView):
@@ -138,10 +140,12 @@ class PaymentResponse(APIView):
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
         if payment_instance.appointment_identifier:
-            appointment = Appointment.objects.filter(id = payment_instance.appointment_identifier_id)
+            appointment = Appointment.objects.filter(
+                appointment_identifier=payment_instance.appointment_identifier_id)
             update_data = {"payment_status": payment_response["status"]}
-            appointment_serializer = AppointmentSerializer(appointment, data = update_data, partial = True)
-            appointment_serializer.is_valid(raise_exception = True)
+            appointment_serializer = AppointmentSerializer(
+                appointment, data=update_data, partial=True)
+            appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
 
         return Response(payment_serializer.data)
@@ -166,16 +170,31 @@ class PaymentReturn(APIView):
 
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name']
-    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    filter_backends = (filters.SearchFilter,
+                       filters.OrderingFilter, DjangoFilterBackend)
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     ordering = ('-created_at',)
+    filter_fields = ('status',)
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Payment list returned successfully!'
     retrieve_success_message = 'Payment information returned successfully!'
 
     def get_queryset(self):
         uhid = self.request.query_params.get("uhid", None)
+        filter_by = self.request.query_params.get("filter_by", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset()
+        if filter_by:
+            if filter_by == "current_week":
+                current_week = date.today().isocalendar()[1]
+                return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week)
+            elif filter_by == "last_week":
+                last_week = date.today()-timedelta(days=7)
+                return super().get_queryset().filter(uhid_number=uhid, created_at__gte=last_week)
+            elif filter_by == "last_month":
+                last_month = datetime.today() - timedelta(days=30)
+                return super().get_queryset().filter(uhid_number=uhid, created_at__gte=last_month)
+            else:
+                return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
