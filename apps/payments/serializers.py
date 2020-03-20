@@ -34,8 +34,4 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
             response_object['uhid_patient'] = PatientSerializer(
                 Patient.objects.get(id=str(response_object['uhid_patient']))).data
 
-        if response_object["health_package"]:
-            response_object["health_package"] = HealthPackageDetailSerializer(
-                HealthPackage.objects.get(id=str(response_object['health_package']))).data
-
         return response_object
