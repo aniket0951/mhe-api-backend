@@ -22,7 +22,7 @@ from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
                                   SALUCRO_USERNAME)
 from proxy.custom_views import ProxyView
-from rest_framework import filters
+from rest_framework import filters, status
 from rest_framework.decorators import (api_view, parser_classes,
                                        permission_classes)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -151,7 +151,7 @@ class PaymentResponse(APIView):
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
 
-        return Response(payment_serializer.data)
+        return Response(status=status.HTTP_200_OK)
 
 
 class PaymentReturn(APIView):
