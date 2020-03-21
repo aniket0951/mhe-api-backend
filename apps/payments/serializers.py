@@ -2,12 +2,15 @@ from apps.appointments.models import Appointment
 from apps.appointments.serializers import AppointmentSerializer
 from apps.health_packages.models import HealthPackage
 from apps.health_packages.serializers import HealthPackageDetailSerializer
+from apps.master_data.models import Hospital
+from apps.master_data.serializers import HospitalSerializer
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import Payment
+
 
 
 class PaymentSerializer(DynamicFieldsModelSerializer):
@@ -33,5 +36,9 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
         if response_object['uhid_patient']:
             response_object['uhid_patient'] = PatientSerializer(
                 Patient.objects.get(id=str(response_object['uhid_patient']))).data
+
+        if response_object['location']:
+            response_object['location'] = HospitalSerializer(
+                Hospital.objects.get(id=str(response_object['location']))).data
 
         return response_object
