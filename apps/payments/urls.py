@@ -8,7 +8,7 @@ from .views import *
 
 router = DefaultRouter(trailing_slash=False)
 router.register('all_payments', PaymentsAPIView)
-
+router.register('all_health_package', HealthPackageAPIView)
 
 
 

@@ -36,7 +36,10 @@ from utils.payment_parameter_generator import get_payment_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment
+from apps.health_packages.serializers import HealthPackageSerializer
+from apps.health_packages.models import HealthPackage
 from .serializers import PaymentSerializer
+from django.core import serializers
 
 
 class AppointmentPayment(APIView):
@@ -201,3 +204,48 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             else:
                 return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
+
+class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
+    search_fields = ['patient__first_name']
+    filter_backends = (filters.SearchFilter,
+                       filters.OrderingFilter, DjangoFilterBackend)
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    list_success_message = 'Health Package list returned successfully!'
+
+    def get_queryset(self):
+        uhid = self.request.query_params.get("uhid", None)
+        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            return super().get_queryset()
+        else:
+            query  = Payment.health_package.through.objects.filter(payment_id__uhid_number = uhid)
+            return query
+    
+    def list(self, request, *args, **kwargs):
+        pagination_data = None
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = serializers.serialize('json', page)
+            serializer_obj = json.loads(serializer)
+            for obj in serializer_obj:
+                health_package_obj = HealthPackage.objects.filter(id= obj["fields"]["healthpackage"])
+                payment_obj = Payment.objects.filter(id= obj["fields"]["payment"])
+                health_package_json = serializers.serialize('json', health_package_obj)
+                payment_json = serializers.serialize('json', payment_obj)
+                health_package_json = json.loads(health_package_json)
+                payment_json = json.loads(payment_json)
+                obj["fields"]["healthpackage"] = health_package_json[0]
+                obj["fields"]["payment"] = payment_json[0]
+            pagination_data = self.get_paginated_response(serializer_obj)
+        else:
+            serializer = serializers.serialize('json', queryset)
+            serializer_obj = json.loads(serializer)
+
+        data = {
+            "data": serializer_obj,
+            "message": self.list_success_message,
+            "pagination_data": pagination_data
+        }
+        return Response(data, status=status.HTTP_200_OK)
