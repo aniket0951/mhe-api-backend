@@ -9,7 +9,8 @@ import requests
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
-
+from apps.master_data.exceptions import HospitalDoesNotExistsValidationException
+from apps.master_data.models import Hospital
 from apps.appointments.models import Appointment
 from apps.appointments.serializers import AppointmentSerializer
 from apps.manipal_admin.models import ManipalAdmin
@@ -41,10 +42,20 @@ from apps.health_packages.models import HealthPackage
 from .serializers import PaymentSerializer
 from django.core import serializers
 
+from proxy.custom_serializables import \
+    PayBills as serializable_PayBills
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_views import ProxyView
+
 
 class AppointmentPayment(APIView):
     def post(self, request, format=None):
         param = get_payment_param(request.data)
+        location_code = request.data.get("location_code", None)
+        try:
+            hospital = Hospital.objects.get(code = location_code)
+        except Exception as e:
+            raise HospitalDoesNotExistsValidationException
         appointment_id = request.data["appointment_id"]
         payment_data = {}
         param["token"]["appointment_id"] = appointment_id
@@ -52,6 +63,7 @@ class AppointmentPayment(APIView):
         param["token"]["transaction_type"] = "APP"
         payment_data["appointment_id"] = appointment_id
         payment_data["patient"] = request.user.id
+        payment_data["location"] = hospital.id
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
@@ -63,6 +75,11 @@ class HealthPackagePayment(APIView):
 
     def post(self, request, format=None):
         param = get_payment_param(request.data)
+        location_code = request.data.get("location_code", None)
+        try:
+            hospital = Hospital.objects.get(code = location_code)
+        except Exception as e:
+            raise HospitalDoesNotExistsValidationException
         package_code = request.data["package_code"]
         package_id = request.data["package_id"]
         package_id_list = package_id.split(",")
@@ -74,6 +91,7 @@ class HealthPackagePayment(APIView):
         payment_data["processing_id"] = param["token"]["processing_id"]
         payment_data["health_package"] = package_id_list
         payment_data["patient"] = request.user.id
+        payment_data["location"] = hospital.id
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
@@ -87,11 +105,17 @@ class UHIDPayment(APIView):
         payment_data = {}
         family_member = request.data.get("user_id", None)
         location_code = request.data.get("location_code", None)
+        try:
+            hospital = Hospital.objects.get(code = location_code)
+        except Exception as e:
+            raise HospitalDoesNotExistsValidationException
+
         param = get_payment_param(request.data)
         param["token"]["transaction_type"] = "REG"
         param["token"]["payment_location"] = location_code
         payment_data["processing_id"] = param["token"]["processing_id"]
         payment_data["patient"] = request.user.id
+        payment_data["location"] = hospital.id
         if family_member is not None:
             payment_data["uhid_family_member"] = family_member
         else:
@@ -249,3 +273,32 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
             "pagination_data": pagination_data
         }
         return Response(data, status=status.HTTP_200_OK)
+
+class PayBillView(ProxyView):
+    source = 'DepositAmt'
+    permission_classes = [IsSelfUserOrFamilyMember]
+
+    def get_request_data(self, request):
+        data = request.data
+        pay_bill = serializable_PayBills(**request.data)
+        request_data = custom_serializer().serialize(pay_bill, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        response_data = {}
+        response_message = "We are unable to cancel fetch the bill information. Please Try again"
+        success_status = False
+        if response.status_code == 200:
+            status = root.find("Status").text
+            if status == "1":
+                success_status = True
+                response_message = "Returned Bill Information Successfully"
+                bill_response = root.find("BillDetail")
+                response_data = json.loads(bill_response.text)
+
+        return self.custom_success_response(message=response_message,
+                                            success=success_status, data=response_data)
