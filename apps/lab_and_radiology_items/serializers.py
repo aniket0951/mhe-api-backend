@@ -129,6 +129,14 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
                 context={
                     "hospital__id": instance.hospital_id
                 }).data
+        try:
+            if instance.document:
+                response_object['document'] = generate_pre_signed_url(
+                    instance.document.url)
+        except Exception as error:
+            print(error)
+            response_object['display_picture'] = None
+
         if instance.address:
             response_object['address'] = PatientAddressSerializer(
                 instance.address).data
