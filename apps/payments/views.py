@@ -60,12 +60,12 @@ class AppointmentPayment(APIView):
             hospital = Hospital.objects.get(code=location_code)
         except Exception as e:
             raise HospitalDoesNotExistsValidationException
-        appointment_id = request.data["appointment_id"]
+        appointment = request.data["appointment_id"]
         payment_data = {}
         param["token"]["appointment_id"] = appointment_id
         payment_data["processing_id"] = param["token"]["processing_id"]
         param["token"]["transaction_type"] = "APP"
-        payment_data["appointment_id"] = appointment_id
+        payment_data["appointment"] = appointment
         payment_data["patient"] = request.user.id
         payment_data["location"] = hospital.id
         payment = PaymentSerializer(data=payment_data)
