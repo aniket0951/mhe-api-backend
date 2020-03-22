@@ -1,16 +1,25 @@
 from datetime import datetime
+import json
+import xml.etree.ElementTree as ET
+import ast
 
 from django.db.models import Q
+
+from apps.master_data.models import Specialisation
 from django_filters.rest_framework import DjangoFilterBackend
+from proxy.custom_serializables import \
+    DoctorSchedule as serializable_DoctorSchedule
+from proxy.custom_serializables import \
+    SlotAvailability as serializable_SlotAvailability
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_views import ProxyView
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.serializers import ValidationError
-
-from apps.master_data.models import Specialisation
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser)
+                                      IsManipalAdminUser, IsPatientUser)
 
 from .filters import HealthPackageFilter
 from .models import HealthPackage, HealthPackagePricing
@@ -18,6 +27,7 @@ from .serializers import (HealthPackageDetailSerializer,
                           HealthPackageSerializer,
                           HealthPackageSpecialisationDetailSerializer,
                           HealthPackageSpecialisationSerializer)
+from .exceptions import FeatureNotAvailableException
 
 
 class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -104,3 +114,56 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
         return HealthPackage.objects.filter(id__in=hospital_related_health_packages).distinct()
+
+
+class HealthPackageSlotAvailability(ProxyView):
+    source = 'getDoctorPriceAndSchedule'
+    permission_classes = [IsPatientUser]
+
+    def get_request_data(self, request):
+        data = request.data
+        date = data.pop("date")
+        location_code = data["location_code"]
+        y, m, d = date.split("-")
+        data["doctor_code"] = location_code + "HC1"
+        if location_code == "MHB":
+            data["speciality_code"] = "MHBHSVC"
+        elif location_code == "MHD":
+            data["speciality_code"] = "MHDHSVS"
+        else:
+            raise FeatureNotAvailableException
+        data["schedule_date"] = d + m + y
+        slots = serializable_SlotAvailability(**request.data)
+        request_data = custom_serializer().serialize(slots, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        slots = root.find("timeSlots").text
+        price = root.find("price").text
+        slot_list = []
+        if slots:
+            slot_list = ast.literal_eval(slots)
+        morning_slot = []
+        afternoon_slot = []
+        evening_slot = []
+        response = {}
+        print(slot_list)
+        for slot in slot_list:
+            time = datetime.strptime(
+                slot['startTime'], '%d %b, %Y %I:%M %p').time()
+            if time.hour < 12:
+                morning_slot.append(time.strftime("%H:%M %p"))
+            elif (time.hour >= 12) and (time.hour < 17):
+                afternoon_slot.append(time.strftime("%I:%M %p"))
+            else:
+                evening_slot.append(time.strftime("%I:%M %p"))
+        response["morning_slot"] = morning_slot
+        response["afternoon_slot"] = afternoon_slot
+        response["evening_slot"] = evening_slot
+        response["price"] = price
+        return self.custom_success_response(message='Available slots',
+                                            success=True, data=response)
