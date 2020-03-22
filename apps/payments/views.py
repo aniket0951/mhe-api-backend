@@ -46,6 +46,8 @@ from proxy.custom_serializables import \
     PayBillsIp as serializable_PayBillsIp
 from proxy.custom_serializables import \
     PayBillsOp as serializable_PayBillsOp
+from proxy.custom_serializables import \
+    EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 
@@ -333,3 +335,34 @@ class PayBillOpView(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
+
+class EpisodeItemView(ProxyView):
+    source = 'GetEpisodeItems'
+    permission_classes = [IsSelfUserOrFamilyMember]
+
+    def get_request_data(self, request):
+        data = request.data
+        pay_bill = serializable_EpisodeItems(**request.data)
+        request_data = custom_serializer().serialize(pay_bill, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        response_data = {}
+        response_message = "We are unable to fetch the Item information. Please Try again"
+        success_status = False
+        print(response.content)
+        if response.status_code == 200:
+            status = root.find("Status").text
+            if status == "1":
+                success_status = True
+                response_message = "Returned Bill Information Successfully"
+                episode_response = root.find("EpisodeList")
+                response_data = json.loads(episode_response.text)
+
+        return self.custom_success_response(message=response_message,
+                                            success=success_status, data=response_data)
+

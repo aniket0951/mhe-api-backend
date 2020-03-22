@@ -212,6 +212,16 @@ class PayBillsOp:
         serializer.start_object('PatOutStandAmtParam')
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('LocationCode', self.location_code)
+
+class EpisodeItems:
+    def __init__(self, location_code=None, admission_no = None):
+        self.location_code = location_code
+        self.admission_no = admission_no
+
+    def serialize(self, serializer):
+        serializer.start_object('GetEpisodeItemsParam')
+        serializer.add_property('AdmNo', self.admission_no)
+        serializer.add_property('LocationCode', self.location_code)
         
 
 
