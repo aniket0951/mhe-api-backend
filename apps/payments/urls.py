@@ -20,6 +20,7 @@ urlpatterns = [
     path('health_package_payment', HealthPackagePayment.as_view()),
     path('uhid_payment', UHIDPayment.as_view()),
     path('ip_bill_details', PayBillView.as_view()),
+    path('op_bill_details', PayBillOpView.as_view()),
     *router.urls
 
 ]
