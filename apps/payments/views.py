@@ -61,16 +61,18 @@ class AppointmentPayment(APIView):
         except Exception as e:
             raise HospitalDoesNotExistsValidationException
         appointment = request.data["appointment_id"]
+        appointment_instance = Appointment.objects.filter(appointment_identifier = appointment).first()
         payment_data = {}
         param["token"]["appointment_id"] = appointment
         payment_data["processing_id"] = param["token"]["processing_id"]
         param["token"]["transaction_type"] = "APP"
-        payment_data["appointment"] = appointment
+        payment_data["appointment"] = appointment_instance.id
         payment_data["patient"] = request.user.id
         payment_data["location"] = hospital.id
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
+        import pdb; pdb.set_trace()
         return Response(data=param)
 
 
@@ -184,8 +186,7 @@ class PaymentResponse(APIView):
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
         if payment_instance.appointment:
-            appointment = Appointment.objects.filter(
-                appointment_identifier=payment_instance.payment_instance.appointment)
+            appointment = Appointment.objects.filter(id =payment_instance.appointment.id).first()
             update_data = {"payment_status": payment_response["status"]}
             appointment_serializer = AppointmentSerializer(
                 appointment, data=update_data, partial=True)
