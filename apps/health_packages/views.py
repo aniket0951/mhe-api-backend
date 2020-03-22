@@ -3,12 +3,8 @@ import json
 import xml.etree.ElementTree as ET
 import ast
 
-from django.db.models import Q
-
-from apps.master_data.models import Specialisation
+from django.db.models import Exists, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
-from proxy.custom_serializables import \
-    DoctorSchedule as serializable_DoctorSchedule
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
@@ -16,6 +12,9 @@ from proxy.custom_views import ProxyView
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.serializers import ValidationError
+
+from apps.cart_items.models import HealthPackageCart
+from apps.master_data.models import Specialisation
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -113,7 +112,13 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Hospital ID is missiing!")
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
-        return HealthPackage.objects.filter(id__in=hospital_related_health_packages).distinct()
+        
+        user_cart_packages = HealthPackageCart.objects.filter(
+            patient_info_id=self.request.user.id,  health_packages=OuterRef('pk'), hospital_id=hospital_id)
+
+        return HealthPackage.objects.filter(id__in=hospital_related_health_packages)\
+            .distinct().annotate(is_added_to_cart=Exists(user_cart_packages))
+        
 
 
 class HealthPackageSlotAvailability(ProxyView):
@@ -167,3 +172,4 @@ class HealthPackageSlotAvailability(ProxyView):
         response["price"] = price
         return self.custom_success_response(message='Available slots',
                                             success=True, data=response)
+

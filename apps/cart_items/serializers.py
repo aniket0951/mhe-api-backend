@@ -20,7 +20,8 @@ class HealthPackageCartSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.health_packages:
-            response_object["health_packages"] = HealthPackageSerializer(instance.health_packages, many=True,
+            response_object["health_packages"] = HealthPackageSerializer(instance.health_packages,
+                                                                         many=True,
                                                                          context={
                                                                              "hospital__id": instance.hospital.id
                                                                          }).data
