@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.doctors.models import Doctor
+from apps.health_packages.models import HealthPackage
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 
@@ -40,4 +41,23 @@ class Appointment(models.Model):
     payment_status = models.CharField(max_length=10,
                                       blank=True,
                                       null=True)
+    app_booked = models.BooleanField(default=True)
+
+from apps.payments.models import Payment
+class HealthPackageAppointment(models.Model):
+
+    appointment_date = models.DateField(blank=True, null=True)
+    appointment_slot = models.TimeField(blank=True, null=True)
+    appointment_identifier = models.CharField(max_length=20,
+                                              blank=True,
+                                              null=True)
+    appointment_status = models.CharField(max_length=10,
+                                          default="Not Booked")
+    payment = models.ForeignKey(Payment, on_delete=models.PROTECT)
+    health_package = models.ForeignKey(HealthPackage, on_delete=models.PROTECT)
+    hospital = models.ForeignKey(
+        Hospital, on_delete=models.PROTECT, related_name='hospital_health_appointment')
+    reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
+                               related_name='cancellation_reason_health_appointment',
+                               null=True, blank=True)
     app_booked = models.BooleanField(default=True)
