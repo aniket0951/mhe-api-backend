@@ -22,7 +22,8 @@ class LabRadiologyItemPricingSerializer(DynamicFieldsModelSerializer):
 
 class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
     price = serializers.SerializerMethodField()
-
+    is_added_to_cart = serializers.BooleanField(default=False,
+                                                read_only=True)
     class Meta:
         model = LabRadiologyItem
         exclude = ('created_at', 'updated_at',

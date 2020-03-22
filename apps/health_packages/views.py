@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.serializers import ValidationError
 
+from apps.cart_items.models import HealthPackageCart
 from apps.master_data.models import Specialisation
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
@@ -103,4 +104,9 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Hospital ID is missiing!")
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
-        return HealthPackage.objects.filter(id__in=hospital_related_health_packages).distinct()
+
+        user_cart_packages = HealthPackageCart.objects.filter(
+            patient_info_id=self.request.user.id,  health_packages=OuterRef('pk'), hospital_id=hospital_id)
+
+        return HealthPackage.objects.filter(id__in=hospital_related_health_packages)\
+            .distinct().annotate(is_added_to_cart=Exists(user_cart_packages))
