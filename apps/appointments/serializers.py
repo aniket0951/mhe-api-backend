@@ -4,13 +4,15 @@ from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
                                       HospitalSerializer)
+from apps.health_packages.serializers import HealthPackageSpecificSerializer
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from apps.payments.serializers import PaymentSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import Appointment, CancellationReason
+from .models import Appointment, CancellationReason, HealthPackageAppointment
 
 
 class CancellationReasonSerializer(DynamicFieldsModelSerializer):
@@ -49,3 +51,20 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
                 CancellationReason.objects.get(id=str(response_object['reason']))).data
 
         return response_object
+
+
+class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = HealthPackageAppointment
+        fields = '__all__'
+
+
+class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
+    hospital = HospitalSerializer(read_only=True)
+    payment = PaymentSerializer(read_only=True)
+    health_package = HealthPackageSpecificSerializer(read_only=True)
+
+    class Meta:
+        model = HealthPackageAppointment
+        fields = '__all__'

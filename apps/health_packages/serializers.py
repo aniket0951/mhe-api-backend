@@ -1,7 +1,6 @@
+from apps.master_data.models import Specialisation
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
-
-from apps.master_data.models import Specialisation
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import HealthPackage, HealthPackagePricing, HealthTest
@@ -81,3 +80,11 @@ class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Specialisation
         exclude = ('created_at', 'updated_at',)
+
+
+class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
+    included_health_tests = HealthTestSerializer(many=True)
+
+    class Meta:
+        model = HealthPackage
+        fields = '__all__'

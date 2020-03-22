@@ -7,13 +7,20 @@ from random import randint
 
 import requests
 from django.contrib.auth.decorators import login_required
+from django.core import serializers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
-from apps.master_data.exceptions import HospitalDoesNotExistsValidationException
-from apps.master_data.models import Hospital
-from apps.appointments.models import Appointment
-from apps.appointments.serializers import AppointmentSerializer
+
+from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.appointments.serializers import (
+    AppointmentSerializer, HealthPackageAppointmentDetailSerializer,
+    HealthPackageAppointmentSerializer)
+from apps.health_packages.models import HealthPackage
+from apps.health_packages.serializers import HealthPackageSerializer
 from apps.manipal_admin.models import ManipalAdmin
+from apps.master_data.exceptions import \
+    HospitalDoesNotExistsValidationException
+from apps.master_data.models import Hospital
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
@@ -22,6 +29,11 @@ from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_MID, SALUCRO_RESPONSE_URL,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
                                   SALUCRO_USERNAME)
+from proxy.custom_serializables import \
+    EpisodeItems as serializable_EpisodeItems
+from proxy.custom_serializables import PayBillsIp as serializable_PayBillsIp
+from proxy.custom_serializables import PayBillsOp as serializable_PayBillsOp
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, status
 from rest_framework.decorators import (api_view, parser_classes,
@@ -37,19 +49,7 @@ from utils.payment_parameter_generator import get_payment_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment
-from apps.health_packages.serializers import HealthPackageSerializer
-from apps.health_packages.models import HealthPackage
 from .serializers import PaymentSerializer
-from django.core import serializers
-
-from proxy.custom_serializables import \
-    PayBillsIp as serializable_PayBillsIp
-from proxy.custom_serializables import \
-    PayBillsOp as serializable_PayBillsOp
-from proxy.custom_serializables import \
-    EpisodeItems as serializable_EpisodeItems
-from proxy.custom_serializers import ObjectSerializer as custom_serializer
-from proxy.custom_views import ProxyView
 
 
 class AppointmentPayment(APIView):
@@ -57,7 +57,7 @@ class AppointmentPayment(APIView):
         param = get_payment_param(request.data)
         location_code = request.data.get("location_code", None)
         try:
-            hospital = Hospital.objects.get(code = location_code)
+            hospital = Hospital.objects.get(code=location_code)
         except Exception as e:
             raise HospitalDoesNotExistsValidationException
         appointment_id = request.data["appointment_id"]
@@ -81,7 +81,7 @@ class HealthPackagePayment(APIView):
         param = get_payment_param(request.data)
         location_code = request.data.get("location_code", None)
         try:
-            hospital = Hospital.objects.get(code = location_code)
+            hospital = Hospital.objects.get(code=location_code)
         except Exception as e:
             raise HospitalDoesNotExistsValidationException
         package_code = request.data["package_code"]
@@ -99,6 +99,16 @@ class HealthPackagePayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
+        appointment_data = {}
+        appointment_data["payment"] = payment.data['id']
+        appointment_data["hospital"] = hospital.id
+        for package_id in package_id_list:
+            appointment_data["health_package"] = package_id
+            serializer = HealthPackageAppointmentSerializer(
+                data=appointment_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
         return Response(data=param)
 
 
@@ -110,7 +120,7 @@ class UHIDPayment(APIView):
         family_member = request.data.get("user_id", None)
         location_code = request.data.get("location_code", None)
         try:
-            hospital = Hospital.objects.get(code = location_code)
+            hospital = Hospital.objects.get(code=location_code)
         except Exception as e:
             raise HospitalDoesNotExistsValidationException
 
@@ -233,12 +243,13 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
 
+
 class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name']
     filter_backends = (filters.SearchFilter,
                        filters.OrderingFilter, DjangoFilterBackend)
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
+    queryset = HealthPackageAppointment.objects.all()
+    serializer_class = HealthPackageAppointmentDetailSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Health Package list returned successfully!'
 
@@ -246,37 +257,8 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
         uhid = self.request.query_params.get("uhid", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset()
-        else:
-            query  = Payment.health_package.through.objects.filter(payment_id__uhid_number = uhid)
-            return query
-    
-    def list(self, request, *args, **kwargs):
-        pagination_data = None
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = serializers.serialize('json', page)
-            serializer_obj = json.loads(serializer)
-            for obj in serializer_obj:
-                health_package_obj = HealthPackage.objects.filter(id= obj["fields"]["healthpackage"])
-                payment_obj = Payment.objects.filter(id= obj["fields"]["payment"])
-                health_package_json = serializers.serialize('json', health_package_obj)
-                payment_json = serializers.serialize('json', payment_obj)
-                health_package_json = json.loads(health_package_json)
-                payment_json = json.loads(payment_json)
-                obj["fields"]["healthpackage"] = health_package_json[0]
-                obj["fields"]["payment"] = payment_json[0]
-            pagination_data = self.get_paginated_response(serializer_obj)
-        else:
-            serializer = serializers.serialize('json', queryset)
-            serializer_obj = json.loads(serializer)
+        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__status="success")
 
-        data = {
-            "data": serializer_obj,
-            "message": self.list_success_message,
-            "pagination_data": pagination_data
-        }
-        return Response(data, status=status.HTTP_200_OK)
 
 class PayBillView(ProxyView):
     source = 'DepositAmt'
@@ -307,6 +289,7 @@ class PayBillView(ProxyView):
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
 
+
 class PayBillOpView(ProxyView):
     source = 'PatOutStandAmt'
     permission_classes = [IsSelfUserOrFamilyMember]
@@ -335,6 +318,7 @@ class PayBillOpView(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
+
 
 class EpisodeItemView(ProxyView):
     source = 'GetEpisodeItems'
@@ -365,4 +349,3 @@ class EpisodeItemView(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
-
