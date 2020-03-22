@@ -81,3 +81,9 @@ class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
         model = Specialisation
         exclude = ('created_at', 'updated_at',)
 
+class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
+    included_health_tests = HealthTestSerializer(many=True)
+    class Meta:
+        model = HealthPackage
+        fields = '__all__'
+

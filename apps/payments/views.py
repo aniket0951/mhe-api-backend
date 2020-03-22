@@ -72,7 +72,6 @@ class AppointmentPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        import pdb; pdb.set_trace()
         return Response(data=param)
 
 
