@@ -4,7 +4,7 @@ from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
                                       HospitalSerializer)
-from apps.health_packages.serializers import HealthPackageSpecificSerializer
+from apps.health_packages.serializers import HealthPackageDetailSerializer
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
@@ -62,7 +62,7 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
 class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
     hospital = HospitalSerializer(read_only=True)
     payment = PaymentSerializer(read_only=True)
-    health_package = HealthPackageSpecificSerializer(read_only=True)
+    health_package = HealthPackageDetailSerializer(read_only=True)
 
     class Meta:
         model = HealthPackageAppointment
