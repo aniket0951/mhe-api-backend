@@ -193,13 +193,23 @@ class CreateUHID:
         serializer.add_property('PassportIssueDate', self.passport_issue_date)
         serializer.add_property('PassportExpiryDate', self.passport_expiry_date)
 
-class PayBills:
+class PayBillsIp:
     def __init__(self, location_code=None, uhid = None):
         self.location_code = location_code
         self.uhid = uhid
 
     def serialize(self, serializer):
         serializer.start_object('DepositAmtParam')
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('LocationCode', self.location_code)
+
+class PayBillsOp:
+    def __init__(self, location_code=None, uhid = None):
+        self.location_code = location_code
+        self.uhid = uhid
+
+    def serialize(self, serializer):
+        serializer.start_object('PatOutStandAmtParam')
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('LocationCode', self.location_code)
         
