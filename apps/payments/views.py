@@ -62,7 +62,7 @@ class AppointmentPayment(APIView):
             raise HospitalDoesNotExistsValidationException
         appointment = request.data["appointment_id"]
         payment_data = {}
-        param["token"]["appointment_id"] = appointment_id
+        param["token"]["appointment_id"] = appointment
         payment_data["processing_id"] = param["token"]["processing_id"]
         param["token"]["transaction_type"] = "APP"
         payment_data["appointment"] = appointment
