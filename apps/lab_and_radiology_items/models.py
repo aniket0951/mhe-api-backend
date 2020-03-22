@@ -132,13 +132,6 @@ class UploadPrescription(MyBaseModel):
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_prescription')
 
-    document = models.FileField(upload_to=generate_prescription_file_path,
-                                storage=FileStorage(),
-                                validators=[FileExtensionValidator(
-                                            VALID_FILE_EXTENSIONS), validate_file_size,
-                                            validate_file_authenticity],
-                                blank=False,
-                                null=False)
 
     class Meta:
         verbose_name = "Prescription"
@@ -152,7 +145,15 @@ class HomeCollectionAppointment(MyBaseModel):
     appointment_date = models.DateTimeField()
 
     home_collections = models.ManyToManyField(LabRadiologyItem,
-                                              blank=False)
+                                              blank=True)
+
+    document = models.FileField(upload_to=generate_prescription_file_path,
+                                storage=FileStorage(),
+                                validators=[FileExtensionValidator(
+                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                blank=True,
+                                null=True)
 
     hospital = models.ForeignKey(Hospital,
                                  on_delete=models.PROTECT,
