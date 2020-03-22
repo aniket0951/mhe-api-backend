@@ -4,7 +4,6 @@ from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
-from apps.payments.models import Payment
 
 
 class CancellationReason(models.Model):
@@ -44,7 +43,7 @@ class Appointment(models.Model):
                                       null=True)
     app_booked = models.BooleanField(default=True)
 
-
+from apps.payments.models import Payment
 class HealthPackageAppointment(models.Model):
 
     appointment_date = models.DateField(blank=True, null=True)

@@ -8,7 +8,6 @@ from apps.health_packages.serializers import HealthPackageSpecificSerializer
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
-from apps.payments.serializers import PaymentSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
@@ -52,7 +51,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
 
         return response_object
 
-
+from apps.payments.serializers import PaymentSerializer
 class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
