@@ -24,6 +24,8 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
     included_health_tests = HealthTestSerializer(many=True)
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
+    is_added_to_cart = serializers.BooleanField(default=False,
+                                                read_only=True)
 
     class Meta:
         model = HealthPackage
@@ -40,6 +42,8 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
 class HealthPackageSerializer(DynamicFieldsModelSerializer):
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
+    is_added_to_cart = serializers.BooleanField(default=False,
+                                                read_only=True)
 
     class Meta:
         model = HealthPackage

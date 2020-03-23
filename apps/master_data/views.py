@@ -51,6 +51,7 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', 'address', ]
+    filter_fields = ['is_home_collection_supported',]
     ordering_fields = ('code',)
 
     def get_permissions(self):

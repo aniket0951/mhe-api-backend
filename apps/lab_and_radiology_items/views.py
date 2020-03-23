@@ -1,3 +1,4 @@
+from django.db.models import Exists, OuterRef, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -26,7 +27,6 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
     model = LabRadiologyItem
     queryset = LabRadiologyItem.objects.all()
     serializer_class = LabRadiologyItemSerializer
-    detail_serializer_class = LabRadiologyItemSerializer
     create_success_message = "New home collection is added successfully."
     list_success_message = 'Home collection list returned successfully!'
     retrieve_success_message = 'Home collection information returned successfully!'
@@ -56,12 +56,6 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()
 
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            if hasattr(self, 'detail_serializer_class'):
-                return self.detail_serializer_class
-        return super().get_serializer_class()
-
     def get_queryset(self):
         hospital_id = self.request.query_params.get('hospital__id')
         if not hospital_id:
@@ -73,8 +67,12 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
         hospital_related_items = LabRadiologyItemPricing.objects.filter(
             hospital=hospital_id).values_list('item_id', flat=True)
 
+        user_cart_collections = HomeCollectionCart.objects.filter(
+            patient_info_id=self.request.user.id,  home_collections=OuterRef('pk'), hospital_id=hospital_id)
+
         return LabRadiologyItem.objects.filter(id__in=hospital_related_items,
-                                               billing_group=home_collection_billing_group).distinct()
+                                               billing_group=home_collection_billing_group)\
+            .distinct().annotate(is_added_to_cart=Exists(user_cart_collections))
 
 
 class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):

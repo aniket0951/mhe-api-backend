@@ -4,7 +4,8 @@ from apps.master_data.models import HomeCareService
 from apps.master_data.serializers import HospitalSerializer
 from apps.patients.serializers import (CurrentPatientUserDefault,
                                        FamilyMemberSerializer,
-                                       PatientAddressSerializer)
+                                       PatientAddressSerializer,
+                                       PatientSerializer)
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
@@ -21,7 +22,8 @@ class LabRadiologyItemPricingSerializer(DynamicFieldsModelSerializer):
 
 class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
     price = serializers.SerializerMethodField()
-
+    is_added_to_cart = serializers.BooleanField(default=False,
+                                                read_only=True)
     class Meta:
         model = LabRadiologyItem
         exclude = ('created_at', 'updated_at',
@@ -63,7 +65,14 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
 
         if instance.family_member:
             response_object['family_member'] = FamilyMemberSerializer(
-                instance.family_member).data
+                instance.family_member,
+                fields=('id', 'mobile', 'relation_name', 'uhid_number', 'display_picture', 'gender',
+                        'first_name')).data
+
+        response_object['patient'] = PatientSerializer(
+            instance.patient,
+            fields=('id', 'mobile', 'uhid_number', 'first_name', 'display_picture',
+                    'email', 'gender')).data
 
         return response_object
 
@@ -93,7 +102,14 @@ class UploadPrescriptionSerializer(DynamicFieldsModelSerializer):
 
         if instance.family_member:
             response_object['family_member'] = FamilyMemberSerializer(
-                instance.family_member).data
+                instance.family_member,
+                fields=('id', 'mobile', 'relation_name', 'uhid_number', 'display_picture', 'gender',
+                        'first_name')).data
+
+        response_object['patient'] = PatientSerializer(
+            instance.patient,
+            fields=('id', 'mobile', 'uhid_number', 'first_name', 'display_picture',
+                    'email', 'gender')).data
 
         return response_object
 
@@ -114,16 +130,31 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
                 context={
                     "hospital__id": instance.hospital_id
                 }).data
+        try:
+            if instance.document:
+                response_object['document'] = generate_pre_signed_url(
+                    instance.document.url)
+        except Exception as error:
+            print(error)
+            response_object['display_picture'] = None
+
         if instance.address:
             response_object['address'] = PatientAddressSerializer(
                 instance.address).data
 
         if instance.family_member:
             response_object['family_member'] = FamilyMemberSerializer(
-                instance.family_member).data
+                instance.family_member,
+                fields=('id', 'mobile', 'relation_name', 'uhid_number', 'display_picture',
+                        'gender', 'first_name')).data
 
         if instance.hospital:
             response_object['hospital'] = HospitalSerializer(
                 instance.hospital).data
+
+        response_object['patient'] = PatientSerializer(
+            instance.patient,
+            fields=('id', 'mobile', 'uhid_number', 'first_name', 'display_picture',
+                    'email', 'gender')).data
 
         return response_object
