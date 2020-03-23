@@ -12,6 +12,7 @@ from django.shortcuts import render
 import rest_framework
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
+from apps.health_packages.exceptions import FeatureNotAvailableException
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.exceptions import (
     DepartmentDoesNotExistsValidationException,
@@ -38,14 +39,15 @@ from utils.custom_sms import send_sms
 
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
-from .models import Appointment, CancellationReason
-from .serializers import AppointmentSerializer, CancellationReasonSerializer
+from .models import Appointment, CancellationReason, HealthPackageAppointment
+from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
+                          HealthPackageAppointmentSerializer)
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
-    search_fields = ['patient__first_name','doctor__name', 'family_member__first_name', 
-                    'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number', 
-                    'patient__mobile', 'patient__email']
+    search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
+                     'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
+                     'patient__mobile', 'patient__email']
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
@@ -62,7 +64,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         is_cancelled = self.request.query_params.get("is_cancelled", False)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             if is_cancelled == "true":
-                return super().get_queryset().filter(status = 2)
+                return super().get_queryset().filter(status=2)
             elif is_cancelled == "false":
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1)
             else:
@@ -267,13 +269,31 @@ class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
     list_success_message = 'Cancellation Reason list returned successfully!'
     retrieve_success_message = 'Cancellation Reason returned successfully!'
 
-class HealthPackageAppointment(ProxyView):
+
+class HealthPackageAppointmentView(ProxyView):
     permission_classes = [IsSelfUserOrFamilyMember]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
-        slot_book = serializable_BookMySlot(**request.data)
+        payment_id = request.data.get('payment_id', None)
+        health_package_id = request.data.get('health_package_id', None)
+        health_package_instance = HealthPackageAppointment.objects.filter(
+            payment_id=payment_id, health_package_id=health_package_id).first()
+        param = dict()
+        param["location_code"] = health_package_instance.hospital.code
+        param["doctor_code"] = param["location_code"] + "HC1"
+        if param["location_code"] == "MHB":
+            param["speciality_code"] = "MHBHSVC"
+        elif param["location_code"] == "MHD":
+            param["speciality_code"] = "MHDHSVS"
+        else:
+            raise FeatureNotAvailableException
+        param["appointment_date_time"] = request.data.get(
+            "appointment_date_time", None)
+        param["mrn"] = health_package_instance.payment.uhid_number
+        slot_book = serializable_BookMySlot(**param)
         request_data = custom_serializer().serialize(slot_book, 'XML')
+        request.data["health_package_instance"] = health_package_instance
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -290,15 +310,18 @@ class HealthPackageAppointment(ProxyView):
             if status == "FAILED":
                 raise AppointmentAlreadyExistsException
             else:
+                instance = self.request.data["health_package_instance"]
                 datetime_object = datetime.strptime(
-                    appointment_date_time, '%Y%m%d%H%M%S')
+                    self.request.data["appointment_date_time"], '%Y%m%d%H%M%S')
                 time = datetime_object.time()
+                new_appointment = dict()
                 new_appointment["appointment_date"] = datetime_object.date()
                 new_appointment["appointment_slot"] = time.strftime(
                     "%H:%M:%S %p")
-                new_appointment["status"] = "Booked"
+                new_appointment["appointment_status"] = "Booked"
                 new_appointment["appointment_identifier"] = appointment_identifier
-                appointment = HealthPackageAppointmentSerializer(data=new_appointment)
+                appointment = HealthPackageAppointmentSerializer(
+                    instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
                 response_success = True

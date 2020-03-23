@@ -25,10 +25,10 @@ from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from django_filters.rest_framework import DjangoFilterBackend
-from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
-                                  SALUCRO_MID, SALUCRO_RESPONSE_URL,
-                                  SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
-                                  SALUCRO_USERNAME, REDIRECT_URL)
+from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
+                                  SALUCRO_AUTH_USER, SALUCRO_MID,
+                                  SALUCRO_RESPONSE_URL, SALUCRO_RETURN_URL,
+                                  SALUCRO_SECRET_KEY, SALUCRO_USERNAME)
 from proxy.custom_serializables import \
     EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import PayBillsIp as serializable_PayBillsIp
@@ -61,7 +61,8 @@ class AppointmentPayment(APIView):
         except Exception as e:
             raise HospitalDoesNotExistsValidationException
         appointment = request.data["appointment_id"]
-        appointment_instance = Appointment.objects.filter(appointment_identifier = appointment).first()
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=appointment).first()
         payment_data = {}
         param["token"]["appointment_id"] = appointment
         payment_data["processing_id"] = param["token"]["processing_id"]
@@ -185,7 +186,8 @@ class PaymentResponse(APIView):
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
         if payment_instance.appointment:
-            appointment = Appointment.objects.filter(id =payment_instance.appointment.id).first()
+            appointment = Appointment.objects.filter(
+                id=payment_instance.appointment.id).first()
             update_data = {"payment_status": payment_response["status"]}
             appointment_serializer = AppointmentSerializer(
                 appointment, data=update_data, partial=True)
@@ -209,7 +211,7 @@ class PaymentReturn(APIView):
         txnid = payment_response["txnid"]
         param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
             txnid, txnstatus, txnamount)
-        return HttpResponseRedirect(REDIRECT_URL +param)
+        return HttpResponseRedirect(REDIRECT_URL + param)
 
 
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -259,8 +261,11 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         uhid = self.request.query_params.get("uhid", None)
+        is_booked = self.request.query_params.get("is_booked", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset().filter(payment_id__status="success")
+        if is_booked:
+            return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__status="success", appointment_status="Booked")
         return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__status="success")
 
 
