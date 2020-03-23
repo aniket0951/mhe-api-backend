@@ -60,7 +60,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        restriced_fields = ['uhid_number', 'mobile', 'mobile_verified',
+        restriced_fields = ['uhid_number', 'mobile_verified',
          'email_verified', 'otp_expiration_time', 'email_otp_expiration_time', 'is_active']
         validated_data = {k:v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
