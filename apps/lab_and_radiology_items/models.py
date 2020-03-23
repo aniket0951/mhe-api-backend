@@ -88,7 +88,11 @@ class LabRadiologyItemPricing(MyBaseModel):
 class PatientServiceAppointment(MyBaseModel):
     SERVICE_APPOINTMENT_STATUS_CHOICES = (
         ('Pending', 'Pending'),
-        ('Completed', 'Completed')
+        ('Completed', 'Completed'),
+        ('In Progress', 'In Progress'),
+        ('Cancelled', 'Cancelled')
+
+
     )
     appointment_date = models.DateField()
 
@@ -113,7 +117,7 @@ class PatientServiceAppointment(MyBaseModel):
 
     status = models.CharField(choices=SERVICE_APPOINTMENT_STATUS_CHOICES,
                               default='Pending',
-                              max_length=9
+                              max_length=11
                               )
 
     class Meta:
@@ -152,7 +156,9 @@ class UploadPrescription(MyBaseModel):
 class HomeCollectionAppointment(MyBaseModel):
     HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES = (
         ('Pending', 'Pending'),
-        ('Completed', 'Completed')
+        ('Completed', 'Completed'),
+        ('In Progress', 'In Progress'),
+        ('Cancelled', 'Cancelled')
     )
     appointment_date = models.DateTimeField()
 
@@ -188,7 +194,7 @@ class HomeCollectionAppointment(MyBaseModel):
 
     status = models.CharField(choices=HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES,
                               default='Pending',
-                              max_length=9
+                              max_length=11
                               )
 
     class Meta:
