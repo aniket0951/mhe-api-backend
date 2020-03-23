@@ -18,7 +18,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Patient
         exclude = ('is_staff', 'is_superuser', 'otp_expiration_time',
-                   'user_permissions', 'groups', 'password')
+                   'user_permissions', 'groups', 'password', 'email_otp')
 
         read_only_fields = ('id', 'last_login', 'created_at', 'updated_at',
                             'is_active', 'mobile_verified',
@@ -55,18 +55,14 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         return response_object
 
     def create(self, validated_data):
-        # TODO: Writable but not updatable
-        if 'uhid_number' in validated_data:
-            _ = validated_data.pop('uhid_number')
+        restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified']
+        validated_data = {k:v for k, v in validated_data.items() if not k in restriced_fields}
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        # TODO: Writable but not updatable
-        if 'mobile' in validated_data:
-            _ = validated_data.pop('mobile')
-        # TODO: Writable but not updatable
-        if 'uhid_number' in validated_data:
-            _ = validated_data.pop('uhid_number')
+        restriced_fields = ['uhid_number', 'mobile', 'mobile_verified',
+         'email_verified', 'otp_expiration_time', 'email_otp_expiration_time', 'is_active']
+        validated_data = {k:v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
 
 

@@ -81,10 +81,19 @@ class Patient(BaseUser):
     email = models.EmailField(null=False,
                               blank=False)
 
+    email_otp = models.CharField(max_length=4,
+                                 null=True,
+                                 blank=True)
+
     otp_expiration_time = models.DateTimeField(
         blank=True,
         null=True,
         verbose_name='OTP Key Expiration DateTime')
+
+    email_otp_expiration_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Email OTP Key Expiration DateTime')
 
     gender = models.CharField(choices=GENDER_CHOICES,
                               blank=True,

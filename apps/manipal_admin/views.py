@@ -26,7 +26,7 @@ from .exceptions import (ManipalAdminDoesNotExistsValidationException,
                          ManipalAdminPasswordURLExipirationValidationException,
                          ManipalAdminPasswordURLValidationException)
 from .serializers import ManipalAdminResetPasswordSerializer
-from .utils import send_reset_password_email
+from .emails import send_reset_password_email
 
 
 @api_view(['POST'])

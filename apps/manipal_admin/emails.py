@@ -42,3 +42,5 @@ def send_reset_password_email(request, user_id):
         subject, text_content, EMAIL_FROM_USER, recipients)
     # email.attach_alternative(html_content, "text/html")
     email.send()
+
+

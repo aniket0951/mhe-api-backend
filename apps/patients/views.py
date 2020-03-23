@@ -21,13 +21,15 @@ from manipal_api.settings import (ANDROID_SMS_RETRIEVER_API_KEY, JWT_AUTH,
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser, IsPatientUser, IsSelfAddress,
-                                      SelfUserAccess)
+                                      IsManipalAdminUser, IsPatientUser,
+                                      IsSelfAddress, SelfUserAccess)
 from utils.custom_sms import send_sms
 from utils.utils import manipal_admin_object, patient_user_object
 
+from .emails import send_email_activation_otp
 from .exceptions import (InvalidCredentialsException, InvalidUHID,
                          OTPExpiredException,
+                         InvalidEmailOTPException,
                          PatientDoesNotExistsValidationException,
                          PatientMobileDoesNotExistsValidationException,
                          PatientMobileExistsValidationException,
@@ -88,16 +90,25 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def perform_create(self, serializer):
         if self.get_queryset().filter(mobile=self.request.data.get('mobile')).exists():
             raise PatientMobileExistsValidationException
+
         random_password = get_random_string(
+            length=4, allowed_chars='0123456789')
+        random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
         user_obj = serializer.save(
             otp_expiration_time=otp_expiration_time,
+            email_otp_expiration_time=otp_expiration_time,
+            email_otp = random_email_otp,
             is_active=True)
+
         user_obj.set_password(random_password)
         user_obj.save()
+
+        send_email_activation_otp(str(user_obj.id), random_email_otp)
+
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
             random_password, OTP_EXPIRATION_TIME)
         if self.request.query_params.get('is_android', True):
@@ -108,6 +119,29 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration is completed successfully. Activate your account by entering the OTP which we have sent to your mobile number.'
         else:
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
+
+    def perform_update(self, serializer):
+        is_email_to_be_verified = False
+        patient_object = self.get_object()
+
+        if 'email' in serializer.validated_data and \
+                not patient_object.email == serializer.validated_data['email']:
+            is_email_to_be_verified = True
+        
+        if is_email_to_be_verified:
+            random_email_otp = get_random_string(
+                length=4, allowed_chars='0123456789')
+            otp_expiration_time = datetime.now(
+            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+            send_email_activation_otp(str(patient_object.id), random_email_otp)
+
+            patient_object.email_otp = random_email_otp
+            patient_object.email_otp_expiration_time = otp_expiration_time
+            patient_object.save()
+
+        patient_object = serializer.save(
+            email_verified=not is_email_to_be_verified)
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
@@ -151,6 +185,57 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "token_expiration": expiration_epoch
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+    @action(detail=False, methods=['POST'])
+    def verify_email_otp(self, request):
+        email_otp = request.data.get('email_otp')
+        authenticated_patient = patient_user_object(request)
+
+        if not authenticated_patient.email_otp == email_otp:
+            raise InvalidEmailOTPException
+
+        if datetime.now().timestamp() > \
+                authenticated_patient.email_otp_expiration_time.timestamp():
+            raise OTPExpiredException
+
+        random_email_otp = get_random_string(
+            length=4, allowed_chars='0123456789')
+
+        authenticated_patient.email_otp = random_email_otp
+        authenticated_patient.email_verified = True
+        authenticated_patient.save()
+
+        data = {
+            "data": None,
+            "message": "You email is verified successfully!",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['GET'])
+    def generate_email_verification_otp(self, request):
+        authenticated_patient = patient_user_object(request)
+
+        if authenticated_patient.email_verified:
+            raise ValidationError("Invalid request!")
+
+        random_email_otp = get_random_string(
+            length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+        send_email_activation_otp(str(authenticated_patient.id), random_email_otp)
+
+        authenticated_patient.email_otp = random_email_otp
+        authenticated_patient.email_otp_expiration_time = otp_expiration_time
+        authenticated_patient.save()
+
+        data = {
+            "data": {"email": str(authenticated_patient.email), },
+            "message": "OTP to verify you email is sent successfully!",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
 
     @action(detail=False, methods=['POST'])
     def generate_login_otp(self, request):
