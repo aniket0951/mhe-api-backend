@@ -28,7 +28,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_MID, SALUCRO_RESPONSE_URL,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
-                                  SALUCRO_USERNAME)
+                                  SALUCRO_USERNAME, REDIRECT_URL)
 from proxy.custom_serializables import \
     EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import PayBillsIp as serializable_PayBillsIp
@@ -209,7 +209,7 @@ class PaymentReturn(APIView):
         txnid = payment_response["txnid"]
         param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
             txnid, txnstatus, txnamount)
-        return HttpResponseRedirect("https://mhedev.mantralabsglobal.com/redirect"+param)
+        return HttpResponseRedirect(REDIRECT_URL +param)
 
 
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):

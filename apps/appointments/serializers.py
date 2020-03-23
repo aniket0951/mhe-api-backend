@@ -53,14 +53,14 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
 
         return response_object
 
-from apps.payments.serializers import PaymentSerializer
+
 class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = HealthPackageAppointment
         fields = '__all__'
 
-
+from apps.payments.serializers import PaymentSerializer
 class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
     hospital = HospitalSerializer(read_only=True)
     payment = PaymentSerializer(read_only=True)

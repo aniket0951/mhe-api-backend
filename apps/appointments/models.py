@@ -43,7 +43,7 @@ class Appointment(models.Model):
                                       null=True)
     app_booked = models.BooleanField(default=True)
 
-from apps.payments.models import Payment
+
 class HealthPackageAppointment(models.Model):
 
     appointment_date = models.DateField(blank=True, null=True)
@@ -53,7 +53,7 @@ class HealthPackageAppointment(models.Model):
                                               null=True)
     appointment_status = models.CharField(max_length=10,
                                           default="Not Booked")
-    payment = models.ForeignKey(Payment, on_delete=models.PROTECT)
+    payment = models.ForeignKey('payments.Payment', on_delete=models.PROTECT)
     health_package = models.ForeignKey(HealthPackage, on_delete=models.PROTECT)
     hospital = models.ForeignKey(
         Hospital, on_delete=models.PROTECT, related_name='hospital_health_appointment')
