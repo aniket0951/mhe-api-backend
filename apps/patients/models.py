@@ -193,6 +193,8 @@ class FamilyMember(MyBaseModel):
     email_verified = models.BooleanField(default=False,
                                          verbose_name='Email Verified')
 
+    is_visible = models.BooleanField(default=False)
+
     raw_info_from_manipal_API = JSONField(blank=True,
                                           null=True
                                           )

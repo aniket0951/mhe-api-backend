@@ -101,6 +101,15 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             validated_data.pop('uhid_number')
         return super().create(validated_data)
 
+    def update(self, instance, validated_data):
+        if 'is_visible' in validated_data:
+            validated_data.pop('is_visible')
+        if 'mobile_verified' in validated_data:
+            validated_data.pop('mobile_verified')
+        if 'email_verified' in validated_data:
+            validated_data.pop('email_verified')
+        return super().update(instance, validated_data)
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
 
