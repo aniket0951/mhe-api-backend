@@ -6,3 +6,11 @@ class ManipalAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = ManipalAdmin
         fields = ['id', 'name', 'email']
+
+
+class ManipalAdminResetPasswordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ManipalAdmin
+        fields = ('password',)
+
+    extra_kwargs = {'email': {'write_only': True}}
