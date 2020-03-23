@@ -22,6 +22,7 @@ from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser,
+                                      IsSelfFamilyMember,
                                       IsSelfAddress, SelfUserAccess)
 from utils.custom_sms import send_sms
 from utils.utils import manipal_admin_object, patient_user_object
@@ -384,18 +385,20 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     ordering_fields = ('-created_at',)
 
     def get_permissions(self):
-        if self.action in ['create', 'generate_family_member_uhid_otp',
-                           'validate_family_member_uhid_otp',
-                           'generate_family_member_mobile_verification_otp']:
+        if self.action in ['create',]:
             permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve',
+                           'verify_family_member_email_otp',
+                           'verify_family_member_otp',
+                           'generate_family_member_mobile_verification_otp',
+                           'generate_family_member_email_verification_otp']:
+            permission_classes = [IsPatientUser & IsSelfFamilyMember]
             return [permission() for permission in permission_classes]
 
         if self.action == 'list':
             permission_classes = [IsManipalAdminUser | IsPatientUser]
-            return [permission() for permission in permission_classes]
-
-        if self.action == 'partial_update':
-            permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':
@@ -648,8 +651,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         if not email_otp:
             raise ValidationError("Enter OTP to verify family member!")
         try:
-            # TODO: self.get_object() doesn't seem to work
-            family_member = self.model.objects.get(pk=pk)
+            family_member = self.get_object() 
         except:
             raise NotFound(detail='Requested information not found!')
 
@@ -679,8 +681,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'])
     def generate_family_member_email_verification_otp(self, request, pk=None):
         try:
-            # TODO: self.get_object() doesn't seem to work
-            family_member_object = self.model.objects.get(pk=pk)
+            family_member_object = self.get_object()
         except:
             raise NotFound(detail='Requested information not found!')
 
