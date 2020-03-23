@@ -26,10 +26,10 @@ from utils.custom_permissions import (BlacklistDestroyMethodPermission,
 from utils.custom_sms import send_sms
 from utils.utils import manipal_admin_object, patient_user_object
 
-from .emails import send_email_activation_otp
-from .exceptions import (InvalidCredentialsException, InvalidUHID,
-                         OTPExpiredException,
-                         InvalidEmailOTPException,
+from .emails import (send_email_activation_otp,
+                     send_family_member_email_activation_otp)
+from .exceptions import (InvalidCredentialsException, InvalidEmailOTPException,
+                         InvalidUHID, OTPExpiredException,
                          PatientDoesNotExistsValidationException,
                          PatientMobileDoesNotExistsValidationException,
                          PatientMobileExistsValidationException,
@@ -61,7 +61,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['generate_uhid_otp', 'validate_uhid_otp']:
+        if self.action in ['generate_uhid_otp', 'validate_uhid_otp', \
+        'generate_email_verification_otp', 'verify_email_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -101,7 +102,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         user_obj = serializer.save(
             otp_expiration_time=otp_expiration_time,
             email_otp_expiration_time=otp_expiration_time,
-            email_otp = random_email_otp,
+            email_otp=random_email_otp,
             is_active=True)
 
         user_obj.set_password(random_password)
@@ -127,7 +128,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if 'email' in serializer.validated_data and \
                 not patient_object.email == serializer.validated_data['email']:
             is_email_to_be_verified = True
-        
+
         if is_email_to_be_verified:
             random_email_otp = get_random_string(
                 length=4, allowed_chars='0123456789')
@@ -186,7 +187,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
-
     @action(detail=False, methods=['POST'])
     def verify_email_otp(self, request):
         email_otp = request.data.get('email_otp')
@@ -224,7 +224,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
-        send_email_activation_otp(str(authenticated_patient.id), random_email_otp)
+        send_email_activation_otp(
+            str(authenticated_patient.id), random_email_otp)
 
         authenticated_patient.email_otp = random_email_otp
         authenticated_patient.email_otp_expiration_time = otp_expiration_time
@@ -235,7 +236,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": "OTP to verify you email is sent successfully!",
         }
         return Response(data, status=status.HTTP_200_OK)
-
 
     @action(detail=False, methods=['POST'])
     def generate_login_otp(self, request):
@@ -307,7 +307,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         patient_info = patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError("This UHID is already linked to your account!")
+            raise ValidationError(
+                "This UHID is already linked to your account!")
 
         if self.model.objects.filter(uhid_number=uhid_number).exists():
             raise ValidationError(
@@ -420,8 +421,11 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
+        if not 'email' in serializer.validated_data or \
+                not serializer.validated_data['email']:
+            raise ValidationError("Email is not mentioned!")
 
-        random_email_password = get_random_string(
+        random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
         random_mobile_password = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -429,25 +433,30 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
         is_mobile_to_be_verified = True
-        is_visible = True
+        is_email_to_be_verified = True
+        is_visible = False
 
         request_patient = patient_user_object(self.request)
 
         if serializer.validated_data['mobile'] == request_patient.mobile:
             is_mobile_to_be_verified = False
-            is_visible = False
+            is_visible = True
+
+        if serializer.validated_data['email'] == request_patient.email:
+            is_email_to_be_verified = False
 
         user_obj = serializer.save(
             mobile_otp_expiration_time=otp_expiration_time,
             email_otp_expiration_time=otp_expiration_time,
             mobile_verification_otp=random_mobile_password,
-            email_verification_otp=random_email_password,
+            email_verification_otp=random_email_otp,
             mobile_verified=not is_mobile_to_be_verified,
-            is_visible=not is_visible
+            email_verified=not is_email_to_be_verified,
+            is_visible=is_visible
         )
 
         self.create_success_message = "Family member is added successfully!"
-
+        
         if is_mobile_to_be_verified:
             message = "You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
@@ -463,17 +472,36 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             else:
                 self.create_success_message = 'We are unable to send OTP to your family member. Please try after sometime.'
 
+        if is_email_to_be_verified:
+            send_family_member_email_activation_otp(str(user_obj.id), random_email_otp)
+
     def perform_update(self, serializer):
         request_patient = patient_user_object(self.request)
+        family_member_object = self.get_object()
+        is_email_to_be_verified = False
         is_mobile_to_be_verified = False
 
         if 'mobile' in serializer.validated_data and \
-                not self.get_object().mobile == serializer.validated_data['mobile'] and \
+                not family_member_object.mobile == serializer.validated_data['mobile'] and \
                 not serializer.validated_data['mobile'] == request_patient.mobile:
             is_mobile_to_be_verified = True
 
-        family_member_object = serializer.save(
-            mobile_verified=not is_mobile_to_be_verified)
+        if 'email' in serializer.validated_data and \
+                not family_member_object.email == serializer.validated_data['email'] and \
+                not serializer.validated_data['email'] == request_patient.email:
+            is_email_to_be_verified = True
+
+        if is_email_to_be_verified:
+            random_email_otp = get_random_string(
+                length=4, allowed_chars='0123456789')
+            otp_expiration_time = datetime.now(
+            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+            family_member_object.email_verification_otp = random_email_otp
+            family_member_object.email_otp_expiration_time = otp_expiration_time
+            family_member_object.save()
+
+            send_family_member_email_activation_otp(str(family_member_object.id), random_email_otp)
 
         if is_mobile_to_be_verified:
             random_mobile_password = get_random_string(
@@ -498,6 +526,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 self.update_success_message = 'Family member details updated successfully, please enter OTP which we have sent to your family member.'
             else:
                 self.update_success_message = 'Family member detials updated successfully, we are unable to send OTP to your family member. Please try after sometime.'
+
+        family_member_object = serializer.save(
+            mobile_verified=not is_mobile_to_be_verified)
 
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
@@ -610,6 +641,71 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+
+    @action(detail=True, methods=['PATCH'])
+    def verify_family_member_email_otp(self, request, pk=None):
+        email_otp = request.data.get('email_otp')
+        if not email_otp:
+            raise ValidationError("Enter OTP to verify family member!")
+        try:
+            # TODO: self.get_object() doesn't seem to work
+            family_member = self.model.objects.get(pk=pk)
+        except:
+            raise NotFound(detail='Requested information not found!')
+
+        if not family_member.email_verification_otp == email_otp:
+            raise ValidationError("Invalid OTP is entered!")
+
+        if datetime.now().timestamp() > \
+                family_member.email_otp_expiration_time.timestamp():
+            raise OTPExpiredException
+
+        random_email_otp = get_random_string(
+            length=4, allowed_chars='0123456789')
+        family_member.email_verification_otp = random_email_otp
+        family_member.email_verified = True
+        family_member.save()
+
+        serializer = self.get_serializer(self.get_queryset(), many=True)
+
+        data = {
+            "data": serializer.data,
+            "message": "Email is verified successfully!",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+
+    @action(detail=True, methods=['GET'])
+    def generate_family_member_email_verification_otp(self, request, pk=None):
+        try:
+            # TODO: self.get_object() doesn't seem to work
+            family_member_object = self.model.objects.get(pk=pk)
+        except:
+            raise NotFound(detail='Requested information not found!')
+
+        if family_member_object.email_verified:
+            raise ValidationError("Invalid request!")
+
+        random_email_otp = get_random_string(
+            length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+        send_family_member_email_activation_otp(str(family_member_object.id), random_email_otp)
+
+        family_member_object.email_verification_otp = random_email_otp
+        family_member_object.email_otp_expiration_time = otp_expiration_time
+        family_member_object.save()
+
+        data = {
+            "data": {"email": str(family_member_object.email)},
+            "message": "Please enter OTP which we have sent on your email to activate.",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+
+
     @action(detail=True, methods=['GET'])
     def generate_family_member_mobile_verification_otp(self, request, pk=None):
         try:
@@ -672,7 +768,7 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'retrieve',]:
+        if self.action in ['partial_update', 'retrieve', ]:
             permission_classes = [IsSelfAddress]
             return [permission() for permission in permission_classes]
 
@@ -701,9 +797,9 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
     def perform_update(self, serializer):
         request_data = self.request.data
         longitude = float(request_data.get("longitude", 0))
-        latitude = float(request_data.get("latitude",0))
+        latitude = float(request_data.get("latitude", 0))
         if longitude and latitude:
             serializer.save(location=Point(longitude, latitude, srid=4326))
             return
-        
+
         serializer.save()
