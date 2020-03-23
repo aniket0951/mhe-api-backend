@@ -3,6 +3,8 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
+                                                 PatientServiceAppointment)
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
@@ -42,9 +44,27 @@ class DashboardAPIView(ListAPIView):
             if manipal_admin_obj:
                 dashboard_details['manipal_admin'] = ManipalAdminSerializer(
                     manipal_admin_obj).data
-                unique_uhid_info = set(Patient.objects.filter(uhid_number__isnull=False).values_list('uhid_number', flat=True))
-                unique_uhid_info.update(set(FamilyMember.objects.filter(uhid_number__isnull=False).values_list('uhid_number', flat=True)))
+                unique_uhid_info = set(Patient.objects.filter(
+                    uhid_number__isnull=False).values_list('uhid_number', flat=True))
+                unique_uhid_info.update(set(FamilyMember.objects.filter(
+                    uhid_number__isnull=False).values_list('uhid_number', flat=True)))
                 dashboard_details['patients_count'] = len(unique_uhid_info)
                 dashboard_details['app_users_count'] = Patient.objects.count()
-            
+
+                dashboard_details['home_collection_statistics'] = {}
+                dashboard_details['home_collection_statistics']['total'] = HomeCollectionAppointment.objects.count(
+                )
+                dashboard_details['home_collection_statistics']['pending'] = HomeCollectionAppointment.objects.filter(
+                    status='Pending').count()
+                dashboard_details['home_collection_statistics']['completed'] = HomeCollectionAppointment.objects.filter(
+                    status='Completed').count()
+
+                dashboard_details['services_statistics'] = {}
+                dashboard_details['services_statistics']['total'] = PatientServiceAppointment.objects.count(
+                )
+                dashboard_details['services_statistics']['pending'] = PatientServiceAppointment.objects.filter(
+                    status='Pending').count()
+                dashboard_details['services_statistics']['completed'] = PatientServiceAppointment.objects.filter(
+                    status='Completed').count()
+
         return Response(dashboard_details, status=status.HTTP_200_OK)
