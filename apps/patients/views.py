@@ -500,6 +500,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             otp_expiration_time = datetime.now(
             ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
+            family_member_object.email_verified = False
             family_member_object.email_verification_otp = random_email_otp
             family_member_object.email_otp_expiration_time = otp_expiration_time
             family_member_object.save()
@@ -512,6 +513,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             otp_expiration_time = datetime.now(
             ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
+            family_member_object.mobile_verified = False
             family_member_object.mobile_verification_otp = random_mobile_password
             family_member_object.mobile_otp_expiration_time = otp_expiration_time
             family_member_object.save()
@@ -531,7 +533,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 self.update_success_message = 'Family member detials updated successfully, we are unable to send OTP to your family member. Please try after sometime.'
 
         family_member_object = serializer.save(
-            mobile_verified=not is_mobile_to_be_verified)
+            mobile_verified=not is_mobile_to_be_verified,
+            email_verified=not is_email_to_be_verified)
 
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):

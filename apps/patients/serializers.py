@@ -56,13 +56,15 @@ class PatientSerializer(DynamicFieldsModelSerializer):
 
     def create(self, validated_data):
         restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified']
-        validated_data = {k:v for k, v in validated_data.items() if not k in restriced_fields}
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        restriced_fields = ['uhid_number', 'mobile_verified',
-         'email_verified', 'otp_expiration_time', 'email_otp_expiration_time', 'is_active']
-        validated_data = {k:v for k, v in validated_data.items() if not k in restriced_fields}
+        restriced_fields = ['uhid_number', 'mobile', 'mobile_verified',
+                            'otp_expiration_time', 'email_otp_expiration_time', 'is_active']
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
 
 
@@ -93,17 +95,16 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
                               {"required": "Enter your relationship with the person whom you are linking."}}}
 
     def create(self, validated_data):
-        if 'uhid_number' in validated_data:
-            validated_data.pop('uhid_number')
+        restriced_fields = ['uhid_number']
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        if 'is_visible' in validated_data:
-            validated_data.pop('is_visible')
-        if 'mobile_verified' in validated_data:
-            validated_data.pop('mobile_verified')
-        if 'email_verified' in validated_data:
-            validated_data.pop('email_verified')
+        restriced_fields = ['uhid_number', 'is_visible',
+                            'otp_expiration_time', 'email_otp_expiration_time']
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
