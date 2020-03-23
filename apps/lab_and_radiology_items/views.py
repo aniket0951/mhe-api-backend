@@ -103,13 +103,18 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('appointment_date',)
     filter_fields = ('status',)
+    search_fields = ('patient__first_name', 'patient__uhid_number',
+                     'patient__mobile',
+                     'family_member__first_name', 'family_member__uhid_number',
+                     'family_member__mobile',
+                     'service__name')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['create',]:
+        if self.action in ['create', ]:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -198,13 +203,17 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('appointment_date',)
     filter_fields = ('status',)
+    search_fields = ('patient__first_name', 'patient__uhid_number',
+                     'patient__mobile',
+                     'family_member__first_name', 'family_member__uhid_number',
+                     'family_member__mobile',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['create',]:
+        if self.action in ['create', ]:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
