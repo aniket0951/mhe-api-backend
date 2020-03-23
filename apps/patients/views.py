@@ -320,7 +320,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset().filter(patient_info__id=self.request.user.id,
-                                           mobile_verified=True)
+                                           is_visible=True)
         if manipal_admin_object(self.request):
             try:
                 request_patient_info = Patient.objects.get(
@@ -331,7 +331,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                         "Invalid patient information.")
 
             qs = FamilyMember.objects.filter(
-                patient_info__id=request_patient_info.id, mobile_verified=True)
+                patient_info__id=request_patient_info.id, is_visible=True)
         return qs
 
     def perform_create(self, serializer):
@@ -344,17 +344,21 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
         is_mobile_to_be_verified = True
+        is_visible = True
+
         request_patient = patient_user_object(self.request)
 
         if serializer.validated_data['mobile'] == request_patient.mobile:
             is_mobile_to_be_verified = False
+            is_visible = False
 
         user_obj = serializer.save(
             mobile_otp_expiration_time=otp_expiration_time,
             email_otp_expiration_time=otp_expiration_time,
             mobile_verification_otp=random_mobile_password,
             email_verification_otp=random_email_password,
-            mobile_verified=not is_mobile_to_be_verified
+            mobile_verified=not is_mobile_to_be_verified,
+            is_visible=not is_visible
         )
 
         self.create_success_message = "Family member is added successfully!"
@@ -428,6 +432,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 "You have an existing family member with this UHID.")
         uhid_user_info = fetch_uhid_user_details(request)
         uhid_user_info['mobile_verified'] = True
+        uhid_user_info['is_visible'] = True
+        uhid_user_info['email_verified'] = True
         uhid_user_info['patient_info'] = patient_info
 
         self.model.objects.create(**uhid_user_info)
@@ -508,6 +514,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             length=4, allowed_chars='0123456789')
         family_member.mobile_verification_otp = random_password
         family_member.mobile_verified = True
+        family_member.is_visible = True
         family_member.save()
 
         serializer = self.get_serializer(self.get_queryset(), many=True)
