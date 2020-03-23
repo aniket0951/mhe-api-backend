@@ -26,6 +26,18 @@ class InvalidCredentialsException(APIException):
     default_detail = 'Your have entered invalid credentials!'
 
 
+class InvalidEmailOTPException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_email_otp'
+    default_detail = 'Your have entered invalid OTP!'
+
+
+class UnablToSendEmailException(APIException):
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_code = 'unable_to_send_email'
+    default_detail = 'We are unable to send email at this moment!'
+
+
 class OTPExpiredException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'otp_expired'
