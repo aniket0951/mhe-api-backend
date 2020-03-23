@@ -61,9 +61,12 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         is_upcoming = self.request.query_params.get("is_upcoming", False)
         is_cancelled = self.request.query_params.get("is_cancelled", False)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
-            if is_cancelled:
-                return super().get_queryset().filter(status = 2).order_by('-appointment_date')
-            return super().get_queryset().order_by('-appointment_date')
+            if is_cancelled == "true":
+                return super().get_queryset().filter(status = 2)
+            elif is_cancelled == "false":
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1)
+            else:
+                return super().get_queryset()
         elif (family_member is not None):
             if is_upcoming:
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1, family_member_id=family_member)
@@ -263,3 +266,44 @@ class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
 
     list_success_message = 'Cancellation Reason list returned successfully!'
     retrieve_success_message = 'Cancellation Reason returned successfully!'
+
+class HealthPackageAppointment(ProxyView):
+    permission_classes = [IsSelfUserOrFamilyMember]
+    source = 'bookAppointment'
+
+    def get_request_data(self, request):
+        slot_book = serializable_BookMySlot(**request.data)
+        request_data = custom_serializer().serialize(slot_book, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        response_message = "Unable to Book the Appointment. Please try again"
+        response_data = {}
+        response_success = False
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            appointment_identifier = root.find("appointmentIdentifier").text
+            status = root.find("Status").text
+            if status == "FAILED":
+                raise AppointmentAlreadyExistsException
+            else:
+                datetime_object = datetime.strptime(
+                    appointment_date_time, '%Y%m%d%H%M%S')
+                time = datetime_object.time()
+                new_appointment["appointment_date"] = datetime_object.date()
+                new_appointment["appointment_slot"] = time.strftime(
+                    "%H:%M:%S %p")
+                new_appointment["status"] = "Booked"
+                new_appointment["appointment_identifier"] = appointment_identifier
+                appointment = HealthPackageAppointmentSerializer(data=new_appointment)
+                appointment.is_valid(raise_exception=True)
+                appointment.save()
+                response_success = True
+                response_message = "Appointment has been created"
+                response_data["appointment_identifier"] = appointment_identifier
+
+        return self.custom_success_response(message=response_message,
+                                            success=response_success, data=response_data)

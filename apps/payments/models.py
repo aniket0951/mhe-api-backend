@@ -27,6 +27,7 @@ class Payment(MyBaseModel):
                                     null=True,
                                     blank=True,
                                     )
+                                    
 
     settled_at = models.DateField(null=True, blank=True)
 
