@@ -157,8 +157,8 @@ class HomeCollectionAppointment(MyBaseModel):
 
     hospital = models.ForeignKey(Hospital,
                                  on_delete=models.PROTECT,
-                                 null=False,
-                                 blank=False)
+                                 null=True,
+                                 blank=True)
 
     patient = models.ForeignKey(Patient,
                                 null=True,
