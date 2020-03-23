@@ -14,7 +14,7 @@ router.register('services', HomeCareServiceViewSet)
 router.register('service_appointments', PatientServiceAppointmentViewSet)
 router.register('home_collection_appointments',
                 HomeCollectionAppointmentViewSet)
-router.register('prescription', UploadPrescriptionViewSet)
+# router.register('prescription', UploadPrescriptionViewSet)
 
 
 urlpatterns = [

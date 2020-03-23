@@ -102,14 +102,19 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('appointment_date',)
+    filter_fields = ('status',)
 
     def get_permissions(self):
-        if self.action in ['list', ]:
+        if self.action in ['list', 'retrieve']:
             permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'retrieve', 'create']:
+        if self.action in ['create',]:
             permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'partial_update':
+            permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':
@@ -151,8 +156,12 @@ class UploadPrescriptionViewSet(custom_viewsets.ModelViewSet):
             permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'create']:
+        if self.action in ['create']:
             permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'partial_update':
+            permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':
@@ -188,14 +197,19 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     ordering_fields = ('appointment_date',)
+    filter_fields = ('status',)
 
     def get_permissions(self):
-        if self.action in ['list', ]:
+        if self.action in ['list', 'retrieve']:
             permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'retrieve', 'create']:
+        if self.action in ['create',]:
             permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'partial_update':
+            permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':

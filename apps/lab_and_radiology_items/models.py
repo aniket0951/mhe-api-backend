@@ -86,6 +86,10 @@ class LabRadiologyItemPricing(MyBaseModel):
 
 
 class PatientServiceAppointment(MyBaseModel):
+    SERVICE_APPOINTMENT_STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Completed', 'Completed')
+    )
     appointment_date = models.DateField()
 
     service = models.ForeignKey(HomeCareService,
@@ -106,6 +110,11 @@ class PatientServiceAppointment(MyBaseModel):
 
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_service_appointment')
+
+    status = models.CharField(choices=SERVICE_APPOINTMENT_STATUS_CHOICES,
+                              default='Pending',
+                              max_length=9
+                              )
 
     class Meta:
         verbose_name = "Patient Service Appointment"
@@ -132,7 +141,6 @@ class UploadPrescription(MyBaseModel):
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_prescription')
 
-
     class Meta:
         verbose_name = "Prescription"
         verbose_name_plural = "Prescriptions"
@@ -142,6 +150,10 @@ class UploadPrescription(MyBaseModel):
 
 
 class HomeCollectionAppointment(MyBaseModel):
+    HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Completed', 'Completed')
+    )
     appointment_date = models.DateTimeField()
 
     home_collections = models.ManyToManyField(LabRadiologyItem,
@@ -173,6 +185,11 @@ class HomeCollectionAppointment(MyBaseModel):
 
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_home_collection_appointment')
+
+    status = models.CharField(choices=HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES,
+                              default='Pending',
+                              max_length=9
+                              )
 
     class Meta:
         verbose_name = "Home Collection Appointment"
