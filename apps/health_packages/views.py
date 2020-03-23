@@ -173,3 +173,5 @@ class HealthPackageSlotAvailability(ProxyView):
         return self.custom_success_response(message='Available slots',
                                             success=True, data=response)
 
+
+

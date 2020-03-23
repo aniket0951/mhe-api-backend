@@ -172,14 +172,14 @@ class PaymentResponse(APIView):
         if (payment_instance.uhid_patient or payment_instance.uhid_family_member):
             if payment_instance.uhid_patient:
                 patient = Patient.objects.filter(
-                    id=payment_instance.uhid_patient).first()
+                    id=payment_instance.uhid_patient.id).first()
                 patient_serializer = PatientSerializer(
                     patient, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
             else:
                 family_member = FamilyMember.objects.filter(
-                    id=payment_instance.uhid_family_member).first()
+                    id=payment_instance.uhid_family_member.id).first()
                 patient_serializer = FamilyMemberSerializer(
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
@@ -257,7 +257,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         uhid = self.request.query_params.get("uhid", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
-            return super().get_queryset()
+            return super().get_queryset().filter(payment_id__status="success")
         return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__status="success")
 
 
