@@ -60,8 +60,8 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
         model = HealthPackageAppointment
         fields = '__all__'
 
-from apps.payments.serializers import PaymentSerializer
 class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
+    from apps.payments.serializers import PaymentSerializer
     hospital = HospitalSerializer(read_only=True)
     payment = PaymentSerializer(read_only=True)
     health_package = HealthPackageSpecificSerializer(read_only=True)
