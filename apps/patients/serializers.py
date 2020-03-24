@@ -120,7 +120,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         return response_object
         
     def to_internal_value(self, data):
-        if 'mobile' in data:
+        if (not self.context['request'].method=='POST')  and 'mobile' in data:
             data.pop('mobile')
         return super().to_internal_value(data)
 
