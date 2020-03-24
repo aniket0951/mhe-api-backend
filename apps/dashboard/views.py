@@ -58,6 +58,10 @@ class DashboardAPIView(ListAPIView):
                     status='Pending').count()
                 dashboard_details['home_collection_statistics']['completed'] = HomeCollectionAppointment.objects.filter(
                     status='Completed').count()
+                dashboard_details['home_collection_statistics']['in_progress'] = HomeCollectionAppointment.objects.filter(
+                    status='In Progress').count()
+                dashboard_details['home_collection_statistics']['cancelled'] = HomeCollectionAppointment.objects.filter(
+                    status='Cancelled').count()
 
                 dashboard_details['services_statistics'] = {}
                 dashboard_details['services_statistics']['total'] = PatientServiceAppointment.objects.count(
@@ -66,5 +70,8 @@ class DashboardAPIView(ListAPIView):
                     status='Pending').count()
                 dashboard_details['services_statistics']['completed'] = PatientServiceAppointment.objects.filter(
                     status='Completed').count()
-
+                dashboard_details['services_statistics']['in_progress'] = PatientServiceAppointment.objects.filter(
+                    status='In Progress').count()
+                dashboard_details['services_statistics']['cancelled'] = PatientServiceAppointment.objects.filter(
+                    status='Cancelled').count()
         return Response(dashboard_details, status=status.HTTP_200_OK)
