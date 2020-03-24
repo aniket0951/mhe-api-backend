@@ -18,7 +18,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Patient
         exclude = ('is_staff', 'is_superuser', 'otp_expiration_time',
-                   'user_permissions', 'groups', 'password')
+                   'user_permissions', 'groups', 'password', 'email_otp')
 
         read_only_fields = ('id', 'last_login', 'created_at', 'updated_at',
                             'is_active', 'mobile_verified',
@@ -55,18 +55,16 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         return response_object
 
     def create(self, validated_data):
-        # TODO: Writable but not updatable
-        if 'uhid_number' in validated_data:
-            _ = validated_data.pop('uhid_number')
+        restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified']
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        # TODO: Writable but not updatable
-        if 'mobile' in validated_data:
-            _ = validated_data.pop('mobile')
-        # TODO: Writable but not updatable
-        if 'uhid_number' in validated_data:
-            _ = validated_data.pop('uhid_number')
+        restriced_fields = ['uhid_number', 'mobile', 'mobile_verified',
+                            'otp_expiration_time', 'email_otp_expiration_time', 'is_active']
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
 
 
@@ -97,9 +95,17 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
                               {"required": "Enter your relationship with the person whom you are linking."}}}
 
     def create(self, validated_data):
-        if 'uhid_number' in validated_data:
-            validated_data.pop('uhid_number')
+        restriced_fields = ['uhid_number']
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        restriced_fields = ['uhid_number', 'is_visible',]
+                            # 'otp_expiration_time', 'email_otp_expiration_time']
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
@@ -112,7 +118,11 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = None
 
         return response_object
-
+        
+    def to_internal_value(self, data):
+        if (not self.context['request'].method=='POST')  and 'mobile' in data:
+            data.pop('mobile')
+        return super().to_internal_value(data)
 
 class PatientAddressSerializer(DynamicFieldsModelSerializer):
     patient_info = serializers.UUIDField(write_only=True,

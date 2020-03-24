@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.appointments.serializers import CancellationReasonSerializer
 from apps.master_data.models import HomeCareService
 from apps.master_data.serializers import HospitalSerializer
 from apps.patients.serializers import (CurrentPatientUserDefault,
@@ -24,6 +25,7 @@ class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
     price = serializers.SerializerMethodField()
     is_added_to_cart = serializers.BooleanField(default=False,
                                                 read_only=True)
+
     class Meta:
         model = LabRadiologyItem
         exclude = ('created_at', 'updated_at',
@@ -141,6 +143,10 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.address:
             response_object['address'] = PatientAddressSerializer(
                 instance.address).data
+
+        if instance.reason:
+            response_object['reason'] = CancellationReasonSerializer(
+                instance.reason).data['reason']
 
         if instance.family_member:
             response_object['family_member'] = FamilyMemberSerializer(

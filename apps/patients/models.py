@@ -81,10 +81,19 @@ class Patient(BaseUser):
     email = models.EmailField(null=False,
                               blank=False)
 
+    email_otp = models.CharField(max_length=4,
+                                 null=True,
+                                 blank=True)
+
     otp_expiration_time = models.DateTimeField(
         blank=True,
         null=True,
         verbose_name='OTP Key Expiration DateTime')
+
+    email_otp_expiration_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Email OTP Key Expiration DateTime')
 
     gender = models.CharField(choices=GENDER_CHOICES,
                               blank=True,
@@ -143,6 +152,10 @@ class FamilyMember(MyBaseModel):
     mobile = PhoneNumberField(blank=True,
                               null=True,
                               verbose_name="Mobile Number")
+                              
+    new_mobile = PhoneNumberField(blank=True,
+                              null=True,
+                              verbose_name="New Mobile Number")
 
     uhid_number = models.CharField(max_length=20,
                                    blank=True,
@@ -192,6 +205,8 @@ class FamilyMember(MyBaseModel):
 
     email_verified = models.BooleanField(default=False,
                                          verbose_name='Email Verified')
+
+    is_visible = models.BooleanField(default=False)
 
     raw_info_from_manipal_API = JSONField(blank=True,
                                           null=True

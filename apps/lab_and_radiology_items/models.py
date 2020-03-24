@@ -3,6 +3,7 @@ import os
 from django.core.validators import FileExtensionValidator
 from django.db import models
 
+from apps.appointments.models import CancellationReason
 from apps.master_data.models import (BillingGroup, BillingSubGroup,
                                      HomeCareService, Hospital)
 from apps.meta_app.models import MyBaseModel
@@ -86,6 +87,14 @@ class LabRadiologyItemPricing(MyBaseModel):
 
 
 class PatientServiceAppointment(MyBaseModel):
+    SERVICE_APPOINTMENT_STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Completed', 'Completed'),
+        ('In Progress', 'In Progress'),
+        ('Cancelled', 'Cancelled')
+
+
+    )
     appointment_date = models.DateField()
 
     service = models.ForeignKey(HomeCareService,
@@ -107,6 +116,10 @@ class PatientServiceAppointment(MyBaseModel):
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_service_appointment')
 
+    status = models.CharField(choices=SERVICE_APPOINTMENT_STATUS_CHOICES,
+                              default='Pending',
+                              max_length=11
+                              )
     class Meta:
         verbose_name = "Patient Service Appointment"
         verbose_name_plural = "Patient Service Appointments"
@@ -132,7 +145,6 @@ class UploadPrescription(MyBaseModel):
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_prescription')
 
-
     class Meta:
         verbose_name = "Prescription"
         verbose_name_plural = "Prescriptions"
@@ -142,6 +154,12 @@ class UploadPrescription(MyBaseModel):
 
 
 class HomeCollectionAppointment(MyBaseModel):
+    HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Completed', 'Completed'),
+        ('In Progress', 'In Progress'),
+        ('Cancelled', 'Cancelled')
+    )
     appointment_date = models.DateTimeField()
 
     home_collections = models.ManyToManyField(LabRadiologyItem,
@@ -157,8 +175,8 @@ class HomeCollectionAppointment(MyBaseModel):
 
     hospital = models.ForeignKey(Hospital,
                                  on_delete=models.PROTECT,
-                                 null=False,
-                                 blank=False)
+                                 null=True,
+                                 blank=True)
 
     patient = models.ForeignKey(Patient,
                                 null=True,
@@ -173,6 +191,15 @@ class HomeCollectionAppointment(MyBaseModel):
 
     address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
                                 related_name='patient_home_collection_appointment')
+
+    status = models.CharField(choices=HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES,
+                              default='Pending',
+                              max_length=11
+                              )
+                              
+    reason = models.ForeignKey(CancellationReason,
+                               on_delete=models.PROTECT,
+                               null=True, blank=True)
 
     class Meta:
         verbose_name = "Home Collection Appointment"
