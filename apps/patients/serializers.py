@@ -118,7 +118,11 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = None
 
         return response_object
-
+        
+    def to_internal_value(self, data):
+        if 'mobile' in data:
+            data.pop('mobile')
+        return super().to_internal_value(data)
 
 class PatientAddressSerializer(DynamicFieldsModelSerializer):
     patient_info = serializers.UUIDField(write_only=True,
