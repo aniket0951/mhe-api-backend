@@ -152,6 +152,10 @@ class FamilyMember(MyBaseModel):
     mobile = PhoneNumberField(blank=True,
                               null=True,
                               verbose_name="Mobile Number")
+                              
+    new_mobile = PhoneNumberField(blank=True,
+                              null=True,
+                              verbose_name="New Mobile Number")
 
     uhid_number = models.CharField(max_length=20,
                                    blank=True,
