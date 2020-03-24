@@ -23,7 +23,7 @@ from apps.master_data.exceptions import \
 from apps.master_data.models import Hospital
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from apps.patients.serializers import FamilyMemberSpecificSerializer, PatientSpecificSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
                                   SALUCRO_AUTH_USER, SALUCRO_MID,
@@ -174,14 +174,14 @@ class PaymentResponse(APIView):
             if payment_instance.uhid_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.uhid_patient.id).first()
-                patient_serializer = PatientSerializer(
+                patient_serializer = PatientSpecificSerializer(
                     patient, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
             else:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.uhid_family_member.id).first()
-                patient_serializer = FamilyMemberSerializer(
+                patient_serializer = FamilyMemberSpecificSerializer(
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()

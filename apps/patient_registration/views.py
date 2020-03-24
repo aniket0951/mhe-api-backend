@@ -64,6 +64,7 @@ class UHIDRegistrationView(ProxyView):
     def get_request_data(self, request):
         data = request.data
         user_id = data.pop("user_id",None)
+        request.data["dob"] = "".join(request.data["dob"].split("/"))
         uhid_registration = serializable_CreateUHID(**request.data)
         request_data = custom_serializer().serialize(uhid_registration, 'XML')
         data["user_id"] =user_id

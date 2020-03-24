@@ -134,3 +134,21 @@ class PatientAddressSerializer(DynamicFieldsModelSerializer):
             obj['longitude'] = instance.location.x
             obj['latitude'] = instance.location.y
         return obj
+
+class PatientSpecificSerializer(DynamicFieldsModelSerializer):
+    mobile = PhoneNumberField()
+    class Meta:
+        model = Patient
+        exclude = ('is_staff', 'is_superuser', 'otp_expiration_time',
+                   'user_permissions', 'groups', 'password')
+
+class FamilyMemberSpecificSerializer(DynamicFieldsModelSerializer):
+    mobile = PhoneNumberField()
+    patient_info = serializers.UUIDField(write_only=True,
+                                         default=CurrentPatientUserDefault())
+
+    class Meta:
+        model = FamilyMember
+        exclude = ('raw_info_from_manipal_API', 'mobile_verification_otp',
+                   'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
+                   'created_at', 'updated_at')
