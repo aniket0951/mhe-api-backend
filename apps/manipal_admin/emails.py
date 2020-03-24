@@ -19,14 +19,13 @@ def send_reset_password_email(request, user_id):
         "uidb64": urlsafe_base64_encode(force_bytes(user.id)),
         "token": default_token_generator.make_token(user)
     }
-    password_reset_url = reverse(
-        'manipal_admin:password_reset', kwargs=kwargs)
+    password_reset_url = reverse('manipal_admin:password_reset', kwargs=kwargs)
 
-    modified_activation_url = "/api" + \
-        "".join(password_reset_url.split('api')[1:])
+    modified_activation_url = "".join(
+        password_reset_url.split('api/manipal_admin')[1:])
 
-    activate_url = "{0}://{1}{2}".format(request.scheme,
-                                         request.get_host(), modified_activation_url)
+    activate_url = "{0}{1}".format(
+        request.META['HTTP_ORIGIN'], modified_activation_url)
     # context = {
     #     'user': user.name,
     #     'activate_url': activate_url,
@@ -42,5 +41,3 @@ def send_reset_password_email(request, user_id):
         subject, text_content, EMAIL_FROM_USER, recipients)
     # email.attach_alternative(html_content, "text/html")
     email.send()
-
-
