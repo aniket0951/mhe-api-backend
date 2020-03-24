@@ -246,4 +246,5 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
         patient_user = patient_user_object(self.request)
         cart_obj = HomeCollectionCart.objects.filter(
             patient_info=patient_user).first()
-        cart_obj.home_collections.clear()
+        if cart_obj:
+            cart_obj.home_collections.clear()

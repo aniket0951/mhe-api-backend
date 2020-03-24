@@ -3,6 +3,7 @@ import os
 from django.core.validators import FileExtensionValidator
 from django.db import models
 
+from apps.appointments.models import CancellationReason
 from apps.master_data.models import (BillingGroup, BillingSubGroup,
                                      HomeCareService, Hospital)
 from apps.meta_app.models import MyBaseModel
@@ -119,7 +120,6 @@ class PatientServiceAppointment(MyBaseModel):
                               default='Pending',
                               max_length=11
                               )
-
     class Meta:
         verbose_name = "Patient Service Appointment"
         verbose_name_plural = "Patient Service Appointments"
@@ -196,6 +196,10 @@ class HomeCollectionAppointment(MyBaseModel):
                               default='Pending',
                               max_length=11
                               )
+                              
+    reason = models.ForeignKey(CancellationReason,
+                               on_delete=models.PROTECT,
+                               null=True, blank=True)
 
     class Meta:
         verbose_name = "Home Collection Appointment"
