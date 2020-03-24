@@ -119,7 +119,7 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action == 'partial_update':
-            permission_classes = [IsManipalAdminUser]
+            permission_classes = [IsManipalAdminUser | IsPatientUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':
@@ -218,7 +218,7 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action == 'partial_update':
-            permission_classes = [IsManipalAdminUser]
+            permission_classes = [IsManipalAdminUser | IsPatientUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':
