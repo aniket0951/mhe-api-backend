@@ -6,7 +6,7 @@ from datetime import datetime
 from django.db.models import Exists, OuterRef, Q
 
 from apps.cart_items.models import HealthPackageCart
-from apps.master_data.models import Specialisation
+from apps.master_data.models import Specialisation, Hospital
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
@@ -127,7 +127,6 @@ class HealthPackageSlotAvailability(ProxyView):
     def get_request_data(self, request):
         data = request.data
         date = data.pop("date")
-        import pdb; pdb.set_trace()
         location_code = data.get("location_code", None)
         if not location_code:
             raise ValidationError("Hospital code is missiing!")
