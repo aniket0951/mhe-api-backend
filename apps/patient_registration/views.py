@@ -6,7 +6,7 @@ import requests
 from django.core import serializers
 
 from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from apps.patients.serializers import FamilyMemberSpecificSerializer, PatientSerializer
 from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
@@ -89,7 +89,7 @@ class UHIDRegistrationView(ProxyView):
 
             if user_id:
                 family_member = FamilyMember.objects.filter(id=user_id).first()
-                family_serializer = FamilyMemberSerializer(
+                family_serializer = FamilyMemberSpecificSerializer(
                     family_member, data=response_data, partial=True)
                 family_serializer.is_valid(raise_exception=True)
                 family_serializer.save()
