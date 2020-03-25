@@ -77,7 +77,7 @@ class AppointmentPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        return Response(data=param)
+        return Response(data=param, status=status.HTTP_200_OK)
 
 
 class HealthPackagePayment(APIView):
@@ -115,7 +115,7 @@ class HealthPackagePayment(APIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
 
-        return Response(data=param)
+        return Response(data=param, status=status.HTTP_200_OK)
 
 
 class UHIDPayment(APIView):
@@ -143,7 +143,7 @@ class UHIDPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        return Response(data=param)
+        return Response(data=param,status=status.HTTP_200_OK)
 
 
 class PaymentResponse(APIView):

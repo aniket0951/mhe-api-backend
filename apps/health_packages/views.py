@@ -148,12 +148,9 @@ class HealthPackageSlotAvailability(ProxyView):
         root = ET.fromstring(response.content)
         slots = root.find("timeSlots").text
         price = root.find("price").text
-        slot_list = []
+        morning_slot = afternoon_slot = evening_slot = slot_list  = []
         if slots:
             slot_list = ast.literal_eval(slots)
-        morning_slot = []
-        afternoon_slot = []
-        evening_slot = []
         response = {}
         for slot in slot_list:
             time = datetime.strptime(

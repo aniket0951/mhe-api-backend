@@ -3,14 +3,15 @@ from django.urls import path
 
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
-from .views import *
 
+from .views import (AppointmentPayment, EpisodeItemView, HealthPackageAPIView,
+                    HealthPackagePayment, PayBillOpView, PayBillView,
+                    PaymentResponse, PaymentReturn, PaymentsAPIView,
+                    UHIDPayment)
 
 router = DefaultRouter(trailing_slash=False)
 router.register('all_payments', PaymentsAPIView)
 router.register('all_health_package', HealthPackageAPIView)
-
-
 
 
 urlpatterns = [
@@ -25,4 +26,3 @@ urlpatterns = [
     *router.urls
 
 ]
-
