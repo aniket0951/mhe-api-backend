@@ -42,6 +42,7 @@ from rest_framework.decorators import (api_view, parser_classes,
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
@@ -64,6 +65,8 @@ class AppointmentPayment(APIView):
         appointment = request.data["appointment_id"]
         appointment_instance = Appointment.objects.filter(
             appointment_identifier=appointment).first()
+        if not appointment_instance:
+            raise ValidationError("Appointment is not available")
         payment_data = {}
         param["token"]["appointment_id"] = appointment
         payment_data["processing_id"] = param["token"]["processing_id"]
