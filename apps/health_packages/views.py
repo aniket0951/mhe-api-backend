@@ -127,12 +127,15 @@ class HealthPackageSlotAvailability(ProxyView):
     def get_request_data(self, request):
         data = request.data
         date = data.pop("date")
-        location_code = data["location_code"]
+        location_code = data.get("location_code", None)
+        if not location_code:
+            raise ValidationError("Hospital code is missiing!")
         y, m, d = date.split("-")
         if not health_package_instance.hospital.is_home_collection_supported:
             raise FeatureNotAvailableException
-        data["doctor_code"] = health_package_instance.hospital.health_package_doctor_code
-        data["speciality_code"] = health_package_instance.hospital.health_package_department_code
+        hospital = Hospital.objects.filter(code = location_code).first()
+        data["doctor_code"] = hospital.health_package_doctor_code
+        data["speciality_code"] = hospital.health_package_department_code
         data["schedule_date"] = d + m + y
         slots = serializable_SlotAvailability(**request.data)
         request_data = custom_serializer().serialize(slots, 'XML')
