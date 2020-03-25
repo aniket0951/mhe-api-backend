@@ -99,8 +99,9 @@ class ItemTariffPrice:
         serializer.add_property('SyncMethod', self.sync_method)
         serializer.add_property('SyncItemCode', self.item_code)
 
+
 class DoctorSchedule:
-    def __init__(self, doctor_code=None, location_code=None, department_code = None):
+    def __init__(self, doctor_code=None, location_code=None, department_code=None):
         self.doctor_code = doctor_code
         self.location_code = location_code
         self.department_code = department_code
@@ -112,49 +113,44 @@ class DoctorSchedule:
         serializer.add_property('locationCode', self.location_code)
         serializer.add_property('DepartmentCode', self.department_code)
 
+
 class CreateUHID:
-    def __init__(self, title_id =None, first_name=None,middle_name = None ,last_name=None, gender_id=None, 
-                 marital_status_id=None, dob=None, phone_no =None, email=None, national_id=None, 
-                 address=None, city_area_id=None, city_id=None, zip_code=None,hospital_id=None,
-                 age=None,sms_alert="1",email_alert = "1",country = None, state = None, parent_spouse = "1",
-                 par_spouse_mob_no = "1", emr_contact_name = None, emr_contact_no = None, religion = None,
-                  payment_type = None, id_proof_name = None, id_no = None, nok_name = None,
-                  nok_contact_number = None, nok_relation = None,passport_no = None, 
-                  passport_issue_date=None, passport_expiry_date = None):
-        self.title_id = title_id
-        self.first_name = first_name
-        self.middle_name = middle_name
-        self.last_name = last_name
-        self.gender_id = gender_id
-        self.marital_status_id = marital_status_id
-        self.dob = dob
-        self.phone_no = phone_no
-        self.email = email
-        self.national_id = national_id
-        self.address = address
-        self.city_area_id = city_area_id
-        self.city_id = city_id
-        self.zip_code = zip_code
-        self.hospital_id = hospital_id
-        self.age = age
-        self.sms_alert = sms_alert
-        self.email_alert = email_alert
-        self.country = country
-        self.state = state
-        self.parent_spouse = parent_spouse
-        self.par_spouse_mob_no = par_spouse_mob_no
-        self.emr_contact_name = emr_contact_name
-        self.emr_contact_no = emr_contact_no
-        self.religion = religion
-        self.payment_type = payment_type
-        self.id_proof_name = id_proof_name
-        self.id_no = id_no
-        self.nok_name = nok_name
-        self.nok_contact_number = nok_contact_number
-        self.nok_relation = nok_relation
-        self.passport_no = passport_no
-        self.passport_issue_date = passport_issue_date
-        self.passport_expiry_date = passport_expiry_date
+    def __init__(self, param):
+        self.title_id = param.get("title_id", None)
+        self.first_name = param.get("first_name", None)
+        self.middle_name = param.get("middle_name", None)
+        self.last_name = param.get("last_name", None)
+        self.last_name = param.get("last_name", None)
+        self.marital_status_id = param.get("marital_status_id", None)
+        self.dob = param.get("dob", None)
+        self.phone_no = param.get("phone_no", None)
+        self.email = param.get("email", None)
+        self.national_id = param.get("national_id", None)
+        self.address = param.get("address", None)
+        self.city_area_id = param.get("city_area_id", None)
+        self.city_id = param.get("city_id", None)
+        self.zip_code = param.get("zip_code", None)
+        self.hospital_id = param.get("hospital_id", None)
+        self.gender_id = param.get("gender_id", None)
+        self.age = param.get("age", None)
+        self.sms_alert = param.get("sms_alert", None)
+        self.email_alert = param.get("email_alert", None)
+        self.country = param.get("country", None)
+        self.state = param.get("state", None)
+        self.parent_spouse = param.get("parent_spouse", None)
+        self.par_spouse_mob_no = param.get("par_spouse_mob_no", None)
+        self.emr_contact_name = param.get("emr_contact_name", None)
+        self.emr_contact_no = param.get("emr_contact_no", None)
+        self.religion = param.get("religion", None)
+        self.payment_type = param.get("payment_type", None)
+        self.id_proof_name = param.get("id_proof_name", None)
+        self.id_no = param.get("id_no", None)
+        self.nok_name = param.get("nok_name", None)
+        self.nok_contact_number = param.get("nok_contact_number", None)
+        self.nok_relation = param.get("nok_relation", None)
+        self.passport_no = param.get("passport_no", None)
+        self.passport_issue_date = param.get("passport_issue_date", None)
+        self.passport_expiry_date = param.get("passport_expiry_date", None)
 
     def serialize(self, serializer):
         serializer.start_object('PreRegparam')
@@ -191,10 +187,12 @@ class CreateUHID:
         serializer.add_property('NOKrelation', self.nok_relation)
         serializer.add_property('PassportNo', self.passport_no)
         serializer.add_property('PassportIssueDate', self.passport_issue_date)
-        serializer.add_property('PassportExpiryDate', self.passport_expiry_date)
+        serializer.add_property('PassportExpiryDate',
+                                self.passport_expiry_date)
+
 
 class IPBills:
-    def __init__(self, location_code=None, uhid = None):
+    def __init__(self, location_code=None, uhid=None):
         self.location_code = location_code
         self.uhid = uhid
 
@@ -203,8 +201,9 @@ class IPBills:
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('LocationCode', self.location_code)
 
+
 class OPBills:
-    def __init__(self, location_code=None, uhid = None):
+    def __init__(self, location_code=None, uhid=None):
         self.location_code = location_code
         self.uhid = uhid
 
@@ -213,8 +212,9 @@ class OPBills:
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('LocationCode', self.location_code)
 
+
 class EpisodeItems:
-    def __init__(self, location_code=None, admission_no = None):
+    def __init__(self, location_code=None, admission_no=None):
         self.location_code = location_code
         self.admission_no = admission_no
 
@@ -222,9 +222,3 @@ class EpisodeItems:
         serializer.start_object('GetEpisodeItemsParam')
         serializer.add_property('AdmNo', self.admission_no)
         serializer.add_property('LocationCode', self.location_code)
-        
-
-
-
-
-

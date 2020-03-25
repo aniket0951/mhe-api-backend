@@ -60,4 +60,4 @@ class HealthPackageAppointment(models.Model):
     reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
                                related_name='cancellation_reason_health_appointment',
                                null=True, blank=True)
-    app_booked = models.BooleanField(default=True)
+    booked_via_app = models.BooleanField(default=True)
