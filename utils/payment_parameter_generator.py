@@ -21,8 +21,8 @@ def get_payment_param(data=None):
     token["accounts"] = []
     if not data["account"]:
         raise ValidationError("Account is empty")
-    if not data["account"]["amount"]:
-        data["account"]["amount"] = "manipalhospitals.app@gmail.com"
+    if not data["account"]["email"]:
+        data["account"]["email"] = "manipalhospitals.app@gmail.com"
     token["accounts"].append(data["account"])
     token["processing_id"] = processing_id
     token["paymode"] = ""
