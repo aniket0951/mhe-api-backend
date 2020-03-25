@@ -65,10 +65,10 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             if is_cancelled == "true":
                 return super().get_queryset().filter(status=2)
-            elif is_cancelled == "false":
+            if is_cancelled == "false":
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1)
-            else:
-                return super().get_queryset()
+            return super().get_queryset()
+
         elif (family_member is not None):
             if is_upcoming:
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1, family_member_id=family_member)
@@ -281,13 +281,10 @@ class HealthPackageAppointmentView(ProxyView):
             payment_id=payment_id, health_package_id=health_package_id).first()
         param = dict()
         param["location_code"] = health_package_instance.hospital.code
-        param["doctor_code"] = param["location_code"] + "HC1"
-        if param["location_code"] == "MHB":
-            param["speciality_code"] = "MHBHSVC"
-        elif param["location_code"] == "MHD":
-            param["speciality_code"] = "MHDHSVS"
-        else:
+        if not health_package_instance.hospital.is_home_collection_supported:
             raise FeatureNotAvailableException
+        param["doctor_code"] = health_package_instance.hospital.health_package_doctor_code
+        param["speciality_code"] = health_package_instance.hospital.health_package_department_code
         param["appointment_date_time"] = request.data.get(
             "appointment_date_time", None)
         param["mrn"] = health_package_instance.payment.uhid_number

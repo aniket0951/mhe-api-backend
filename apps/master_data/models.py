@@ -1,9 +1,10 @@
+
+from django.contrib.gis.geos import Point
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
-from django.contrib.gis.db import models
-from django.contrib.gis.geos import Point
 
 from apps.meta_app.models import MyBaseModel
+from django.contrib.gis.db import models
 
 
 class Hospital(MyBaseModel):
@@ -30,6 +31,16 @@ class Hospital(MyBaseModel):
                                  null=True, blank=True,)
 
     is_home_collection_supported = models.BooleanField(default=False)
+
+    is_health_package_online_purchase_supported = models.BooleanField(
+        default=False)
+
+    health_package_doctor_code = models.CharField(max_length=10,
+                                                  null=True,
+                                                  blank=True,)
+    health_package_department_code = models.CharField(max_length=10,
+                                                      null=True,
+                                                      blank=True,)
 
     class Meta:
         verbose_name = "Hospital"
