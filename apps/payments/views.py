@@ -32,8 +32,8 @@ from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
                                   SALUCRO_SECRET_KEY, SALUCRO_USERNAME)
 from proxy.custom_serializables import \
     EpisodeItems as serializable_EpisodeItems
-from proxy.custom_serializables import PayBillsIp as serializable_PayBillsIp
-from proxy.custom_serializables import PayBillsOp as serializable_PayBillsOp
+from proxy.custom_serializables import IPBills as serializable_IPBills
+from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, status
@@ -276,7 +276,7 @@ class PayBillView(ProxyView):
 
     def get_request_data(self, request):
         data = request.data
-        pay_bill = serializable_PayBillsIp(**request.data)
+        pay_bill = serializable_IPBills(**request.data)
         request_data = custom_serializer().serialize(pay_bill, 'XML')
         return request_data
 
@@ -306,7 +306,7 @@ class PayBillOpView(ProxyView):
 
     def get_request_data(self, request):
         data = request.data
-        pay_bill = serializable_PayBillsOp(**request.data)
+        pay_bill = serializable_OPBills(**request.data)
         request_data = custom_serializer().serialize(pay_bill, 'XML')
         return request_data
 
