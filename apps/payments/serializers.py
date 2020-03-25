@@ -21,24 +21,19 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
 
-        if response_object['appointment']:
-            response_object['appointment'] = AppointmentSerializer(
-                Appointment.objects.get(id=str(response_object['appointment']))).data
+        if instance.appointment:
+            response_object['appointment'] = AppointmentSerializer(instance.appointment).data
 
-        if response_object['patient']:
-            response_object['patient'] = PatientSerializer(
-                Patient.objects.get(id=str(response_object['patient']))).data
+        if instance.patient:
+            response_object['patient'] = PatientSerializer(instance.patient).data
 
-        if response_object['uhid_family_member']:
-            response_object['uhid_family_member'] = FamilyMemberSerializer(
-                FamilyMember.objects.get(id=str(response_object['uhid_family_member']))).data
+        if instance.uhid_family_member:
+            response_object['uhid_family_member'] = FamilyMemberSerializer(instance.uhid_family_member).data
 
-        if response_object['uhid_patient']:
-            response_object['uhid_patient'] = PatientSerializer(
-                Patient.objects.get(id=str(response_object['uhid_patient']))).data
+        if instance.uhid_patient:
+            response_object['uhid_patient'] = PatientSerializer(instance.uhid_patient).data
 
-        if response_object['location']:
-            response_object['location'] = HospitalSerializer(
-                Hospital.objects.get(id=str(response_object['location']))).data
+        if instance.location:
+            response_object['location'] = HospitalSerializer(instance.location).data
 
         return response_object

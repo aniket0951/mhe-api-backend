@@ -41,7 +41,7 @@ class Appointment(models.Model):
     payment_status = models.CharField(max_length=10,
                                       blank=True,
                                       null=True)
-    app_booked = models.BooleanField(default=True)
+    booked_via_app = models.BooleanField(default=True)
 
 
 class HealthPackageAppointment(models.Model):
