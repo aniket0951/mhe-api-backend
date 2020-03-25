@@ -1,9 +1,12 @@
-from datetime import datetime
+import ast
 import json
 import xml.etree.ElementTree as ET
-import ast
+from datetime import datetime
 
 from django.db.models import Exists, OuterRef, Q
+
+from apps.cart_items.models import HealthPackageCart
+from apps.master_data.models import Specialisation
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
@@ -12,21 +15,18 @@ from proxy.custom_views import ProxyView
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.serializers import ValidationError
-
-from apps.cart_items.models import HealthPackageCart
-from apps.master_data.models import Specialisation
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       IsManipalAdminUser, IsPatientUser)
 
+from .exceptions import FeatureNotAvailableException
 from .filters import HealthPackageFilter
 from .models import HealthPackage, HealthPackagePricing
 from .serializers import (HealthPackageDetailSerializer,
                           HealthPackageSerializer,
                           HealthPackageSpecialisationDetailSerializer,
                           HealthPackageSpecialisationSerializer)
-from .exceptions import FeatureNotAvailableException
 
 
 class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -112,13 +112,12 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Hospital ID is missiing!")
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
-        
+
         user_cart_packages = HealthPackageCart.objects.filter(
             patient_info_id=self.request.user.id,  health_packages=OuterRef('pk'), hospital_id=hospital_id)
 
         return HealthPackage.objects.filter(id__in=hospital_related_health_packages)\
             .distinct().annotate(is_added_to_cart=Exists(user_cart_packages))
-        
 
 
 class HealthPackageSlotAvailability(ProxyView):
@@ -153,7 +152,6 @@ class HealthPackageSlotAvailability(ProxyView):
         afternoon_slot = []
         evening_slot = []
         response = {}
-        print(slot_list)
         for slot in slot_list:
             time = datetime.strptime(
                 slot['startTime'], '%d %b, %Y %I:%M %p').time()
@@ -169,6 +167,3 @@ class HealthPackageSlotAvailability(ProxyView):
         response["price"] = price
         return self.custom_success_response(message='Available slots',
                                             success=True, data=response)
-
-
-

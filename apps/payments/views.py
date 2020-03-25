@@ -23,7 +23,8 @@ from apps.master_data.exceptions import \
 from apps.master_data.models import Hospital
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import FamilyMemberSpecificSerializer, PatientSpecificSerializer
+from apps.patients.serializers import (FamilyMemberSpecificSerializer,
+                                       PatientSpecificSerializer)
 from django_filters.rest_framework import DjangoFilterBackend
 from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
                                   SALUCRO_AUTH_USER, SALUCRO_MID,
@@ -347,7 +348,6 @@ class EpisodeItemView(ProxyView):
         response_data = {}
         response_message = "We are unable to fetch the Item information. Please Try again"
         success_status = False
-        print(response.content)
         if response.status_code == 200:
             status = root.find("Status").text
             if status == "1":
