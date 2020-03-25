@@ -7,6 +7,7 @@ from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
                                   SALUCRO_MID, SALUCRO_RESPONSE_URL,
                                   SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
                                   SALUCRO_USERNAME)
+from rest_framework.serializers import ValidationError
 
 
 def get_payment_param(data=None):
@@ -18,6 +19,10 @@ def get_payment_param(data=None):
     token["auth"]["key"] = SALUCRO_AUTH_KEY
     token["username"] = SALUCRO_USERNAME
     token["accounts"] = []
+    if not data["account"]:
+        raise ValidationError("Account is empty")
+    if not data["account"]["email"]:
+        data["account"]["email"] = "manipalhospitals.app@gmail.com"
     token["accounts"].append(data["account"])
     token["processing_id"] = processing_id
     token["paymode"] = ""
