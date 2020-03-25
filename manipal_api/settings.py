@@ -2,8 +2,9 @@ import ast
 import datetime
 import os
 
-import boto3
 import environ
+
+import boto3
 from boto3 import session as boto3_session
 
 root = environ.Path(__file__) - 2
@@ -84,6 +85,7 @@ CUSTOM_APPS = [
     'apps.appointments',
     'apps.manipal_admin',
     'apps.lab_and_radiology_items',
+    'apps.payments',
     'apps.patient_registration',
     'apps.personal_documents',
     'apps.cart_items',
@@ -294,7 +296,15 @@ OTP_EXPIRATION_TIME = env('OTP_EXPIRATION_TIME')
 
 ANDROID_SMS_RETRIEVER_API_KEY = env('ANDROID_SMS_RETRIEVER_API_KEY')
 
+SALUCRO_AUTH_USER = env('SALUCRO_AUTH_USER')
+SALUCRO_AUTH_KEY = env('SALUCRO_AUTH_KEY')
+SALUCRO_USERNAME = env('SALUCRO_USERNAME')
+SALUCRO_RESPONSE_URL = env('SALUCRO_RESPONSE_URL')
+SALUCRO_RETURN_URL = env('SALUCRO_RETURN_URL')
+SALUCRO_MID = env('SALUCRO_MID')
+SALUCRO_SECRET_KEY = env('SALUCRO_SECRET_KEY')
 PATIENT_PROFILE_SYNC_API = env('PATIENT_PROFILE_SYNC_API')
+REDIRECT_URL= env('REDIRECT_URL')
 
 
 # Email settings
