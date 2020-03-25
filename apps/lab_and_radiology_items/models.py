@@ -120,6 +120,11 @@ class PatientServiceAppointment(MyBaseModel):
                               default='Pending',
                               max_length=11
                               )
+       
+    reason = models.ForeignKey(CancellationReason,
+                               on_delete=models.PROTECT,
+                               null=True, blank=True)
+
     class Meta:
         verbose_name = "Patient Service Appointment"
         verbose_name_plural = "Patient Service Appointments"

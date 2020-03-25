@@ -2,8 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (HomeCareServiceViewSet, HomeCollectionAppointmentViewSet,
-                    HomeCollectionViewSet, PatientServiceAppointmentViewSet,
-                    UploadPrescriptionViewSet)
+                    HomeCollectionViewSet, PatientServiceAppointmentViewSet)
 
 app_name = 'home_care'
 
@@ -14,8 +13,6 @@ router.register('services', HomeCareServiceViewSet)
 router.register('service_appointments', PatientServiceAppointmentViewSet)
 router.register('home_collection_appointments',
                 HomeCollectionAppointmentViewSet)
-# router.register('prescription', UploadPrescriptionViewSet)
-
 
 urlpatterns = [
     *router.urls
