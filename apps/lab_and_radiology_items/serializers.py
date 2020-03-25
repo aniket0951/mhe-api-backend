@@ -65,6 +65,10 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
             response_object['address'] = PatientAddressSerializer(
                 instance.address).data
 
+        if instance.reason:
+            response_object['reason'] = CancellationReasonSerializer(
+                instance.reason).data['reason']
+
         if instance.family_member:
             response_object['family_member'] = FamilyMemberSerializer(
                 instance.family_member,
