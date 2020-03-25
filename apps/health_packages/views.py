@@ -127,13 +127,14 @@ class HealthPackageSlotAvailability(ProxyView):
     def get_request_data(self, request):
         data = request.data
         date = data.pop("date")
+        import pdb; pdb.set_trace()
         location_code = data.get("location_code", None)
         if not location_code:
             raise ValidationError("Hospital code is missiing!")
-        y, m, d = date.split("-")
-        if not health_package_instance.hospital.is_home_collection_supported:
-            raise FeatureNotAvailableException
         hospital = Hospital.objects.filter(code = location_code).first()
+        y, m, d = date.split("-")
+        if not hospital.is_home_collection_supported:
+            raise FeatureNotAvailableException
         data["doctor_code"] = hospital.health_package_doctor_code
         data["speciality_code"] = hospital.health_package_department_code
         data["schedule_date"] = d + m + y
