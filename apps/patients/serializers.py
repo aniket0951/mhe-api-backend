@@ -36,7 +36,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
 
     def get_family_members_count(self, instance):
         return FamilyMember.objects.filter(patient_info__id=instance.id,
-                                           mobile_verified=True).count()
+                                           is_visible=True).count()
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
@@ -101,8 +101,8 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        restriced_fields = ['uhid_number', 'is_visible',]
-                            # 'otp_expiration_time', 'email_otp_expiration_time']
+        restriced_fields = ['uhid_number', 'is_visible', ]
+        # 'otp_expiration_time', 'email_otp_expiration_time']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
@@ -118,11 +118,12 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = None
 
         return response_object
-        
+
     def to_internal_value(self, data):
-        if (not self.context['request'].method=='POST')  and 'mobile' in data:
+        if (not self.context['request'].method == 'POST') and 'mobile' in data:
             data.pop('mobile')
         return super().to_internal_value(data)
+
 
 class PatientAddressSerializer(DynamicFieldsModelSerializer):
     patient_info = serializers.UUIDField(write_only=True,
