@@ -163,8 +163,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         message = "Login successful!"
 
         update_last_login(None, authenticated_patient)
-        if not authenticated_patient.is_active:
-            authenticated_patient.is_active = True
+        if not authenticated_patient.mobile_verified:
+            authenticated_patient.mobile_verified = True
             message = "Your account is activated successfully!"
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
