@@ -132,7 +132,7 @@ class HealthPackageSlotAvailability(ProxyView):
             raise ValidationError("Hospital code is missiing!")
         hospital = Hospital.objects.filter(code = location_code).first()
         y, m, d = date.split("-")
-        if not hospital.is_home_collection_supported:
+        if not hospital.is_health_package_online_purchase_supported:
             raise FeatureNotAvailableException
         data["doctor_code"] = hospital.health_package_doctor_code
         data["speciality_code"] = hospital.health_package_department_code
