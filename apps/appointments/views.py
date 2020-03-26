@@ -281,7 +281,7 @@ class HealthPackageAppointmentView(ProxyView):
             payment_id=payment_id, health_package_id=health_package_id).first()
         param = dict()
         param["location_code"] = health_package_instance.hospital.code
-        if not health_package_instance.hospital.is_home_collection_supported:
+        if not health_package_instance.hospital.is_health_package_online_purchase_supported:
             raise FeatureNotAvailableException
         param["doctor_code"] = health_package_instance.hospital.health_package_doctor_code
         param["speciality_code"] = health_package_instance.hospital.health_package_department_code
