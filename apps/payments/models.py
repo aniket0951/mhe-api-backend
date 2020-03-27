@@ -62,7 +62,7 @@ class Payment(MyBaseModel):
                                      blank=True,
                                      null=True)
     uhid_family_member = models.ForeignKey(FamilyMember,
-                                           on_delete=models.DO_NOTHING,
+                                           on_delete=models.SET_NULL,
                                            blank=True,
                                            null=True)
     raw_info_from_salucro_response = JSONField(blank=True,

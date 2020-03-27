@@ -108,7 +108,7 @@ class PatientServiceAppointment(MyBaseModel):
                                 on_delete=models.PROTECT, related_name='patient_service_appointment')
 
     family_member = models.ForeignKey(FamilyMember,
-                                      on_delete=models.DO_NOTHING,
+                                      on_delete=models.SET_NULL,
                                       related_name='family_service_appointment',
                                       blank=True,
                                       null=True)
@@ -142,7 +142,7 @@ class UploadPrescription(MyBaseModel):
                                 on_delete=models.PROTECT, related_name='prescription')
 
     family_member = models.ForeignKey(FamilyMember,
-                                      on_delete=models.DO_NOTHING,
+                                      on_delete=models.SET_NULL,
                                       related_name='family_prescription',
                                       blank=True,
                                       null=True)
@@ -189,7 +189,7 @@ class HomeCollectionAppointment(MyBaseModel):
                                 on_delete=models.PROTECT, related_name='patient_home_collection_appointment')
 
     family_member = models.ForeignKey(FamilyMember,
-                                      on_delete=models.DO_NOTHING,
+                                      on_delete=models.SET_NULL,
                                       related_name='family_home_collection_appointment',
                                       blank=True,
                                       null=True)
