@@ -30,7 +30,7 @@ class Appointment(models.Model):
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     patient = models.ForeignKey(
         Patient, on_delete=models.PROTECT, related_name='patient_appointment')
-    family_member = models.ForeignKey(FamilyMember, on_delete=models.DO_NOTHING, 
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.SET_NULL, 
                                       related_name='family_appointment', blank=True,
                                       null=True)
     doctor = models.ForeignKey(
