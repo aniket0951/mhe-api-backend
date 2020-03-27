@@ -197,8 +197,12 @@ class PaymentResponse(APIView):
                 appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
-
-        return Response(status=status.HTTP_200_OK)
+        txnstatus = response_token_json["status_code"]
+        txnamount = payment_response["net_amount_debit"]
+        txnid = payment_response["txnid"]
+        param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
+            txnid, txnstatus, txnamount)
+        return HttpResponseRedirect(REDIRECT_URL + param)
 
 
 class PaymentReturn(APIView):
