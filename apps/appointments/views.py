@@ -74,13 +74,13 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             if not member:
                 raise PatientDoesNotExistsValidationException
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member) | Q(uhid = member.uhid_number))
-            return super().get_queryset().filter(Q(family_member_id=family_member) | Q(uhid = member.uhid_number)).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number)))
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(uhid=patient.uhid_number) | (Q(patient_id=patient.id) & Q(family_member__isnull= True) ))
-            return super().get_queryset().filter(Q(uhid=patient.uhid_number) | (Q(patient_id=patient.id) & Q(family_member__isnull=True))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter((Q(uhid=patient.uhid_number) & Q(uhid__isnull = False) ) | (Q(patient_id=patient.id) & Q(family_member__isnull= True) ))
+            return super().get_queryset().filter((Q(uhid=patient.uhid_number) & Q(uhid__isnull = False) ) | (Q(patient_id=patient.id) & Q(family_member__isnull= True) )).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
 
 
 class CreateMyAppointment(ProxyView):
