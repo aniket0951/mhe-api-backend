@@ -5,6 +5,10 @@ from datetime import datetime, timedelta
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -12,7 +16,6 @@ from apps.health_packages.models import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
-from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -20,9 +23,6 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -51,8 +51,20 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', 'address', ]
-    filter_fields = ['is_home_collection_supported',]
+    filter_fields = ['is_home_collection_supported', ]
     ordering_fields = ('code',)
+
+    def get_queryset(self):
+        try:
+            longitude = float(self.request.query_params.get("longitude", 0))
+            latitude = float(self.request.query_params.get("latitude", 0))
+            if longitude and latitude:
+                user_location = Point(longitude, latitude, srid=4326)
+                return self.get_queryset().annotate(calculated_distance=Django_Distance('location', 
+                user_location)).order_by('calculated_distance')
+        except Exception as e:
+            pass
+        return super().get_queryset()
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
