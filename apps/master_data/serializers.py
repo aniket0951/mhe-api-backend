@@ -15,8 +15,11 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object =  super().to_representation(instance)
-        if 'distance' in response_object and instance.calculated_distance:
-            response_object['distance'] = instance.calculated_distance.km
+        try:
+            if 'distance' in response_object and instance.calculated_distance:
+                response_object['distance'] = instance.calculated_distance.km
+        except Exception:
+            pass
         return response_object
 
 class SpecialisationSerializer(DynamicFieldsModelSerializer):
