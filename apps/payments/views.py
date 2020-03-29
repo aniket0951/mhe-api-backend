@@ -146,7 +146,7 @@ class UHIDPayment(APIView):
             payment_data["payment_done_for_family_member"] = family_member
         else:
             payment_data["payment_done_for_patient"] = request.user.id
-        payment_data["payment_for_uhid_creation"] = True
+        payment_data["payment_for_uhid_creation"] = True 
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
