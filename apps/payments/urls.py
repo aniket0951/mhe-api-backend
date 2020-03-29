@@ -20,6 +20,8 @@ urlpatterns = [
     path('payment_return', PaymentReturn.as_view()),
     path('health_package_payment', HealthPackagePayment.as_view()),
     path('uhid_payment', UHIDPayment.as_view()),
+    path('op_bill_payment', OPBillPayment.as_view()),
+    path('ip_deposit_payment', IPDepositPayment.as_view()),
     path('ip_bill_details', PayBillView.as_view()),
     path('op_bill_details', PayBillOpView.as_view()),
     path('episode_items_details', EpisodeItemView.as_view()),

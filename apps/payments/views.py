@@ -152,6 +152,65 @@ class UHIDPayment(APIView):
         payment.save()
         return Response(data=param,status=status.HTTP_200_OK)
 
+class OPBillPayment(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        payment_data = {}
+        family_member = request.data.get("user_id", None)
+        location_code = request.data.get("location_code", None)
+        episode_no = request.data.get("episode_no", None)
+        try:
+            hospital = Hospital.objects.get(code=location_code)
+        except Exception as e:
+            raise HospitalDoesNotExistsValidationException
+
+        param = get_payment_param(request.data)
+        param["token"]["transaction_type"] = "OPB"
+        param["token"]["appointment_id"] = episode_no
+        param["token"]["payment_location"] = location_code
+        payment_data["processing_id"] = param["token"]["processing_id"]
+        payment_data["patient"] = request.user.id
+        payment_data["location"] = hospital.id
+        if family_member is not None:
+            payment_data["payment_done_for_family_member"] = family_member
+        else:
+            payment_data["payment_done_for_patient"] = request.user.id
+        payment_data["payment_for_op_billing"] = True
+        payment_data["episode_number"] = episode_no
+        payment = PaymentSerializer(data=payment_data)
+        payment.is_valid(raise_exception=True)
+        payment.save()
+        return Response(data=param,status=status.HTTP_200_OK)
+
+class IPDepositPayment(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        payment_data = {}
+        family_member = request.data.get("user_id", None)
+        location_code = request.data.get("location_code", None)
+        try:
+            hospital = Hospital.objects.get(code=location_code)
+        except Exception as e:
+            raise HospitalDoesNotExistsValidationException
+
+        param = get_payment_param(request.data)
+        param["token"]["transaction_type"] = "IPD"
+        param["token"]["payment_location"] = location_code
+        payment_data["processing_id"] = param["token"]["processing_id"]
+        payment_data["patient"] = request.user.id
+        payment_data["location"] = hospital.id
+        if family_member is not None:
+            payment_data["payment_done_for_family_member"] = family_member
+        else:
+            payment_data["payment_done_for_patient"] = request.user.id
+        payment_data["payment_for_ip_deposit"] = True
+        payment = PaymentSerializer(data=payment_data)
+        payment.is_valid(raise_exception=True)
+        payment.save()
+        return Response(data=param,status=status.HTTP_200_OK)
+
 
 class PaymentResponse(APIView):
     permission_classes = (AllowAny,)
@@ -181,7 +240,7 @@ class PaymentResponse(APIView):
         uhid_info = {}
         uhid_info["uhid_number"] = payment_account["account_number"]
         uhid_info["pre_registration_number"] = None
-        if (payment_instance.payment_done_for_patient or payment_instance.payment_done_for_family_member):
+        if (payment_instance.payment_for_uhid_creation):
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
