@@ -8,24 +8,19 @@ from .models import Department, Hospital, HospitalDepartment, Specialisation
 
 
 class HospitalSerializer(DynamicFieldsModelSerializer):
-    distance = serializers.SerializerMethodField()
-
+    distance =  serializers.CharField(source='calculated_distance', default=None)
     class Meta:
         model = Hospital
         exclude = ('created_at', 'updated_at',)
 
-    def get_distance(self, obj):
+    def to_representation(self, instance):
+        response_object =  super().to_representation(instance)
         try:
-            request_data = self.context['request']
-            longitude = float(request_data.query_params.get("longitude", 0))
-            latitude = float(request_data.query_params.get("latitude", 0))
-            user_location = Point(longitude, latitude, srid=4326)
-            distance = obj.location.distance(user_location)
-            return distance*100
-        except Exception as e:
-            print(e)
-        return None
-
+            if 'distance' in response_object and instance.calculated_distance:
+                response_object['distance'] = instance.calculated_distance.km
+        except Exception:
+            pass
+        return response_object
 
 class SpecialisationSerializer(DynamicFieldsModelSerializer):
     class Meta:
