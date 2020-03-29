@@ -27,11 +27,11 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
         if instance.patient:
             response_object['patient'] = PatientSerializer(instance.patient).data
 
-        if instance.uhid_family_member:
-            response_object['uhid_family_member'] = FamilyMemberSerializer(instance.uhid_family_member).data
+        if instance.payment_done_for_family_member:
+            response_object['payment_done_for_family_member'] = FamilyMemberSerializer(instance.payment_done_for_family_member).data
 
-        if instance.uhid_patient:
-            response_object['uhid_patient'] = PatientSerializer(instance.uhid_patient).data
+        if instance.payment_done_for_patient:
+            response_object['payment_done_for_patient'] = PatientSerializer(instance.payment_done_for_patient).data
 
         if instance.location:
             response_object['location'] = HospitalSerializer(instance.location).data

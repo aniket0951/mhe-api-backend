@@ -57,14 +57,22 @@ class Payment(MyBaseModel):
                                 blank=False,
                                 null=False, related_name="payment_patient")
 
-    uhid_patient = models.ForeignKey(Patient,
+    payment_done_for_patient = models.ForeignKey(Patient,
                                      on_delete=models.PROTECT,
                                      blank=True,
                                      null=True)
-    uhid_family_member = models.ForeignKey(FamilyMember,
+    payment_done_for_family_member = models.ForeignKey(FamilyMember,
                                            on_delete=models.SET_NULL,
                                            blank=True,
                                            null=True)
+    payment_for_uhid_creation = models.BooleanField(default=False)
+    payment_for_ip_deposit = models.BooleanField(default=False)
+    payment_for_op_billing = models.BooleanField(default=False)
+    payment_for_health_package = models.BooleanField(default=False)
+    episode_number = models.CharField(max_length=20,
+                                      blank=True,
+                                      null=True)
+
     raw_info_from_salucro_response = JSONField(blank=True,
                                                null=True
                                                )
