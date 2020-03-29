@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (AppointmentPayment, EpisodeItemView, HealthPackageAPIView,
                     HealthPackagePayment, PayBillOpView, PayBillView,
                     PaymentResponse, PaymentReturn, PaymentsAPIView,
-                    UHIDPayment)
+                    UHIDPayment,OPBillPayment, IPDepositPayment)
 
 router = DefaultRouter(trailing_slash=False)
 router.register('all_payments', PaymentsAPIView)
