@@ -31,6 +31,7 @@ from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
@@ -42,6 +43,7 @@ from .exceptions import (AppointmentAlreadyExistsException,
 from .models import Appointment, CancellationReason, HealthPackageAppointment
 from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
                           HealthPackageAppointmentSerializer)
+from rest_framework.serializers import ValidationError
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -333,3 +335,42 @@ class HealthPackageAppointmentView(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
+
+
+class OfflineAppointment(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
+                         'locationCode', 'status']
+        data = request.data
+        appointment_data = dict()
+        if not data and set(required_keys).issubset(set(data.keys())):
+            raise ValidationError("Appointment attribute is missing")
+        uhid = data["UHID"]
+        patient = Patient.objects.filter(uhid_number = uhid).first()
+        family_member = FamilyMember.objects.filter(uhid_number = uhid).first()
+        doctor = Doctor.objects.filter(code = data["doctorCode"].upper()).first()
+        hospital = Hospital.objects.filter(code = data["locationCode"]).first()
+        if not (patient or family_member):
+            return Response({"message" :"User is not App user"}, status=status.HTTP_200_OK)
+        if not (doctor and hospital):
+            raise ValidationError("Hospital or doctor is not available")
+        appointment_data["booked_via_app"] = False
+        datetime_object = datetime.strptime(data["appointmentDatetime"], '%Y%m%d%H%M%S')
+        time = datetime_object.time()
+        appointment_data["patient"] = patient
+        appointment_data["family_member"] = family_member
+        appointment_data["appointment_date"] = datetime_object.date()
+        appointment_data["appointment_slot"] = time.strftime("%H:%M:%S %p")
+        appointment_data["hospital"] = hospital.id
+        appointment_data["appointment_identifier"] = data["appointmentIdentifier"]
+        appointment_data["doctor"] = doctor.id
+        appointment_data["uhid"] = uhid
+        appointment_data["status"] = 1
+        if data["status"] == "Cancelled":
+            appointment_data["status"] = 2
+        appointment_serializer = AppointmentSerializer(data = appointment_data)
+        appointment_serializer.is_valid(raise_exception = True)
+        appointment_serializer.save()
+        return Response(data=appointment_serializer.data,status=status.HTTP_200_OK)

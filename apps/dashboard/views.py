@@ -1,13 +1,14 @@
-from rest_framework import status
-from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-
+from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.doctors.models import Doctor
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
+from rest_framework import status
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import IsManipalAdminUser
 from utils.utils import manipal_admin_object, patient_user_object
@@ -74,4 +75,21 @@ class DashboardAPIView(ListAPIView):
                     status='In Progress').count()
                 dashboard_details['services_statistics']['cancelled'] = PatientServiceAppointment.objects.filter(
                     status='Cancelled').count()
+
+                dashboard_details['doctor_count'] = Doctor.objects.count()
+
+                dashboard_details['appointment_statistics'] = {}
+                dashboard_details['appointment_statistics']['total'] = Appointment.objects.count(
+                )
+                dashboard_details['appointment_statistics']['confirmed'] = Appointment.objects.filter(
+                    status=1).count()
+                dashboard_details['appointment_statistics']['cancelled'] = Appointment.objects.filter(
+                    status=2).count()
+
+                dashboard_details['health_package_statistics'] = {}
+                dashboard_details['health_package_statistics']['total'] = HealthPackageAppointment.objects.filter(
+                    payment_id__status="success").count()
+                dashboard_details['health_package_statistics']['booked'] = HealthPackageAppointment.objects.filter(
+                    payment_id__status="success", appointment_status="Booked").count()
+
         return Response(dashboard_details, status=status.HTTP_200_OK)
