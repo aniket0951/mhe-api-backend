@@ -40,23 +40,20 @@ class CancelAppointmentRequest:
 
 
 class BookMySlot:
-    def __init__(self, doctor_code=None, appointment_date_time=None, mrn=None, location_code=None,
-                 patient_name=None, mobile=None, email=None, duration="10", visit_type="A",
-                 appointment_type="NEW", reason_for_visit="CONSULT", fast_care_id="PatientApp",
-                 speciality_code=None):
-        self.doctor_code = doctor_code
-        self.mrn = mrn
-        self.appointment_date_time = appointment_date_time
-        self.location_code = location_code
-        self.patient_name = patient_name
-        self.mobile = mobile
-        self.email = email
-        self.duration = duration
-        self.visit_type = visit_type
-        self.appointment_type = appointment_type
-        self.reason_for_visit = reason_for_visit
-        self.fast_care_id = fast_care_id
-        self.speciality_code = speciality_code
+    def __init__(self, param):
+        self.doctor_code = param.get("doctor_code", None)
+        self.mrn = param.get("mrn", None)
+        self.appointment_date_time = param.get("appointment_date_time", None)
+        self.location_code = param.get("location_code", None)
+        self.patient_name = param.get("patient_name", None)
+        self.mobile = param.get("mobile", None)
+        self.email = param.get("email", None)
+        self.duration = param.get("duration", "10")
+        self.visit_type = param.get("visit_type", "A")
+        self.appointment_type = param.get("appointment_type", "NEW")
+        self.reason_for_visit = param.get("reason_for_visit", "CONSULT")
+        self.fast_care_id = param.get("fast_care_id", "PatientApp")
+        self.speciality_code = param.get("speciality_code", None)
 
     def serialize(self, serializer):
         serializer.start_object('IbookAppointmentParam')

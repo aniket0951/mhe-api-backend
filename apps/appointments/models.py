@@ -30,7 +30,8 @@ class Appointment(models.Model):
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     patient = models.ForeignKey(
         Patient, on_delete=models.PROTECT, related_name='patient_appointment')
-    family_member = models.ForeignKey(FamilyMember, on_delete=models.PROTECT, related_name='family_appointment', blank=True,
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.SET_NULL, 
+                                      related_name='family_appointment', blank=True,
                                       null=True)
     doctor = models.ForeignKey(
         Doctor, on_delete=models.PROTECT, related_name='doctor_appointment')
@@ -41,6 +42,9 @@ class Appointment(models.Model):
     payment_status = models.CharField(max_length=10,
                                       blank=True,
                                       null=True)
+    uhid = models.CharField(max_length=20,
+                            blank=True,
+                            null=True)
     booked_via_app = models.BooleanField(default=True)
 
 

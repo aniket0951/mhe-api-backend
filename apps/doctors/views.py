@@ -93,7 +93,10 @@ class DoctorSlotAvailability(ProxyView):
         root = ET.fromstring(response.content)
         slots = root.find("timeSlots").text
         price = root.find("price").text
-        morning_slot = afternoon_slot = evening_slot = slot_list  = []
+        morning_slot = []
+        afternoon_slot = []
+        evening_slot = []
+        slot_list  = []
         if slots:
             slot_list = ast.literal_eval(slots)
         response = {}
@@ -118,7 +121,6 @@ class DoctorScheduleView(ProxyView):
     permission_classes = [IsPatientUser]
 
     def get_request_data(self, request):
-        data = request.data
         schedule = serializable_DoctorSchedule(**request.data)
         request_data = custom_serializer().serialize(schedule, 'XML')
         return request_data
@@ -127,7 +129,6 @@ class DoctorScheduleView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        data = {}
         root = ET.fromstring(response.content)
         schedule_lists = root.find("ScheduleList").text
         schedule_list = []

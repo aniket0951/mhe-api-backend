@@ -10,7 +10,7 @@ router = DefaultRouter(trailing_slash=False)
 router.register('banner', DashboardBannerViewSet)
 
 urlpatterns = [
-    path('', DashboardAPIView.as_view()),
+    path('details', DashboardAPIView.as_view()),
 
     *router.urls
 ]

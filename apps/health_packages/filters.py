@@ -1,4 +1,5 @@
-from django_filters.rest_framework import BaseInFilter, FilterSet, UUIDFilter
+from django_filters.rest_framework import (BaseInFilter, BooleanFilter,
+                                           FilterSet, UUIDFilter)
 
 from .models import HealthPackage
 
@@ -11,6 +12,7 @@ class HealthPackageFilter(FilterSet):
     specialisation_id_in = UUIDInFilter(
         field_name='specialisation__id', lookup_expr='in')
     id_not = UUIDFilter(field_name='id', exclude=True)
+    is_popular = BooleanFilter(field_name='is_popular')
 
     class Meta:
         model = HealthPackage
