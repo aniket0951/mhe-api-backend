@@ -350,7 +350,7 @@ class OfflineAppointment(APIView):
         uhid = data["UHID"]
         patient = Patient.objects.filter(uhid_number = uhid).first()
         family_member = FamilyMember.objects.filter(uhid_number = uhid).first()
-        doctor = Doctor.objects.filter(code = data["doctorCode"]).first()
+        doctor = Doctor.objects.filter(code = data["doctorCode"].upper()).first()
         hospital = Hospital.objects.filter(code = data["locationCode"]).first()
         if not (patient or family_member):
             return Response({"message" :"User is not App user"}, status=status.HTTP_200_OK)
