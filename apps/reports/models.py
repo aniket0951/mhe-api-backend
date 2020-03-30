@@ -1,6 +1,7 @@
-from apps.meta_app.models import MyBaseModel
 from django.db import models
+
 from apps.doctors.models import Doctor
+from apps.meta_app.models import MyBaseModel
 
 
 class Report(MyBaseModel):
@@ -58,6 +59,7 @@ class NumericReportDetails(MyBaseModel):
     report = models.ForeignKey(
         Report,
         on_delete=models.PROTECT,
+        related_name='numeric_report',
         null=True,
         blank=True)
 

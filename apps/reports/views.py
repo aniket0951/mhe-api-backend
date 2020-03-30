@@ -26,7 +26,8 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
     serializer_class = ReportSerializer
     create_success_message = "New report is added successfully."
     list_success_message = 'Report list returned successfully!'
-
+    filter_fields = ('numeric_report__identifier',)
+    
     def get_permissions(self):
         if self.action in ['list', ]:
             permission_classes = [IsPatientUser]
