@@ -27,7 +27,6 @@ class Payment(MyBaseModel):
                                     null=True,
                                     blank=True,
                                     )
-                                    
 
     settled_at = models.DateField(null=True, blank=True)
 
@@ -50,8 +49,8 @@ class Payment(MyBaseModel):
                                             null=True
                                             )
     payment_method = models.CharField(max_length=10,
-                                      blank = True,
-                                      null = True)
+                                      blank=True,
+                                      null=True)
     health_package_appointment_status = models.CharField(max_length=10,
                                                          default="Not Booked")
 
@@ -61,13 +60,13 @@ class Payment(MyBaseModel):
                                 null=False, related_name="payment_patient")
 
     payment_done_for_patient = models.ForeignKey(Patient,
-                                     on_delete=models.PROTECT,
-                                     blank=True,
-                                     null=True)
+                                                 on_delete=models.PROTECT,
+                                                 blank=True,
+                                                 null=True)
     payment_done_for_family_member = models.ForeignKey(FamilyMember,
-                                           on_delete=models.SET_NULL,
-                                           blank=True,
-                                           null=True)
+                                                       on_delete=models.SET_NULL,
+                                                       blank=True,
+                                                       null=True)
     payment_for_uhid_creation = models.BooleanField(default=False)
     payment_for_ip_deposit = models.BooleanField(default=False)
     payment_for_op_billing = models.BooleanField(default=False)
