@@ -86,6 +86,7 @@ class HealthPackagePayment(APIView):
     def post(self, request, format=None):
         param = get_payment_param(request.data)
         location_code = request.data.get("location_code", None)
+        family_member = request.data.get("user_id", None)
         try:
             hospital = Hospital.objects.get(code=location_code)
         except Exception as e:
@@ -102,6 +103,11 @@ class HealthPackagePayment(APIView):
         payment_data["health_package"] = package_id_list
         payment_data["patient"] = request.user.id
         payment_data["location"] = hospital.id
+        payment_data["payment_for_health_package"] = True
+        if family_member is not None:
+            payment_data["payment_done_for_family_member"] = family_member
+        else:
+            payment_data["payment_done_for_patient"] = request.user.id
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
@@ -137,9 +143,69 @@ class UHIDPayment(APIView):
         payment_data["patient"] = request.user.id
         payment_data["location"] = hospital.id
         if family_member is not None:
-            payment_data["uhid_family_member"] = family_member
+            payment_data["payment_done_for_family_member"] = family_member
         else:
-            payment_data["uhid_patient"] = request.user.id
+            payment_data["payment_done_for_patient"] = request.user.id
+        payment_data["payment_for_uhid_creation"] = True 
+        payment = PaymentSerializer(data=payment_data)
+        payment.is_valid(raise_exception=True)
+        payment.save()
+        return Response(data=param,status=status.HTTP_200_OK)
+
+class OPBillPayment(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        payment_data = {}
+        family_member = request.data.get("user_id", None)
+        location_code = request.data.get("location_code", None)
+        episode_no = request.data.get("episode_no", None)
+        try:
+            hospital = Hospital.objects.get(code=location_code)
+        except Exception as e:
+            raise HospitalDoesNotExistsValidationException
+
+        param = get_payment_param(request.data)
+        param["token"]["transaction_type"] = "OPB"
+        param["token"]["appointment_id"] = episode_no
+        param["token"]["payment_location"] = location_code
+        payment_data["processing_id"] = param["token"]["processing_id"]
+        payment_data["patient"] = request.user.id
+        payment_data["location"] = hospital.id
+        if family_member is not None:
+            payment_data["payment_done_for_family_member"] = family_member
+        else:
+            payment_data["payment_done_for_patient"] = request.user.id
+        payment_data["payment_for_op_billing"] = True
+        payment_data["episode_number"] = episode_no
+        payment = PaymentSerializer(data=payment_data)
+        payment.is_valid(raise_exception=True)
+        payment.save()
+        return Response(data=param,status=status.HTTP_200_OK)
+
+class IPDepositPayment(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        payment_data = {}
+        family_member = request.data.get("user_id", None)
+        location_code = request.data.get("location_code", None)
+        try:
+            hospital = Hospital.objects.get(code=location_code)
+        except Exception as e:
+            raise HospitalDoesNotExistsValidationException
+
+        param = get_payment_param(request.data)
+        param["token"]["transaction_type"] = "IPD"
+        param["token"]["payment_location"] = location_code
+        payment_data["processing_id"] = param["token"]["processing_id"]
+        payment_data["patient"] = request.user.id
+        payment_data["location"] = hospital.id
+        if family_member is not None:
+            payment_data["payment_done_for_family_member"] = family_member
+        else:
+            payment_data["payment_done_for_patient"] = request.user.id
+        payment_data["payment_for_ip_deposit"] = True
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
@@ -174,17 +240,17 @@ class PaymentResponse(APIView):
         uhid_info = {}
         uhid_info["uhid_number"] = payment_account["account_number"]
         uhid_info["pre_registration_number"] = None
-        if (payment_instance.uhid_patient or payment_instance.uhid_family_member):
-            if payment_instance.uhid_patient:
+        if (payment_instance.payment_for_uhid_creation):
+            if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
-                    id=payment_instance.uhid_patient.id).first()
+                    id=payment_instance.payment_done_for_patient.id).first()
                 patient_serializer = PatientSpecificSerializer(
                     patient, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
             else:
                 family_member = FamilyMember.objects.filter(
-                    id=payment_instance.uhid_family_member.id).first()
+                    id=payment_instance.payment_done_for_family_member.id).first()
                 patient_serializer = FamilyMemberSpecificSerializer(
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
@@ -255,9 +321,9 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
-    search_fields = ['payment_id__uhid_patient__first_name', 'payment_id__uhid_family_member__first_name',
-                     'payment_id__uhid_number', 'payment_id__uhid_patient__mobile',
-                     'payment_id__uhid_family_member__mobile', 'payment_id__location__description',
+    search_fields = ['payment_id__payment_done_for_patient__first_name', 'payment_id__payment_done_for_family_member__first_name',
+                     'payment_id__uhid_number', 'payment_id__payment_done_for_patient__mobile',
+                     'payment_id__payment_done_for_family_member__mobile', 'payment_id__location__description',
                      'payment_id__health_package__code', 'payment_id__health_package__name']
     filter_backends = (filters.SearchFilter,
                        filters.OrderingFilter, DjangoFilterBackend)
@@ -273,8 +339,8 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset().filter(payment_id__status="success")
         if is_booked:
-            return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__status="success", appointment_status="Booked")
-        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__status="success")
+            return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull = False,payment_id__status="success", appointment_status="Booked")
+        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull = False,payment_id__status="success")
 
 
 class PayBillView(ProxyView):
