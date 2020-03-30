@@ -12,8 +12,6 @@ from manipal_api.settings import EMAIL_FROM_USER
 def send_reset_password_email(request, user_id):
 
     user = ManipalAdmin.objects.get(id=user_id)
-    # template_name = os.path.join(os.path.dirname(
-    #     __file__), 'templates/reset_password.html')
     recipients = [user.email]
     kwargs = {
         "uidb64": urlsafe_base64_encode(force_bytes(user.id)),
@@ -26,18 +24,12 @@ def send_reset_password_email(request, user_id):
 
     activate_url = "{0}{1}".format(
         request.META['HTTP_ORIGIN'], modified_activation_url)
-    # context = {
-    #     'user': user.name,
-    #     'activate_url': activate_url,
-    # }
 
     subject = 'FORGOT PASSWORD'
 
     text_content = 'Dear {}, Please click this link {} to reset your password.'.format(
         user.name, activate_url)
 
-    # html_content = render_to_string(template_name, context)
     email = EmailMultiAlternatives(
         subject, text_content, EMAIL_FROM_USER, recipients)
-    # email.attach_alternative(html_content, "text/html")
     email.send()

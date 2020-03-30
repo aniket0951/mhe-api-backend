@@ -10,6 +10,15 @@ from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status
+from rest_framework.decorators import (api_view, parser_classes,
+                                       permission_classes)
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (
@@ -25,7 +34,6 @@ from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,
                                        PatientSpecificSerializer)
-from django_filters.rest_framework import DjangoFilterBackend
 from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
                                   SALUCRO_AUTH_USER, SALUCRO_MID,
                                   SALUCRO_RESPONSE_URL, SALUCRO_RETURN_URL,
@@ -36,14 +44,6 @@ from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,
-                                       permission_classes)
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
-from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
@@ -60,7 +60,7 @@ class AppointmentPayment(APIView):
         location_code = request.data.get("location_code", None)
         try:
             hospital = Hospital.objects.get(code=location_code)
-        except Exception as e:
+        except Exception:
             raise HospitalDoesNotExistsValidationException
         appointment = request.data["appointment_id"]
         appointment_instance = Appointment.objects.filter(
@@ -89,7 +89,7 @@ class HealthPackagePayment(APIView):
         family_member = request.data.get("user_id", None)
         try:
             hospital = Hospital.objects.get(code=location_code)
-        except Exception as e:
+        except Exception:
             raise HospitalDoesNotExistsValidationException
         package_code = request.data["package_code"]
         package_id = request.data["package_id"]
@@ -133,7 +133,7 @@ class UHIDPayment(APIView):
         location_code = request.data.get("location_code", None)
         try:
             hospital = Hospital.objects.get(code=location_code)
-        except Exception as e:
+        except Exception:
             raise HospitalDoesNotExistsValidationException
 
         param = get_payment_param(request.data)
@@ -162,7 +162,7 @@ class OPBillPayment(APIView):
         episode_no = request.data.get("episode_no", None)
         try:
             hospital = Hospital.objects.get(code=location_code)
-        except Exception as e:
+        except Exception:
             raise HospitalDoesNotExistsValidationException
 
         param = get_payment_param(request.data)
@@ -192,7 +192,7 @@ class IPDepositPayment(APIView):
         location_code = request.data.get("location_code", None)
         try:
             hospital = Hospital.objects.get(code=location_code)
-        except Exception as e:
+        except Exception:
             raise HospitalDoesNotExistsValidationException
 
         param = get_payment_param(request.data)
@@ -222,7 +222,7 @@ class PaymentResponse(APIView):
         processing_id = response_token_json["processing_id"]
         try:
             payment_instance = Payment.objects.get(processing_id=processing_id)
-        except Exception as e:
+        except Exception:
             raise ProcessingIdDoesNotExistsValidationException
         payment = {}
         payment_response = response_token_json["payment_response"]
@@ -348,7 +348,6 @@ class PayBillView(ProxyView):
     permission_classes = [IsSelfUserOrFamilyMember]
 
     def get_request_data(self, request):
-        data = request.data
         pay_bill = serializable_IPBills(**request.data)
         request_data = custom_serializer().serialize(pay_bill, 'XML')
         return request_data
@@ -378,7 +377,6 @@ class PayBillOpView(ProxyView):
     permission_classes = [IsSelfUserOrFamilyMember]
 
     def get_request_data(self, request):
-        data = request.data
         pay_bill = serializable_OPBills(**request.data)
         request_data = custom_serializer().serialize(pay_bill, 'XML')
         return request_data
@@ -408,7 +406,6 @@ class EpisodeItemView(ProxyView):
     permission_classes = [IsSelfUserOrFamilyMember]
 
     def get_request_data(self, request):
-        data = request.data
         pay_bill = serializable_EpisodeItems(**request.data)
         request_data = custom_serializer().serialize(pay_bill, 'XML')
         return request_data
