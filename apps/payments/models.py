@@ -49,8 +49,9 @@ class Payment(MyBaseModel):
                                             blank=True,
                                             null=True
                                             )
-    health_package_appointment_status = models.CharField(max_length=10,
-                                                         default="Not Booked")
+    payment_method = models.CharField(max_length=10,
+                                      blank = True,
+                                      null = True)
 
     patient = models.ForeignKey(Patient,
                                 on_delete=models.PROTECT,
