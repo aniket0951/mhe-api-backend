@@ -16,18 +16,18 @@ class HealthPackage(MyBaseModel):
                             null=False,
                             blank=False,
                             )
-    
+
     age_group = models.CharField(max_length=50,
-                            null=True,
-                            blank=True,
-                            default='All age groups'
-                            )
+                                 null=True,
+                                 blank=True,
+                                 default='All age groups'
+                                 )
 
     gender = models.CharField(max_length=50,
-                            null=True,
-                            blank=True,
-                            default='Men and Women'
-                            )
+                              null=True,
+                              blank=True,
+                              default='Men and Women'
+                              )
 
     specialisation = models.ForeignKey(Specialisation,
                                        related_name='health_package',
@@ -38,6 +38,9 @@ class HealthPackage(MyBaseModel):
     included_health_tests = models.ManyToManyField(HealthTest,
                                                    related_name='health_package'
                                                    )
+
+    is_popular = models.BooleanField(default=False,
+                                     verbose_name='Popular Health Package')
 
     class Meta:
         verbose_name = "Health Package"
