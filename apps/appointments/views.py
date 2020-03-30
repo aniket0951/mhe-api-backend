@@ -121,7 +121,7 @@ class CreateMyAppointment(ProxyView):
         request.data['email'] = str(user.email)
         request.data['speciality_code'] = department.code
 
-        slot_book = serializable_BookMySlot(**request.data)
+        slot_book = serializable_BookMySlot(request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
 
         request.data["patient"] = patient
@@ -294,7 +294,7 @@ class HealthPackageAppointmentView(ProxyView):
         param["appointment_date_time"] = request.data.get(
             "appointment_date_time", None)
         param["mrn"] = health_package_instance.payment.uhid_number
-        slot_book = serializable_BookMySlot(**param)
+        slot_book = serializable_BookMySlot(param)
         request_data = custom_serializer().serialize(slot_book, 'XML')
         request.data["health_package_instance"] = health_package_instance
         return request_data
