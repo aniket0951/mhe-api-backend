@@ -117,4 +117,6 @@ class ReportsSyncAPIView(CreateAPIView):
                     StringReportDetailsViewSet.as_view(
                         {'post': 'create'})(string_report_proxy_request)
 
-        return Response({"data": None}, status=status.HTTP_201_CREATED)
+            return Response({"data": None}, status=status.HTTP_201_CREATED)
+        return Response({"data": report_response.data}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

@@ -121,7 +121,6 @@ class DoctorScheduleView(ProxyView):
     permission_classes = [IsPatientUser]
 
     def get_request_data(self, request):
-        data = request.data
         schedule = serializable_DoctorSchedule(**request.data)
         request_data = custom_serializer().serialize(schedule, 'XML')
         return request_data
@@ -130,7 +129,6 @@ class DoctorScheduleView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        data = {}
         root = ET.fromstring(response.content)
         schedule_lists = root.find("ScheduleList").text
         schedule_list = []

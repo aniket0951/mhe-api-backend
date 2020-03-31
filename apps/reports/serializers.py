@@ -1,5 +1,12 @@
+from apps.doctors.serializers import DoctorSerializer
+from apps.master_data.serializers import HospitalSerializer
+from apps.patients.models import FamilyMember
+from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
-from .models import Report, NumericReportDetails, StringReportDetails, TextReportDetails
+from utils.utils import patient_user_object
+
+from .models import (NumericReportDetails, Report, StringReportDetails,
+                     TextReportDetails)
 
 
 class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
@@ -21,13 +28,6 @@ class TextReportDetailsSerializer(DynamicFieldsModelSerializer):
 
 
 class ReportSerializer(DynamicFieldsModelSerializer):
-    # string_reports = StringReportDetailsSerializer(
-    #     source='stringreportdetails_set', many=True, read_only=True)
-    # text_reports = TextReportDetailsSerializer(
-    #     source='textreportdetails_set', many=True, read_only=True)
-    # numeric_reports = NumericReportDetailsSerializer(
-    #     source='numeric_report', many=True, read_only=True)
-
     class Meta:
         model = Report
         exclude = ('created_at', 'updated_at',)
@@ -44,5 +44,33 @@ class ReportSerializer(DynamicFieldsModelSerializer):
         response_object['numeric_reports'] = NumericReportDetailsSerializer(
             instance.numeric_report.all(),
             many=True, read_only=True).data
+
+        if instance.doctor:
+            response_object['doctor'] = DoctorSerializer(
+                instance.doctor).data
+
+        if instance.hospital:
+            response_object['hospital'] = HospitalSerializer(
+                instance.hospital).data
+
+        response_object['patient_class'] = instance.get_patient_class_display()
+        response_object['family_member'] = None
+
+        patient_user = patient_user_object(self.context['request'])
+        if patient_user:
+            response_object['patient'] = PatientSerializer(
+                patient_user,
+                fields=('id', 'mobile', 'uhid_number', 'first_name', 'display_picture',
+                        'email', 'gender', 'last_name')).data
+
+        family_member_id = self.context['request'].query_params.get(
+            'user_id', None)
+        if family_member_id:
+            family_member = FamilyMember.objects.filter(patient_info=patient_user,
+                                                        id=family_member_id).first()
+            response_object['family_member'] = FamilyMemberSerializer(
+                family_member,
+                fields=('id', 'mobile', 'relation_name', 'uhid_number', 'display_picture', 'gender',
+                        'first_name', 'last_name')).data
 
         return response_object

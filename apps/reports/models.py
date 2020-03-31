@@ -1,10 +1,16 @@
 from django.db import models
 
 from apps.doctors.models import Doctor
+from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
 
 
 class Report(MyBaseModel):
+    PATIENT_CLASS_CHOICES = (
+        ('E', 'Emergency'),
+        ('O', 'Outpatient'),
+        ('I', 'Inpatient'),
+    )
 
     uhid = models.CharField(max_length=20,
                             blank=False,
@@ -22,11 +28,28 @@ class Report(MyBaseModel):
                                    null=True,
                                    blank=True)
 
-    doctor = models.ForeignKey(
-        Doctor,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True)
+    visit_id = models.CharField(max_length=100,
+                                null=False,
+                                blank=False)
+
+    message_id = models.CharField(max_length=100,
+                                  null=False,
+                                  blank=False)
+
+    patient_class = models.CharField(choices=PATIENT_CLASS_CHOICES,
+                                     blank=False,
+                                     null=False,
+                                     max_length=1)
+
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 null=True,
+                                 blank=True)
+
+    doctor = models.ForeignKey(Doctor,
+                               on_delete=models.PROTECT,
+                               null=True,
+                               blank=True)
 
     time = models.DateTimeField()
 

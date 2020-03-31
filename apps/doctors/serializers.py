@@ -41,7 +41,8 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Doctor
-        fields = '__all__'
+        exclude = ('password', 'last_login', 'is_superuser', 'updated_at',
+        'created_at', 'is_staff', 'is_active', 'groups', 'user_permissions')
 
 
 class DoctorSpecificSerializer(DynamicFieldsModelSerializer):

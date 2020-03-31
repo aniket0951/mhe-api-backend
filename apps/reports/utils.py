@@ -6,6 +6,9 @@ from rest_framework.test import APIRequestFactory
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 
+from .exceptions import ReportExistsException
+from .models import Report
+
 
 def report_handler(report_info, factory=APIRequestFactory()):
 
@@ -13,15 +16,23 @@ def report_handler(report_info, factory=APIRequestFactory()):
 
     if report_info and type(report_info) == dict and \
             set(required_keys).issubset(set(report_info.keys())):
+
+        if Report.objects.filter(message_id=report_info['MsgID']).exists():
+            raise ReportExistsException
+
         report_request_data = {}
         report_request_data['uhid'] = report_info['UHID']
         report_request_data['code'] = report_info['ReportCode']
+        report_request_data['patient_class'] = report_info['PatientClass']
+        report_request_data['visit_id'] = report_info['VisitID']
+        report_request_data['message_id'] = report_info['MsgID']
         report_request_data['name'] = report_info['ReportName']
         report_request_data['time'] = datetime.strptime(
             report_info['ReportDateTime'], '%Y%m%d%H%M%S')
         hospital_info = Hospital.objects.filter(
             code=report_info['LocationCode']).first()
         if hospital_info:
+            report_request_data['hospital'] = hospital_info.id
             doctor_info = Doctor.objects.filter(code=report_info['DoctorCode'].split(',')[
                                                 0], hospital=hospital_info).first()
             if doctor_info:
