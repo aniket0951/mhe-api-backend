@@ -17,7 +17,7 @@ from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
 from apps.master_data.views import ValidateUHIDView
 from manipal_api.settings import (ANDROID_SMS_RETRIEVER_API_KEY, JWT_AUTH,
-                                  OTP_EXPIRATION_TIME)
+                                  MAX_FAMILY_MEMBER_COUNT, OTP_EXPIRATION_TIME)
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -425,6 +425,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
+        if self.get_queryset().count() >= int(MAX_FAMILY_MEMBER_COUNT):
+            raise ValidationError("You have reached limit, you cannot add family members!")
+
         if not 'email' in serializer.validated_data or \
                 not serializer.validated_data['email']:
             raise ValidationError("Email is not mentioned!")
@@ -542,6 +545,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
+        if self.get_queryset().count() >= int(MAX_FAMILY_MEMBER_COUNT):
+            raise ValidationError("You have reached limit, you cannot add family members!")
+
         uhid_number = request.data.get('uhid_number')
         if not uhid_number:
             raise ValidationError(
