@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.doctors.models import Doctor
+from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
 
 
@@ -40,11 +41,15 @@ class Report(MyBaseModel):
                                      null=False,
                                      max_length=1)
 
-    doctor = models.ForeignKey(
-        Doctor,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True)
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 null=True,
+                                 blank=True)
+
+    doctor = models.ForeignKey(Doctor,
+                               on_delete=models.PROTECT,
+                               null=True,
+                               blank=True)
 
     time = models.DateTimeField()
 

@@ -5,8 +5,10 @@ from rest_framework.test import APIRequestFactory
 
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
-from .models import Report
+
 from .exceptions import ReportExistsException
+from .models import Report
+
 
 def report_handler(report_info, factory=APIRequestFactory()):
 
@@ -30,6 +32,7 @@ def report_handler(report_info, factory=APIRequestFactory()):
         hospital_info = Hospital.objects.filter(
             code=report_info['LocationCode']).first()
         if hospital_info:
+            report_request_data['hospital'] = hospital_info.id
             doctor_info = Doctor.objects.filter(code=report_info['DoctorCode'].split(',')[
                                                 0], hospital=hospital_info).first()
             if doctor_info:

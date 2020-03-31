@@ -1,3 +1,5 @@
+from apps.doctors.serializers import DoctorSerializer
+from apps.master_data.serializers import HospitalSerializer
 from apps.patients.models import FamilyMember
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
@@ -42,6 +44,14 @@ class ReportSerializer(DynamicFieldsModelSerializer):
         response_object['numeric_reports'] = NumericReportDetailsSerializer(
             instance.numeric_report.all(),
             many=True, read_only=True).data
+
+        if instance.doctor:
+            response_object['doctor'] = DoctorSerializer(
+                instance.doctor).data
+
+        if instance.hospital:
+            response_object['hospital'] = HospitalSerializer(
+                instance.hospital).data
 
         response_object['patient_class'] = instance.get_patient_class_display()
         response_object['family_member'] = None
