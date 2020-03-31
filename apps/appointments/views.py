@@ -231,7 +231,7 @@ class CancelMyAppointment(ProxyView):
                 if not instance:
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
-                instance.reason_id = self.request.data.get("reason")
+                instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
                 success_status = True
                 if instance.family_member:
