@@ -43,6 +43,8 @@ class ReportSerializer(DynamicFieldsModelSerializer):
             instance.numeric_report.all(),
             many=True, read_only=True).data
 
+        response_object['patient_class'] = instance.get_patient_class_display()
+        response_object['family_member'] = None
 
         patient_user = patient_user_object(self.context['request'])
         if patient_user:
@@ -51,7 +53,6 @@ class ReportSerializer(DynamicFieldsModelSerializer):
                 fields=('id', 'mobile', 'uhid_number', 'first_name', 'display_picture',
                         'email', 'gender', 'last_name')).data
 
-        response_object['family_member'] = None
         family_member_id = self.context['request'].query_params.get(
             'user_id', None)
         if family_member_id:
