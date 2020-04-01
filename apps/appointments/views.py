@@ -76,8 +76,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             if not member:
                 raise PatientDoesNotExistsValidationException
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member)| (Q(patient_id__uhid_number__isnull= False) & Q(patient_id__uhid_number = member.uhid_number)) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number)))
-            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull= False) & Q(patient_id__uhid_number = member.uhid_number)) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member)| (Q(patient_id__uhid_number__isnull= False) & Q(patient_id__uhid_number = member.uhid_number)) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number)) | (Q(family_member_id__uhid_number__isnull= False) & Q(family_member_id__uhid_number = member.uhid_number)))
+            return super().get_queryset().filter((Q(family_member_id__uhid_number__isnull= False) & Q(family_member_id__uhid_number = member.uhid_number))| Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull= False) & Q(patient_id__uhid_number = member.uhid_number)) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if is_upcoming:
@@ -144,7 +144,8 @@ class CreateMyAppointment(ProxyView):
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
-                raise AppointmentAlreadyExistsException
+                message = root.find("Message").text
+                raise ValidationError(message)
             else:
                 data = self.request.data
                 family_member = data.get("family_member")
@@ -396,6 +397,50 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         for member in family_members:
             family_appointment = super().get_queryset().filter(
                 appointment_date__gte=datetime.now().date(), status=1).filter(
-                    Q(family_member_id=member.id)| (Q(patient_id__uhid_number__isnull= False) & Q(patient_id__uhid_number = member.uhid_number)) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number)))
+                    Q(family_member_id=member.id)| (Q(patient_id__uhid_number__isnull= False) & Q(patient_id__uhid_number = member.uhid_number)) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number)) | (Q(family_member_id__uhid_number__isnull= False) & Q(family_member_id__uhid_number = member.uhid_number)))
             patient_appointment = patient_appointment.union(family_appointment)
-        return patient_appointment    
+        return patient_appointment  
+
+class CancelHealthPackageAppointment(ProxyView):
+    source = 'cancelAppointment'
+    permission_classes = [IsSelfUserOrFamilyMember]
+
+    def get_request_data(self, request):
+        data = request.data
+        appointment_id = data.get("appointment_identifier")
+        reason_id = data.pop("reason_id")
+        instance = HealthPackageAppointment.objects.filter(
+            appointment_identifier=appointment_id).first()
+        if not instance:
+            raise AppointmentDoesNotExistsValidationException
+        request.data["location_code"] = instance.hospital.code
+        cancel_appointment = serializable_CancelAppointmentRequest(
+            **request.data)
+        request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+        data["reason_id"] = reason_id
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        appointment_id = self.request.data.get("appointment_identifier")
+        root = ET.fromstring(response.content)
+        response_message = "We are unable to cancel the appointment. Please Try again"
+        success_status = False
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            status = root.find("Status").text
+            message = root.find("Message").text
+            response_message = status
+            if status == "SUCCESS":
+                instance = HealthPackageAppointment.objects.filter(
+                    appointment_identifier=appointment_id).first()
+                if not instance:
+                    raise AppointmentDoesNotExistsValidationException
+                instance.status = "Cancelled"
+                instance.reason_id = self.request.data.get("reason_id")
+                instance.save()
+                success_status = True
+        return self.custom_success_response(message=response_message,
+                                            success=success_status, data=None)  

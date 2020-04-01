@@ -49,6 +49,6 @@ def get_appointment(patient_id):
     for member in family_members:
         family_appointment = Appointment.objects.filter(
             appointment_date__gte=datetime.now().date(), status=1).filter(
-                Q(family_member_id=member.id) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)))
+                Q(family_member_id=member.id) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) | (Q(family_member_id__uhid_number__isnull= False) & Q(family_member_id__uhid_number = member.uhid_number)))
         patient_appointment = patient_appointment.union(family_appointment)
     return patient_appointment.order_by('-appointment_date', '-appointment_slot')
