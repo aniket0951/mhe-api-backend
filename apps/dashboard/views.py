@@ -1,4 +1,5 @@
 from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.appointments.serializers import AppointmentSerializer
 from apps.doctors.models import Doctor
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
@@ -11,7 +12,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import IsManipalAdminUser
-from utils.utils import manipal_admin_object, patient_user_object
+from utils.utils import (get_appointment, manipal_admin_object,
+                         patient_user_object)
 
 from .models import DashboardBanner
 from .serializers import DashboardBannerSerializer
@@ -40,6 +42,10 @@ class DashboardAPIView(ListAPIView):
             if patient_obj:
                 dashboard_details['patient'] = PatientSerializer(
                     patient_obj).data
+                patient_appointment = get_appointment(patient_obj.id)
+                dashboard_details['upcoming_appointment'] = AppointmentSerializer(
+                    patient_appointment, many=True
+                ).data
 
             manipal_admin_obj = manipal_admin_object(request)
             if manipal_admin_obj:
