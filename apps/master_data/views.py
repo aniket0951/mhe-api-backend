@@ -60,8 +60,8 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
             latitude = float(self.request.query_params.get("latitude", 0))
             if longitude and latitude:
                 user_location = Point(longitude, latitude, srid=4326)
-                return self.get_queryset().annotate(calculated_distance=Django_Distance('location', 
-                user_location)).order_by('calculated_distance')
+                return self.get_queryset().annotate(calculated_distance=Django_Distance('location',
+                                                                                        user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
         return super().get_queryset()
@@ -426,8 +426,7 @@ class LabRadiologyItemsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        root = ET.fromstring(response._content)
-        item = root.find('SyncResponse')
+        item = ET.fromstring(response._content).find('SyncResponse')
         if item.text.startswith('Request Parameter'):
             raise HospitalCodeMissingValidationException
         try:
@@ -458,9 +457,7 @@ class LabRadiologyItemsView(ProxyView):
                 hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
                                                     ] = each_lab_radiology_item[key]
 
-            lab_radiology_item_kwargs = dict()
-            lab_radiology_item_details = dict()
-            hospital_lab_radiology_item_kwargs = dict()
+            lab_radiology_item_kwargs, lab_radiology_item_details, hospital_lab_radiology_item_kwargs = dict(), dict(), dict()
 
             lab_radiology_item_details['billing_group'] = hospital_lab_radiology_item_details.pop(
                 'billing_group')
