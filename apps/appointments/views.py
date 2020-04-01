@@ -374,3 +374,28 @@ class OfflineAppointment(APIView):
         appointment_serializer.is_valid(raise_exception = True)
         appointment_serializer.save()
         return Response(data=appointment_serializer.data,status=status.HTTP_200_OK)
+
+class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
+    search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
+                     'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
+                     'patient__mobile', 'patient__email']
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    ordering = ('-appointment_date', '-appointment_slot', 'status')
+    list_success_message = 'Appointment list returned successfully!'
+    retrieve_success_message = 'Appointment information returned successfully!'
+
+    def get_queryset(self):
+        patient = Patient.objects.filter(id = self.request.user.id).first()
+        patient_appointment = super().get_queryset().filter(
+            appointment_date__gte=datetime.now().date(), status=1).filter(
+                (Q(uhid=patient.uhid_number) & Q(uhid__isnull = False) ) | (Q(patient_id=patient.id) & Q(family_member__isnull= True)) | (Q(family_member_id__uhid_number__isnull = False) & Q(family_member_id__uhid_number = patient.patient.uhid_number)))
+        family_members = patient.patient_family_member_info.all()
+        for member in family_members:
+            family_appointment = super().get_queryset().filter(
+                appointment_date__gte=datetime.now().date(), status=1).filter(
+                    Q(family_member_id=member.id)| (Q(patient_id__uhid_number__isnull= False) & Q(patient_id__uhid_number = member.uhid_number)) | (Q(uhid__isnull = False) & Q(uhid = member.uhid_number)))
+            patient_appointment = patient_appointment.union(family_appointment)
+        return patient_appointment    
