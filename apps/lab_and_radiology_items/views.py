@@ -33,7 +33,6 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['description', ]
     ordering_fields = ('lab_radiology_item_pricing__price', 'description')
-    # filter_fields = ('specialisation',)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
