@@ -1,3 +1,5 @@
+from datetime import date, datetime, timedelta
+
 from rest_framework import status
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -26,8 +28,8 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
     serializer_class = ReportSerializer
     create_success_message = "New report is added successfully."
     list_success_message = 'Report list returned successfully!'
-    filter_fields = ('numeric_report__identifier',)
-    
+    filter_fields = ('numeric_report__identifier', 'patient_class')
+
     def get_permissions(self):
         if self.action in ['list', ]:
             permission_classes = [IsPatientUser]
@@ -41,22 +43,43 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
 
     def get_queryset(self):
         family_member_id = self.request.query_params.get('user_id', None)
+        filter_by = self.request.query_params.get("filter_by", None)
         request_patient_obj = patient_user_object(self.request)
+        qs = None
+
         if family_member_id:
             family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,
                                                         id=family_member_id).first()
             if not family_member:
                 raise ValidationError("Family member not found!")
 
-            if family_member.uhid_number:
-                return Report.objects.filter(uhid=family_member.uhid_number).distinct()
+            if not family_member.uhid_number:
+                raise ValidationError(
+                    "UHID is not linked to your family member!")
 
-            raise ValidationError("UHID is not linked to your family member!")
+            qs = Report.objects.filter(
+                uhid=family_member.uhid_number).distinct()
 
-        if request_patient_obj.uhid_number:
-            return Report.objects.filter(uhid=request_patient_obj.uhid_number).distinct()
+        if not qs and not request_patient_obj.uhid_number:
+            raise ValidationError("Your UHID is not linked!")
 
-        raise ValidationError("Your UHID is not linked!")
+        if not qs:
+            qs = Report.objects.filter(
+                uhid=request_patient_obj.uhid_number).distinct()
+
+        if filter_by:
+            if filter_by == "current_week":
+                current_week = date.today().isocalendar()[1]
+                return qs.filter(time__week=current_week)
+            elif filter_by == "last_week":
+                last_week = date.today() - timedelta(days=7)
+                return qs.filter(time__gte=last_week)
+            elif filter_by == "last_month":
+                last_month = datetime.today() - timedelta(days=30)
+                return qs.filter(time__gte=last_month)
+            else:
+                return qs.filter(time__date=filter_by)
+        return qs
 
 
 class NumericReportDetailsViewSet(custom_viewsets.CreateViewSet):
@@ -119,4 +142,3 @@ class ReportsSyncAPIView(CreateAPIView):
 
             return Response({"data": None}, status=status.HTTP_201_CREATED)
         return Response({"data": report_response.data}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
