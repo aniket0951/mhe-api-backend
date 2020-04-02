@@ -63,7 +63,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action in ['generate_uhid_otp', 'validate_uhid_otp',
-                           'generate_email_verification_otp', 'verify_email_otp']:
+                           'generate_email_verification_otp', 'verify_email_otp',  
+                           'generate_new_mobile_verification_otp', 'verify_new_mobile_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
