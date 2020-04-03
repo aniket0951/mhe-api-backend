@@ -40,8 +40,9 @@ class HealthPackageCartViewSet(custom_viewsets.ListUpdateViewSet):
         return super().get_queryset().filter(patient_info_id=self.request.user.id)
 
     def list(self, request, *args, **kwargs):
-        cart_obj = self.get_queryset().first()
         patient_user = patient_user_object(request)
+        cart_obj = self.get_queryset().filter(patient_info=patient_user,).first()
+
         if not cart_obj:
             cart_obj = self.model.objects.create(
                 patient_info=patient_user,
