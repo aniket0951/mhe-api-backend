@@ -129,8 +129,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         patient_object = self.get_object()
 
         if 'new_mobile' in serializer.validated_data and\
-                not patient_object.mobile == serializer.validated_data['new_mobile'] and \
-                not patient_object.new_mobile == serializer.validated_data['new_mobile']:
+                not patient_object.mobile == serializer.validated_data['new_mobile']:
             is_new_mobile_to_be_verified = True
 
         if 'email' in serializer.validated_data and \
