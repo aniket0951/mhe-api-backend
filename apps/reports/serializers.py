@@ -35,15 +35,20 @@ class ReportSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if not self.context['request'].query_params.get('numeric_report__identifier', None):
-            response_object['string_reports'] = StringReportDetailsSerializer(
-                instance.stringreportdetails_set.all(),
-                many=True).data
-            response_object['text_reports'] = TextReportDetailsSerializer(
-                instance.textreportdetails_set.all(),
-                many=True).data
-            response_object['numeric_reports'] = NumericReportDetailsSerializer(
-                instance.numeric_report.all(),
-                many=True).data
+
+            if self.context['request'].query_params.get('text_report__isnull') and\
+                    self.context['request'].query_params.get('text_report__isnull') == 'False':
+
+                response_object['text_reports'] = TextReportDetailsSerializer(
+                    instance.text_report.all(),
+                    many=True).data
+            else:
+                response_object['string_reports'] = StringReportDetailsSerializer(
+                    instance.string_report.all(),
+                    many=True).data
+                response_object['numeric_reports'] = NumericReportDetailsSerializer(
+                    instance.numeric_report.all(),
+                    many=True).data
         else:
             response_object['numeric_reports'] = NumericReportDetailsSerializer(
                 instance.numeric_report.all().filter(

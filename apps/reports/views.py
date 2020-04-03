@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta
 
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -28,7 +29,7 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
     serializer_class = ReportSerializer
     create_success_message = "New report is added successfully."
     list_success_message = 'Report list returned successfully!'
-    filter_fields = ('numeric_report__identifier', 'patient_class')
+    filter_fields = ('numeric_report__identifier', 'patient_class',)
 
     def get_permissions(self):
         if self.action in ['list', ]:
@@ -79,6 +80,14 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
                 return qs.filter(time__gte=last_month)
             else:
                 return qs.filter(time__date=filter_by)
+
+        if self.request.query_params.get('text_report__isnull') and\
+                self.request.query_params.get('text_report__isnull') == 'False':
+            # Looking for lab and radiology reports
+            qs = qs.filter(text_report__isnull=False)
+        else:
+            qs = qs.filter(Q(numeric_report__isnull=False)
+                           | Q(string_report__isnull=False))
         return qs
 
 
