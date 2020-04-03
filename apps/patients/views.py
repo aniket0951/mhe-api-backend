@@ -124,7 +124,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
 
     def perform_update(self, serializer):
-        is_email_to_be_verified = False
         is_new_mobile_to_be_verified = False
         patient_object = self.get_object()
 
@@ -135,10 +134,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if 'email' in serializer.validated_data and \
                 not patient_object.email == serializer.validated_data['email'] and \
                 not patient_object.email_verified:
-            is_email_to_be_verified = True
-
-        patient_object = serializer.save(
-            email_verified=not is_email_to_be_verified)
+            patient_object = serializer.save(
+                email_verified=False)
 
         if is_new_mobile_to_be_verified:
             if Patient.objects.filter(mobile=serializer.validated_data['new_mobile']).exists():

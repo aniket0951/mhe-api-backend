@@ -38,6 +38,16 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         return FamilyMember.objects.filter(patient_info__id=instance.id,
                                            is_visible=True).count()
 
+    def to_internal_value(self, data):
+        restriced_fields = ['mobile_verified', 'email_verified', 'pre_registration_number',
+                            'is_visible', 'raw_info_from_manipal_API', 'mobile_verification_otp',
+                            'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
+                            'is_staff', 'is_superuser', 'otp_expiration_time',
+                            'user_permissions', 'groups', 'password']
+        data = {
+            k: v for k, v in data.items() if not k in restriced_fields}
+        return super().to_internal_value(data)
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
 
@@ -146,12 +156,15 @@ class PatientAddressSerializer(DynamicFieldsModelSerializer):
             obj['latitude'] = instance.location.y
         return obj
 
+
 class PatientSpecificSerializer(DynamicFieldsModelSerializer):
     mobile = PhoneNumberField()
+
     class Meta:
         model = Patient
         exclude = ('is_staff', 'is_superuser', 'otp_expiration_time',
                    'user_permissions', 'groups', 'password')
+
 
 class FamilyMemberSpecificSerializer(DynamicFieldsModelSerializer):
     mobile = PhoneNumberField()
