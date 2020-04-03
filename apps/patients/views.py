@@ -63,7 +63,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action in ['generate_uhid_otp', 'validate_uhid_otp',
-                           'generate_email_verification_otp', 'verify_email_otp']:
+                           'generate_email_verification_otp', 'verify_email_otp',  
+                           'generate_new_mobile_verification_otp', 'verify_new_mobile_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -124,16 +125,49 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         is_email_to_be_verified = False
+        is_new_mobile_to_be_verified = False
         patient_object = self.get_object()
+
+        if 'new_mobile' in serializer.validated_data and\
+                not patient_object.mobile == serializer.validated_data['new_mobile']:
+            is_new_mobile_to_be_verified = True
+
+        if 'email' in serializer.validated_data and \
+                not patient_object.email == serializer.validated_data['email'] and \
+                not patient_object.email_verified:
+            is_email_to_be_verified = True
 
         patient_object = serializer.save(
             email_verified=not is_email_to_be_verified)
 
+        if is_new_mobile_to_be_verified:
+            if Patient.objects.filter(mobile=serializer.validated_data['new_mobile']).exists():
+                raise ValidationError(
+                    "This mobile number is already registered with us, please try with another number!")
+            
+            random_mobile_change_password = get_random_string(
+                length=4, allowed_chars='0123456789')
+            otp_expiration_time = datetime.now(
+            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+            patient_object.new_mobile_verification_otp = random_mobile_change_password
+            patient_object.new_mobile_otp_expiration_time = otp_expiration_time
+            patient_object.save()
+
+            message = "OTP to activate your new mobile number is {}, this OTP will expire in {} seconds.".format(
+                random_mobile_change_password, OTP_EXPIRATION_TIME)
+
+            if self.request.query_params.get('is_android', True):
+                message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+            is_message_sent = send_sms(mobile_number=str(
+                patient_object.new_mobile.raw_input), message=message)
+            if is_message_sent:
+                self.update_success_message = 'Enter the OTP which we have sent to your new mobile number to activate.'
+            else:
+                self.update_success_message = 'We are unable to send OTP to your new mobile number. Please try after sometime.'
+
         if 'email' in serializer.validated_data and \
                 not patient_object.email == serializer.validated_data['email']:
-            is_email_to_be_verified = True
-
-        if is_email_to_be_verified:
             random_email_otp = get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
@@ -144,6 +178,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.email_otp = random_email_otp
             patient_object.email_otp_expiration_time = otp_expiration_time
             patient_object.save()
+            self.update_success_message = "You email is changed, please enter the OTP to verify."
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
@@ -185,6 +220,77 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": message,
             "token": token,
             "token_expiration": expiration_epoch
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['PATCH'])
+    def verify_new_mobile_otp(self, request):
+        new_mobile_otp = request.data.get('new_mobile_otp')
+        if not new_mobile_otp:
+            raise ValidationError("Enter OTP to verify new mobile number!")
+        patient_obj = patient_user_object(request)
+
+        if not patient_obj.new_mobile_verification_otp == new_mobile_otp:
+            raise ValidationError("Invalid OTP is entered!")
+
+        if datetime.now().timestamp() > \
+                patient_obj.new_mobile_otp_expiration_time.timestamp():
+            raise OTPExpiredException
+
+
+        if Patient.objects.filter(mobile=patient_obj.new_mobile).exists():
+            raise ValidationError(
+                "This mobile number is registered with us recently, please try with another number!")
+        
+        message = "Successfully changed your mobile number, please login again!"
+
+        random_password = get_random_string(
+            length=4, allowed_chars='0123456789')
+
+        patient_obj.new_mobile_verification_otp = random_password
+        patient_obj.mobile = patient_obj.new_mobile
+        patient_obj.save()
+
+        serializer = self.get_serializer(patient_obj)
+
+        data = {
+            "data": serializer.data,
+            "message": message,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['GET'])
+    def generate_new_mobile_verification_otp(self, request):
+        patient_obj = patient_user_object(request)
+
+        if not patient_obj.new_mobile or patient_obj.mobile == patient_obj.new_mobile:
+            raise ValidationError("Invalid request!")
+
+        random_mobile_change_password = get_random_string(
+            length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+
+        patient_obj.new_mobile_verification_otp = random_mobile_change_password
+        patient_obj.new_mobile_otp_expiration_time = otp_expiration_time
+        patient_obj.save()
+
+        mobile_number = str(patient_obj.new_mobile.raw_input)
+        message = "OTP to activate your new mobile number is {}, this OTP will expire in {} seconds.".format(
+            random_mobile_change_password, OTP_EXPIRATION_TIME)
+
+        if self.request.query_params.get('is_android', True):
+            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+        is_message_sent = send_sms(
+            mobile_number=mobile_number, message=message)
+        if is_message_sent:
+            response_message = 'Enter the OTP which we have sent to your new mobile number to activate.'
+        else:
+            response_message = 'We are unable to send OTP to your new mobile number. Please try after sometime.'
+
+        data = {
+            "data": {"mobile": mobile_number},
+            "message": response_message,
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -426,7 +532,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if self.get_queryset().count() >= int(MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError("You have reached limit, you cannot add family members!")
+            raise ValidationError(
+                "You have reached limit, you cannot add family members!")
 
         if not 'email' in serializer.validated_data or \
                 not serializer.validated_data['email']:
@@ -545,7 +652,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
         if self.get_queryset().count() >= int(MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError("You have reached limit, you cannot add family members!")
+            raise ValidationError(
+                "You have reached limit, you cannot add family members!")
 
         uhid_number = request.data.get('uhid_number')
         if not uhid_number:
@@ -631,7 +739,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             family_member = self.model.objects.get(pk=pk)
         except:
             raise NotFound(detail='Requested information not found!')
-        print(family_member.mobile_verification_otp)
+
         if not family_member.mobile_verification_otp == mobile_otp:
             raise ValidationError("Invalid OTP is entered!")
 
@@ -717,7 +825,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "message": "Please enter OTP which we have sent on your email to activate.",
         }
         return Response(data, status=status.HTTP_200_OK)
-
 
     @action(detail=True, methods=['GET'])
     def generate_family_member_mobile_verification_otp(self, request, pk=None):

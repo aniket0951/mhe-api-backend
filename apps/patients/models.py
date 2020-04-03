@@ -116,6 +116,18 @@ class Patient(BaseUser):
                                           blank=True,
                                           null=True)
 
+    new_mobile = PhoneNumberField(blank=True,
+                                  null=True,
+                                  verbose_name="New Mobile Number")
+
+    new_mobile_verification_otp = models.CharField(blank=True, null=True,
+                                                   max_length=10)
+
+    new_mobile_otp_expiration_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='New mobile OTP Key Expiration DateTime')
+
     @property
     def representation(self):
         return 'Unique Manipal Identifier: {} Name: {}'.format(self.uhid_number, self.first_name)
@@ -152,10 +164,10 @@ class FamilyMember(MyBaseModel):
     mobile = PhoneNumberField(blank=True,
                               null=True,
                               verbose_name="Mobile Number")
-                              
+
     new_mobile = PhoneNumberField(blank=True,
-                              null=True,
-                              verbose_name="New Mobile Number")
+                                  null=True,
+                                  verbose_name="New Mobile Number")
 
     uhid_number = models.CharField(max_length=20,
                                    blank=True,
