@@ -646,6 +646,11 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             else:
                 self.update_success_message = 'Family member detials updated successfully, we are unable to send OTP to your family member. Please try after sometime.'
 
+
+    def perform_destroy(self, instance):
+        instance.is_visible = False
+        instance.save()
+
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
         if self.get_queryset().count() >= int(MAX_FAMILY_MEMBER_COUNT):
@@ -663,7 +668,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 "Your cannnot associate your UHID number to your family member.")
 
         if self.model.objects.filter(patient_info=patient_info,
-                                     uhid_number=uhid_number).exists():
+                                     uhid_number=uhid_number, is_visible=True).exists():
             raise ValidationError(
                 "You have an existing family member with this UHID.")
         uhid_user_info = fetch_uhid_user_details(request)
@@ -698,7 +703,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 "Your cannnot associate your UHID number to your family member.")
 
         if self.model.objects.filter(patient_info=patient_info,
-                                     uhid_number=uhid_number).exists():
+                                     uhid_number=uhid_number, is_visible=True).exists():
             raise ValidationError(
                 "You have an existing family member with this UHID.")
 
