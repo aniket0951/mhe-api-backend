@@ -146,11 +146,12 @@ class UHIDPayment(APIView):
             payment_data["payment_done_for_family_member"] = family_member
         else:
             payment_data["payment_done_for_patient"] = request.user.id
-        payment_data["payment_for_uhid_creation"] = True 
+        payment_data["payment_for_uhid_creation"] = True
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        return Response(data=param,status=status.HTTP_200_OK)
+        return Response(data=param, status=status.HTTP_200_OK)
+
 
 class OPBillPayment(APIView):
     permission_classes = (AllowAny,)
@@ -181,7 +182,8 @@ class OPBillPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        return Response(data=param,status=status.HTTP_200_OK)
+        return Response(data=param, status=status.HTTP_200_OK)
+
 
 class IPDepositPayment(APIView):
     permission_classes = (AllowAny,)
@@ -209,7 +211,7 @@ class IPDepositPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        return Response(data=param,status=status.HTTP_200_OK)
+        return Response(data=param, status=status.HTTP_200_OK)
 
 
 class PaymentResponse(APIView):
@@ -310,7 +312,7 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 current_week = date.today().isocalendar()[1]
                 return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week)
             elif filter_by == "last_week":
-                last_week = date.today()-timedelta(days=7)
+                last_week = date.today() - timedelta(days=7)
                 return super().get_queryset().filter(uhid_number=uhid, created_at__gte=last_week)
             elif filter_by == "last_month":
                 last_month = datetime.today() - timedelta(days=30)
@@ -340,8 +342,8 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset().filter(payment_id__status="success")
         if is_booked:
-            return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull = False,payment_id__status="success", appointment_status="Booked")
-        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull = False,payment_id__status="success")
+            return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
+        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success")
 
 
 class PayBillView(ProxyView):

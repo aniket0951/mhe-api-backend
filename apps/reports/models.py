@@ -110,6 +110,7 @@ class StringReportDetails(MyBaseModel):
     report = models.ForeignKey(
         Report,
         on_delete=models.PROTECT,
+        related_name='string_report',
         null=True,
         blank=True)
 
@@ -137,6 +138,7 @@ class TextReportDetails(MyBaseModel):
     report = models.ForeignKey(
         Report,
         on_delete=models.PROTECT,
+        related_name='text_report',
         null=True,
         blank=True)
 
