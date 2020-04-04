@@ -26,6 +26,12 @@ class TextReportDetailsSerializer(DynamicFieldsModelSerializer):
         model = TextReportDetails
         exclude = ('created_at', 'updated_at',)
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['observation_value'] = instance.observation_value.replace(
+            'nbsp;', '')
+        return data
+
 
 class ReportSerializer(DynamicFieldsModelSerializer):
     class Meta:
