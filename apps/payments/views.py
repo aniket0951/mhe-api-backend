@@ -45,6 +45,7 @@ from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from utils import custom_viewsets
+from utils.custom_sms import send_sms
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
 from utils.payment_parameter_generator import get_payment_param
@@ -250,6 +251,10 @@ class PaymentResponse(APIView):
                     patient, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
+                user_message = """Dear {0}. You have successfully purchased the health package. 
+                                  Please book an appointment to visit hospital.
+                                  You can manage your appointment from my health packages in the app.""".format(patient.first_name)
+                send_sms(mobile_number=str(patient.mobile.raw_input), message=user_message)
             else:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.payment_done_for_family_member.id).first()
@@ -257,6 +262,10 @@ class PaymentResponse(APIView):
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
+                user_message = """Dear {0}. You have successfully purchased the health package. 
+                                  Please book an appointment to visit hospital.
+                                  You can manage your appointment from my health packages in the app.""".format(patient.first_name)
+                send_sms(mobile_number=str(family_member.mobile.raw_input), message=user_message)
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(
                 id=payment_instance.appointment.id).first()

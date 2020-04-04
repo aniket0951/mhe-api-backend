@@ -49,7 +49,7 @@ from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
                      'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
-                     'patient__mobile', 'patient__email', 'family_member__mobile', 'family_member__email']
+                     'patient__mobile', 'patient__email']
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
@@ -267,8 +267,7 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.filter(
-            patient_id=self.request.user.id, hospital_id = self.request.query_params.get("location_id", None)).distinct('doctor')
+        return queryset.filter(patient_id=self.request.user.id).distinct('doctor')
 
 
 class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
@@ -315,7 +314,8 @@ class HealthPackageAppointmentView(ProxyView):
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
-                raise AppointmentAlreadyExistsException
+                message = root.find("Message").text
+                raise ValidationError(message)
             else:
                 instance = self.request.data["health_package_instance"]
                 datetime_object = datetime.strptime(
@@ -331,6 +331,14 @@ class HealthPackageAppointmentView(ProxyView):
                     instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
+                user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
+                                instance.payment.payment_done_for_patient.first_name, instance.appointment_slot, instance.appointment_date)
+                mobile = str(instance.payment.payment_done_for_patient.mobile)
+                if instance.payment.payment_done_for_family_member:
+                    user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
+                                instance.payment.payment_done_for_family_member.first_name, instance.appointment_slot, instance.appointment_date)
+                    mobile = str(instance.payment.payment_done_for_family_member.mobile)
+                send_sms(mobile, user_message)
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
@@ -429,7 +437,6 @@ class CancelHealthPackageAppointment(ProxyView):
 
     def parse_proxy_response(self, response):
         appointment_id = self.request.data.get("appointment_identifier")
-        root = ET.fromstring(response.content)
         response_message = "We are unable to cancel the appointment. Please Try again"
         success_status = False
         if response.status_code == 200:
