@@ -49,7 +49,7 @@ from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
                      'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
-                     'patient__mobile', 'patient__email']
+                     'patient__mobile', 'patient__email', 'family_member__mobile', 'family_member__email']
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
@@ -267,7 +267,8 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.filter(patient_id=self.request.user.id).distinct('doctor')
+        return queryset.filter(
+            patient_id=self.request.user.id, hospital_id = self.request.query_params.get("location_id", None)).distinct('doctor')
 
 
 class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
