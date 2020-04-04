@@ -219,3 +219,17 @@ class EpisodeItems:
         serializer.start_object('GetEpisodeItemsParam')
         serializer.add_property('AdmNo', self.admission_no)
         serializer.add_property('LocationCode', self.location_code)
+
+class NextAvailableSlot:
+    def __init__(self, doctor_code=None, location_code=None, schedule_date=None, department_code=None):
+        self.doctor_code = doctor_code
+        self.location_code = location_code
+        self.schedule_date = schedule_date
+        self.department_code = department_code
+
+    def serialize(self, serializer):
+        serializer.start_object('NextAvailableSlotDateParam')
+        serializer.add_property('doctorCode', self.doctor_code)
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('scheduleDate', self.schedule_date)
+        serializer.add_property('departmentCode', self.department_code)
