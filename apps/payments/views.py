@@ -331,6 +331,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
                        filters.OrderingFilter, DjangoFilterBackend)
     queryset = HealthPackageAppointment.objects.all()
     ordering = ('-payment_id__created_at',)
+    filter_fields = ('appointment_status','payment_id__status')
     serializer_class = HealthPackageAppointmentDetailSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Health Package list returned successfully!'
