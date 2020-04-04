@@ -449,7 +449,7 @@ class CancelHealthPackageAppointment(ProxyView):
                     appointment_identifier=appointment_id).first()
                 if not instance:
                     raise AppointmentDoesNotExistsValidationException
-                instance.status = "Cancelled"
+                instance.appointment_status = "Cancelled"
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
                 success_status = True
