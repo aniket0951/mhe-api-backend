@@ -12,6 +12,7 @@ router.register('details', views.DoctorsAPIView)
 urlpatterns = [
 path('slot', views.DoctorSlotAvailability.as_view()),
 path('schedule', views.DoctorScheduleView.as_view()),
+path('next_slot', views.NextSlotAvailable.as_view()),
 *router.urls
 
 ]

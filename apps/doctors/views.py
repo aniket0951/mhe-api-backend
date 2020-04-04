@@ -28,6 +28,8 @@ from apps.master_data.models import Department, Hospital, Specialisation
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializables import \
+    NextAvailableSlot as serializable_NextAvailableSlot
+from proxy.custom_serializables import \
     DoctorSchedule as serializable_DoctorSchedule
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
@@ -146,3 +148,35 @@ class DoctorScheduleView(ProxyView):
 
         return self.custom_success_response(message='Available slots',
                                             success=True, data=records)
+
+class NextSlotAvailable(ProxyView):
+    source = 'NextAvailableSlotDate'
+    permission_classes = [IsPatientUser]
+
+    def get_request_data(self, request):
+        data = request.data
+        date = data.pop("date")
+        y, m, d = date.split("-")
+        data["schedule_date"] = d + m + y
+        slots = serializable_NextAvailableSlot(**request.data)
+        request_data = custom_serializer().serialize(slots, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        response_message = "We are unable to cancel the appointment. Please Try again"
+        success_status = False
+        response_data = {}
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            next_date = root.find("nextdate").text
+            status = root.find("Status").text
+            message = root.find("Message").text
+            response_success = True
+            response_message = message
+            response_data["next_slot"] = next_date
+        return self.custom_success_response(message=response_message,
+                                            success=response_success, data=response_data)
