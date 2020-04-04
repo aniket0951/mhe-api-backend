@@ -45,7 +45,7 @@ def get_appointment(patient_id):
     patient_appointment = Appointment.objects.filter(
         appointment_date__gte=datetime.now().date(), status=1).filter(
             (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
-    family_members = patient.patient_family_member_info.all()
+    family_members = patient.patient_family_member_info.filter(is_visible = True)
     for member in family_members:
         family_appointment = Appointment.objects.filter(
             appointment_date__gte=datetime.now().date(), status=1).filter(
