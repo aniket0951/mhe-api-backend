@@ -64,7 +64,7 @@ class Payment(MyBaseModel):
                                                  blank=True,
                                                  null=True)
     payment_done_for_family_member = models.ForeignKey(FamilyMember,
-                                                       on_delete=models.SET_NULL,
+                                                       on_delete=models.PROTECT,
                                                        blank=True,
                                                        null=True)
     payment_for_uhid_creation = models.BooleanField(default=False)
