@@ -231,7 +231,7 @@ class PaymentResponse(APIView):
         payment_response = response_token_json["payment_response"]
         payment_account = response_token_json["accounts"]
         payment["status"] = payment_response["status"]
-        payment["payment_method"] = response_token_json["payment_method"]
+        payment["payment_method"] = payment_response["card_type"] + "-" + payment_response["mode"]
         payment["transaction_id"] = payment_response["txnid"]
         payment["amount"] = payment_response["net_amount_debit"]
         payment["bank_ref_num"] = payment_response["bank_ref_num"]
