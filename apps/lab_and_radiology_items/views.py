@@ -186,10 +186,15 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
             return super().get_queryset()
         family_member = self.request.query_params.get("user_id", None)
         if family_member is not None:
-            return super().get_queryset().filter(family_member_id=family_member)
+            member = FamilyMember.objects.filter(id=family_member).first()
+            if not member:
+                raise PatientDoesNotExistsValidationException
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull == False) & Q(patient_id__uhid_number == member.uhid_number))
+                                               | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
-            return super().get_queryset().filter(patient_id=self.request.user.id,
-                                                 family_member__isnull=True)
+            patient = Patient.objects.filter(id=self.request.user.id).first()
+            return super().get_queryset().filter((Q(patient_id=patient.id) & Q(family_member__isnull=True))| 
+                                                (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.uhid_number)))
 
     def perform_create(self, serializer):
         serializer.save()
