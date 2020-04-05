@@ -76,8 +76,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             if not member:
                 raise PatientDoesNotExistsValidationException
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
-            return super().get_queryset().filter((Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)) | Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
+            return super().get_queryset().filter((Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)) | Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if is_upcoming:
@@ -267,7 +267,7 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.filter(patient_id=self.request.user.id).distinct('doctor')
+        return queryset.filter(patient_id=self.request.user.id, hospital_id = self.request.query_params.get("location_id", None)).distinct('doctor')
 
 
 class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
