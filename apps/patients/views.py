@@ -603,9 +603,11 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 not family_member_object.email == serializer.validated_data['email'] and \
                 not serializer.validated_data['email'] == request_patient.email:
             is_email_to_be_verified = True
-
-        family_member_object = serializer.save(
-            email_verified=not is_email_to_be_verified)
+            
+            family_member_object = serializer.save(
+                email_verified=False)
+        else:
+            family_member_object = serializer.save()
 
         if is_email_to_be_verified:
             random_email_otp = get_random_string(
