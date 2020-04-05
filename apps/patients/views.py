@@ -124,11 +124,12 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
 
     def perform_update(self, serializer):
-        is_new_mobile_to_be_verified = False
+        mobile_number_changes = False
         patient_object = self.get_object()
 
         if 'new_mobile' in serializer.validated_data and\
                 not patient_object.mobile == serializer.validated_data['new_mobile']:
+            mobile_number_changes = True
 
             if Patient.objects.filter(mobile=serializer.validated_data['new_mobile']).exists():
                 raise ValidationError(
@@ -156,26 +157,25 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             else:
                 self.update_success_message = 'We are unable to send OTP to your new mobile number. Please try after sometime.'
 
-            return
+        if not mobile_number_changes:
+            if 'email' in serializer.validated_data and \
+                    not patient_object.email == serializer.validated_data['email']:
+                patient_object = serializer.save(
+                    email_verified=False)
 
-        if 'email' in serializer.validated_data and \
-                not patient_object.email == serializer.validated_data['email']:
-            patient_object = serializer.save(
-                email_verified=False)
+                random_email_otp = get_random_string(
+                    length=4, allowed_chars='0123456789')
+                otp_expiration_time = datetime.now(
+                ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
-            random_email_otp = get_random_string(
-                length=4, allowed_chars='0123456789')
-            otp_expiration_time = datetime.now(
-            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+                send_email_activation_otp(str(patient_object.id), random_email_otp)
 
-            send_email_activation_otp(str(patient_object.id), random_email_otp)
-
-            patient_object.email_otp = random_email_otp
-            patient_object.email_otp_expiration_time = otp_expiration_time
-            patient_object.save()
-            self.update_success_message = "You email is changed, please enter the OTP to verify."
-        else:
-            patient_object = serializer.save()
+                patient_object.email_otp = random_email_otp
+                patient_object.email_otp_expiration_time = otp_expiration_time
+                patient_object.save()
+                self.update_success_message = "You email is changed, please enter the OTP to verify."
+            else:
+                patient_object = serializer.save()
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
