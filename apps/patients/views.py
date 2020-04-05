@@ -63,7 +63,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action in ['generate_uhid_otp', 'validate_uhid_otp',
-                           'generate_email_verification_otp', 'verify_email_otp',  
+                           'generate_email_verification_otp', 'verify_email_otp',
                            'generate_new_mobile_verification_otp', 'verify_new_mobile_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
@@ -129,24 +129,17 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if 'new_mobile' in serializer.validated_data and\
                 not patient_object.mobile == serializer.validated_data['new_mobile']:
-            is_new_mobile_to_be_verified = True
 
-        if 'email' in serializer.validated_data and \
-                not patient_object.email == serializer.validated_data['email'] and \
-                not patient_object.email_verified:
-            patient_object = serializer.save(
-                email_verified=False)
-
-        if is_new_mobile_to_be_verified:
             if Patient.objects.filter(mobile=serializer.validated_data['new_mobile']).exists():
                 raise ValidationError(
                     "This mobile number is already registered with us, please try with another number!")
-            
+
             random_mobile_change_password = get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
             ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
 
+            patient_object = serializer.save()
             patient_object.new_mobile_verification_otp = random_mobile_change_password
             patient_object.new_mobile_otp_expiration_time = otp_expiration_time
             patient_object.save()
@@ -163,8 +156,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             else:
                 self.update_success_message = 'We are unable to send OTP to your new mobile number. Please try after sometime.'
 
+            return
+
         if 'email' in serializer.validated_data and \
                 not patient_object.email == serializer.validated_data['email']:
+            patient_object = serializer.save(
+                email_verified=False)
+
             random_email_otp = get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
@@ -176,6 +174,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.email_otp_expiration_time = otp_expiration_time
             patient_object.save()
             self.update_success_message = "You email is changed, please enter the OTP to verify."
+        else:
+            patient_object = serializer.save()
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
@@ -234,11 +234,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 patient_obj.new_mobile_otp_expiration_time.timestamp():
             raise OTPExpiredException
 
-
         if Patient.objects.filter(mobile=patient_obj.new_mobile).exists():
             raise ValidationError(
                 "This mobile number is registered with us recently, please try with another number!")
-        
+
         message = "Successfully changed your mobile number, please login again!"
 
         random_password = get_random_string(
@@ -311,8 +310,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.save()
 
         data = {
-            "data": None,
-            "message": "You email is verified successfully!",
+            "data": self.get_serializer(authenticated_patient).data,
+            "message": "You email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -604,9 +603,11 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 not family_member_object.email == serializer.validated_data['email'] and \
                 not serializer.validated_data['email'] == request_patient.email:
             is_email_to_be_verified = True
-
-        family_member_object = serializer.save(
-            email_verified=not is_email_to_be_verified)
+            
+            family_member_object = serializer.save(
+                email_verified=False)
+        else:
+            family_member_object = serializer.save()
 
         if is_email_to_be_verified:
             random_email_otp = get_random_string(
@@ -645,7 +646,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 self.update_success_message = 'Family member details updated successfully, please enter OTP which we have sent to your family member.'
             else:
                 self.update_success_message = 'Family member detials updated successfully, we are unable to send OTP to your family member. Please try after sometime.'
-
 
     def perform_destroy(self, instance):
         instance.is_visible = False
