@@ -310,8 +310,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.save()
 
         data = {
-            "data": None,
-            "message": "You email is verified successfully!",
+            "data": self.get_serializer(authenticated_patient).data,
+            "message": "You email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
 
