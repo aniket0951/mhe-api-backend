@@ -138,7 +138,7 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
             member = FamilyMember.objects.filter(id=family_member).first()
             if not member:
                 raise PatientDoesNotExistsValidationException
-            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull = False) & Q(patient_id__uhid_number == member.uhid_number))
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull = False) & Q(patient_id__uhid_number=member.uhid_number))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
