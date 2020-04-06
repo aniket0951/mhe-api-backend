@@ -267,7 +267,7 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.filter(patient_id=self.request.user.id, hospital_id = self.request.query_params.get("location_id", None)).distinct('doctor')
+        return queryset.filter(patient_id=self.request.user.id, hospital_id=self.request.query_params.get("location_id", None)).distinct('doctor')
 
 
 class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
@@ -331,13 +331,16 @@ class HealthPackageAppointmentView(ProxyView):
                     instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
-                user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
-                                instance.payment.payment_done_for_patient.first_name, instance.appointment_slot, instance.appointment_date)
-                mobile = str(instance.payment.payment_done_for_patient.mobile)
+                if instance.payment.payment_done_for_patient:
+                    user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
+                        instance.payment.payment_done_for_patient.first_name, instance.appointment_slot, instance.appointment_date)
+                    mobile = str(
+                        instance.payment.payment_done_for_patient.mobile)
                 if instance.payment.payment_done_for_family_member:
                     user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
-                                instance.payment.payment_done_for_family_member.first_name, instance.appointment_slot, instance.appointment_date)
-                    mobile = str(instance.payment.payment_done_for_family_member.mobile)
+                        instance.payment.payment_done_for_family_member.first_name, instance.appointment_slot, instance.appointment_date)
+                    mobile = str(
+                        instance.payment.payment_done_for_family_member.mobile)
                 send_sms(mobile, user_message)
                 response_success = True
                 response_message = "Appointment has been created"
