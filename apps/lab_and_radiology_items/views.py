@@ -6,6 +6,7 @@ from rest_framework.serializers import ValidationError
 
 from apps.cart_items.models import HomeCollectionCart
 from apps.master_data.models import BillingGroup, HomeCareService
+from apps.patients.models import Patient
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -138,12 +139,11 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
             if not member:
                 raise PatientDoesNotExistsValidationException
             return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull == False) & Q(patient_id__uhid_number == member.uhid_number))
-                                               | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
+                                                 | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
-            return super().get_queryset().filter((Q(patient_id=patient.id) & Q(family_member__isnull=True))| 
-                                                (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.uhid_number)))
-            
+            return super().get_queryset().filter((Q(patient_id=patient.id) & Q(family_member__isnull=True)) |
+                                                 (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.uhid_number)))
 
 
 class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
@@ -196,11 +196,11 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
             if not member:
                 raise PatientDoesNotExistsValidationException
             return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull == False) & Q(patient_id__uhid_number == member.uhid_number))
-                                               | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
+                                                 | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
-            return super().get_queryset().filter((Q(patient_id=patient.id) & Q(family_member__isnull=True))| 
-                                                (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.uhid_number)))
+            return super().get_queryset().filter((Q(patient_id=patient.id) & Q(family_member__isnull=True)) |
+                                                 (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.uhid_number)))
 
     def perform_create(self, serializer):
         serializer.save()
