@@ -331,9 +331,10 @@ class HealthPackageAppointmentView(ProxyView):
                     instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
-                user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
+                if instance.payment.payment_done_for_patient:
+                    user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
                                 instance.payment.payment_done_for_patient.first_name, instance.appointment_slot, instance.appointment_date)
-                mobile = str(instance.payment.payment_done_for_patient.mobile)
+                    mobile = str(instance.payment.payment_done_for_patient.mobile)
                 if instance.payment.payment_done_for_family_member:
                     user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
                                 instance.payment.payment_done_for_family_member.first_name, instance.appointment_slot, instance.appointment_date)
