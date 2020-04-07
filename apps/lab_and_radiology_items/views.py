@@ -6,6 +6,7 @@ from rest_framework.serializers import ValidationError
 
 from apps.cart_items.models import HomeCollectionCart
 from apps.master_data.models import BillingGroup, HomeCareService
+from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
@@ -135,10 +136,11 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
             return super().get_queryset()
         family_member = self.request.query_params.get("user_id", None)
         if family_member is not None:
-            member = FamilyMember.objects.filter(id=family_member).first()
+            member = FamilyMember.objects.filter(id=family_member,
+                                                 patient_info_id=self.request.user.id).first()
             if not member:
                 raise PatientDoesNotExistsValidationException
-            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull = False) & Q(patient_id__uhid_number=member.uhid_number))
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
@@ -192,10 +194,11 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
             return super().get_queryset()
         family_member = self.request.query_params.get("user_id", None)
         if family_member is not None:
-            member = FamilyMember.objects.filter(id=family_member).first()
+            member = FamilyMember.objects.filter(id=family_member,
+                                                 patient_info_id=self.request.user.id).first()
             if not member:
                 raise PatientDoesNotExistsValidationException
-            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull = False) & Q(patient_id__uhid_number = member.uhid_number))
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()

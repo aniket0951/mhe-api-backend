@@ -4,7 +4,7 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.meta_app.models import MyBaseModel
-from apps.patients.models import Patient
+from apps.patients.models import FamilyMember, Patient
 from manipal_api.settings import VALID_FILE_EXTENSIONS
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
@@ -35,9 +35,15 @@ class PatientPersonalDocuments(MyBaseModel):
 
     patient_info = models.ForeignKey(Patient,
                                      on_delete=models.PROTECT,
-                                     null=True,
-                                     blank=True,
+                                     null=False,
+                                     blank=False,
                                      related_name='patient_documents')
+
+    family_member = models.ForeignKey(FamilyMember,
+                                      on_delete=models.PROTECT,
+                                      related_name='family_personal_documents',
+                                      blank=True,
+                                      null=True)
 
     @property
     def representation(self):
