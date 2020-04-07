@@ -6,7 +6,7 @@ from rest_framework.serializers import ValidationError
 
 from apps.cart_items.models import HomeCollectionCart
 from apps.master_data.models import BillingGroup, HomeCareService
-from apps.patients.exceptions import PatientDoesNotExistsValidationException
+from apps.patients.exceptions import InvalidFamilyMemberValidationException
 from apps.patients.models import FamilyMember, Patient
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
@@ -139,7 +139,7 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
             member = FamilyMember.objects.filter(id=family_member,
                                                  patient_info_id=self.request.user.id).first()
             if not member:
-                raise PatientDoesNotExistsValidationException
+                raise InvalidFamilyMemberValidationException
             return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
@@ -197,7 +197,7 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
             member = FamilyMember.objects.filter(id=family_member,
                                                  patient_info_id=self.request.user.id).first()
             if not member:
-                raise PatientDoesNotExistsValidationException
+                raise InvalidFamilyMemberValidationException
             return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:

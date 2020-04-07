@@ -56,6 +56,13 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
+        try:
+            if instance.document:
+                response_object['document'] = generate_pre_signed_url(
+                    instance.document.url)
+        except Exception as error:
+            print(error)
+            response_object['display_picture'] = None
 
         if instance.service:
             response_object['service'] = HomeCareServiceSerializer(
