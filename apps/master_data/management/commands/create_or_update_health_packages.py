@@ -20,8 +20,6 @@ class Command(BaseCommand):
             for each_hospital in all_hospitals:
                 print("Started loading Health Packages of {} hospital.".format(
                     each_hospital.code))
-                if each_hospital.code == 'MMH':
-                    continue
                 
                 client.post('/api/master_data/health_packages',
                                        json.dumps({'location_code': each_hospital.code}), content_type='application/json')
