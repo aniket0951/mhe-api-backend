@@ -6,9 +6,10 @@ from rest_framework import serializers
 
 from apps.patients.serializers import CurrentPatientUserDefault
 
+
 class PatientPersonalDocumentsSerializer(DynamicFieldsModelSerializer):
     patient_info = serializers.UUIDField(write_only=True,
-                                    default=CurrentPatientUserDefault())
+                                         default=CurrentPatientUserDefault())
 
     class Meta:
         model = PatientPersonalDocuments
@@ -16,6 +17,7 @@ class PatientPersonalDocumentsSerializer(DynamicFieldsModelSerializer):
         extra_kwargs = {
             'name': {"error_messages": {"required": "Name is mandatory to upload your document."}},
         }
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
 

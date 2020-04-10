@@ -418,7 +418,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 "There is an exisiting user  on our platform with this UHID.")
 
         if FamilyMember.objects.filter(patient_info=patient_info,
-                                       uhid_number=uhid_number).exists():
+                                       uhid_number=uhid_number,
+                                       is_visible=True).exists():
             raise ValidationError(
                 "You have an existing family member with this UHID.")
         uhid_user_info = fetch_uhid_user_details(request)
@@ -603,7 +604,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 not family_member_object.email == serializer.validated_data['email'] and \
                 not serializer.validated_data['email'] == request_patient.email:
             is_email_to_be_verified = True
-            
+
             family_member_object = serializer.save(
                 email_verified=False)
         else:
