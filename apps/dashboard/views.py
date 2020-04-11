@@ -97,5 +97,9 @@ class DashboardAPIView(ListAPIView):
                     payment_id__status="success").count()
                 dashboard_details['health_package_statistics']['booked'] = HealthPackageAppointment.objects.filter(
                     payment_id__status="success", appointment_status="Booked").count()
+                dashboard_details['health_package_statistics']['Cancelled'] = HealthPackageAppointment.objects.filter(
+                    payment_id__status="success", appointment_status="Cancelled").count()
+                dashboard_details['health_package_statistics']['Not Booked'] = HealthPackageAppointment.objects.filter(
+                    payment_id__status="success", appointment_status="Not Booked").count()
 
         return Response(dashboard_details, status=status.HTTP_200_OK)
