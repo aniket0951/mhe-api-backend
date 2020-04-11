@@ -14,6 +14,12 @@ class PatientDoesNotExistsValidationException(APIException):
     default_detail = 'Your are not registered with us!'
 
 
+class InvalidFamilyMemberValidationException(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+    default_code = 'invalid_patient'
+    default_detail = 'Family member not found!'
+
+
 class PatientMobileDoesNotExistsValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_patient_mobile'

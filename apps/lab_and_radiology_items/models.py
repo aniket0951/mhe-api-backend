@@ -19,6 +19,12 @@ def generate_prescription_file_path(self, filename):
     return "users/{0}/prescription/{1}".format(self.id, obj_name)
 
 
+def generate_service_prescription_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "users/{0}/service_prescription/{1}".format(self.id, obj_name)
+
+
 class LabRadiologyItem(MyBaseModel):
 
     code = models.SlugField(max_length=200,
@@ -102,6 +108,14 @@ class PatientServiceAppointment(MyBaseModel):
                                 blank=False,
                                 on_delete=models.PROTECT, related_name='patient_service_appointment')
 
+    document = models.FileField(upload_to=generate_prescription_file_path,
+                                storage=FileStorage(),
+                                validators=[FileExtensionValidator(
+                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                blank=True,
+                                null=True)
+
     patient = models.ForeignKey(Patient,
                                 null=True,
                                 blank=True,
@@ -120,7 +134,7 @@ class PatientServiceAppointment(MyBaseModel):
                               default='Pending',
                               max_length=11
                               )
-       
+
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
@@ -170,7 +184,7 @@ class HomeCollectionAppointment(MyBaseModel):
     home_collections = models.ManyToManyField(LabRadiologyItem,
                                               blank=True)
 
-    document = models.FileField(upload_to=generate_prescription_file_path,
+    document = models.FileField(upload_to=generate_service_prescription_file_path,
                                 storage=FileStorage(),
                                 validators=[FileExtensionValidator(
                                             VALID_FILE_EXTENSIONS), validate_file_size,
@@ -201,7 +215,7 @@ class HomeCollectionAppointment(MyBaseModel):
                               default='Pending',
                               max_length=11
                               )
-                              
+
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
