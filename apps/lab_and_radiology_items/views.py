@@ -140,7 +140,7 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
                                                  patient_info_id=self.request.user.id).first()
             if not member:
                 raise InvalidFamilyMemberValidationException
-            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number))
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)& Q(family_member__isnull=True))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
@@ -198,7 +198,7 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
                                                  patient_info_id=self.request.user.id).first()
             if not member:
                 raise InvalidFamilyMemberValidationException
-            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number))
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
