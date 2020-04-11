@@ -916,9 +916,9 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
         request_data = self.request.data
         longitude = float(request_data.get("longitude", 0))
         latitude = float(request_data.get("latitude", 0))
-        if not (longitude and latitude):
-            raise ValidationError(
-                "Missing information about longitude and latitude!")
+        # if not (longitude and latitude):
+        #     raise ValidationError(
+        #         "Missing information about longitude and latitude!")
         serializer.save(location=Point(longitude, latitude, srid=4326))
 
     def perform_update(self, serializer):
