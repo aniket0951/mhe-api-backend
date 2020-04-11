@@ -24,6 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')  # e.g. us-east-2
@@ -91,6 +92,7 @@ CUSTOM_APPS = [
     'apps.cart_items',
     'apps.reports',
     'apps.dashboard',
+    'apps.notifications.apps.NotificationsConfig',
 
 
 ]
@@ -102,7 +104,8 @@ THIRD_PARTY_APPS = [
     'phonenumber_field',
     'import_export',
     'django_extensions',
-    'django.contrib.gis'
+    'django.contrib.gis',
+    'fcm_django'
 ]
 
 # Application definition
@@ -291,6 +294,11 @@ OTP_EXPIRATION_TIME = env('OTP_EXPIRATION_TIME')
 
 MAX_FAMILY_MEMBER_COUNT = env('MAX_FAMILY_MEMBER_COUNT')
 
+FCM_DJANGO_SETTINGS = {
+"FCM_SERVER_KEY": env('FCM_SERVER_KEY')
+}
+FCM_API_KEY=env('FCM_API_KEY')
+
 
 ANDROID_SMS_RETRIEVER_API_KEY = env('ANDROID_SMS_RETRIEVER_API_KEY')
 
@@ -313,3 +321,15 @@ EMAIL_HOST_USER = env('AWS_SES_ACCESS_KEY_ID')
 EMAIL_HOST_PASSWORD = env('AWS_SES_SECRET_ACCESS_KEY')
 EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_TLS = True
+
+# CELERY_BROKER_URL= "sqs://%s:%s@" % (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+# CELERY_BROKER_URL='sqs://AKIAA4saas78KBMR7TYAUHBOCRD:BK9ssHJHJhjhjhjtHAwVNfpumzYdfdfdfo++PMkU9cY@'
+CELERY_BROKER_URL=env('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
+# CELERY_DEFAULT_QUEUE = env('CELERY_DEFAULT_QUEUE')
+# CELERY_BROKER_TRANSPORT_OPTIONS = {
+#     'region': 'ap-south-1',
+#     # 'visibility_timeout': 3600,
+#     # 'polling_interval': 0.3,
+#     'queue_name_prefix': 'mhe-dev-celery.fifo',
+# }

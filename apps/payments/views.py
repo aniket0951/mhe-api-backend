@@ -265,7 +265,7 @@ class PaymentResponse(APIView):
                 patient_serializer.save()
                 user_message = """Dear {0}. You have successfully purchased the health package. 
                                   Please book an appointment to visit hospital.
-                                  You can manage your appointment from my health packages in the app.""".format(patient.first_name)
+                                  You can manage your appointment from my health packages in the app.""".format(family_member.first_name)
                 send_sms(mobile_number=str(family_member.mobile.raw_input), message=user_message)
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(
