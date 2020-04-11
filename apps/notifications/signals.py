@@ -92,14 +92,28 @@ def send_new_health_package_appointment_notification(sender, **kwargs):
 @receiver(post_save, sender=HomeCollectionAppointment)
 def send_new_home_collection_appointment_notification(sender, **kwargs):
     appointment_instance = kwargs['instance']
-    patient = Patient.objects.filter(id=appointment_instance.patient).first()
-    if appointment_instance.family_member:
-        member = FamilyMember.objects.filter(
-            id=appointment_instance.family_member, patient_info_id=appointment_instance.patient)
-        if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-            patient_member = Patient.objects.filter(
-                uhid_number=member.uhid_number).first()
-            notification_data["recipient"] = patient_member.id
+    if kwargs["created"]:
+        patient = Patient.objects.filter(id=appointment_instance.patient).first()
+        if appointment_instance.family_member:
+            member = FamilyMember.objects.filter(
+                id=appointment_instance.family_member, patient_info_id=appointment_instance.patient)
+            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+                patient_member = Patient.objects.filter(
+                    uhid_number=member.uhid_number).first()
+                notification_data["recipient"] = patient_member.id
+                notification_data["title"] = "New Home Collection Appointment is created"
+                notification_data["message"] = "You have a home collection appointment on {0}".format(
+                    appointment_instance.appointment_date)
+                mobile_notification_serializer = MobileNotificationSerializer(
+                    data=notification_data)
+                mobile_notification_serializer.is_valid(raise_exception=True)
+                notification_instance = mobile_notification_serializer.save()
+                schedule_time = appointment_instance.appointment_date - \
+                    timedelta(hours=7, minutes=30)
+                send_push_notification.apply_async(kwargs={"registration_id": notification_instance.recipient.device.token,
+                                                        "data_message": {"title": "Appointment Reminder",
+                                                                            "message": "Reminder:" + notification_instance.message}, "low_priority": False}, eta=schedule_time)
+            notification_data["recipient"] = patient.id
             notification_data["title"] = "New Home Collection Appointment is created"
             notification_data["message"] = "You have a home collection appointment on {0}".format(
                 appointment_instance.appointment_date)
@@ -110,34 +124,35 @@ def send_new_home_collection_appointment_notification(sender, **kwargs):
             schedule_time = appointment_instance.appointment_date - \
                 timedelta(hours=7, minutes=30)
             send_push_notification.apply_async(kwargs={"registration_id": notification_instance.recipient.device.token,
-                                                       "data_message": {"title": "Appointment Reminder",
+                                                    "data_message": {"title": "Appointment Reminder",
                                                                         "message": "Reminder:" + notification_instance.message}, "low_priority": False}, eta=schedule_time)
-        notification_data["recipient"] = patient.id
-        notification_data["title"] = "New Home Collection Appointment is created"
-        notification_data["message"] = "You have a home collection appointment on {0}".format(
-            appointment_instance.appointment_date)
-        mobile_notification_serializer = MobileNotificationSerializer(
-            data=notification_data)
-        mobile_notification_serializer.is_valid(raise_exception=True)
-        notification_instance = mobile_notification_serializer.save()
-        schedule_time = appointment_instance.appointment_date - \
-            timedelta(hours=7, minutes=30)
-        send_push_notification.apply_async(kwargs={"registration_id": notification_instance.recipient.device.token,
-                                                   "data_message": {"title": "Appointment Reminder",
-                                                                    "message": "Reminder:" + notification_instance.message}, "low_priority": False}, eta=schedule_time)
 
 
 @receiver(post_save, sender=PatientServiceAppointment)
 def send_new_patient_service_appointment_notification(sender, **kwargs):
     appointment_instance = kwargs['instance']
-    patient = Patient.objects.filter(id=appointment_instance.patient).first()
-    if appointment_instance.family_member:
-        member = FamilyMember.objects.filter(
-            id=appointment_instance.family_member, patient_info_id=appointment_instance.patient)
-        if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-            patient_member = Patient.objects.filter(
-                uhid_number=member.uhid_number).first()
-            notification_data["recipient"] = patient_member.id
+    if kwargs["created"]:
+        patient = Patient.objects.filter(id=appointment_instance.patient).first()
+        if appointment_instance.family_member:
+            member = FamilyMember.objects.filter(
+                id=appointment_instance.family_member, patient_info_id=appointment_instance.patient)
+            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+                patient_member = Patient.objects.filter(
+                    uhid_number=member.uhid_number).first()
+                notification_data["recipient"] = patient_member.id
+                notification_data["title"] = "Home Collection Appointment is created"
+                notification_data["message"] = "Reminder: Hi {0},You have a home collection appointent on {1}".format(
+                    patient.first_name, appointment_instance.appointment_date)
+                mobile_notification_serializer = MobileNotificationSerializer(
+                    data=notification_data)
+                mobile_notification_serializer.is_valid(raise_exception=True)
+                notification_instance = mobile_notification_serializer.save()
+                schedule_time = appointment_instance.appointment_date - \
+                    timedelta(hours=7, minutes=30)
+                send_push_notification.apply_async(kwargs={"registration_id": notification_instance.recipient.device.token,
+                                                        "data_message": {"title": "Home Collection Appointment Reminder",
+                                                                            "message": "Reminder:" + notification_instance.message}, "low_priority": False}, eta=schedule_time)
+            notification_data["recipient"] = patient.id
             notification_data["title"] = "Home Collection Appointment is created"
             notification_data["message"] = "Reminder: Hi {0},You have a home collection appointent on {1}".format(
                 patient.first_name, appointment_instance.appointment_date)
@@ -148,18 +163,5 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
             schedule_time = appointment_instance.appointment_date - \
                 timedelta(hours=7, minutes=30)
             send_push_notification.apply_async(kwargs={"registration_id": notification_instance.recipient.device.token,
-                                                       "data_message": {"title": "Home Collection Appointment Reminder",
+                                                    "data_message": {"title": "Home Collection Appointment Reminder",
                                                                         "message": "Reminder:" + notification_instance.message}, "low_priority": False}, eta=schedule_time)
-        notification_data["recipient"] = patient.id
-        notification_data["title"] = "Home Collection Appointment is created"
-        notification_data["message"] = "Reminder: Hi {0},You have a home collection appointent on {1}".format(
-            patient.first_name, appointment_instance.appointment_date)
-        mobile_notification_serializer = MobileNotificationSerializer(
-            data=notification_data)
-        mobile_notification_serializer.is_valid(raise_exception=True)
-        notification_instance = mobile_notification_serializer.save()
-        schedule_time = appointment_instance.appointment_date - \
-            timedelta(hours=7, minutes=30)
-        send_push_notification.apply_async(kwargs={"registration_id": notification_instance.recipient.device.token,
-                                                   "data_message": {"title": "Home Collection Appointment Reminder",
-                                                                    "message": "Reminder:" + notification_instance.message}, "low_priority": False}, eta=schedule_time)
