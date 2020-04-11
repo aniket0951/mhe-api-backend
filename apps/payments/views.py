@@ -252,20 +252,18 @@ class PaymentResponse(APIView):
                     patient, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
-                user_message = """Dear {0}. You have successfully purchased the health package. 
-                                  Please book an appointment to visit hospital.
-                                  You can manage your appointment from my health packages in the app.""".format(patient.first_name)
+                user_message = """Dear {0}. You have successfully registered with us 
+                                  and your UHID is {1}""".format(patient.first_name, patient.uhid_number)
                 send_sms(mobile_number=str(patient.mobile.raw_input), message=user_message)
-            else:
+            if payment_instance.payment_done_for_family_member:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.payment_done_for_family_member.id).first()
                 patient_serializer = FamilyMemberSpecificSerializer(
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
-                user_message = """Dear {0}. You have successfully purchased the health package. 
-                                  Please book an appointment to visit hospital.
-                                  You can manage your appointment from my health packages in the app.""".format(family_member.first_name)
+                user_message = """Dear {0}. You have successfully registered with us 
+                                  and your UHID is {1}""".format(family_member.first_name, family_member.uhid_number)
                 send_sms(mobile_number=str(family_member.mobile.raw_input), message=user_message)
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(
@@ -275,6 +273,22 @@ class PaymentResponse(APIView):
                 appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
+        
+        if payment_instance.payment_for_health_package:
+            if payment_instance.payment_done_for_patient:
+                patient = Patient.objects.filter(
+                    id=payment_instance.payment_done_for_patient.id).first()
+                user_message = """Dear {0}. You have successfully purchased the health package. 
+                                  Please book an appointment to visit hospital.
+                                  You can manage your appointment from my health packages in the app""".format(patient.first_name)
+                send_sms(mobile_number=str(patient.mobile.raw_input), message=user_message)
+            if payment_instance.payment_done_for_family_member:
+                family_member = FamilyMember.objects.filter(
+                    id=payment_instance.payment_done_for_family_member.id).first()
+                user_message = """Dear {0}. You have successfully purchased the health package. 
+                                  Please book an appointment to visit hospital.
+                                  You can manage your appointment from my health packages in the app""".format(family_member.first_name)
+                send_sms(mobile_number=str(family_member.mobile.raw_input), message=user_message)
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
