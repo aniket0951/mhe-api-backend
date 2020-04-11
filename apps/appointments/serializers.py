@@ -61,6 +61,7 @@ class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
     hospital = HospitalSerializer(read_only=True)
     payment = PaymentSerializer(read_only=True)
     health_package = HealthPackageSpecificSerializer(read_only=True)
+    reason = CancellationReasonSerializer(read_only=True)
     pricing = serializers.SerializerMethodField()
 
     class Meta:
