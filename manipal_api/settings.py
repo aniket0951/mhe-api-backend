@@ -322,14 +322,8 @@ EMAIL_HOST_PASSWORD = env('AWS_SES_SECRET_ACCESS_KEY')
 EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_TLS = True
 
-# CELERY_BROKER_URL= "sqs://%s:%s@" % (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-# CELERY_BROKER_URL='sqs://AKIAA4saas78KBMR7TYAUHBOCRD:BK9ssHJHJhjhjhjtHAwVNfpumzYdfdfdfo++PMkU9cY@'
-CELERY_BROKER_URL=env('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
-# CELERY_DEFAULT_QUEUE = env('CELERY_DEFAULT_QUEUE')
-# CELERY_BROKER_TRANSPORT_OPTIONS = {
-#     'region': 'ap-south-1',
-#     # 'visibility_timeout': 3600,
-#     # 'polling_interval': 0.3,
-#     'queue_name_prefix': 'mhe-dev-celery.fifo',
-# }
+CELERY_BROKER_URL= "sqs://%s:%s@" % (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+CELERY_RESULT_BACKEND = None
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'region': 'ap-south-1',
+}
