@@ -76,8 +76,8 @@ class NumericReportDetails(MyBaseModel):
                                          null=False)
 
     observation_range = models.CharField(max_length=100,
-                                         blank=False,
-                                         null=False)
+                                         blank=True,
+                                         null=True)
 
     report = models.ForeignKey(
         Report,
