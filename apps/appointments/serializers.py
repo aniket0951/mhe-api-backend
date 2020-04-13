@@ -64,6 +64,7 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
 class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
     from apps.payments.serializers import PaymentSerializer
     hospital = HospitalSerializer(read_only=True)
+    is_cancellable = serializers.ReadOnlyField()
     payment = PaymentSerializer(read_only=True)
     health_package = HealthPackageSpecificSerializer(read_only=True)
     reason = CancellationReasonSerializer(read_only=True)
