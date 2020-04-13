@@ -69,10 +69,11 @@ def send_new_health_package_appointment_notification(sender, **kwargs):
     if kwargs["created"]:
         user_message = ""
         if appointment_instance.payment.payment_done_for_family_member:
-            patient = appointment_instance.payment.patient
+            patient_id = appointment_instance.payment.patient.id
+            patient = Patient.objects.filter(id = patient_id)
             user_message = "Hi {0}, your health package appointment is booked on {1} at {2}".format(
                 patient.first_name, appointment_instance.appointment_date, appointment_instance.appointment_slot)
-            notification_data["recipient"] = patient
+            notification_data["recipient"] = patient_id
             notification_data["title"] = "Health PackageAppointment Booked Successfully"
             notification_data["message"] = user_message
             send_push_notification.delay(notification_data = notification_data)
