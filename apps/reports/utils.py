@@ -61,6 +61,22 @@ def string_report_hanlder(report_detail, report_id, factory=APIRequestFactory())
             '', string_report_request_data, format='json')
 
 
+def free_text_report_hanlder(report_detail, report_id, factory=APIRequestFactory()):
+
+    string_report_request_data = {}
+    string_report_required_keys = [
+        'ObxIdentifierID', 'ObxIdentifierText', 'ObxValue']
+
+    if report_detail and type(report_detail) == dict and \
+            set(string_report_required_keys).issubset(set(report_detail.keys())):
+        string_report_request_data = {}
+        string_report_request_data['code'] = report_detail['ObxIdentifierID']
+        string_report_request_data['name'] = report_detail['ObxIdentifierText']
+        string_report_request_data['observation_value'] = report_detail['ObxValue']
+        string_report_request_data['report'] = report_id
+        return factory.post(
+            '', string_report_request_data, format='json')
+
 def text_report_hanlder(report_detail, report_id, factory=APIRequestFactory()):
     text_report_request_data = {}
     text_report_required_keys = [

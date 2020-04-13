@@ -148,3 +148,31 @@ class TextReportDetails(MyBaseModel):
 
     def __str__(self):
         return self.name
+
+
+class FreeTextReportDetails(MyBaseModel):
+
+    code = models.CharField(max_length=20,
+                            blank=False,
+                            null=False)
+
+    name = models.CharField(max_length=100,
+                            blank=False,
+                            null=False)
+
+    observation_value = models.CharField(max_length=10000000,
+                                         blank=False,
+                                         null=False)
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.PROTECT,
+        related_name='free_text_report',
+        null=True,
+        blank=True)
+
+    class Meta:
+        verbose_name = "Free TextReport Detail"
+        verbose_name_plural = "Free TextReport Details"
+
+    def __str__(self):
+        return self.name
