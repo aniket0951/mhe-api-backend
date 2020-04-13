@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.db import models
 
 from apps.doctors.models import Doctor
@@ -30,7 +32,7 @@ class Appointment(models.Model):
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     patient = models.ForeignKey(
         Patient, on_delete=models.PROTECT, related_name='patient_appointment')
-    family_member = models.ForeignKey(FamilyMember, on_delete=models.PROTECT, 
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.PROTECT,
                                       related_name='family_appointment', blank=True,
                                       null=True)
     doctor = models.ForeignKey(
@@ -46,6 +48,13 @@ class Appointment(models.Model):
                             blank=True,
                             null=True)
     booked_via_app = models.BooleanField(default=True)
+
+    @property
+    def is_cancellable(self):
+        now = datetime.now() + timedelta(hours=5, minutes=30)
+        if self.appointment_date > now.date():
+            return True
+        return False
 
 
 class HealthPackageAppointment(models.Model):
@@ -65,3 +74,10 @@ class HealthPackageAppointment(models.Model):
                                related_name='cancellation_reason_health_appointment',
                                null=True, blank=True)
     booked_via_app = models.BooleanField(default=True)
+
+    @property
+    def is_cancellable(self):
+        now = datetime.now() + timedelta(hours=5, minutes=30)
+        if self.appointment_date > now.date():
+            return True
+        return False
