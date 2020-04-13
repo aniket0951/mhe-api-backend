@@ -88,7 +88,8 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             qs = qs.filter(text_report__isnull=False)
         else:
             qs = qs.filter(Q(numeric_report__isnull=False)
-                           | Q(string_report__isnull=False))
+                           | Q(string_report__isnull=False)
+                           | Q(free_text_report__isnull=False))
         return qs
 
 
