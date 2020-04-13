@@ -62,41 +62,37 @@ def send_new_report_notification(sender, **kwargs):
             send_push_notification.delay(notification_data = notification_data)
 
 
-@receiver(post_save, sender=HealthPackageAppointment)
-def send_new_health_package_appointment_notification(sender, **kwargs):
+
+def send_new_health_package_appointment_notification(**kwargs):
     appointment_instance = kwargs['instance']
     notification_data = {}
     if kwargs["created"]:
         user_message = ""
         if appointment_instance.payment.payment_done_for_family_member:
-            patient_id = appointment_instance.payment.patient.id
-            patient = Patient.objects.filter(id = patient_id).first()
-            user_message = "Hi {0}, your health package appointment is booked on {1} at {2}".format(
-                patient.first_name, appointment_instance.appointment_date, appointment_instance.appointment_slot)
-            notification_data["recipient"] = patient_id
-            notification_data["title"] = "Health PackageAppointment Booked Successfully"
-            notification_data["message"] = user_message
-            send_push_notification.delay(notification_data = notification_data)
-            send_push_notification.delay(notification_data = notification_data)
-            schedule_time = datetime.combine(
-                appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
-            notification_data["title"] = "Reminder: Health Package Appointment"
-            send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
-            
-
-        patient = Patient.objects.filter(
-            uhid_number=appointment_instance.payment.uhid_number).first()
-        if patient:
-            user_message = "Hi {0}, your health package appointment is booked on {1} at {2}".format(
-                patient.first_name, appointment_instance.appointment_date, appointment_instance.appointment_slot)
-            notification_data["recipient"] = patient.id
-            notification_data["title"] = "Health PackageAppointment Booked Successfully"
-            notification_data["message"] = user_message
-            send_push_notification.delay(notification_data = notification_data)
-            schedule_time = datetime.combine(
-                appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
-            notification_data["title"] = "Reminder: Health Package Appointment"
-            send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
+            patient = Patient.objects.filter(uhid_number=appointment_instance.payment.uhid_number).first()
+            if patient:
+                user_message = "Hi {0}, your health package appointment is booked on {1} at {2}".format(
+                    patient.first_name, appointment_instance.appointment_date, appointment_instance.appointment_slot)
+                notification_data["recipient"] = patient_id
+                notification_data["title"] = "Health PackageAppointment Booked Successfully"
+                notification_data["message"] = user_message
+                send_push_notification.delay(notification_data = notification_data)
+                send_push_notification.delay(notification_data = notification_data)
+                schedule_time = datetime.combine(
+                    appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
+                notification_data["title"] = "Reminder: Health Package Appointment"
+                send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
+        patient = Patient.objects.filter(id = appointment_instance.payment.patient.id).first()
+        user_message = "Hi {0}, your health package appointment is booked on {1} at {2}".format(
+            patient.first_name, appointment_instance.appointment_date, appointment_instance.appointment_slot)
+        notification_data["recipient"] = patient.id
+        notification_data["title"] = "Health PackageAppointment Booked Successfully"
+        notification_data["message"] = user_message
+        send_push_notification.delay(notification_data = notification_data)
+        schedule_time = datetime.combine(
+            appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
+        notification_data["title"] = "Reminder: Health Package Appointment"
+        send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
 
 
 @receiver(post_save, sender=HomeCollectionAppointment)
@@ -146,7 +142,7 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
                 notification_data["recipient"] = patient_member.id
                 notification_data["title"] = "Service Appointment Booked Successfully"
                 notification_data["message"] = "Hi {0},You have a Service appointent on {1}".format(
-                    patient.first_name, appointment_instance.appointment_date)
+                    patient_member.first_name, appointment_instance.appointment_date)
                 send_push_notification.delay(notification_data = notification_data)
                 schedule_time = appointment_instance.appointment_date - \
                     timedelta(hours=7, minutes=30)
