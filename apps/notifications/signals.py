@@ -25,7 +25,7 @@ def send_new_appointment_notification(sender, **kwargs):
             user_message = "Dear {0}, Your Appointment has been booked by {6} with {1} on {2} at {3} with appointment id:{4} at {5}".format(appointment_instance.family_member.first_name, appointment_instance.doctor.name,
                                                                                                                                             appointment_instance.appointment_date, appointment_instance.appointment_slot, appointment_instance.appointment_identifier, appointment_instance.hospital.address, appointment_instance.patient.first_name)
             member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member, patient_info_id=appointment_instance.patient)
+                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(
                     uhid_number=member.uhid_number).first()
@@ -106,7 +106,7 @@ def send_new_home_collection_appointment_notification(sender, **kwargs):
         patient = Patient.objects.filter(id=appointment_instance.patient).first()
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member, patient_info_id=appointment_instance.patient)
+                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(
                     uhid_number=member.uhid_number).first()
@@ -138,7 +138,7 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
         patient = Patient.objects.filter(id=appointment_instance.patient).first()
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member, patient_info_id=appointment_instance.patient)
+                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(
                     uhid_number=member.uhid_number).first()
