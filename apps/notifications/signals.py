@@ -104,7 +104,7 @@ def send_new_home_collection_appointment_notification(sender, **kwargs):
     appointment_instance = kwargs['instance']
     notification_data = {}
     if kwargs["created"]:
-        patient = Patient.objects.filter(id=appointment_instance.patient).first()
+        patient = Patient.objects.filter(id=appointment_instance.patient.id).first()
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
                 id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
@@ -136,7 +136,7 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
     appointment_instance = kwargs['instance']
     notification_data = {}
     if kwargs["created"]:
-        patient = Patient.objects.filter(id=appointment_instance.patient).first()
+        patient = Patient.objects.filter(id=appointment_instance.patient.id).first()
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
                 id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
