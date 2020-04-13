@@ -12,7 +12,7 @@ def send_push_notification(self,**kwargs):
                 data=notification_data)
     mobile_notification_serializer.is_valid(raise_exception=True)
     notification_instance = mobile_notification_serializer.save()
-    if (notification_instance.recipient.device and notification_instance.recipient.device.token):
+    if (hasattr(notification_instance.recipient,'device') and notification_instance.recipient.device.token):
         result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
                                         "title": notification_instance.title, "message": notification_instance.message}, low_priority=False)
 
