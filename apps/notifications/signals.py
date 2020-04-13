@@ -70,7 +70,7 @@ def send_new_health_package_appointment_notification(sender, **kwargs):
         user_message = ""
         if appointment_instance.payment.payment_done_for_family_member:
             patient_id = appointment_instance.payment.patient.id
-            patient = Patient.objects.filter(id = patient_id)
+            patient = Patient.objects.filter(id = patient_id).first()
             user_message = "Hi {0}, your health package appointment is booked on {1} at {2}".format(
                 patient.first_name, appointment_instance.appointment_date, appointment_instance.appointment_slot)
             notification_data["recipient"] = patient_id
