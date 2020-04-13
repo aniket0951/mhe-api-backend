@@ -120,15 +120,15 @@ def send_new_home_collection_appointment_notification(sender, **kwargs):
                     timedelta(hours=7, minutes=30)
                 notification_data["title"] = "Reminder: Home Collection Appointment"
                 send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
-            notification_data["recipient"] = patient.id
-            notification_data["title"] = "Home Collection Appointment Booked Successfully"
-            notification_data["message"] = "You have a home collection appointment on {0}".format(
+        notification_data["recipient"] = patient.id
+        notification_data["title"] = "Home Collection Appointment Booked Successfully"
+        notification_data["message"] = "You have a home collection appointment on {0}".format(
                 appointment_instance.appointment_date)
-            send_push_notification.delay(notification_data = notification_data)
-            schedule_time = appointment_instance.appointment_date - \
+        send_push_notification.delay(notification_data = notification_data)
+        schedule_time = appointment_instance.appointment_date - \
                 timedelta(hours=7, minutes=30)
-            notification_data["title"] = "Reminder: Home collection Appointment"
-            send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
+        notification_data["title"] = "Reminder: Home collection Appointment"
+        send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
 
 
 @receiver(post_save, sender=PatientServiceAppointment)
@@ -152,12 +152,12 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
                     timedelta(hours=7, minutes=30)
                 notification_data["Title"] = "Reminder: Service Appointment"
                 send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
-            notification_data["recipient"] = patient.id
-            notification_data["title"] = "Service Appointment Booked Successfully"
-            notification_data["message"] = "Hi {0},You have a Service appointment on {1}".format(
+        notification_data["recipient"] = patient.id
+        notification_data["title"] = "Service Appointment Booked Successfully"
+        notification_data["message"] = "Hi {0},You have a Service appointment on {1}".format(
                 patient.first_name, appointment_instance.appointment_date)
-            send_push_notification.delay(notification_data = notification_data)
-            schedule_time = appointment_instance.appointment_date - \
+        send_push_notification.delay(notification_data = notification_data)
+        schedule_time = appointment_instance.appointment_date - \
                 timedelta(hours=7, minutes=30)
-            notification_data["title"] = "Reminder: Service Appointment"
-            send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
+        notification_data["title"] = "Reminder: Service Appointment"
+        send_push_notification.apply_async(kwargs={"notification_data": notification_data}, eta=schedule_time)
