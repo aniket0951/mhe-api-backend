@@ -55,20 +55,6 @@ class Appointment(models.Model):
         if self.appointment_date > now.date():
             return True
         return False
-    
-    def save(self, *args, **kwargs):
-        ..
-        create_task = False # variable to know if celery task is to be created
-        if self.pk is None: # Check if instance has 'pk' attribute set 
-            # Celery Task is to created in case of 'INSERT'
-            create_task = True # set the variable 
-
-        super(Appointment, self).save(*args, **kwargs) # Call the Django's "real" save() method.
-
-        if create_task: # check if task is to be created
-            # pass the current instance as 'args' and call the task with 'eta' argument 
-            # to execute after the race `end_time`
-            set_appointment_status_completed.apply_async(args=[self], eta=self.end_time)
 
 
 class HealthPackageAppointment(models.Model):
