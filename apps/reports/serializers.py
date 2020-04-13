@@ -6,7 +6,7 @@ from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import patient_user_object
 
 from .models import (NumericReportDetails, Report, StringReportDetails,
-                     TextReportDetails)
+                     TextReportDetails, FreeTextReportDetails)
 
 
 class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
@@ -14,6 +14,10 @@ class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
         model = NumericReportDetails
         exclude = ('created_at', 'updated_at',)
 
+class FreeTextReportDetailsSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = FreeTextReportDetails
+        exclude = ('created_at', 'updated_at',)
 
 class StringReportDetailsSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -54,6 +58,9 @@ class ReportSerializer(DynamicFieldsModelSerializer):
                     many=True).data
                 response_object['numeric_reports'] = NumericReportDetailsSerializer(
                     instance.numeric_report.all(),
+                    many=True).data
+                response_object['free_text_reports'] = FreeTextReportDetailsSerializer(
+                    instance.free_text_report.all(),
                     many=True).data
         else:
             response_object['numeric_reports'] = NumericReportDetailsSerializer(

@@ -13,13 +13,14 @@ from utils import custom_viewsets
 from utils.custom_permissions import InternalAPICall, IsPatientUser
 from utils.utils import patient_user_object
 
-from .models import (NumericReportDetails, Report, StringReportDetails,
-                     TextReportDetails)
-from .serializers import (NumericReportDetailsSerializer, ReportSerializer,
+from .models import (FreeTextReportDetails, NumericReportDetails, Report,
+                     StringReportDetails, TextReportDetails)
+from .serializers import (FreeTextReportDetailsSerializer,
+                          NumericReportDetailsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
                           TextReportDetailsSerializer)
-from .utils import (numeric_report_hanlder, report_handler,
-                    string_report_hanlder, text_report_hanlder)
+from .utils import (free_text_report_hanlder, numeric_report_hanlder,
+                    report_handler, string_report_hanlder, text_report_hanlder)
 
 
 class ReportViewSet(custom_viewsets.ListCreateViewSet):
@@ -87,7 +88,8 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             qs = qs.filter(text_report__isnull=False)
         else:
             qs = qs.filter(Q(numeric_report__isnull=False)
-                           | Q(string_report__isnull=False))
+                           | Q(string_report__isnull=False)
+                           | Q(free_text_report__isnull=False))
         return qs
 
 
@@ -105,6 +107,14 @@ class TextReportDetailsViewSet(custom_viewsets.CreateViewSet):
     queryset = TextReportDetails.objects.all()
     serializer_class = TextReportDetailsSerializer
     create_success_message = "New text report is added successfully."
+
+
+class FreeTextReportDetailsViewSet(custom_viewsets.CreateViewSet):
+    permission_classes = [InternalAPICall]
+    model = FreeTextReportDetails
+    queryset = FreeTextReportDetails.objects.all()
+    serializer_class = FreeTextReportDetailsSerializer
+    create_success_message = "New free text report is added successfully."
 
 
 class StringReportDetailsViewSet(custom_viewsets.CreateViewSet):
@@ -138,15 +148,26 @@ class ReportsSyncAPIView(CreateAPIView):
                                                                           report_id=report_response.data['data']['id'])
                     NumericReportDetailsViewSet.as_view(
                         {'post': 'create'})(numeric_report_proxy_request)
+                    continue
+
+                if each_report_detail['ObxType'] == 'ST':
+                    string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,
+                                                                        report_id=report_response.data['data']['id'])
+                    StringReportDetailsViewSet.as_view(
+                        {'post': 'create'})(string_report_proxy_request)
+                    continue
+
                 if each_report_detail['ObxType'] == 'TX':
                     text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,
                                                                     report_id=report_response.data['data']['id'])
                     TextReportDetailsViewSet.as_view(
                         {'post': 'create'})(text_report_proxy_request)
-                if each_report_detail['ObxType'] == 'ST':
-                    string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,
-                                                                        report_id=report_response.data['data']['id'])
-                    StringReportDetailsViewSet.as_view(
+                    continue
+
+                if each_report_detail['ObxType'] == 'FT':
+                    string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,
+                                                                           report_id=report_response.data['data']['id'])
+                    FreeTextReportDetailsViewSet.as_view(
                         {'post': 'create'})(string_report_proxy_request)
 
             return Response({"data": None, "consumed": True},
