@@ -122,7 +122,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         if instance.relation:
-            response_object['relation'] = RelationSerializer(instance.relation).data
+            response_object['relationship'] = RelationSerializer(instance.relationship).data
 
         try:
             response_object['display_picture'] = generate_pre_signed_url(
