@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from apps.master_data.models import Hospital
 from apps.master_data.serializers import HospitalSerializer
+from apps.patient_registration.serializers import RelationSerializer
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
 
@@ -119,6 +120,9 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
+
+        if instance.relation:
+            response_object['relation'] = RelationSerializer(instance.relation).data
 
         try:
             response_object['display_picture'] = generate_pre_signed_url(
