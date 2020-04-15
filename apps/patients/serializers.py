@@ -121,7 +121,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
 
-        if instance.relation:
+        if instance.relationship:
             response_object['relationship'] = RelationSerializer(instance.relationship).data
 
         try:
