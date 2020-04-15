@@ -156,11 +156,11 @@ class FamilyMember(MyBaseModel):
                                      blank=False,
                                      related_name='patient_family_member_info')
 
-    relation = models.ForeignKey(Relation,
-                                 on_delete=models.PROTECT,
-                                 null=False,
-                                 blank=False,
-                                 related_name='patient_family_member_relation')
+    relationship = models.ForeignKey(Relation,
+                                     on_delete=models.PROTECT,
+                                     null=False,
+                                     blank=False,
+                                     related_name='patient_family_member_relation')
 
     mobile = PhoneNumberField(blank=True,
                               null=True,
