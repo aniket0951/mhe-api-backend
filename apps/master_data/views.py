@@ -86,6 +86,7 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_fields = ('hospital__id',)
+    ordering = ('department_id__name')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
