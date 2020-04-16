@@ -58,17 +58,6 @@ class Appointment(models.Model):
         if self.appointment_date > now.date():
             return True
         return False
-    
-    def save(self, *args, **kwargs):
-        create_task = False 
-        if self.pk is None:
-            create_task = True 
-
-        super(Appointment, self).save(*args, **kwargs)
-
-        if create_task:
-            schedule_time = datetime.combine(self.appointment_date, self.appointment_slot) - timedelta(hours=5, minutes=30)
-            set_status_as_completed.apply_async(args=[self.appointment_identifier], eta=schedule_time)
 
 
 class HealthPackageAppointment(models.Model):
