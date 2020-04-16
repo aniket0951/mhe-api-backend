@@ -11,6 +11,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
+from apps.patient_registration.models import Relation
 from apps.users.models import BaseUser
 from manipal_api.settings import VALID_IMAGE_FILE_EXTENSIONS
 from utils.custom_storage import LocalFileStorage, MediaStorage
@@ -155,11 +156,11 @@ class FamilyMember(MyBaseModel):
                                      blank=False,
                                      related_name='patient_family_member_info')
 
-    relation_name = models.CharField(blank=False,
-                                     max_length=100,
+    relationship = models.ForeignKey(Relation,
+                                     on_delete=models.PROTECT,
                                      null=False,
-                                     verbose_name='Relation name',
-                                     )
+                                     blank=False,
+                                     related_name='patient_family_member_relation')
 
     mobile = PhoneNumberField(blank=True,
                               null=True,
