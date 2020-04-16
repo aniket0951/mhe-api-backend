@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -138,7 +139,7 @@ class PatientServiceAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
-    
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
@@ -227,6 +228,7 @@ class HomeCollectionAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
