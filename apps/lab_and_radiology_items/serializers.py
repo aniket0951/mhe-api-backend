@@ -49,6 +49,7 @@ class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
 class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
     patient = serializers.UUIDField(write_only=True,
                                     default=CurrentPatientUserDefault())
+    is_cancellable = serializers.ReadOnlyField()
 
     class Meta:
         model = PatientServiceAppointment
@@ -93,6 +94,7 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
 class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
     patient = serializers.UUIDField(write_only=True,
                                     default=CurrentPatientUserDefault())
+    is_cancellable = serializers.ReadOnlyField()
 
     class Meta:
         model = HomeCollectionAppointment
