@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='familymember',
             name='relation',
-            field=models.ForeignKey(default='adcd8135-bc67-43a5-b998-632a83498acf', on_delete=django.db.models.deletion.PROTECT, related_name='patient_family_member_relation', to='patient_registration.Relation'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='patient_family_member_relation', to='patient_registration.Relation'),
             preserve_default=False,
         ),
     ]
