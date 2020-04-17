@@ -55,7 +55,7 @@ class Appointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            now = datetime.now() + timedelta(hours=5, minutes=30)
+            now = datetime.now()
             if self.appointment_date > now.date():
                 return True
         return False
@@ -82,7 +82,7 @@ class HealthPackageAppointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            now = datetime.now() + timedelta(hours=5, minutes=30)
+            now = datetime.now()
             if self.appointment_date > now.date():
                 return True
         return False
