@@ -32,21 +32,15 @@ class MobileDeviceViewSet(APIView):
     queryset = MobileDevice.objects.all()
 
     def post(self, request, format=None):
-        device_data = {}
-        device_data["participant"] = self.request.user.id
-        device_data["device_id"] = request.data.get("device", None)
-        device_data["token"] = request.data.get("token", None)
-        device_data["version"] = request.data.get("version", None)
-        device_data["platform"] = request.data.get("platform", None)
-        if not (device_data["token"] and device_data["platform"]):
+        if not (request.data["token"] and request.data["platform"]):
             raise ValidationError(
                 "Token or Platform is missing!")
         device = MobileDevice.objects.filter(
             participant_id=self.request.user.id).first()
-        serializer = MobileDeviceSerializer(data=device_data)
+        serializer = MobileDeviceSerializer(data=request.data)
         if device:
             serializer = MobileDeviceSerializer(
-                device, data=device_data, partial=True)
+                device, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(data=serializer.data, status=status.HTTP_200_OK)
