@@ -35,7 +35,7 @@ def send_new_appointment_notification(sender, **kwargs):
                 send_push_notification.delay(
                     notification_data=notification_data)
                 schedule_time = datetime.combine(appointment_instance.appointment_date,
-                                                 appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
+                                                 appointment_instance.appointment_slot) - timedelta(hours=2)
                 notification_data["title"] = "Reminder: Doctor Appointment"
                 send_push_notification.apply_async(
                     kwargs={"notification_data": notification_data}, eta=schedule_time)
@@ -44,7 +44,7 @@ def send_new_appointment_notification(sender, **kwargs):
         notification_data["message"] = user_message
         send_push_notification.delay(notification_data=notification_data)
         schedule_time = datetime.combine(
-            appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
+            appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=2)
         notification_data["title"] = "Reminder: Doctor Appointment"
         send_push_notification.apply_async(
             kwargs={"notification_data": notification_data}, eta=schedule_time)
@@ -83,7 +83,7 @@ def send_new_health_package_appointment_notification(**kwargs):
                 send_push_notification.delay(
                     notification_data=notification_data)
                 schedule_time = datetime.combine(
-                    appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
+                    appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=2)
                 notification_data["title"] = "Reminder: Health Package Appointment"
                 send_push_notification.apply_async(
                     kwargs={"notification_data": notification_data}, eta=schedule_time)
@@ -96,7 +96,7 @@ def send_new_health_package_appointment_notification(**kwargs):
         notification_data["message"] = user_message
         send_push_notification.delay(notification_data=notification_data)
         schedule_time = datetime.combine(
-            appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=7, minutes=30)
+            appointment_instance.appointment_date, appointment_instance.appointment_slot) - timedelta(hours=2)
         notification_data["title"] = "Reminder: Health Package Appointment"
         send_push_notification.apply_async(
             kwargs={"notification_data": notification_data}, eta=schedule_time)
@@ -121,8 +121,7 @@ def send_new_home_collection_appointment_notification(sender, **kwargs):
                     appointment_instance.appointment_date)
                 send_push_notification.delay(
                     notification_data=notification_data)
-                schedule_time = appointment_instance.appointment_date - \
-                    timedelta(hours=7, minutes=30)
+                schedule_time = appointment_instance.appointment_date - timedelta(hours=2)
                 notification_data["title"] = "Reminder: Home Collection Appointment"
                 send_push_notification.apply_async(
                     kwargs={"notification_data": notification_data}, eta=schedule_time)
@@ -157,8 +156,7 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
                     patient_member.first_name, appointment_instance.appointment_date)
                 send_push_notification.delay(
                     notification_data=notification_data)
-                schedule_time = appointment_instance.appointment_date - \
-                    timedelta(hours=7, minutes=30)
+                schedule_time = appointment_instance.appointment_date - timedelta(hours=2)
                 notification_data["Title"] = "Reminder: Service Appointment"
                 send_push_notification.apply_async(
                     kwargs={"notification_data": notification_data}, eta=schedule_time)
@@ -167,8 +165,7 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
         notification_data["message"] = "Hi {0},You have a Service appointment on {1}".format(
             patient.first_name, appointment_instance.appointment_date)
         send_push_notification.delay(notification_data=notification_data)
-        schedule_time = appointment_instance.appointment_date - \
-            timedelta(hours=7, minutes=30)
+        schedule_time = appointment_instance.appointment_date - timedelta(hours=2)
         notification_data["title"] = "Reminder: Service Appointment"
         send_push_notification.apply_async(
             kwargs={"notification_data": notification_data}, eta=schedule_time)
