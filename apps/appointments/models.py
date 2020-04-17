@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.db import models
-
+from datetime import datetime, timedelta
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage
 from apps.master_data.models import Hospital
@@ -54,9 +54,10 @@ class Appointment(models.Model):
 
     @property
     def is_cancellable(self):
-        now = datetime.now() + timedelta(hours=5, minutes=30)
-        if self.appointment_date > now.date():
-            return True
+        if self.appointment_date:
+            now = datetime.now() + timedelta(hours=5, minutes=30)
+            if self.appointment_date > now.date():
+                return True
         return False
 
 

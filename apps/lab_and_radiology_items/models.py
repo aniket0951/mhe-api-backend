@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -139,6 +140,14 @@ class PatientServiceAppointment(MyBaseModel):
                                on_delete=models.PROTECT,
                                null=True, blank=True)
 
+    @property
+    def is_cancellable(self):
+        if self.appointment_date:
+            now = datetime.now() + timedelta(hours=5, minutes=30)
+            if self.appointment_date > now.date():
+                return True
+        return False
+
     class Meta:
         verbose_name = "Patient Service Appointment"
         verbose_name_plural = "Patient Service Appointments"
@@ -219,6 +228,14 @@ class HomeCollectionAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
+
+    @property
+    def is_cancellable(self):
+        if self.appointment_date:
+            now = datetime.now() + timedelta(hours=5, minutes=30)
+            if self.appointment_date.date() > now.date():
+                return True
+        return False
 
     class Meta:
         verbose_name = "Home Collection Appointment"
