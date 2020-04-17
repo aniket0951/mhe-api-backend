@@ -252,8 +252,7 @@ class PaymentResponse(APIView):
                     patient, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
-                user_message = """Dear {0}. You have successfully registered with us 
-                                  and your UHID is {1}""".format(patient.first_name, patient.uhid_number)
+                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(patient.first_name, patient.uhid_number)
                 send_sms(mobile_number=str(patient.mobile.raw_input), message=user_message)
             if payment_instance.payment_done_for_family_member:
                 family_member = FamilyMember.objects.filter(
@@ -262,8 +261,7 @@ class PaymentResponse(APIView):
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
-                user_message = """Dear {0}. You have successfully registered with us 
-                                  and your UHID is {1}""".format(family_member.first_name, family_member.uhid_number)
+                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(family_member.first_name, family_member.uhid_number)
                 send_sms(mobile_number=str(family_member.mobile.raw_input), message=user_message)
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(

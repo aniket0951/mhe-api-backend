@@ -20,6 +20,7 @@ from apps.master_data.exceptions import (
 from apps.master_data.models import Department, Hospital, Specialisation
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
+from apps.notifications.signals import send_new_health_package_appointment_notification
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
@@ -331,6 +332,7 @@ class HealthPackageAppointmentView(ProxyView):
                     instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
+                user_message, mobile = "", ""
                 if instance.payment.payment_done_for_patient:
                     user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
                         instance.payment.payment_done_for_patient.first_name, instance.appointment_slot, instance.appointment_date)
@@ -342,6 +344,7 @@ class HealthPackageAppointmentView(ProxyView):
                     mobile = str(
                         instance.payment.payment_done_for_family_member.mobile)
                 send_sms(mobile, user_message)
+                send_new_health_package_appointment_notification(instance = instance, created = True)
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier

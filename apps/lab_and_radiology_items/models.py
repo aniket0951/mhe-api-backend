@@ -143,8 +143,7 @@ class PatientServiceAppointment(MyBaseModel):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            now = datetime.now() + timedelta(hours=5, minutes=30)
-            if self.appointment_date > now.date():
+            if self.appointment_date > datetime.now().date():
                 return True
         return False
 
@@ -232,8 +231,7 @@ class HomeCollectionAppointment(MyBaseModel):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            now = datetime.now() + timedelta(hours=5, minutes=30)
-            if self.appointment_date.date() > now.date():
+            if self.appointment_date.date() > datetime.now().date():
                 return True
         return False
 
