@@ -333,13 +333,19 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if filter_by:
             if filter_by == "current_week":
                 current_week = date.today().isocalendar()[1]
-                return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week)
+                current_year = date.today().isocalendar()[0]
+                return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week,created_at__year=current_year)
             elif filter_by == "last_week":
-                last_week = date.today() - timedelta(days=7)
-                return super().get_queryset().filter(uhid_number=uhid, created_at__gte=last_week)
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                return super().get_queryset().filter(uhid_number=uhid, created_at__week=last_week,created_at__year=current_year)
             elif filter_by == "last_month":
-                last_month = datetime.today() - timedelta(days=30)
-                return super().get_queryset().filter(uhid_number=uhid, created_at__gte=last_month)
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                return super().get_queryset().filter(uhid_number=uhid, created_at__month=last_month.month, created_at__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                return super().get_queryset().filter(uhid_number=uhid, created_at__month=current_month.month, created_at__year=current_month.year)
             else:
                 return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
@@ -446,11 +452,12 @@ class EpisodeItemView(ProxyView):
         success_status = False
         if response.status_code == 200:
             status = root.find("Status").text
+            import pdb; pdb.set_trace()
             if status == "1":
                 success_status = True
                 response_message = "Returned Bill Information Successfully"
-                episode_response = root.find("EpisodeList")
-                response_data = json.loads(episode_response.text)
+                episode_response = root.find("EpisodeList").text
+                response_data = json.loads(episode_response)
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
