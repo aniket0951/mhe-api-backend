@@ -158,8 +158,8 @@ class FamilyMember(MyBaseModel):
 
     relationship = models.ForeignKey(Relation,
                                      on_delete=models.PROTECT,
-                                     null=False,
-                                     blank=False,
+                                     null=True,
+                                     blank=True,
                                      related_name='patient_family_member_relation')
 
     mobile = PhoneNumberField(blank=True,
