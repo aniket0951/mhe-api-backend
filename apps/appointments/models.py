@@ -55,7 +55,7 @@ class Appointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            if self.appointment_date > datetime.now().date():
+            if ((self.appointment_date > datetime.now().date()) and (self.status == 1)):
                 return True
         return False
 
@@ -81,6 +81,6 @@ class HealthPackageAppointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            if self.appointment_date > datetime.now().date():
+            if ((self.appointment_date > datetime.now().date()) and (self.appointment_status != "Cancelled")):
                 return True
         return False
