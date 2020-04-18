@@ -242,8 +242,9 @@ class PaymentResponse(APIView):
         payment_serializer.is_valid(raise_exception=True)
         payment_serializer.save()
         uhid_info = {}
-        uhid_info["uhid_number"] = payment_account["account_number"]
-        uhid_info["pre_registration_number"] = None
+        if payment_account["account_number"]:
+            uhid_info["uhid_number"] = payment_account["account_number"]
+            uhid_info["pre_registration_number"] = None
         if (payment_instance.payment_for_uhid_creation):
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
