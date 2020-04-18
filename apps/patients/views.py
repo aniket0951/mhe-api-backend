@@ -357,7 +357,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if facebook_id:
             request_patient = self.get_queryset().filter(
-                google_id=facebook_id).first()
+                facebook_id=facebook_id).first()
         if google_id:
             request_patient = self.get_queryset().filter(
                 google_id=google_id).first()
