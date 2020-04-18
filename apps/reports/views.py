@@ -78,7 +78,7 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
                 previous_week = date.today() - timedelta(weeks=1)
                 last_week = previous_week.isocalendar()[1]
                 current_year = previous_week.isocalendar()[0]
-                return qs.filter(time__gte=last_week, time__year=current_year)
+                return qs.filter(time__week=last_week, time__year=current_year)
             elif filter_by == "last_month":
                 last_month = datetime.today().replace(day=1) - timedelta(days=1)
                 return qs.filter(time__month=last_month.month, time__year=last_month.year)
