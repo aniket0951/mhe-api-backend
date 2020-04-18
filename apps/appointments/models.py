@@ -1,9 +1,12 @@
+from datetime import datetime, timedelta
+
 from django.db import models
 from datetime import datetime, timedelta
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
+from .tasks import set_status_as_completed
 
 
 class CancellationReason(models.Model):
@@ -17,10 +20,12 @@ class Appointment(models.Model):
     CONFIRMED = 1
     CANCELLED = 2
     WAITING = 3
+    COMPLETED =4
     STATUS_CODES = (
         (CONFIRMED, 'Confirmed'),
         (CANCELLED, 'Cancelled'),
         (WAITING, 'Waiting'),
+        (COMPLETED, 'Completed'),
     )
     appointment_date = models.DateField()
     appointment_slot = models.TimeField()
@@ -50,8 +55,7 @@ class Appointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            now = datetime.now() + timedelta(hours=5, minutes=30)
-            if self.appointment_date > now.date():
+            if self.appointment_date > datetime.now().date():
                 return True
         return False
 
@@ -77,7 +81,6 @@ class HealthPackageAppointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            now = datetime.now() + timedelta(hours=5, minutes=30)
-            if self.appointment_date > now.date():
+            if self.appointment_date > datetime.now().date():
                 return True
         return False

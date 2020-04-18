@@ -33,6 +33,8 @@ djangorestframework-jwt = "*"
 autopep8 = "*"
 pylint = "*"
 gdal = "*"
+fcm-django = "*"
+celery = {extras = ["sqs"],version = "*"}
 
 [requires]
 python_version = "3.8"
