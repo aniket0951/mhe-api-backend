@@ -888,7 +888,7 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', ]
-    ordering_fields = ('-created_at',)
+    ordering = ('-created_at',)
 
     def get_permissions(self):
         if self.action in ['list', 'create', ]:
