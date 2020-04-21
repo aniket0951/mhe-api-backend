@@ -50,3 +50,10 @@ class AmbulanceContactSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = AmbulanceContact
         exclude = ('created_at', 'updated_at',)
+    
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.hospital:
+            response_object['hospital'] = HospitalSerializer(
+                instance.hospital).data
+        return response_object
