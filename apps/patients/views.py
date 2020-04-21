@@ -885,6 +885,7 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
     list_success_message = 'Addresses returned successfully!'
     retrieve_success_message = 'Address information returned successfully!'
     update_success_message = 'Information is updated successfuly!'
+    delete_success_message = "Address is deleted successfully"
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', ]
