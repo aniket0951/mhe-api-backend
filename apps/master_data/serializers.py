@@ -1,26 +1,30 @@
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point, fromstr
-from rest_framework import serializers
 
+from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import Department, Hospital, HospitalDepartment, Specialisation
+from .models import (AmbulanceContact, Department, Hospital,
+                     HospitalDepartment, Specialisation)
 
 
 class HospitalSerializer(DynamicFieldsModelSerializer):
-    distance =  serializers.CharField(source='calculated_distance', default=None)
+    distance = serializers.CharField(
+        source='calculated_distance', default=None)
+
     class Meta:
         model = Hospital
         exclude = ('created_at', 'updated_at',)
 
     def to_representation(self, instance):
-        response_object =  super().to_representation(instance)
+        response_object = super().to_representation(instance)
         try:
             if 'distance' in response_object and instance.calculated_distance:
                 response_object['distance'] = instance.calculated_distance.km
         except Exception:
             pass
         return response_object
+
 
 class SpecialisationSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -39,4 +43,10 @@ class HospitalDepartmentSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = HospitalDepartment
+        exclude = ('created_at', 'updated_at',)
+
+
+class AmbulanceContactSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = AmbulanceContact
         exclude = ('created_at', 'updated_at',)

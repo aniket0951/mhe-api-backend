@@ -211,3 +211,17 @@ class HomeCareService(MyBaseModel):
 
     def __str__(self):
         return self.name
+
+class AmbulanceContact(MyBaseModel):
+
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 )
+
+    mobile = PhoneNumberField(blank=True,
+                              null=True,
+                              verbose_name="Mobile Number")
+    
+    class Meta:
+        verbose_name = "Ambulance Contact"
+        verbose_name_plural = "Ambulance Contacts"
