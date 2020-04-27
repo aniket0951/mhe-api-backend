@@ -2,10 +2,10 @@ import ast
 import datetime
 import os
 
-import environ
-
 import boto3
+import environ
 from boto3 import session as boto3_session
+from django.utils.log import DEFAULT_LOGGING
 
 root = environ.Path(__file__) - 2
 # set default values and casting
@@ -331,3 +331,117 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
     'region': 'ap-south-1',
 }
 CELERY_TIMEZONE = 'Asia/Kolkata'
+
+
+# Logger configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_logger': False,
+    'formatters': {
+        'simple': {
+            'format': '%(levelname)s -- %(message)s'
+        },
+        'standard': {
+            'format': '[%(asctime)s] -- %(name)s: --  %(levelname)s: --  %(msg)s'
+        },
+        'request_log': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '{server_time} -- {message}',
+            'style': '{',
+        },
+        'generic': {
+            'format': '%(asctime)s -- [%(process)d] --  [%(levelname)s] --  %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+            '()': 'logging.Formatter',
+        },
+        'django.server': DEFAULT_LOGGING['formatters']['django.server'],
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/app.log',
+            'maxBytes': 5242880,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'standard'
+        },
+        'console_handler': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://sys.stderr',
+            'formatter': 'standard'
+        },
+        'django_server_console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'django.server',
+            'level': 'INFO'
+        },
+        'django_server_file': {
+            'formatter': 'django.server',
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/app.log',
+            'maxBytes': 5242880,  # 5 MB
+            'backupCount': 5,
+        },
+        'django_request_console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'request_log',
+            'level': 'INFO'
+        },
+        'django_request_file': {
+            'formatter': 'request_log',
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/requests.log',
+            'maxBytes': 5242880,  # 5 MB
+            'backupCount': 5,
+        },
+        'error_file': {
+            'class': 'logging.FileHandler',
+            'formatter': 'generic',
+            'filename': 'logs/gunicorn_error.log',
+        },
+        'access_file': {
+            'class': 'logging.FileHandler',
+            'formatter': 'generic',
+            'filename': 'logs/gunicorn_access.log',
+        },
+    },
+    # 'root': {
+    #     'handlers': ['file_handler', 'console_handler'],
+    #     'level': 'INFO',
+    # },
+    'loggers': {
+        'django': {
+            'propagate': False,
+            'handlers': ['file_handler', 'console_handler'],
+            'level': 'INFO',
+        },
+        'django.request': {
+            'propagate': False,
+            'handlers': ['django_request_console', 'django_request_file'],
+            'level': 'INFO'
+        },
+        'django.server':  {
+            'handlers': ['django_server_console', 'django_server_file'],
+            'propagate': False,
+            'level': 'INFO',
+        },
+        'gunicorn.error': {
+            'level': 'DEBUG',
+            'handlers': ['error_file'],
+            'propagate': True,
+        },
+        'gunicorn.access': {
+            'level': 'DEBUG',
+            'handlers': ['access_file'],
+            'propagate': True,
+        },
+    }
+}
