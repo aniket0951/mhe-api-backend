@@ -1,9 +1,13 @@
+import logging
+
 from django.contrib.humanize.templatetags.humanize import ordinal
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import exception_handler
+
+logger = logging.getLogger('django')
 
 
 def custom_exception_handler(exc, context):
@@ -24,7 +28,8 @@ def custom_exception_handler(exc, context):
                         latest_key = ''
                         if key != '':
                             if isinstance(error_key, int):
-                                latest_key = "{} >> {}".format(key, ordinal(int(error_key)))
+                                latest_key = "{} >> {}".format(
+                                    key, ordinal(int(error_key)))
                             else:
                                 latest_key = "{} >> {}".format(key, error_key)
                         else:
@@ -37,10 +42,12 @@ def custom_exception_handler(exc, context):
                         for sequence_no, current_data in enumerate(data, start=1):
                             latest_key = ''
                             if key:
-                                latest_key = "{} >> 🠖{}".format(key, ordinal(sequence_no))
+                                latest_key = "{} >> 🠖{}".format(
+                                    key, ordinal(sequence_no))
                             else:
                                 latest_key = ordinal(sequence_no)
-                            generate_error_responses(current_data, key=latest_key)
+                            generate_error_responses(
+                                current_data, key=latest_key)
 
             try:
                 generate_error_responses(response.data)
@@ -54,6 +61,7 @@ def custom_exception_handler(exc, context):
                 customized_response['errors'].append(response.data)
 
         response.data = customized_response
+        logger.error(customized_response)
 
     # # If validation error, set status code to '422 Unprocessable Entity'
     # # see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
@@ -61,8 +69,10 @@ def custom_exception_handler(exc, context):
     #     response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     else:
         error = {'field': 'debug', 'message': "Internal server error, please try again after sometime",
-        "exception" : str(exc)}
+                 "exception": str(exc)}
         customized_response['errors'].append(error)
-        response = Response(customized_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(customized_response)
+        response = Response(customized_response,
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return response
