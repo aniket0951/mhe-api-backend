@@ -1,30 +1,36 @@
 import ast
 import json
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 import requests
 from django.core import serializers
-
-from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import FamilyMemberSpecificSerializer, PatientSerializer
-from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
-from proxy.custom_serializers import ObjectSerializer as custom_serializer
-from proxy.custom_views import ProxyView
-from rest_framework import status
+from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+
+from apps.patients.models import FamilyMember, Patient
+from apps.patients.serializers import (FamilyMemberSpecificSerializer,
+                                       PatientSerializer)
+from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_views import ProxyView
+from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 
 from .exceptions import FieldMissingValidationException
-from .models import (Country, Gender, IDProof, MaritalStatus, Nationality,
-                     Province, Region, Relation, Religion, Speciality, Title)
-from .serializers import (CountrySerializer, GenderSerializer,
+from .models import (City, Country, Gender, IDProof, MaritalStatus,
+                     Nationality, Province, Region, Relation, Religion,
+                     Speciality, Title, Zipcode)
+from .serializers import (CitySerializer, CountrySerializer, GenderSerializer,
                           IDProofSerializer, MaritalStatusSerializer,
                           NationalitySerializer, ProvinceSerializer,
                           RegionSerializer, RelationSerializer,
                           ReligionSerializer, SpecialitySerializer,
-                          TitleSerializer)
+                          TitleSerializer, ZipcodeSerializer)
 
 
 class RegistrationAPIView(ListAPIView):
@@ -32,8 +38,6 @@ class RegistrationAPIView(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         registration_details = {}
-        registration_details['country'] = CountrySerializer(
-            Country.objects.all(), many=True).data
         registration_details['speciality'] = SpecialitySerializer(
             Speciality.objects.all(), many=True).data
         registration_details['gender'] = GenderSerializer(
@@ -44,10 +48,6 @@ class RegistrationAPIView(ListAPIView):
             MaritalStatus.objects.all(), many=True).data
         registration_details['nationality'] = NationalitySerializer(
             Nationality.objects.all(), many=True).data
-        registration_details['province'] = ProvinceSerializer(
-            Province.objects.all(), many=True).data
-        registration_details['region'] = RegionSerializer(
-            Region.objects.all(), many=True).data
         registration_details['relation'] = RelationSerializer(
             Relation.objects.all(), many=True).data
         registration_details['religion'] = ReligionSerializer(
@@ -55,6 +55,70 @@ class RegistrationAPIView(ListAPIView):
         registration_details['title'] = TitleSerializer(
             Title.objects.all(), many=True).data
         return Response(registration_details, status=status.HTTP_200_OK)
+
+
+class CountryViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser]
+    model = Country
+    queryset = Country.objects.all()
+    serializer_class = CountrySerializer
+    list_success_message = 'Countries list returned successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['description', ]
+    ordering_fields = ('description',)
+    pagination_class = None
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_active=True,
+                                             from_date__lte=datetime.today().date()).filter(
+            Q(to_date__isnull=True) | Q(to_date__gte=datetime.today().date()))
+
+
+class RegionViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser]
+    model = Region
+    queryset = Region.objects.all()
+    serializer_class = RegionSerializer
+    list_success_message = 'Regions list returned successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['description', ]
+    ordering_fields = ('description',)
+    filter_fields = ('country',)
+    pagination_class = None
+
+
+class CityViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser]
+    model = City
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+    list_success_message = 'Cities list returned successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['description', ]
+    ordering_fields = ('description',)
+    filter_fields = ('province__region',)
+    pagination_class = None
+
+
+class ZipcodeViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser]
+    model = Zipcode
+    queryset = Zipcode.objects.all()
+    serializer_class = ZipcodeSerializer
+    list_success_message = 'Zipcodes list returned successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['code', ]
+    ordering_fields = ('code',)
+    filter_fields = ('city',)
+    pagination_class = None
 
 
 class UHIDRegistrationView(ProxyView):
