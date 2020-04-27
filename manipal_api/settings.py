@@ -161,7 +161,8 @@ WSGI_APPLICATION = 'manipal_api.wsgi.application'
 
 # Database (Postgresql) Settings
 DATABASES = {
-    'default': {
+    'default': {},
+    'write_db': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': env('MANIPAL_DB_NAME'),
         'USER': env('MANIPAL_DB_USER'),
@@ -169,8 +170,20 @@ DATABASES = {
         'HOST': env('MANIPAL_DB_HOST'),
         'PORT': env('MANIPAL_DB_PORT'),
 
+    },
+    'read_db': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': env('MANIPAL_READ_DB_NAME'),
+        'USER': env('MANIPAL_READ_DB_USER'),
+        'PASSWORD': env('MANIPAL_READ_DB_USER_PASSWORD'),
+        'HOST': env('MANIPAL_READ_DB_HOST'),
+        'PORT': env('MANIPAL_READ_DB_PORT'),
+
     }
 }
+
+DATABASE_ROUTERS = ['utils.custom_db_routers.CustomDBRouter']
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -297,9 +310,9 @@ OTP_EXPIRATION_TIME = env('OTP_EXPIRATION_TIME')
 MAX_FAMILY_MEMBER_COUNT = env('MAX_FAMILY_MEMBER_COUNT')
 
 FCM_DJANGO_SETTINGS = {
-"FCM_SERVER_KEY": env('FCM_SERVER_KEY')
+    "FCM_SERVER_KEY": env('FCM_SERVER_KEY')
 }
-FCM_API_KEY=env('FCM_API_KEY')
+FCM_API_KEY = env('FCM_API_KEY')
 
 
 ANDROID_SMS_RETRIEVER_API_KEY = env('ANDROID_SMS_RETRIEVER_API_KEY')
@@ -324,7 +337,7 @@ EMAIL_HOST_PASSWORD = env('AWS_SES_SECRET_ACCESS_KEY')
 EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_TLS = True
 
-CELERY_BROKER_URL= "sqs://%s:%s@" % (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+CELERY_BROKER_URL = "sqs://%s:%s@" % (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 CELERY_RESULT_BACKEND = None
 CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE')
 CELERY_BROKER_TRANSPORT_OPTIONS = {
