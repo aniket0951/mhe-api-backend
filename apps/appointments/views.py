@@ -294,11 +294,19 @@ class HealthPackageAppointmentView(ProxyView):
     def get_request_data(self, request):
         param = dict()
         patient_id = request.user.id
-        family_member_id = request.data.pop("user_id", None)
+        family_member_id = request.data.get("user_id", None)
         package_id = request.data["package_id"]
         package_id_list = package_id.split(",")
+        previous_appointment = request.data.get("previous_appointment", None)
+        payment_id = request.data.get("payment_id", None)
+        if previous_appointment and payment_id:
+            appointment_instance = HealthPackageAppointment.objects.filter(appointment_identifier=previous_appointment).first()
+            if not appointment_instance:
+                raise ValidationError("Appointment does not Exist")
+            serializer = HealthPackageAppointmentSerializer(appointment_instance, data = {"appointment_status":"Rescheduled"})
         health_package_appointment = HealthPackageAppointmentSerializer(data={"patient": patient_id, "family_member": family_member_id,
-                                                                              "hospital": request.data.get("hospital_id"), "health_package": package_id_list})
+                                                                              "hospital": request.data.get("hospital_id"), "health_package": package_id_list,
+                                                                              "payment": payment_id})
         health_package_appointment.is_valid(raise_exception=True)
         request.data["appointment_instance"] = health_package_appointment.save()
         hospital = Hospital.objects.filter(

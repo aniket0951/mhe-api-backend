@@ -286,6 +286,10 @@ class PaymentResponse(APIView):
             appointment_serializer.save()
 
         if payment_instance.payment_for_health_package:
+            appointment = HealthPackageAppointment.objects.filter(
+                    id=payment_instance.health_package_appointment.id).first()
+            update_data = {}
+            update_data["payment"] = payment_instance.id
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
@@ -303,13 +307,11 @@ class PaymentResponse(APIView):
                 send_sms(mobile_number=str(
                     family_member.mobile.raw_input), message=user_message)
             if payment_instance.payment_for_uhid_creation:
-                appointment = HealthPackageAppointment.objects.filter(
-                    id=payment_instance.health_package_appointment.id).first()
-                update_data = {"appointment_identifier": new_appointment_id}
-                appointment_serializer = HealthPackageAppointmentSerializer(
-                    appointment, data=update_data, partial=True)
-                appointment_serializer.is_valid(raise_exception=True)
-                appointment_serializer.save()
+                update_data["appointment_identifier"] = new_appointment_id}
+            appointment_serializer = HealthPackageAppointmentSerializer(
+                appointment, data=update_data, partial=True)
+            appointment_serializer.is_valid(raise_exception=True)
+            appointment_serializer.save()
 
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
