@@ -328,7 +328,6 @@ class HealthPackageAppointmentView(ProxyView):
         response_success = False
         if response.status_code == 200:
             root = ET.fromstring(response.content)
-            import pdb; pdb.set_trace()
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
