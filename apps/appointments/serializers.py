@@ -55,6 +55,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
 
 class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
     is_cancellable = serializers.ReadOnlyField()
+
     class Meta:
         model = HealthPackageAppointment
         fields = '__all__'
@@ -66,17 +67,8 @@ class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
     is_cancellable = serializers.ReadOnlyField()
     payment = PaymentSerializer(read_only=True)
     is_cancellable = serializers.ReadOnlyField()
-    health_package = HealthPackageSpecificSerializer(read_only=True)
     reason = CancellationReasonSerializer(read_only=True)
-    pricing = serializers.SerializerMethodField()
 
     class Meta:
         model = HealthPackageAppointment
         fields = '__all__'
-
-    def get_pricing(self, instance):
-        hospital_id = instance.hospital.id
-        health_package_id = instance.health_package.id
-        health_package = HealthPackagePricing.objects.filter(
-            health_package_id=health_package_id, hospital_id=hospital_id).first()
-        return HealthPackagePricingSerializer(health_package).data
