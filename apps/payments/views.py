@@ -314,7 +314,7 @@ class PaymentResponse(APIView):
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
-        uhid = payment["uhid_number"]
+        uhid = response_token_json["accounts"]
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
         return HttpResponseRedirect(REDIRECT_URL + param)
@@ -332,7 +332,7 @@ class PaymentReturn(APIView):
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
-        uhid = payment["uhid_number"]
+        uhid = response_token_json["accounts"]
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
         return HttpResponseRedirect(REDIRECT_URL + param)
