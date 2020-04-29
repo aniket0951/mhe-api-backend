@@ -232,24 +232,33 @@ class PaymentResponse(APIView):
         payment = {}
         payment_response = response_token_json["payment_response"]
         payment_account = response_token_json["accounts"]
-        payment_paydetail = payment_response["payDetailAPIResponse"]
-        bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
-        new_appointment_id = bill_detail["AppointmentId"]
-        payment["receipt_number"] = bill_detail["ReceiptNo"]
+        payment["uhid_number"] = payment_account["account_number"]
+        if payment_instance.payment_for_uhid_creation:
+            if payment_instance.appointment or payment_instance.payment_for_health_package:
+                payment_paydetail = payment_response["payDetailAPIResponse"]
+                if payment_paydetail["BillDetail"]:
+                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                    new_appointment_id = bill_detail["AppointmentId"]
+                    payment["receipt_number"] = bill_detail["ReceiptNo"]
+                    payment["uhid_number"] = bill_detail["HospitalNo"]
+            else:
+                payment_paydetail = payment_response["pre_registration_response"]
+                payment["receipt_number"] = payment_paydetail["receiptNo"]
+                payment["uhid_number"] = payment_paydetail["uid"]
+
         payment["status"] = payment_response["status"]
         payment["payment_method"] = payment_response["card_type"] + \
             "-" + payment_response["mode"]
         payment["transaction_id"] = payment_response["txnid"]
         payment["amount"] = payment_response["net_amount_debit"]
-        payment["uhid_number"] = payment_account["account_number"]
         payment["raw_info_from_salucro_response"] = response_token_json
         payment_serializer = PaymentSerializer(
             payment_instance, data=payment, partial=True)
         payment_serializer.is_valid(raise_exception=True)
         payment_serializer.save()
         uhid_info = {}
-        if payment_account["account_number"]:
-            uhid_info["uhid_number"] = payment_account["account_number"]
+        if payment["uhid_number"]:
+            uhid_info["uhid_number"] = payment["uhid_number"]
             uhid_info["pre_registration_number"] = None
         if (payment_instance.payment_for_uhid_creation):
             if payment_instance.payment_done_for_patient:
@@ -316,7 +325,9 @@ class PaymentResponse(APIView):
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
-        uhid = payment_account["account_number"]
+        uhid = payment["uhid_number"]
+        if not uhid:
+            uhid = "-1"
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
         return HttpResponseRedirect(REDIRECT_URL + param)
@@ -330,12 +341,20 @@ class PaymentReturn(APIView):
         data = request.data
         response_token = data["responseToken"]
         response_token_json = json.loads(response_token)
+        processing_id = response_token_json["processing_id"]
+        try:
+            payment_instance = Payment.objects.get(processing_id=processing_id)
+        except Exception:
+            raise ProcessingIdDoesNotExistsValidationException
         payment_response = response_token_json["payment_response"]
         payment_account = response_token_json["accounts"]
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
-        uhid = payment_account["account_number"]
+        uhid = payment_instance.uhid_number
+        if not uhid:
+            uhid = "-1"
+
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
         return HttpResponseRedirect(REDIRECT_URL + param)
