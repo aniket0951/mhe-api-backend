@@ -478,8 +478,6 @@ class EpisodeItemView(ProxyView):
         success_status = False
         if response.status_code == 200:
             status = root.find("Status").text
-            import pdb
-            pdb.set_trace()
             if status == "1":
                 success_status = True
                 response_message = "Returned Bill Information Successfully"
