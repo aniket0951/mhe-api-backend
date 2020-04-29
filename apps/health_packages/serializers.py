@@ -91,3 +91,4 @@ class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
         model = HealthPackage
         fields = '__all__'
 
+
