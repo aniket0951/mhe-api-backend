@@ -66,12 +66,20 @@ class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
     hospital = HospitalSerializer(read_only=True)
     is_cancellable = serializers.ReadOnlyField()
     payment = PaymentSerializer(read_only=True)
-    health_package = HealthPackageSpecificSerializer(read_only = True, many = True)
+    health_package = HealthPackageSpecificSerializer(read_only=True, many=True)
     is_cancellable = serializers.ReadOnlyField()
     reason = CancellationReasonSerializer(read_only=True)
 
     class Meta:
         model = HealthPackageAppointment
         fields = '__all__'
-    
-    
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.patient:
+            response_object['patient'] = PatientSerializer(
+                instance.patient).data
+
+        if instance.family_member:
+            response_object['family_member'] = FamilyMemberSerializer(
+                instance.family_member).data
