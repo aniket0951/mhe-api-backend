@@ -157,7 +157,7 @@ class HealthPackageSlotAvailability(ProxyView):
         response = {}
         for slot in slot_list:
             time = datetime.strptime(
-                slot['startTime'], '%d %b, %Y %I:%M %p').time()
+                slot['startTime'], '%d %b, %Y %I:%M:%S %p').time()
             if time.hour < 12:
                 morning_slot.append(time.strftime("%H:%M %p"))
             elif (time.hour >= 12) and (time.hour < 17):
