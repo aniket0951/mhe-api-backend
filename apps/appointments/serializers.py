@@ -83,3 +83,5 @@ class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
         if instance.family_member:
             response_object['family_member'] = FamilyMemberSerializer(
                 instance.family_member).data
+
+        return response_object
