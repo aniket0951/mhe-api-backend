@@ -416,7 +416,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
             return super().get_queryset().filter(payment_id__status="success")
         if is_booked:
             return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
-        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success")
+        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status__in=["Booked", "Cancelled"])
 
 
 class PayBillView(ProxyView):
