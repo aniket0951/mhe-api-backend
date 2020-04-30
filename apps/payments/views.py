@@ -240,11 +240,9 @@ class PaymentResponse(APIView):
                     bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
                     new_appointment_id = bill_detail["AppointmentId"]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
-                    payment["uhid_number"] = bill_detail["HospitalNo"]
             else:
                 payment_paydetail = payment_response["pre_registration_response"]
                 payment["receipt_number"] = payment_paydetail["receiptNo"]
-                payment["uhid_number"] = payment_paydetail["uid"]
 
         payment["status"] = payment_response["status"]
         payment["payment_method"] = payment_response["card_type"] + \

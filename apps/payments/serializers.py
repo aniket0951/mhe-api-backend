@@ -1,5 +1,5 @@
 from apps.appointments.models import Appointment
-from apps.appointments.serializers import AppointmentSerializer
+from apps.appointments.serializers import AppointmentSerializer, 
 from apps.health_packages.models import HealthPackage
 from apps.health_packages.serializers import HealthPackageDetailSerializer
 from apps.master_data.models import Hospital
@@ -23,6 +23,9 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
 
         if instance.appointment:
             response_object['appointment'] = AppointmentSerializer(instance.appointment).data
+        
+        if instance.health_package_appointment:
+            response_object['health_package_appointment'] = HealthPackageDetailSerializer(instance.health_package_appointment).data
 
         if instance.patient:
             response_object['patient'] = PatientSerializer(instance.patient).data
