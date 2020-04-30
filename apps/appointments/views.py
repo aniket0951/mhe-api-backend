@@ -337,15 +337,16 @@ class HealthPackageAppointmentView(ProxyView):
         response_message = "Unable to Book the Appointment. Please try again"
         response_data = {}
         response_success = False
+        instance = self.request.data["appointment_instance"]
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
+                instance.delete()
                 message = root.find("Message").text
                 raise ValidationError(message)
             else:
-                instance = self.request.data["appointment_instance"]
                 datetime_object = datetime.strptime(
                     self.request.data["appointment_date_time"], '%Y%m%d%H%M%S')
                 new_appointment = dict()
@@ -375,6 +376,7 @@ class HealthPackageAppointmentView(ProxyView):
                 response_data["appointment_identifier"] = appointment_identifier
             return self.custom_success_response(message=response_message,
                                                 success=response_success, data=response_data)
+        instance.delete()
         raise ValidationError(
             "Could not process your request. Please try again")
 
