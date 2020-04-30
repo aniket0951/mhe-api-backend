@@ -303,7 +303,7 @@ class HealthPackageAppointmentView(ProxyView):
             appointment_instance = HealthPackageAppointment.objects.filter(appointment_identifier=previous_appointment).first()
             if not appointment_instance:
                 raise ValidationError("Appointment does not Exist")
-            serializer = HealthPackageAppointmentSerializer(appointment_instance, data = {"appointment_status":"ReBooked"})
+            serializer = HealthPackageAppointmentSerializer(appointment_instance, data = {"appointment_status":"ReBooked"}, partial = True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
 
