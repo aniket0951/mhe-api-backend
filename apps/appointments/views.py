@@ -258,8 +258,6 @@ class CancelMyAppointment(ProxyView):
                                                                                                                                                              instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier)
                     send_sms(mobile_number=str(
                         instance.patient.mobile.raw_input), message=user_message)
-                request_param = cancel_and_refund_parameters(params)
-                CancelAndRefundView.as_view({'post': 'create'})(request_param)
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=None)
 
@@ -539,12 +537,3 @@ class ReBookView(ProxyView):
                                                 success=response_success, data=response_data)
         raise ValidationError(
             "Could not process your request. Please try again")
-
-
-class RescheduleView(APIView):
-    permission_classes = (AllowAny,)
-
-    def post(self, request, format=None):
-        data = request.data
-
-        return Response(data=data)
