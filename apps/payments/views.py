@@ -316,7 +316,7 @@ class PaymentResponse(APIView):
                 send_sms(mobile_number=str(
                     family_member.mobile.raw_input), message=user_message)
             if payment_instance.payment_for_uhid_creation:
-                update_data["appointment_identifier"] = new_appointment_id}
+                update_data["appointment_identifier"] = new_appointment_id
             appointment_serializer = HealthPackageAppointmentSerializer(
                 appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
