@@ -75,6 +75,7 @@ class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
+        self.context["hospital"] = instance.hospital
         response_object = super().to_representation(instance)
         if instance.patient:
             response_object['patient'] = PatientSerializer(
