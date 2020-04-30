@@ -304,6 +304,9 @@ class HealthPackageAppointmentView(ProxyView):
             if not appointment_instance:
                 raise ValidationError("Appointment does not Exist")
             serializer = HealthPackageAppointmentSerializer(appointment_instance, data = {"appointment_status":"Rescheduled"})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
         health_package_appointment = HealthPackageAppointmentSerializer(data={"patient": patient_id, "family_member": family_member_id,
                                                                               "hospital": request.data.get("hospital_id"), "health_package": package_id_list,
                                                                               "payment": payment_id})
