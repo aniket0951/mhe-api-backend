@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.http import HttpResponse, HttpResponseRedirect
@@ -416,7 +417,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
             return super().get_queryset().filter(payment_id__status="success")
         if is_booked:
             return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
-        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status__in=["Booked", "Cancelled"])
+        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
 
 
 class PayBillView(ProxyView):
