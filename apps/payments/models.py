@@ -1,7 +1,7 @@
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 
-from apps.appointments.models import Appointment
+from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.health_packages.models import HealthPackage
 from apps.master_data.models import HomeCareService, Hospital
 from apps.meta_app.models import MyBaseModel
@@ -23,12 +23,12 @@ class Payment(MyBaseModel):
     amount = models.FloatField(default=0,
                                null=True)
 
-    bank_ref_num = models.CharField(max_length=50,
-                                    null=True,
-                                    blank=True,
-                                    )
+    receipt_number = models.CharField(max_length=50,
+                                      null=True,
+                                      blank=True,
+                                      )
 
-    settled_at = models.DateField(null=True, blank=True)
+    settled_at = models.DateTimeField(blank=True, null=True)
 
     uhid_number = models.CharField(max_length=20,
                                    blank=True,
@@ -40,19 +40,19 @@ class Payment(MyBaseModel):
                                  null=True)
 
     appointment = models.ForeignKey(Appointment,
+                                    related_name="payment_appointment",
                                     on_delete=models.PROTECT,
                                     blank=True,
                                     null=True)
 
-    health_package = models.ManyToManyField(HealthPackage,
-                                            blank=True,
-                                            null=True
-                                            )
+    health_package_appointment = models.ForeignKey(HealthPackageAppointment,
+                                                   related_name="payment_health_package_appointment",
+                                                   on_delete=models.PROTECT,
+                                                   blank=True, null=True)
+
     payment_method = models.CharField(max_length=10,
                                       blank=True,
                                       null=True)
-    health_package_appointment_status = models.CharField(max_length=10,
-                                                         default="Not Booked")
 
     patient = models.ForeignKey(Patient,
                                 on_delete=models.PROTECT,

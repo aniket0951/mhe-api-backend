@@ -220,6 +220,7 @@ class EpisodeItems:
         serializer.add_property('AdmNo', self.admission_no)
         serializer.add_property('LocationCode', self.location_code)
 
+
 class NextAvailableSlot:
     def __init__(self, doctor_code=None, location_code=None, schedule_date=None, department_code=None):
         self.doctor_code = doctor_code
@@ -229,7 +230,51 @@ class NextAvailableSlot:
 
     def serialize(self, serializer):
         serializer.start_object('NextAvailableSlotDateParam')
-        serializer.add_property('doctorCode', self.doctor_code)
         serializer.add_property('locationCode', self.location_code)
-        serializer.add_property('scheduleDate', self.schedule_date)
         serializer.add_property('departmentCode', self.department_code)
+        serializer.add_property('doctorCode', self.doctor_code)
+        serializer.add_property('scheduleDate', self.schedule_date)
+
+
+class UpdateCancelAndRefund:
+    def __init__(self, param):
+        self.app_id = param.get("app_id", None)
+        self.cancel_remark = param.get("cancel_remark", None)
+        self.refund_amount = param.get("refund_amount", None)
+        self.refund_trans_id = param.get("refund_trans_id", None)
+        self.refund_date = param.get("refund_date", None)
+        self.refund_time = param.get("refund_time", None)
+        self.refund_status = param.get("refund_status", None)
+        self.location_code = param.get("location_code", None)
+
+    def serialize(self, serializer):
+        serializer.start_object('UpdateAppParam')
+        serializer.add_property('AppId', self.app_id)
+        serializer.add_property('CancelRemark', self.cancel_remark)
+        serializer.add_property('RefundAmt', self.refund_amount)
+        serializer.add_property('RefundTransId', self.refund_trans_id)
+        serializer.add_property('RefundDate', self.refund_date)
+        serializer.add_property('RefundTime', self.refund_time)
+        serializer.add_property('RefundStatus', self.refund_status)
+        serializer.add_property('locationCode', self.location_code)
+
+
+class UpdateRebookStatus:
+    def __init__(self, param):
+        self.app_id = param.get("app_id", None)
+        self.package_code = param.get("package_code", None)
+        self.type = param.get("type", None)
+        self.total_amount = param.get("total_amount", None)
+        self.receipt_no = param.get("receipt_no", None)
+        self.trans_id = param.get("trans_id", None)
+        self.location_code = param.get("location_code", None)
+
+    def serialize(self, serializer):
+        serializer.start_object('RebookAppParam')
+        serializer.add_property('AppId', self.app_id)
+        serializer.add_property('PkagCode', self.package_code)
+        serializer.add_property('Type', self.type)
+        serializer.add_property('TotAmt', self.total_amount)
+        serializer.add_property('ReceiptNo', self.receipt_no)
+        serializer.add_property('Transid', self.trans_id)
+        serializer.add_property('locationCode', self.location_code)

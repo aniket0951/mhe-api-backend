@@ -885,13 +885,14 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
     list_success_message = 'Addresses returned successfully!'
     retrieve_success_message = 'Address information returned successfully!'
     update_success_message = 'Information is updated successfuly!'
+    delete_success_message = "Address is deleted successfully"
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', ]
-    ordering_fields = ('code',)
+    ordering = ('-created_at',)
 
     def get_permissions(self):
-        if self.action in ['list', 'create', ]:
+        if self.action in ['list', 'create', 'destroy']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -901,10 +902,6 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
 
         if self.action == 'update':
             permission_classes = [BlacklistUpdateMethodPermission]
-            return [permission() for permission in permission_classes]
-
-        if self.action == 'destroy':
-            permission_classes = [BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()

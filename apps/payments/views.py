@@ -6,19 +6,11 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,
-                                       permission_classes)
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
-from rest_framework.views import APIView
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (
@@ -34,6 +26,7 @@ from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,
                                        PatientSpecificSerializer)
+from django_filters.rest_framework import DjangoFilterBackend
 from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
                                   SALUCRO_AUTH_USER, SALUCRO_MID,
                                   SALUCRO_RESPONSE_URL, SALUCRO_RETURN_URL,
@@ -44,10 +37,18 @@ from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters, status
+from rest_framework.decorators import (api_view, parser_classes,
+                                       permission_classes)
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 from utils import custom_viewsets
-from utils.custom_sms import send_sms
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
+from utils.custom_sms import send_sms
 from utils.payment_parameter_generator import get_payment_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
@@ -64,17 +65,21 @@ class AppointmentPayment(APIView):
         except Exception:
             raise HospitalDoesNotExistsValidationException
         appointment = request.data["appointment_id"]
+        registration_payment = request.data.get("registration_payment", False)
         appointment_instance = Appointment.objects.filter(
             appointment_identifier=appointment).first()
         if not appointment_instance:
             raise ValidationError("Appointment is not available")
         payment_data = {}
         param["token"]["appointment_id"] = appointment
+        param["token"]["package_code"] = "NA"
         payment_data["processing_id"] = param["token"]["processing_id"]
         param["token"]["transaction_type"] = "APP"
         payment_data["appointment"] = appointment_instance.id
         payment_data["patient"] = request.user.id
         payment_data["location"] = hospital.id
+        if registration_payment:
+            payment_data["payment_for_uhid_creation"] = True
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
@@ -87,24 +92,31 @@ class HealthPackagePayment(APIView):
     def post(self, request, format=None):
         param = get_payment_param(request.data)
         location_code = request.data.get("location_code", None)
+        registration_payment = request.data.get("registration_payment", False)
+        appointment = request.data["appointment_id"]
         family_member = request.data.get("user_id", None)
         try:
             hospital = Hospital.objects.get(code=location_code)
         except Exception:
             raise HospitalDoesNotExistsValidationException
+        appointment_instance = HealthPackageAppointment.objects.filter(
+            appointment_identifier=appointment).first()
+        if not appointment_instance:
+            raise ValidationError("Appointment is not available")
         package_code = request.data["package_code"]
-        package_id = request.data["package_id"]
-        package_id_list = package_id.split(",")
         package_code_list = package_code.split(",")
         package_code = "||".join(package_code_list)
         payment_data = {}
         param["token"]["package_code"] = package_code
+        param["token"]["appointment_id"] = appointment
         param["token"]["transaction_type"] = "HC"
         payment_data["processing_id"] = param["token"]["processing_id"]
-        payment_data["health_package"] = package_id_list
         payment_data["patient"] = request.user.id
         payment_data["location"] = hospital.id
+        payment_data["health_package_appointment"] = appointment_instance.id
         payment_data["payment_for_health_package"] = True
+        if registration_payment:
+            payment_data["payment_for_uhid_creation"] = True
         if family_member is not None:
             payment_data["payment_done_for_family_member"] = family_member
         else:
@@ -112,15 +124,6 @@ class HealthPackagePayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        appointment_data = {}
-        appointment_data["payment"] = payment.data['id']
-        appointment_data["hospital"] = hospital.id
-        for package_id in package_id_list:
-            appointment_data["health_package"] = package_id
-            serializer = HealthPackageAppointmentSerializer(
-                data=appointment_data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
 
         return Response(data=param, status=status.HTTP_200_OK)
 
@@ -230,21 +233,31 @@ class PaymentResponse(APIView):
         payment = {}
         payment_response = response_token_json["payment_response"]
         payment_account = response_token_json["accounts"]
+        payment["uhid_number"] = payment_account["account_number"]
+        if payment_instance.payment_for_uhid_creation:
+            if payment_instance.appointment or payment_instance.payment_for_health_package:
+                payment_paydetail = payment_response["payDetailAPIResponse"]
+                if payment_paydetail["BillDetail"]:
+                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                    new_appointment_id = bill_detail["AppointmentId"]
+                    payment["receipt_number"] = bill_detail["ReceiptNo"]
+            else:
+                payment_paydetail = payment_response["pre_registration_response"]
+                payment["receipt_number"] = payment_paydetail["receiptNo"]
+
         payment["status"] = payment_response["status"]
-        payment["payment_method"] = payment_response["card_type"] + "-" + payment_response["mode"]
+        payment["payment_method"] = payment_response["card_type"] + \
+            "-" + payment_response["mode"]
         payment["transaction_id"] = payment_response["txnid"]
         payment["amount"] = payment_response["net_amount_debit"]
-        payment["bank_ref_num"] = payment_response["bank_ref_num"]
-        payment["uhid_number"] = payment_account["account_number"]
         payment["raw_info_from_salucro_response"] = response_token_json
         payment_serializer = PaymentSerializer(
             payment_instance, data=payment, partial=True)
         payment_serializer.is_valid(raise_exception=True)
         payment_serializer.save()
         uhid_info = {}
-        if payment_account["account_number"]:
-            uhid_info["uhid_number"] = payment_account["account_number"]
-            uhid_info["pre_registration_number"] = None
+        if payment["uhid_number"] and payment["uhid_number"][:2] == "MH":
+            uhid_info["uhid_number"] = payment["uhid_number"]
         if (payment_instance.payment_for_uhid_creation):
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
@@ -253,8 +266,10 @@ class PaymentResponse(APIView):
                     patient, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
-                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(patient.first_name, patient.uhid_number)
-                send_sms(mobile_number=str(patient.mobile.raw_input), message=user_message)
+                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
+                    patient.first_name, patient.uhid_number)
+                send_sms(mobile_number=str(patient.mobile.raw_input),
+                         message=user_message)
             if payment_instance.payment_done_for_family_member:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.payment_done_for_family_member.id).first()
@@ -262,37 +277,57 @@ class PaymentResponse(APIView):
                     family_member, data=uhid_info, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
-                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(family_member.first_name, family_member.uhid_number)
-                send_sms(mobile_number=str(family_member.mobile.raw_input), message=user_message)
+                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
+                    family_member.first_name, family_member.uhid_number)
+                send_sms(mobile_number=str(
+                    family_member.mobile.raw_input), message=user_message)
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(
                 id=payment_instance.appointment.id).first()
             update_data = {"payment_status": payment_response["status"]}
+            if payment_instance.payment_for_uhid_creation:
+                update_data["appointment_identifier"] = new_appointment_id
             appointment_serializer = AppointmentSerializer(
                 appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
-        
+
         if payment_instance.payment_for_health_package:
+            appointment = HealthPackageAppointment.objects.filter(
+                    id=payment_instance.health_package_appointment.id).first()
+            update_data = {}
+            update_data["payment"] = payment_instance.id
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
-                user_message = """Dear {0}. You have successfully purchased the health package. 
-                                  Please book an appointment to visit hospital.
-                                  You can manage your appointment from my health packages in the app""".format(patient.first_name)
-                send_sms(mobile_number=str(patient.mobile.raw_input), message=user_message)
+                user_message = "Dear {0}. You have successfully purchased the health package. \
+                                Please book an appointment to visit hospital.\
+                                You can manage your appointment from my health packages in the app""".format(patient.first_name)
+                send_sms(mobile_number=str(patient.mobile.raw_input),
+                         message=user_message)
             if payment_instance.payment_done_for_family_member:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.payment_done_for_family_member.id).first()
-                user_message = """Dear {0}. You have successfully purchased the health package. 
-                                  Please book an appointment to visit hospital.
-                                  You can manage your appointment from my health packages in the app""".format(family_member.first_name)
-                send_sms(mobile_number=str(family_member.mobile.raw_input), message=user_message)
+                user_message = "Dear {0}. You have successfully purchased the health package. \
+                                Please book an appointment to visit hospital.\
+                                You can manage your appointment from my health packages in the app""".format(family_member.first_name)
+                send_sms(mobile_number=str(
+                    family_member.mobile.raw_input), message=user_message)
+            if payment_instance.payment_for_uhid_creation:
+                update_data["appointment_identifier"] = new_appointment_id
+            appointment_serializer = HealthPackageAppointmentSerializer(
+                appointment, data=update_data, partial=True)
+            appointment_serializer.is_valid(raise_exception=True)
+            appointment_serializer.save()
+
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
-        param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
-            txnid, txnstatus, txnamount)
+        uhid = payment["uhid_number"]
+        if not uhid:
+            uhid = "-1"
+        param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
+            txnid, txnstatus, txnamount, uhid)
         return HttpResponseRedirect(REDIRECT_URL + param)
 
 
@@ -304,12 +339,22 @@ class PaymentReturn(APIView):
         data = request.data
         response_token = data["responseToken"]
         response_token_json = json.loads(response_token)
+        processing_id = response_token_json["processing_id"]
+        try:
+            payment_instance = Payment.objects.get(processing_id=processing_id)
+        except Exception:
+            raise ProcessingIdDoesNotExistsValidationException
         payment_response = response_token_json["payment_response"]
+        payment_account = response_token_json["accounts"]
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
-        param = "?txnid={0}&txnstatus={1}&txnamount={2}".format(
-            txnid, txnstatus, txnamount)
+        uhid = payment_instance.uhid_number
+        if not uhid:
+            uhid = "-1"
+
+        param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
+            txnid, txnstatus, txnamount, uhid)
         return HttpResponseRedirect(REDIRECT_URL + param)
 
 
@@ -333,13 +378,19 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if filter_by:
             if filter_by == "current_week":
                 current_week = date.today().isocalendar()[1]
-                return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week)
+                current_year = date.today().isocalendar()[0]
+                return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week, created_at__year=current_year)
             elif filter_by == "last_week":
-                last_week = date.today() - timedelta(days=7)
-                return super().get_queryset().filter(uhid_number=uhid, created_at__gte=last_week)
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                return super().get_queryset().filter(uhid_number=uhid, created_at__week=last_week, created_at__year=current_year)
             elif filter_by == "last_month":
-                last_month = datetime.today() - timedelta(days=30)
-                return super().get_queryset().filter(uhid_number=uhid, created_at__gte=last_month)
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                return super().get_queryset().filter(uhid_number=uhid, created_at__month=last_month.month, created_at__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                return super().get_queryset().filter(uhid_number=uhid, created_at__month=current_month.month, created_at__year=current_month.year)
             else:
                 return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
@@ -354,7 +405,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
                        filters.OrderingFilter, DjangoFilterBackend)
     queryset = HealthPackageAppointment.objects.all()
     ordering = ('-payment_id__created_at',)
-    filter_fields = ('appointment_status','payment_id__status')
+    filter_fields = ('appointment_status', 'payment_id__status')
     serializer_class = HealthPackageAppointmentDetailSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Health Package list returned successfully!'
@@ -366,7 +417,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
             return super().get_queryset().filter(payment_id__status="success")
         if is_booked:
             return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
-        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success")
+        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
 
 
 class PayBillView(ProxyView):
@@ -449,8 +500,8 @@ class EpisodeItemView(ProxyView):
             if status == "1":
                 success_status = True
                 response_message = "Returned Bill Information Successfully"
-                episode_response = root.find("EpisodeList")
-                response_data = json.loads(episode_response.text)
+                episode_response = root.find("EpisodeList").text
+                response_data = json.loads(episode_response)
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)

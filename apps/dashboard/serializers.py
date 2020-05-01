@@ -17,6 +17,5 @@ class DashboardBannerSerializer(DynamicFieldsModelSerializer):
                 response_object['image'] = generate_pre_signed_url(
                     instance.image.url)
         except Exception as error:
-            print(error)
             response_object['image'] = None
         return response_object
