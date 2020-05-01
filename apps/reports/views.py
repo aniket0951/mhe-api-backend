@@ -72,13 +72,19 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
         if filter_by:
             if filter_by == "current_week":
                 current_week = date.today().isocalendar()[1]
-                return qs.filter(time__week=current_week)
+                current_year = date.today().isocalendar()[0]
+                return qs.filter(time__week=current_week, time__year = current_year)
             elif filter_by == "last_week":
-                last_week = date.today() - timedelta(days=7)
-                return qs.filter(time__gte=last_week)
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                return qs.filter(time__week=last_week, time__year=current_year)
             elif filter_by == "last_month":
-                last_month = datetime.today() - timedelta(days=30)
-                return qs.filter(time__gte=last_month)
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                return qs.filter(time__month=last_month.month, time__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                return qs.filter(time__month=current_month.month, time__year=current_month.year)
             else:
                 return qs.filter(time__date=filter_by)
 

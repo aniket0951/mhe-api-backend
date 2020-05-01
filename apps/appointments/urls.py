@@ -3,11 +3,11 @@ from django.urls import include, path
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
-from .views import (AppointmentsAPIView, CancelHealthPackageAppointment,
-                    CancellationReasonlistView, CancelMyAppointment,
-                    CreateMyAppointment, HealthPackageAppointmentView,
-                    OfflineAppointment, RecentlyVisitedDoctorlistView,
-                    UpcomingAppointmentsAPIView)
+from .views import (AppointmentsAPIView, CancelAndRefundView,
+                    CancelHealthPackageAppointment, CancellationReasonlistView,
+                    CancelMyAppointment, CreateMyAppointment,
+                    HealthPackageAppointmentView, OfflineAppointment,
+                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -18,6 +18,7 @@ router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 
 urlpatterns = [
     path('cancel_appointment', CancelMyAppointment.as_view()),
+    path('Cancel_and_refund', CancelAndRefundView.as_view()),
     path('cancel_health_package_appointment',
          CancelHealthPackageAppointment.as_view()),
     path('create_appointment', CreateMyAppointment.as_view()),

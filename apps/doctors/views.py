@@ -10,13 +10,6 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -25,14 +18,21 @@ from apps.doctors.serializers import (DepartmentSerializer,
                                       DoctorSerializer, HospitalSerializer)
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.models import Department, Hospital, Specialisation
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
-    SlotAvailability as serializable_SlotAvailability
+    DoctorSchedule as serializable_DoctorSchedule
 from proxy.custom_serializables import \
     NextAvailableSlot as serializable_NextAvailableSlot
 from proxy.custom_serializables import \
-    DoctorSchedule as serializable_DoctorSchedule
+    SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters, generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 from utils.exceptions import InvalidRequest
@@ -40,7 +40,8 @@ from utils.exceptions import InvalidRequest
 
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
-    search_fields = ['name', 'hospital_departments__department__name', 'hospital__code', 'code']
+    search_fields = [
+        'name', 'hospital_departments__department__name', 'hospital__code', 'code']
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
@@ -98,7 +99,7 @@ class DoctorSlotAvailability(ProxyView):
         morning_slot = []
         afternoon_slot = []
         evening_slot = []
-        slot_list  = []
+        slot_list = []
         if slots:
             slot_list = ast.literal_eval(slots)
         response = {}
@@ -117,6 +118,7 @@ class DoctorSlotAvailability(ProxyView):
         response["price"] = price
         return self.custom_success_response(message='Available slots',
                                             success=True, data=response)
+
 
 class DoctorScheduleView(ProxyView):
     source = 'weeklySchedule'
@@ -139,19 +141,21 @@ class DoctorScheduleView(ProxyView):
             schedule_list = ast.literal_eval(schedule_lists)
         for record in schedule_list:
             hospital = record["Hosp"]
-            hospital_description = Hospital.objects.filter(code = hospital).first().description
+            hospital_description = Hospital.objects.filter(
+                code=hospital).first().description
             if hospital_description in records:
                 records[hospital_description].append(record)
             else:
-                records[hospital_description] =[]
+                records[hospital_description] = []
                 records[hospital_description].append(record)
 
         return self.custom_success_response(message='Available slots',
                                             success=True, data=records)
 
+
 class NextSlotAvailable(ProxyView):
     source = 'NextAvailableSlotDate'
-    permission_classes = [IsPatientUser]
+    permission_classes = [AllowAny]
 
     def get_request_data(self, request):
         data = request.data

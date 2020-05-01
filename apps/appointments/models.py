@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
 
 from django.db import models
-from datetime import datetime, timedelta
+
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
+
 from .tasks import set_status_as_completed
 
 
@@ -20,7 +21,7 @@ class Appointment(models.Model):
     CONFIRMED = 1
     CANCELLED = 2
     WAITING = 3
-    COMPLETED =4
+    COMPLETED = 4
     STATUS_CODES = (
         (CONFIRMED, 'Confirmed'),
         (CANCELLED, 'Cancelled'),
@@ -62,25 +63,43 @@ class Appointment(models.Model):
 
 class HealthPackageAppointment(models.Model):
 
-    appointment_date = models.DateField(blank=True, null=True)
-    appointment_slot = models.TimeField(blank=True, null=True)
+    appointment_date = models.DateTimeField(blank=True, null=True)
+
     appointment_identifier = models.CharField(max_length=20,
                                               blank=True,
                                               null=True)
+
     appointment_status = models.CharField(max_length=10,
                                           default="Not Booked")
-    payment = models.ForeignKey('payments.Payment', on_delete=models.PROTECT)
-    health_package = models.ForeignKey(HealthPackage, on_delete=models.PROTECT)
-    hospital = models.ForeignKey(
-        Hospital, on_delete=models.PROTECT, related_name='hospital_health_appointment')
+
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT,
+                                related_name='patient_health_package_appointment')
+
+    family_member = models.ForeignKey(FamilyMember, on_delete=models.PROTECT,
+                                      related_name='family_health_package_appointment', blank=True,
+                                      null=True)
+
+    health_package = models.ManyToManyField(HealthPackage,
+                                            blank=True,
+                                            null=True
+                                            )
+
+    payment = models.ForeignKey('payments.Payment', on_delete=models.PROTECT,
+                                related_name='payment_health_package_appointment',
+                                blank=True, null=True)
+
+    hospital = models.ForeignKey(Hospital, on_delete=models.PROTECT,
+                                 related_name='hospital_health_appointment')
+
     reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
                                related_name='cancellation_reason_health_appointment',
                                null=True, blank=True)
+
     booked_via_app = models.BooleanField(default=True)
 
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            if ((self.appointment_date > datetime.now().date()) and (self.appointment_status != "Cancelled")):
+            if ((self.appointment_date > datetime.now()) and (self.appointment_status != "Cancelled")):
                 return True
         return False
