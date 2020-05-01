@@ -68,7 +68,6 @@ class CountryViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['description', ]
     ordering_fields = ('description',)
-    pagination_class = None
 
     def get_queryset(self):
         return super().get_queryset().filter(is_active=True,
@@ -79,7 +78,7 @@ class CountryViewSet(custom_viewsets.ModelViewSet):
 class RegionViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsPatientUser]
     model = Region
-    queryset = Region.objects.all()
+    queryset = Region.objects.all().prefetch_related('country')
     serializer_class = RegionSerializer
     list_success_message = 'Regions list returned successfully!'
 
@@ -88,13 +87,13 @@ class RegionViewSet(custom_viewsets.ModelViewSet):
     search_fields = ['description', ]
     ordering_fields = ('description',)
     filter_fields = ('country',)
-    pagination_class = None
 
 
 class CityViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsPatientUser]
     model = City
-    queryset = City.objects.all()
+    queryset = City.objects.all().prefetch_related('province__region',
+                                                   'province__region__country')
     serializer_class = CitySerializer
     list_success_message = 'Cities list returned successfully!'
 
@@ -103,13 +102,14 @@ class CityViewSet(custom_viewsets.ModelViewSet):
     search_fields = ['description', ]
     ordering_fields = ('description',)
     filter_fields = ('province__region',)
-    pagination_class = None
 
 
 class ZipcodeViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsPatientUser]
     model = Zipcode
-    queryset = Zipcode.objects.all()
+    queryset = Zipcode.objects.all().prefetch_related('city',
+                                                      'city__province__region',
+                                                      'city__province__region__country')
     serializer_class = ZipcodeSerializer
     list_success_message = 'Zipcodes list returned successfully!'
 
@@ -118,7 +118,6 @@ class ZipcodeViewSet(custom_viewsets.ModelViewSet):
     search_fields = ['code', ]
     ordering_fields = ('code',)
     filter_fields = ('city',)
-    pagination_class = None
 
 
 class UHIDRegistrationView(ProxyView):
