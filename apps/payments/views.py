@@ -77,6 +77,10 @@ class AppointmentPayment(APIView):
         param["token"]["transaction_type"] = "APP"
         payment_data["appointment"] = appointment_instance.id
         payment_data["patient"] = request.user.id
+        payment_data["payment_done_for_patient"] = appointment_instance.patient
+        if appointment_instance.family_member:
+            payment_data["payment_done_for_patient"] = None
+            payment_data["payment_done_for_family_member"] = family_member
         payment_data["location"] = hospital.id
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
@@ -234,6 +238,14 @@ class PaymentResponse(APIView):
         payment_response = response_token_json["payment_response"]
         payment_account = response_token_json["accounts"]
         payment["uhid_number"] = payment_account["account_number"]
+
+        if payment_instance.appointment or payment_instance.payment_for_health_package:
+                payment_paydetail = payment_response["payDetailAPIResponse"]
+                if payment_paydetail["BillDetail"]:
+                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                    new_appointment_id = bill_detail["AppointmentId"]
+                    payment["receipt_number"] = bill_detail["ReceiptNo"]
+
         if payment_instance.payment_for_uhid_creation:
             if payment_instance.appointment or payment_instance.payment_for_health_package:
                 payment_paydetail = payment_response["payDetailAPIResponse"]
@@ -300,9 +312,7 @@ class PaymentResponse(APIView):
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
-                user_message = "Dear {0}. You have successfully purchased the health package. \
-                                Please book an appointment to visit hospital.\
-                                You can manage your appointment from my health packages in the app""".format(patient.first_name)
+                user_message = "Dear {0}. You have successfully purchased the health package".format(patient.first_name)
                 send_sms(mobile_number=str(patient.mobile.raw_input),
                          message=user_message)
             if payment_instance.payment_done_for_family_member:
