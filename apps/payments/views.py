@@ -77,10 +77,10 @@ class AppointmentPayment(APIView):
         param["token"]["transaction_type"] = "APP"
         payment_data["appointment"] = appointment_instance.id
         payment_data["patient"] = request.user.id
-        payment_data["payment_done_for_patient"] = appointment_instance.patient
+        payment_data["payment_done_for_patient"] = appointment_instance.patient.id
         if appointment_instance.family_member:
             payment_data["payment_done_for_patient"] = None
-            payment_data["payment_done_for_family_member"] = appointment_instance.family_member
+            payment_data["payment_done_for_family_member"] = appointment_instance.family_member.id
         payment_data["location"] = hospital.id
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
