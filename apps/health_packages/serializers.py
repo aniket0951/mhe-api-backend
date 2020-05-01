@@ -87,7 +87,13 @@ class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
 
 class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
     included_health_tests = HealthTestSerializer(many=True)
+    pricing = serializers.SerializerMethodField()
     class Meta:
         model = HealthPackage
         fields = '__all__'
+
+    def get_pricing(self, instance):
+        hospital_id = self.context["hospital"].id 
+        return HealthPackagePricingSerializer(instance.health_package_pricing.get(hospital_id=hospital_id)).data
+
 

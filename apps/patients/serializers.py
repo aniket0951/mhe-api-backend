@@ -60,7 +60,6 @@ class PatientSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = generate_pre_signed_url(
                 instance.display_picture.url)
         except Exception as error:
-            print(error)
             response_object['display_picture'] = None
 
         return response_object
@@ -128,7 +127,6 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = generate_pre_signed_url(
                 instance.display_picture.url)
         except Exception as error:
-            print(error)
             response_object['display_picture'] = None
 
         return response_object

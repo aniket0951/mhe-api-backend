@@ -18,7 +18,7 @@ class IsManipalAdminUser(permissions.BasePermission):
             if ManipalAdmin.objects.filter(id=request.user.id).exists():
                 return True
         except Exception as e:
-            print(e)
+            pass
         self.message = 'Manipal Administrator has the permission to perform this action.'
         return False
 
@@ -36,8 +36,8 @@ class IsPatientUser(permissions.BasePermission):
         try:
             if hasattr(request.user, 'mobile') and Patient.objects.filter(mobile=request.user.mobile).exists():
                 return True
-        except Exception as e:
-            print(e)
+        except Exception:
+            pass
         self.message = 'Patient has the permission to perform this action.'
         return False
 

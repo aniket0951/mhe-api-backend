@@ -16,8 +16,8 @@ class CustomPatientAuthBackend(BaseBackend):
             match_password = check_password(password, patient.password)
             if match_password:
                 return patient
-        except Exception as e:
-            print(e)
+        except Exception:
+            pass
         return None
 
     # Required for your backend to work properly - unchanged in most scenarios

@@ -1,3 +1,8 @@
+from rest_framework import status
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import AppointmentSerializer
 from apps.doctors.models import Doctor
@@ -6,10 +11,6 @@ from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
-from rest_framework import status
-from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import IsManipalAdminUser
 from utils.utils import (get_appointment, manipal_admin_object,
@@ -54,7 +55,7 @@ class DashboardAPIView(ListAPIView):
                 unique_uhid_info = set(Patient.objects.filter(
                     uhid_number__isnull=False).values_list('uhid_number', flat=True))
                 unique_uhid_info.update(set(FamilyMember.objects.filter(
-                    uhid_number__isnull=False).values_list('uhid_number', flat=True)))
+                    uhid_number__isnull=False, is_visible=True).values_list('uhid_number', flat=True)))
                 dashboard_details['patients_count'] = len(unique_uhid_info)
                 dashboard_details['app_users_count'] = Patient.objects.count()
 

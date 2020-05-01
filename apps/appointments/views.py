@@ -18,14 +18,19 @@ from apps.master_data.exceptions import (
     DepartmentDoesNotExistsValidationException,
     HospitalDoesNotExistsValidationException)
 from apps.master_data.models import Department, Hospital, Specialisation
+from apps.notifications.signals import \
+    send_new_health_package_appointment_notification
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
-from apps.notifications.signals import send_new_health_package_appointment_notification
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
+from proxy.custom_serializables import \
+    UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
+from proxy.custom_serializables import \
+    UpdateRebookStatus as serializable_UpdateRebookStatus
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -45,6 +50,7 @@ from .exceptions import (AppointmentAlreadyExistsException,
 from .models import Appointment, CancellationReason, HealthPackageAppointment
 from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
                           HealthPackageAppointmentSerializer)
+from .utils import cancel_and_refund_parameters
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -252,7 +258,6 @@ class CancelMyAppointment(ProxyView):
                                                                                                                                                              instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier)
                     send_sms(mobile_number=str(
                         instance.patient.mobile.raw_input), message=user_message)
-
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=None)
 
@@ -285,22 +290,42 @@ class HealthPackageAppointmentView(ProxyView):
     source = 'bookAppointment'
 
     def get_request_data(self, request):
-        payment_id = request.data.get('payment_id', None)
-        health_package_id = request.data.get('health_package_id', None)
-        health_package_instance = HealthPackageAppointment.objects.filter(
-            payment_id=payment_id, health_package_id=health_package_id).first()
         param = dict()
-        param["location_code"] = health_package_instance.hospital.code
-        if not health_package_instance.hospital.is_health_package_online_purchase_supported:
+        patient_id = request.user.id
+        family_member_id = request.data.get("user_id", None)
+        package_id = request.data["package_id"]
+        package_id_list = package_id.split(",")
+        previous_appointment = request.data.get("previous_appointment", None)
+        payment_id = request.data.get("payment_id", None)
+        if previous_appointment and payment_id:
+            appointment_instance = HealthPackageAppointment.objects.filter(appointment_identifier=previous_appointment).first()
+            if not appointment_instance:
+                raise ValidationError("Appointment does not Exist")
+            serializer = HealthPackageAppointmentSerializer(appointment_instance, data = {"appointment_status":"ReBooked"}, partial = True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+        health_package_appointment = HealthPackageAppointmentSerializer(data={"patient": patient_id, "family_member": family_member_id,
+                                                                              "hospital": request.data.get("hospital_id"), "health_package": package_id_list,
+                                                                              "payment": payment_id})
+        health_package_appointment.is_valid(raise_exception=True)
+        request.data["appointment_instance"] = health_package_appointment.save()
+        hospital = Hospital.objects.filter(
+            id=request.data.get("hospital_id", None)).first()
+        if not hospital.is_health_package_online_purchase_supported:
             raise FeatureNotAvailableException
-        param["doctor_code"] = health_package_instance.hospital.health_package_doctor_code
-        param["speciality_code"] = health_package_instance.hospital.health_package_department_code
+        param["location_code"] = hospital.code
+        param["doctor_code"] = hospital.health_package_doctor_code
+        param["speciality_code"] = hospital.health_package_department_code
         param["appointment_date_time"] = request.data.get(
             "appointment_date_time", None)
-        param["mrn"] = health_package_instance.payment.uhid_number
+        param["mrn"] = request.data.get("mrn")
+        param["patient_name"] = request.data.get("patient_name")
+        param["mobile"] = request.data.get("mobile")
+        param["email"] = request.data.get("email")
+
         slot_book = serializable_BookMySlot(param)
         request_data = custom_serializer().serialize(slot_book, 'XML')
-        request.data["health_package_instance"] = health_package_instance
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -310,47 +335,48 @@ class HealthPackageAppointmentView(ProxyView):
         response_message = "Unable to Book the Appointment. Please try again"
         response_data = {}
         response_success = False
+        instance = self.request.data["appointment_instance"]
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
+                instance.delete()
                 message = root.find("Message").text
                 raise ValidationError(message)
             else:
-                instance = self.request.data["health_package_instance"]
                 datetime_object = datetime.strptime(
                     self.request.data["appointment_date_time"], '%Y%m%d%H%M%S')
-                time = datetime_object.time()
                 new_appointment = dict()
-                new_appointment["appointment_date"] = datetime_object.date()
-                new_appointment["appointment_slot"] = time.strftime(
-                    "%H:%M:%S %p")
+                new_appointment["appointment_date"] = datetime_object
                 new_appointment["appointment_status"] = "Booked"
                 new_appointment["appointment_identifier"] = appointment_identifier
                 appointment = HealthPackageAppointmentSerializer(
                     instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
-                user_message, mobile = "", ""
-                if instance.payment.payment_done_for_patient:
-                    user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
-                        instance.payment.payment_done_for_patient.first_name, instance.appointment_slot, instance.appointment_date)
-                    mobile = str(
-                        instance.payment.payment_done_for_patient.mobile)
-                if instance.payment.payment_done_for_family_member:
-                    user_message = "Dear {0}, your appointment for health package has been Booked at {1} on {2}".format(
-                        instance.payment.payment_done_for_family_member.first_name, instance.appointment_slot, instance.appointment_date)
-                    mobile = str(
-                        instance.payment.payment_done_for_family_member.mobile)
-                send_sms(mobile, user_message)
-                send_new_health_package_appointment_notification(instance = instance, created = True)
+                if instance.family_member:
+                    user_message = "Dear {0}, Your Health Package Appointment has been booked by {1} on {2} at {3} with appointment id:{4} at {5}".format(
+                                   instance.family_member.first_name, instance.patient.first_name, instance.appointment_date.date(), instance.appointment_date.time(), instance.appointment_identifier, instance.hospital.address)
+                    if str(instance.family_member.mobile) != str(instance.patient.mobile):
+                        send_sms(mobile_number=str(
+                            instance.family_member.mobile), message=user_message)
+                    send_sms(mobile_number=str(
+                        instance.patient.mobile), message=user_message)
+                else:
+                    user_message = "Dear {0}, Your Health Package Appointment has been booked on {1} at {2} with appointment id:{3} at {4}".format(instance.patient.first_name,
+                                                                                                                                                   instance.appointment_date.date(), instance.appointment_date.time(), instance.appointment_identifier, instance.hospital.address)
+                    send_sms(mobile_number=str(
+                        instance.patient.mobile), message=user_message)
+                # send_new_health_package_appointment_notification(instance = instance, created = True)
                 response_success = True
-                response_message = "Appointment has been created"
+                response_message = "Health Package Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
-
-        return self.custom_success_response(message=response_message,
-                                            success=response_success, data=response_data)
+            return self.custom_success_response(message=response_message,
+                                                success=response_success, data=response_data)
+        instance.delete()
+        raise ValidationError(
+            "Could not process your request. Please try again")
 
 
 class OfflineAppointment(APIView):
@@ -461,3 +487,53 @@ class CancelHealthPackageAppointment(ProxyView):
                 success_status = True
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=None)
+
+
+class CancelAndRefundView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'UpdateApp'
+
+    def get_request_data(self, request):
+        cancel_update = serializable_UpdateCancelAndRefund(request.data)
+        request_data = custom_serializer().serialize(cancel_update, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        response_message = "Please try again"
+        response_data = {}
+        response_success = False
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            status = root.find("Status").text
+            return self.custom_success_response(message=response_message,
+                                                success=response_success, data=response_data)
+        raise ValidationError(
+            "Could not process your request. Please try again")
+
+
+class ReBookView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'RebookApp'
+
+    def get_request_data(self, request):
+        cancel_update = serializable_UpdateRebookStatus(request.data)
+        request_data = custom_serializer().serialize(cancel_update, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        response_message = "Please try again"
+        response_data = {}
+        response_success = False
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            status = root.find("Status").text
+            return self.custom_success_response(message=response_message,
+                                                success=response_success, data=response_data)
+        raise ValidationError(
+            "Could not process your request. Please try again")
