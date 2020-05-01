@@ -80,7 +80,7 @@ class AppointmentPayment(APIView):
         payment_data["payment_done_for_patient"] = appointment_instance.patient
         if appointment_instance.family_member:
             payment_data["payment_done_for_patient"] = None
-            payment_data["payment_done_for_family_member"] = family_member
+            payment_data["payment_done_for_family_member"] = appointment_instance.family_member
         payment_data["location"] = hospital.id
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
