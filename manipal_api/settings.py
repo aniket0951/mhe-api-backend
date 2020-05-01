@@ -161,28 +161,34 @@ WSGI_APPLICATION = 'manipal_api.wsgi.application'
 
 # Database (Postgresql) Settings
 DATABASES = {
-    'default': {},
-    'write_db': {
+    'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': env('MANIPAL_DB_NAME'),
         'USER': env('MANIPAL_DB_USER'),
         'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),
         'HOST': env('MANIPAL_DB_HOST'),
-        'PORT': env('MANIPAL_DB_PORT'),
+        'PORT': env('MANIPAL_DB_PORT'), },
+    # 'write_db': {
+    #     'ENGINE': 'django.contrib.gis.db.backends.postgis',
+    #     'NAME': env('MANIPAL_DB_NAME'),
+    #     'USER': env('MANIPAL_DB_USER'),
+    #     'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),
+    #     'HOST': env('MANIPAL_DB_HOST'),
+    #     'PORT': env('MANIPAL_DB_PORT'),
 
-    },
-    'read_db': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': env('MANIPAL_READ_DB_NAME'),
-        'USER': env('MANIPAL_READ_DB_USER'),
-        'PASSWORD': env('MANIPAL_READ_DB_USER_PASSWORD'),
-        'HOST': env('MANIPAL_READ_DB_HOST'),
-        'PORT': env('MANIPAL_READ_DB_PORT'),
+    # },
+    # 'read_db': {
+    #     'ENGINE': 'django.contrib.gis.db.backends.postgis',
+    #     'NAME': env('MANIPAL_READ_DB_NAME'),
+    #     'USER': env('MANIPAL_READ_DB_USER'),
+    #     'PASSWORD': env('MANIPAL_READ_DB_USER_PASSWORD'),
+    #     'HOST': env('MANIPAL_READ_DB_HOST'),
+    #     'PORT': env('MANIPAL_READ_DB_PORT'),
 
-    }
+    # }
 }
 
-DATABASE_ROUTERS = ['utils.custom_db_routers.CustomDBRouter']
+# DATABASE_ROUTERS = ['utils.custom_db_routers.CustomDBRouter']
 
 
 # Password validation
