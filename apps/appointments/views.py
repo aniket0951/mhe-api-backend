@@ -366,6 +366,17 @@ class HealthPackageAppointmentView(ProxyView):
                     payment_obj = instance.payment
                     payment_obj.health_package_appointment = instance
                     payment_obj.save()
+                    if instance.family_member:
+                        user_message = "Hi {0}, your Health package appointment has been rebooked on \
+                                    {1} at {2}".format(instance.family_member.first_name, instance.appointment_date.date(), 
+                                    instance.appointment_date.time())
+                        send_sms(mobile_number=str(instance.family_member.mobile.raw_input), message=user_message)
+                    user_message = "Hi {0}, your Health package appointment has been rebooked on \
+                                    {1} at {2}".format(instance.patient.first_name, instance.appointment_date.date(), 
+                                    instance.appointment_date.time())
+                    send_sms(mobile_number=str(instance.patient.mobile.raw_input), message=user_message)
+                     
+                    
                 response_success = True
                 response_message = "Health Package Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
