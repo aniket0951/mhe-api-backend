@@ -243,9 +243,8 @@ class FamilyMember(MyBaseModel):
 
     @property
     def representation(self):
-        return 'Patient name: {} Patient family member name: {} Relation Name: {}'\
-            .format(self.patient_info.first_name, self.first_name,
-                    self.relation_name)
+        return 'Patient name: {} Patient family member name: {}'\
+            .format(self.patient_info.first_name, self.first_name)
 
     class Meta:
         verbose_name = "Family Member"
