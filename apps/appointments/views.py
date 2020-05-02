@@ -363,7 +363,7 @@ class HealthPackageAppointmentView(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
                 if self.request.data.get("previous_appointment"):
-                    payment_obj = appointment.payment
+                    payment_obj = instance.payment
                     payment_obj.health_package_appointment = appointment
                     payment_obj.save()
                 response_success = True
