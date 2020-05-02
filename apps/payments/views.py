@@ -321,17 +321,15 @@ class PaymentResponse(APIView):
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
-                user_message = "Dear {0}. You have successfully purchased and booked appointment for \
-                                {1} on {2} at {3}".format(patient.first_name, package_name, appointment.appointment_date.date(),
-                                                          appointment.appointment_date.time())
+                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(patient.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                               appointment.appointment_date.time())
                 send_sms(mobile_number=str(patient.mobile.raw_input),
                          message=user_message)
             if payment_instance.payment_done_for_family_member:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.payment_done_for_family_member.id).first()
-                user_message = "Dear {0}. You have successfully purchased and booked appointment for \
-                                {1} on {2} at {3}".format(family_member.first_name, package_name, appointment.appointment_date.date(),
-                                                          appointment.appointment_date.time())
+                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(family_member.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                               appointment.appointment_date.time())
                 send_sms(mobile_number=str(
                     family_member.mobile.raw_input), message=user_message)
             if payment_instance.payment_for_uhid_creation:
