@@ -604,12 +604,15 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 serializer.validated_data['mobile'] = serializer.validated_data['new_mobile']
 
         if 'email' in serializer.validated_data and \
-                not family_member_object.email == serializer.validated_data['email'] and \
-                not serializer.validated_data['email'] == request_patient.email:
-            is_email_to_be_verified = True
+                not family_member_object.email == serializer.validated_data['email']:
 
-            family_member_object = serializer.save(
-                email_verified=False)
+                is_email_to_be_verified = True
+
+                if serializer.validated_data['email'] == request_patient.email and request_patient.email_verified:
+                    is_email_to_be_verified = False
+
+                family_member_object = serializer.save(
+                    email_verified=not is_email_to_be_verified)
         else:
             family_member_object = serializer.save()
 
