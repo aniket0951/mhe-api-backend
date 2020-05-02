@@ -18,8 +18,6 @@ from apps.master_data.exceptions import (
     DepartmentDoesNotExistsValidationException,
     HospitalDoesNotExistsValidationException)
 from apps.master_data.models import Department, Hospital, Specialisation
-from apps.notifications.signals import \
-    send_new_health_package_appointment_notification
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.users.models import BaseUser
@@ -50,7 +48,7 @@ from .exceptions import (AppointmentAlreadyExistsException,
 from .models import Appointment, CancellationReason, HealthPackageAppointment
 from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
                           HealthPackageAppointmentSerializer)
-from .utils import cancel_and_refund_parameters
+from .utils import cancel_and_refund_parameters, rebook_parameters
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -242,6 +240,11 @@ class CancelMyAppointment(ProxyView):
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
                 success_status = True
+                param = dict()
+                param["app_id"] = instance.appointment_identifier
+                param["cancel_remark"] = instance.reason.reason
+                param["location_code"] = instance.hospital.code
+
                 if instance.family_member:
                     user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled by {5}".format(instance.family_member.first_name,
                                                                                                                                                 instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier, instance.patient.first_name)
@@ -258,8 +261,11 @@ class CancelMyAppointment(ProxyView):
                                                                                                                                                              instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier)
                     send_sms(mobile_number=str(
                         instance.patient.mobile.raw_input), message=user_message)
-        return self.custom_success_response(message=response_message,
+                request_param = cancel_and_refund_parameters(param)
+                response = CancelAndRefundView.as_view()(request_param)
+                return self.custom_success_response(message=response_message,
                                             success=success_status, data=None)
+        raise ValidationError("Could not process the request. PLease try again")
 
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
@@ -372,6 +378,9 @@ class HealthPackageAppointmentView(ProxyView):
                 response_success = True
                 response_message = "Health Package Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
+                # if request.data.get("previous_appointment", None):
+                request_param = rebook_parameters(instance)
+                response = ReBookView.as_view()(request_param)
             return self.custom_success_response(message=response_message,
                                                 success=response_success, data=response_data)
         instance.delete()
@@ -485,8 +494,14 @@ class CancelHealthPackageAppointment(ProxyView):
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
                 success_status = True
-        return self.custom_success_response(message=response_message,
+                param["app_id"] = instance.appointment_identifier
+                param["cancel_remark"] = instance.reason.reason
+                param["location_code"] = instance.hospital.code
+                request_param = cancel_and_refund_parameters(param)
+                response = CancelAndRefundView.as_view()(request_param)
+            return self.custom_success_response(message=response_message,
                                             success=success_status, data=None)
+        raise ValidationError("Could not process your request. Please try again")
 
 
 class CancelAndRefundView(ProxyView):
@@ -508,8 +523,9 @@ class CancelAndRefundView(ProxyView):
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             status = root.find("Status").text
-            return self.custom_success_response(message=response_message,
-                                                success=response_success, data=response_data)
+            message = root.find("Message")
+            updated_response = root.find("UpdateAppResp")
+            return Response(data = {"status":status,"message":message, "updated_response": updated_response})
         raise ValidationError(
             "Could not process your request. Please try again")
 
@@ -527,13 +543,54 @@ class ReBookView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        response_message = "Please try again"
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            status = root.find("Status").text
+            message = root.find("Message")
+            rebook_app_response = root.find("RebookAppResp")
+            return Response(data = {"status":status,"message":message, "rebook_app_response": rebook_app_response})
+        raise ValidationError(
+            "Could not process your request. Please try again")
+
+class RescheduleDoctorAppointment(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'bookAppointment'
+
+    def get_request_data(self, request):
+        slot_book = serializable_BookMySlot(request.data)
+        request_data = custom_serializer().serialize(slot_book, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        response_message = "Unable to Book the Appointment. Please try again"
         response_data = {}
         response_success = False
         if response.status_code == 200:
             root = ET.fromstring(response.content)
+            appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
-            return self.custom_success_response(message=response_message,
-                                                success=response_success, data=response_data)
-        raise ValidationError(
-            "Could not process your request. Please try again")
+            if status == "FAILED":
+                message = root.find("Message").text
+                raise ValidationError(message)
+            else:
+                appointment_date_time = data.pop("appointment_date_time")
+                datetime_object = datetime.strptime(
+                    appointment_date_time, '%Y%m%d%H%M%S')
+                time = datetime_object.time()
+                new_appointment["appointment_date"] = datetime_object.date()
+                new_appointment["appointment_slot"] = time.strftime(
+                    "%H:%M:%S %p")
+                new_appointment["status"] = 1
+                new_appointment["appointment_identifier"] = appointment_identifier
+                appointment = AppointmentSerializer(instance, data=new_appointment, partial = True)
+                appointment.is_valid(raise_exception=True)
+                appointment.save()                 
+                response_success = True
+                response_message = "Appointment has been Rebooked"
+                response_data["appointment_identifier"] = appointment_identifier
+
+        return self.custom_success_response(message=response_message,
+                                            success=response_success, data=response_data)
