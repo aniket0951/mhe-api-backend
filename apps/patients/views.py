@@ -309,6 +309,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.email_verified = True
         authenticated_patient.save()
 
+        authenticated_patient.patient_family_member_info.filter(is_visible=True, 
+        email=authenticated_patient.email).update(email_verified=True)
+        
         data = {
             "data": self.get_serializer(authenticated_patient).data,
             "message": "You email is verified successfully!"
@@ -553,7 +556,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             is_mobile_to_be_verified = False
             is_visible = True
 
-        if serializer.validated_data['email'] == request_patient.email:
+        if serializer.validated_data['email'] == request_patient.email and request_patient.email_verified:
             is_email_to_be_verified = False
 
         user_obj = serializer.save(
@@ -601,12 +604,15 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 serializer.validated_data['mobile'] = serializer.validated_data['new_mobile']
 
         if 'email' in serializer.validated_data and \
-                not family_member_object.email == serializer.validated_data['email'] and \
-                not serializer.validated_data['email'] == request_patient.email:
-            is_email_to_be_verified = True
+                not family_member_object.email == serializer.validated_data['email']:
 
-            family_member_object = serializer.save(
-                email_verified=False)
+                is_email_to_be_verified = True
+
+                if serializer.validated_data['email'] == request_patient.email and request_patient.email_verified:
+                    is_email_to_be_verified = False
+
+                family_member_object = serializer.save(
+                    email_verified=not is_email_to_be_verified)
         else:
             family_member_object = serializer.save()
 

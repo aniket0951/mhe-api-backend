@@ -6,9 +6,9 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
-from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 
@@ -240,17 +240,18 @@ class PaymentResponse(APIView):
         payment["uhid_number"] = payment_account["account_number"]
 
         if payment_instance.appointment or payment_instance.payment_for_health_package:
-                payment_paydetail = payment_response["payDetailAPIResponse"]
-                if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
-                    new_appointment_id = bill_detail["AppointmentId"]
-                    payment["receipt_number"] = bill_detail["ReceiptNo"]
+            payment_paydetail = payment_response["payDetailAPIResponse"]
+            if payment_paydetail["BillDetail"]:
+                bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                new_appointment_id = bill_detail["AppointmentId"]
+                payment["receipt_number"] = bill_detail["ReceiptNo"]
 
         if payment_instance.payment_for_uhid_creation:
             if payment_instance.appointment or payment_instance.payment_for_health_package:
                 payment_paydetail = payment_response["payDetailAPIResponse"]
                 if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                    bill_detail = json.loads(
+                        payment_paydetail["BillDetail"])[0]
                     new_appointment_id = bill_detail["AppointmentId"]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
             else:
@@ -306,21 +307,29 @@ class PaymentResponse(APIView):
 
         if payment_instance.payment_for_health_package:
             appointment = HealthPackageAppointment.objects.filter(
-                    id=payment_instance.health_package_appointment.id).first()
+                id=payment_instance.health_package_appointment.id).first()
             update_data = {}
             update_data["payment"] = payment_instance.id
+            package_name = ""
+            package_list = appointment.health_package.all()
+            for package in package_list:
+                if not package_name:
+                    package_name = package.name
+                else:
+                    package_name = package_name + "," + package.name
+
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
-                user_message = "Dear {0}. You have successfully purchased the health package".format(patient.first_name)
+                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(patient.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                               appointment.appointment_date.time())
                 send_sms(mobile_number=str(patient.mobile.raw_input),
                          message=user_message)
             if payment_instance.payment_done_for_family_member:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.payment_done_for_family_member.id).first()
-                user_message = "Dear {0}. You have successfully purchased the health package. \
-                                Please book an appointment to visit hospital.\
-                                You can manage your appointment from my health packages in the app""".format(family_member.first_name)
+                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(family_member.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                               appointment.appointment_date.time())
                 send_sms(mobile_number=str(
                     family_member.mobile.raw_input), message=user_message)
             if payment_instance.payment_for_uhid_creation:

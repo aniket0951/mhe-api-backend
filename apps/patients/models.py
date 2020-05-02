@@ -259,9 +259,8 @@ class FamilyMember(MyBaseModel):
 
     @property
     def representation(self):
-        return 'Patient name: {} Patient family member name: {} Relation Name: {}'\
-            .format(self.patient_info.first_name, self.first_name,
-                    self.relationship.description)
+        return 'Patient name: {} Patient family member name: {}'\
+            .format(self.patient_info.first_name, self.first_name)
 
     def save(self, *args, **kwargs):
         if self.pk:
@@ -278,6 +277,7 @@ class FamilyMember(MyBaseModel):
                     pass
             kwargs['update_fields'] = changed_fields
         super().save(*args, **kwargs)
+        
 
     class Meta:
         verbose_name = "Family Member"
