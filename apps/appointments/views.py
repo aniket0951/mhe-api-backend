@@ -93,7 +93,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class CreateMyAppointment(ProxyView):
-    permission_classes = [IsSelfUserOrFamilyMember]
+    permission_classes = [IsPatientUser]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
@@ -292,7 +292,7 @@ class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class HealthPackageAppointmentView(ProxyView):
-    permission_classes = [IsSelfUserOrFamilyMember]
+    permission_classes = [IsPatientUser]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
