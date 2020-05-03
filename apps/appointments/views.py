@@ -40,7 +40,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
-                                      IsSelfUserOrFamilyMember, SelfUserAccess)
+                                      IsSelfUserOrFamilyMember, SelfUserAccess, InternalAPICall)
 from utils.custom_sms import send_sms
 
 from .exceptions import (AppointmentAlreadyExistsException,
@@ -91,7 +91,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class CreateMyAppointment(ProxyView):
-    permission_classes = [IsPatientUser]
+    permission_classes = [IsPatientUser | InternalAPICall]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
@@ -131,6 +131,7 @@ class CreateMyAppointment(ProxyView):
 
         slot_book = serializable_BookMySlot(request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
+        print(request_data)
 
         request.data["patient"] = patient
         request.data["family_member"] = family_member
@@ -207,7 +208,7 @@ class CreateMyAppointment(ProxyView):
 
 class CancelMyAppointment(ProxyView):
     source = 'cancelAppointment'
-    permission_classes = [IsPatientUser | IsManipalAdminUser]
+    permission_classes = [IsPatientUser | IsManipalAdminUser | InternalAPICall]
 
     def get_request_data(self, request):
         data = request.data
@@ -298,7 +299,7 @@ class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class HealthPackageAppointmentView(ProxyView):
-    permission_classes = [IsPatientUser]
+    permission_classes = [IsPatientUser | InternalAPICall]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
@@ -381,12 +382,11 @@ class HealthPackageAppointmentView(ProxyView):
                                                                                                                    instance.appointment_date.time())
                     send_sms(mobile_number=str(
                         instance.patient.mobile.raw_input), message=user_message)
+                    request_param = rebook_parameters(instance)
+                    response = ReBookView.as_view()(request_param)
                 response_success = True
                 response_message = "Health Package Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
-                # if request.data.get("previous_appointment", None):
-                request_param = rebook_parameters(instance)
-                response = ReBookView.as_view()(request_param)
             return self.custom_success_response(message=response_message,
                                                 success=response_success, data=response_data)
         instance.delete()
@@ -412,7 +412,7 @@ class OfflineAppointment(APIView):
         if not (patient or family_member):
             return Response({"message": "User is not App user"}, status=status.HTTP_200_OK)
         if not (doctor and hospital):
-            raise ValidationError("Hospital or doctor is not available")
+            return Response({"message": "Hospital or doctor is not available"}, status=status.HTTP_200_OK)
         appointment_data["booked_via_app"] = False
         datetime_object = datetime.strptime(
             data["appointmentDatetime"], '%Y%m%d%H%M%S')
@@ -462,7 +462,7 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 class CancelHealthPackageAppointment(ProxyView):
     source = 'cancelAppointment'
-    permission_classes = [IsPatientUser | IsManipalAdminUser]
+    permission_classes = [IsPatientUser | IsManipalAdminUser | InternalAPICall]
 
     def get_request_data(self, request):
         data = request.data
@@ -511,7 +511,7 @@ class CancelHealthPackageAppointment(ProxyView):
 
 
 class CancelAndRefundView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsPatientUser | InternalAPICall]
     source = 'UpdateApp'
 
     def get_request_data(self, request):
@@ -532,12 +532,11 @@ class CancelAndRefundView(ProxyView):
             message = root.find("Message")
             updated_response = root.find("UpdateAppResp")
             return Response(data = {"status":status,"message":message, "updated_response": updated_response})
-        raise ValidationError(
-            "Could not process your request. Please try again")
+        return Response(status=status.HTTP_200_OK) 
 
 
 class ReBookView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsPatientUser | InternalAPICall]
     source = 'RebookApp'
 
     def get_request_data(self, request):
@@ -555,11 +554,11 @@ class ReBookView(ProxyView):
             message = root.find("Message")
             rebook_app_response = root.find("RebookAppResp")
             return Response(data = {"status":status,"message":message, "rebook_app_response": rebook_app_response})
-        raise ValidationError(
-            "Could not process your request. Please try again")
+        return Response(status=status.HTTP_200_OK)
+        
 
 class RescheduleDoctorAppointment(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsPatientUser | InternalAPICall]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
@@ -580,7 +579,6 @@ class RescheduleDoctorAppointment(ProxyView):
             status = root.find("Status").text
             if status == "FAILED":
                 message = root.find("Message").text
-                raise ValidationError(message)
             else:
                 appointment_date_time = data.pop("appointment_date_time")
                 datetime_object = datetime.strptime(

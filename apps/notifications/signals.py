@@ -5,7 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
-from apps.appointments.views import CancelMyAppointment, CreateMyAppointment
+from apps.appointments.views import CancelMyAppointment, CreateMyAppointment,RescheduleDoctorAppointment
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
 from apps.patients.models import FamilyMember, Patient
@@ -13,7 +13,7 @@ from apps.reports.models import Report
 
 from .serializers import MobileNotificationSerializer
 from .tasks import send_push_notification
-from .utils import cancel_parameters
+from .utils import cancel_parameters,rebook_parameters
 
 
 
@@ -129,16 +129,32 @@ def uhid_updated(sender, **kwargs):
                     appointments = instance.family_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
                     for appointment in appointments:
                         param = dict()
-                        param["appointment_identifier"] = instance.appointment_identifier
+                        param["appointment_identifier"] = appointment.appointment_identifier
                         param["reason_id"] = "1"
                         request_param = cancel_parameters(param)
-                        response = CancelMyAppointment.as_views()(request_param)
+                        response = CancelMyAppointment.as_view()(request_param)
                         if response.status_code == 200:
-                            booking_param = dict()
-                            if instance.family_member:
-                                booking["user_id"] = instance.family_member.id
-                            booking["hospital_id"] = instance.doctor.id
-                            booking["department_id"] = instance.department.id
+                            request_param = rebook_parameters(appointment)
+                            RescheduleDoctorAppointment.as_view()(request_param)
+    return
 
+@receiver(post_save, sender=Patient)
+def uhid_updated(sender, **kwargs):
+    created = kwargs["created"]
+    instance = kwargs["instance"]
+    if not created:
+            for item in iter(kwargs.get('update_fields')):
+                if item == 'uhid_number':
+                    appointments = instance.patient_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
+                    for appointment in appointments:
+                        param = dict()
+                        param["appointment_identifier"] = appointment.appointment_identifier
+                        param["reason_id"] = "1"
+                        request_param = cancel_parameters(param)
+                        response = CancelMyAppointment.as_view()(request_param)
+                        if response.status_code == 200:
+                            request_param = rebook_parameters(appointment)
+                            RescheduleDoctorAppointment.as_view()(request_param)
+    return
 
                     

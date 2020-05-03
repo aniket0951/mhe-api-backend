@@ -151,7 +151,8 @@ class Patient(BaseUser):
                 field_name = field.name
                 try:
                     if getattr(old, field_name) != getattr(new, field_name):
-                        changed_fields.append(field_name)
+                        if not getattr(old, field_name):
+                            changed_fields.append(field_name)
                 except Exception as ex:  
                     pass
             kwargs['update_fields'] = changed_fields
@@ -272,7 +273,8 @@ class FamilyMember(MyBaseModel):
                 field_name = field.name
                 try:
                     if getattr(old, field_name) != getattr(new, field_name):
-                        changed_fields.append(field_name)
+                        if not getattr(old, field_name):
+                            changed_fields.append(field_name)
                 except Exception as ex:  
                     pass
             kwargs['update_fields'] = changed_fields
