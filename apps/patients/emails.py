@@ -20,7 +20,7 @@ def send_email_activation_otp(user_id, otp_number):
         user.first_name, otp_number)
 
     email = EmailMultiAlternatives(
-        subject, text_content, EMAIL_FROM_USER, recipients)
+        subject, text_content, settings.EMAIL_FROM_USER, recipients)
     email_sent = email.send()
 
     if not email_sent:
@@ -36,7 +36,7 @@ def send_family_member_email_activation_otp(user_id, otp_number):
         user.first_name, otp_number)
 
     email = EmailMultiAlternatives(
-        subject, text_content, EMAIL_FROM_USER, recipients)
+        subject, text_content, settings.EMAIL_FROM_USER, recipients)
     email_sent = email.send()
 
     if not email_sent:
