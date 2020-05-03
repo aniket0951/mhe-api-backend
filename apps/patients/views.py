@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.contrib.gis.geos import Point
@@ -16,8 +17,6 @@ from rest_framework.test import APIRequestFactory
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
 from apps.master_data.views import ValidateUHIDView
-from manipal_api.settings import (ANDROID_SMS_RETRIEVER_API_KEY, JWT_AUTH,
-                                  MAX_FAMILY_MEMBER_COUNT, OTP_EXPIRATION_TIME)
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -99,7 +98,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         user_obj = serializer.save(
             otp_expiration_time=otp_expiration_time,
@@ -113,9 +112,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         send_email_activation_otp(str(user_obj.id), random_email_otp)
 
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
-            random_password, OTP_EXPIRATION_TIME)
+            random_password, settings.OTP_EXPIRATION_TIME)
         if self.request.query_params.get('is_android', True):
-            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+            message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             user_obj.mobile.raw_input), message=message)
         if is_message_sent:
@@ -137,7 +136,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             random_mobile_change_password = get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
-            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             patient_object = serializer.save()
             patient_object.new_mobile_verification_otp = random_mobile_change_password
@@ -145,10 +144,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.save()
 
             message = "OTP to activate your new mobile number is {}, this OTP will expire in {} seconds.".format(
-                random_mobile_change_password, OTP_EXPIRATION_TIME)
+                random_mobile_change_password, settings.OTP_EXPIRATION_TIME)
 
             if self.request.query_params.get('is_android', True):
-                message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+                message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
             is_message_sent = send_sms(mobile_number=str(
                 patient_object.new_mobile.raw_input), message=message)
             if is_message_sent:
@@ -166,7 +165,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             random_email_otp = get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
-            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             send_email_activation_otp(str(patient_object.id), random_email_otp)
 
@@ -209,7 +208,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         payload['mobile'] = payload['mobile'].raw_input
         token = jwt_encode_handler(payload)
         expiration = datetime.utcnow(
-        ) + JWT_AUTH['JWT_EXPIRATION_DELTA']
+        ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
         expiration_epoch = expiration.timestamp()
 
         data = {
@@ -265,7 +264,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         random_mobile_change_password = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         patient_obj.new_mobile_verification_otp = random_mobile_change_password
         patient_obj.new_mobile_otp_expiration_time = otp_expiration_time
@@ -273,10 +272,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         mobile_number = str(patient_obj.new_mobile.raw_input)
         message = "OTP to activate your new mobile number is {}, this OTP will expire in {} seconds.".format(
-            random_mobile_change_password, OTP_EXPIRATION_TIME)
+            random_mobile_change_password, settings.OTP_EXPIRATION_TIME)
 
         if self.request.query_params.get('is_android', True):
-            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+            message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(
             mobile_number=mobile_number, message=message)
         if is_message_sent:
@@ -328,7 +327,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         send_email_activation_otp(
             str(authenticated_patient.id), random_email_otp)
@@ -371,20 +370,20 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         request_patient.otp_expiration_time = otp_expiration_time
         request_patient.set_password(random_password)
         request_patient.save()
 
         message = "OTP to login into your account is {}, this OTP will expire in {} seconds".format(
-            random_password, OTP_EXPIRATION_TIME)
+            random_password, settings.OTP_EXPIRATION_TIME)
         if not request_patient.is_active:
             message = "OTP to activate your account is {}, this OTP will expire in {} seconds".format(
-                random_password, OTP_EXPIRATION_TIME)
+                random_password, settings.OTP_EXPIRATION_TIME)
 
         if self.request.query_params.get('is_android', True):
-            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+            message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(mobile_number=str(
             request_patient.mobile.raw_input), message=message)
 
@@ -531,7 +530,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        if self.get_queryset().count() >= int(MAX_FAMILY_MEMBER_COUNT):
+        if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
             raise ValidationError(
                 "You have reached limit, you cannot add family members!")
 
@@ -544,7 +543,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         random_mobile_password = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         is_mobile_to_be_verified = True
         is_email_to_be_verified = True
@@ -575,10 +574,10 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             message = "You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 request_patient.first_name,
-                random_mobile_password, OTP_EXPIRATION_TIME)
+                random_mobile_password, settings.OTP_EXPIRATION_TIME)
 
             if self.request.query_params.get('is_android', True):
-                message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+                message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
             is_message_sent = send_sms(mobile_number=str(
                 user_obj.mobile.raw_input), message=message)
             if is_message_sent:
@@ -620,7 +619,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             random_email_otp = get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
-            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             family_member_object.email_verified = False
             family_member_object.email_verification_otp = random_email_otp
@@ -634,7 +633,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             random_mobile_password = get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
-            ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             family_member_object.mobile_verification_otp = random_mobile_password
             family_member_object.mobile_otp_expiration_time = otp_expiration_time
@@ -643,10 +642,10 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             message = "Your mobile number has been added on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 request_patient.first_name,
-                random_mobile_password, OTP_EXPIRATION_TIME)
+                random_mobile_password, settings.OTP_EXPIRATION_TIME)
 
             if self.request.query_params.get('is_android', True):
-                message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+                message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
             is_message_sent = send_sms(mobile_number=str(
                 family_member_object.new_mobile.raw_input), message=message)
             if is_message_sent:
@@ -660,7 +659,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
-        if self.get_queryset().count() >= int(MAX_FAMILY_MEMBER_COUNT):
+        if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
             raise ValidationError(
                 "You have reached limit, you cannot add family members!")
 
@@ -820,7 +819,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         send_family_member_email_activation_otp(
             str(family_member_object.id), random_email_otp)
@@ -853,7 +852,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(OTP_EXPIRATION_TIME))
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         family_member.mobile_verification_otp = random_password
         family_member.mobile_otp_expiration_time = otp_expiration_time
@@ -864,10 +863,10 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         message = "You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
             request_patient.first_name,
-            random_password, OTP_EXPIRATION_TIME)
+            random_password, settings.OTP_EXPIRATION_TIME)
 
         if self.request.query_params.get('is_android', True):
-            message = '<#> ' + message + ' ' + ANDROID_SMS_RETRIEVER_API_KEY
+            message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
         is_message_sent = send_sms(
             mobile_number=mobile_number, message=message)
         if is_message_sent:

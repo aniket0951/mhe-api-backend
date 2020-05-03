@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
 
+from celery.schedules import crontab
+from django.conf import settings
+from fcm_django.models import FCMDevice
+from pyfcm import FCMNotification
+
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
 from apps.patients.models import FamilyMember, Patient
-from celery.schedules import crontab
-from fcm_django.models import FCMDevice
 from manipal_api.celery import app
-from manipal_api.settings import FCM_API_KEY
-from pyfcm import FCMNotification
 
 from .serializers import MobileNotificationSerializer
 
@@ -16,7 +17,7 @@ from .serializers import MobileNotificationSerializer
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
     notification_data = kwargs["notification_data"]
-    fcm = FCMNotification(api_key=FCM_API_KEY)
+    fcm = FCMNotification(api_key=settings.FCM_API_KEY)
     mobile_notification_serializer = MobileNotificationSerializer(
         data=notification_data)
     mobile_notification_serializer.is_valid(raise_exception=True)

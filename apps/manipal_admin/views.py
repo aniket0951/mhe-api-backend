@@ -18,15 +18,14 @@ from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from apps.manipal_admin.models import ManipalAdmin
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.exceptions import InvalidCredentialsException
-from manipal_api.settings import JWT_AUTH
 from utils.custom_permissions import IsManipalAdminUser
 from utils.utils import manipal_admin_object
 
+from .emails import send_reset_password_email
 from .exceptions import (ManipalAdminDoesNotExistsValidationException,
                          ManipalAdminPasswordURLExipirationValidationException,
                          ManipalAdminPasswordURLValidationException)
 from .serializers import ManipalAdminResetPasswordSerializer
-from .emails import send_reset_password_email
 
 
 @api_view(['POST'])
@@ -49,7 +48,7 @@ def login(request):
     payload['username'] = payload['username'].raw_input
     token = jwt_encode_handler(payload)
     expiration = datetime.utcnow(
-    ) + JWT_AUTH['JWT_EXPIRATION_DELTA']
+    ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
     expiration_epoch = expiration.timestamp()
     serializer = ManipalAdminSerializer(admin)
     data = {
