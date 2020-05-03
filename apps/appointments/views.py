@@ -500,6 +500,7 @@ class CancelHealthPackageAppointment(ProxyView):
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
                 success_status = True
+                param = {}
                 param["app_id"] = instance.appointment_identifier
                 param["cancel_remark"] = instance.reason.reason
                 param["location_code"] = instance.hospital.code
