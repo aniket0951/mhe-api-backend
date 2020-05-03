@@ -24,8 +24,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 
-AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_ACCESS_KEY_ID = None  # Set to None to use IAM role
+AWS_SECRET_ACCESS_KEY = None  # Set to None to use IAM role
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')  # e.g. us-east-2
 AWS_DEFAULT_ACL = 'private'
@@ -48,8 +48,8 @@ S3_CLIENT = S3_SESSION.client(
 # AWS SNS Settings
 AWS_SNS_CLIENT = boto3.client(
     "sns",
-    aws_access_key_id=env('AWS_SNS_ACCESS_KEY_ID'),
-    aws_secret_access_key=env('AWS_SNS_SECRET_ACCESS_KEY'),
+    aws_access_key_id=None,
+    aws_secret_access_key=None,
     region_name=env('AWS_SNS_REGION_NAME')
 )
 AWS_SNS_CLIENT.set_sms_attributes(
@@ -338,7 +338,10 @@ REDIRECT_URL = env('REDIRECT_URL')
 EMAIL_BACKEND = 'django_ses.SESBackend'
 EMAIL_FROM_USER = env('EMAIL_FROM_USER')
 
-CELERY_BROKER_URL = "sqs://%s:%s@" % (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+# Celery settings
+SQS_ACCESS_KEY_ID = env('SQS_ACCESS_KEY_ID')
+SQS_SECRET_ACCESS_KEY =  env('SQS_SECRET_ACCESS_KEY')
+CELERY_BROKER_URL = "sqs://%s:%s@" % (SQS_ACCESS_KEY_ID, SQS_SECRET_ACCESS_KEY)
 CELERY_RESULT_BACKEND = None
 CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE')
 CELERY_BROKER_TRANSPORT_OPTIONS = {
