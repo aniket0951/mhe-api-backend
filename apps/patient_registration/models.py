@@ -129,7 +129,6 @@ class Speciality(MyBaseModel):
         return self.code
 
 
-
 class IDProof(MyBaseModel):
 
     code = models.SlugField(unique=True,
@@ -139,6 +138,7 @@ class IDProof(MyBaseModel):
     description = models.TextField(blank=False,
                                    null=False,
                                    max_length=100)
+
     class Meta:
         verbose_name = "IDProof"
         verbose_name_plural = "IDProof"
@@ -149,13 +149,23 @@ class IDProof(MyBaseModel):
 
 class Country(MyBaseModel):
 
-    code = models.SlugField(unique=True,
+    code = models.CharField(unique=True,
                             blank=False,
+                            max_length=30,
                             null=False)
 
-    description = models.TextField(blank=False,
+    description = models.CharField(blank=False,
                                    null=False,
-                                   max_length=100)
+                                   max_length=300)
+
+    is_active = models.BooleanField(default=False)
+
+    from_date = models.DateField(blank=False,
+                                 null=False)
+
+    to_date = models.DateField(blank=True,
+                               null=True)
+
     class Meta:
         verbose_name = "Country"
         verbose_name_plural = "Country"
@@ -173,6 +183,10 @@ class Region(MyBaseModel):
     description = models.TextField(blank=False,
                                    null=False,
                                    max_length=100)
+
+    country = models.ForeignKey(
+        Country, on_delete=models.PROTECT, related_name='country_region')
+
     class Meta:
         verbose_name = "Region"
         verbose_name_plural = "Region"
@@ -190,9 +204,55 @@ class Province(MyBaseModel):
     description = models.TextField(blank=False,
                                    null=False,
                                    max_length=100)
+
+    region = models.ForeignKey(
+        Region, on_delete=models.PROTECT, related_name='region_province')
+
     class Meta:
         verbose_name = "Province"
         verbose_name_plural = "Province"
+
+    def __str__(self):
+        return self.code
+
+
+class City(MyBaseModel):
+
+    code = models.SlugField(unique=True,
+                            blank=False,
+                            null=False)
+
+    description = models.TextField(blank=False,
+                                   null=False,
+                                   max_length=100)
+
+    province = models.ForeignKey(
+        Province, on_delete=models.PROTECT, related_name='province_city')
+
+    class Meta:
+        verbose_name = "City"
+        verbose_name_plural = "City"
+
+    def __str__(self):
+        return self.code
+
+
+class Zipcode(MyBaseModel):
+
+    code = models.CharField(blank=False,
+                            max_length=100,
+                            null=False)
+
+    description = models.TextField(blank=False,
+                                   null=False,
+                                   max_length=100)
+
+    city = models.ForeignKey(
+        City, on_delete=models.PROTECT, related_name='city_zipcode')
+
+    class Meta:
+        verbose_name = "Zipcode"
+        verbose_name_plural = "Zipcode"
 
     def __str__(self):
         return self.code

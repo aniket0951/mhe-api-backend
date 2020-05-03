@@ -2,22 +2,22 @@ import json
 
 import requests
 import six
+from django.conf import settings
 from django.http import HttpResponse
 from requests.exceptions import ConnectionError, SSLError, Timeout
-from six import BytesIO as StringIO
-
-from manipal_api.settings import REST_PROXY as manipal_api_proxy_settings
-from proxy.custom_serializables import \
-    SyncAPIRequest as serializable_SyncAPIRequest
-from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from rest_framework.exceptions import UnsupportedMediaType
 from rest_framework.response import Response
 from rest_framework.utils.mediatypes import media_type_matches
 from rest_framework.views import APIView
+from six import BytesIO as StringIO
+
+from proxy.custom_serializables import \
+    SyncAPIRequest as serializable_SyncAPIRequest
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
 
 
 class BaseProxyView(APIView):
-    proxy_settings = manipal_api_proxy_settings
+    proxy_settings = settings.REST_PROXY
     proxy_host = None
     source = None
     return_raw = False

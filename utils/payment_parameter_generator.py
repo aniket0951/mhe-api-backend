@@ -3,10 +3,7 @@ import hashlib
 import random
 import time
 
-from manipal_api.settings import (SALUCRO_AUTH_KEY, SALUCRO_AUTH_USER,
-                                  SALUCRO_MID, SALUCRO_RESPONSE_URL,
-                                  SALUCRO_RETURN_URL, SALUCRO_SECRET_KEY,
-                                  SALUCRO_USERNAME)
+from django.conf import settings
 from rest_framework.serializers import ValidationError
 
 
@@ -15,9 +12,9 @@ def get_payment_param(data=None):
     token = {}
     processing_id = get_processing_id()
     token["auth"] = {}
-    token["auth"]["user"] = SALUCRO_AUTH_USER
-    token["auth"]["key"] = SALUCRO_AUTH_KEY
-    token["username"] = SALUCRO_USERNAME
+    token["auth"]["user"] = settings.SALUCRO_AUTH_USER
+    token["auth"]["key"] = settings.SALUCRO_AUTH_KEY
+    token["username"] = settings.SALUCRO_USERNAME
     token["accounts"] = []
     if not data["account"]:
         raise ValidationError("Account is empty")
@@ -26,13 +23,13 @@ def get_payment_param(data=None):
     token["accounts"].append(data["account"])
     token["processing_id"] = processing_id
     token["paymode"] = ""
-    token["response_url"] = SALUCRO_RESPONSE_URL
-    token["return_url"] = SALUCRO_RETURN_URL
+    token["response_url"] = settings.SALUCRO_RESPONSE_URL
+    token["return_url"] = settings.SALUCRO_RETURN_URL
     token["transaction_type"] = ""
     param["token"] = token
-    param["mid"] = SALUCRO_MID
+    param["mid"] = settings.SALUCRO_MID
     param["check_sum_hash"] = get_checksum(
-        SALUCRO_AUTH_USER, SALUCRO_AUTH_KEY, processing_id, SALUCRO_MID, SALUCRO_SECRET_KEY)
+        settings.SALUCRO_AUTH_USER, settings.SALUCRO_AUTH_KEY, processing_id, settings.SALUCRO_MID, settings.SALUCRO_SECRET_KEY)
     return param
 
 

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -6,7 +7,6 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from apps.patients.models import FamilyMember, Patient
-from manipal_api.settings import EMAIL_FROM_USER
 
 from .exceptions import UnablToSendEmailException
 
@@ -20,7 +20,7 @@ def send_email_activation_otp(user_id, otp_number):
         user.first_name, otp_number)
 
     email = EmailMultiAlternatives(
-        subject, text_content, EMAIL_FROM_USER, recipients)
+        subject, text_content, settings.EMAIL_FROM_USER, recipients)
     email_sent = email.send()
 
     if not email_sent:
@@ -36,7 +36,7 @@ def send_family_member_email_activation_otp(user_id, otp_number):
         user.first_name, otp_number)
 
     email = EmailMultiAlternatives(
-        subject, text_content, EMAIL_FROM_USER, recipients)
+        subject, text_content, settings.EMAIL_FROM_USER, recipients)
     email_sent = email.send()
 
     if not email_sent:
