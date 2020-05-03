@@ -6,10 +6,7 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
-<<<<<<< HEAD
-=======
 from django.conf import settings
->>>>>>> 71a725725e84a84d202e60a2e86765d3c8300dec
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.db.models import Q
