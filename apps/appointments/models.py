@@ -4,7 +4,7 @@ from django.db import models
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage
-from apps.master_data.models import Hospital
+from apps.master_data.models import Department, Hospital
 from apps.patients.models import FamilyMember, Patient
 
 from .tasks import set_status_as_completed
@@ -36,21 +36,32 @@ class Appointment(models.Model):
     status = models.PositiveSmallIntegerField(choices=STATUS_CODES)
     patient = models.ForeignKey(
         Patient, on_delete=models.PROTECT, related_name='patient_appointment')
+
     family_member = models.ForeignKey(FamilyMember, on_delete=models.PROTECT,
-                                      related_name='family_appointment', blank=True,
-                                      null=True)
-    doctor = models.ForeignKey(
-        Doctor, on_delete=models.PROTECT, related_name='doctor_appointment')
+                                      related_name='family_appointment',
+                                      blank=True, null=True)
+    doctor = models.ForeignKey(Doctor, on_delete=models.PROTECT,
+                               related_name='doctor_appointment')
+
     hospital = models.ForeignKey(
         Hospital, on_delete=models.PROTECT, related_name='hospital_appointment')
-    reason = models.ForeignKey(
-        CancellationReason, on_delete=models.PROTECT, related_name='cancellation_reason_appointment', null=True, blank=True)
+
+    department = models.ForeignKey(Department, on_delete=models.PROTECT,
+                                   related_name='hospital_department',
+                                   blank=True, null=True)
+
+    reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
+                               related_name='cancellation_reason_appointment',
+                               null=True, blank=True)
+
     payment_status = models.CharField(max_length=10,
                                       blank=True,
                                       null=True)
     uhid = models.CharField(max_length=20,
                             blank=True,
                             null=True)
+    consultation_amount = models.FloatField(default=0,
+                                            null=True)
     booked_via_app = models.BooleanField(default=True)
 
     @property

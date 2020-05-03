@@ -6,11 +6,21 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
-from django.db.models import Q
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status
+from rest_framework.decorators import (api_view, parser_classes,
+                                       permission_classes)
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (
@@ -26,25 +36,12 @@ from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,
                                        PatientSpecificSerializer)
-from django_filters.rest_framework import DjangoFilterBackend
-from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
-                                  SALUCRO_AUTH_USER, SALUCRO_MID,
-                                  SALUCRO_RESPONSE_URL, SALUCRO_RETURN_URL,
-                                  SALUCRO_SECRET_KEY, SALUCRO_USERNAME)
 from proxy.custom_serializables import \
     EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,
-                                       permission_classes)
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
-from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
@@ -240,17 +237,18 @@ class PaymentResponse(APIView):
         payment["uhid_number"] = payment_account["account_number"]
 
         if payment_instance.appointment or payment_instance.payment_for_health_package:
-                payment_paydetail = payment_response["payDetailAPIResponse"]
-                if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
-                    new_appointment_id = bill_detail["AppointmentId"]
-                    payment["receipt_number"] = bill_detail["ReceiptNo"]
+            payment_paydetail = payment_response["payDetailAPIResponse"]
+            if payment_paydetail["BillDetail"]:
+                bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                new_appointment_id = bill_detail["AppointmentId"]
+                payment["receipt_number"] = bill_detail["ReceiptNo"]
 
         if payment_instance.payment_for_uhid_creation:
             if payment_instance.appointment or payment_instance.payment_for_health_package:
                 payment_paydetail = payment_response["payDetailAPIResponse"]
                 if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                    bill_detail = json.loads(
+                        payment_paydetail["BillDetail"])[0]
                     new_appointment_id = bill_detail["AppointmentId"]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
             else:
@@ -306,21 +304,29 @@ class PaymentResponse(APIView):
 
         if payment_instance.payment_for_health_package:
             appointment = HealthPackageAppointment.objects.filter(
-                    id=payment_instance.health_package_appointment.id).first()
+                id=payment_instance.health_package_appointment.id).first()
             update_data = {}
             update_data["payment"] = payment_instance.id
+            package_name = ""
+            package_list = appointment.health_package.all()
+            for package in package_list:
+                if not package_name:
+                    package_name = package.name
+                else:
+                    package_name = package_name + "," + package.name
+
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
-                user_message = "Dear {0}. You have successfully purchased the health package".format(patient.first_name)
+                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(patient.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                               appointment.appointment_date.time())
                 send_sms(mobile_number=str(patient.mobile.raw_input),
                          message=user_message)
             if payment_instance.payment_done_for_family_member:
                 family_member = FamilyMember.objects.filter(
                     id=payment_instance.payment_done_for_family_member.id).first()
-                user_message = "Dear {0}. You have successfully purchased the health package. \
-                                Please book an appointment to visit hospital.\
-                                You can manage your appointment from my health packages in the app""".format(family_member.first_name)
+                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(family_member.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                               appointment.appointment_date.time())
                 send_sms(mobile_number=str(
                     family_member.mobile.raw_input), message=user_message)
             if payment_instance.payment_for_uhid_creation:
@@ -338,7 +344,7 @@ class PaymentResponse(APIView):
             uhid = "-1"
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
-        return HttpResponseRedirect(REDIRECT_URL + param)
+        return HttpResponseRedirect(settings.REDIRECT_URL + param)
 
 
 class PaymentReturn(APIView):
@@ -365,7 +371,7 @@ class PaymentReturn(APIView):
 
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
-        return HttpResponseRedirect(REDIRECT_URL + param)
+        return HttpResponseRedirect(settings.REDIRECT_URL + param)
 
 
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
