@@ -1,12 +1,12 @@
 import os
 import uuid
 
+from django.conf import settings
 from django.core.validators import (FileExtensionValidator, MaxValueValidator,
                                     MinValueValidator)
 from django.db import models
 
 from apps.meta_app.models import MyBaseModel
-from manipal_api.settings import VALID_IMAGE_FILE_EXTENSIONS
 from utils.custom_storage import LocalFileStorage, MediaStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 
@@ -26,7 +26,7 @@ class DashboardBanner(MyBaseModel):
     image = models.ImageField(upload_to=generate_banner_picture_path,
                               storage=MediaStorage(),
                               validators=[FileExtensionValidator(
-                                  VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
+                                  settings.VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
                                   validate_file_authenticity],
                               blank=False,
                               null=False,
