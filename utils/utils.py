@@ -1,22 +1,22 @@
 import urllib
 from datetime import datetime
 
+from django.conf import settings
 from django.db.models import Q
 
 from apps.appointments.models import Appointment
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import Patient
-from manipal_api.settings import AWS_STORAGE_BUCKET_NAME, S3_CLIENT
 
 
 def generate_pre_signed_url(image_url):
     try:
         decoded_url = urllib.request.unquote(image_url)
-        url = S3_CLIENT.generate_presigned_url(
+        url = settings.S3_CLIENT.generate_presigned_url(
             ClientMethod='get_object',
             Params={
-                'Bucket': AWS_STORAGE_BUCKET_NAME,
-                'Key': decoded_url.split(AWS_STORAGE_BUCKET_NAME+".s3.amazonaws.com/")[-1]
+                'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+                'Key': decoded_url.split(settings.AWS_STORAGE_BUCKET_NAME+".s3.amazonaws.com/")[-1]
             }, ExpiresIn=600
         )
         return url
@@ -45,7 +45,7 @@ def get_appointment(patient_id):
     patient_appointment = Appointment.objects.filter(
         appointment_date__gte=datetime.now().date(), status=1).filter(
             (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
-    family_members = patient.patient_family_member_info.filter(is_visible = True)
+    family_members = patient.patient_family_member_info.filter(is_visible=True)
     for member in family_members:
         family_appointment = Appointment.objects.filter(
             appointment_date__gte=datetime.now().date(), status=1).filter(

@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
 
@@ -9,7 +10,6 @@ from apps.master_data.models import (BillingGroup, BillingSubGroup,
                                      HomeCareService, Hospital)
 from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient, PatientAddress
-from manipal_api.settings import VALID_FILE_EXTENSIONS
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 
@@ -112,7 +112,7 @@ class PatientServiceAppointment(MyBaseModel):
     document = models.FileField(upload_to=generate_prescription_file_path,
                                 storage=FileStorage(),
                                 validators=[FileExtensionValidator(
-                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
                                             validate_file_authenticity],
                                 blank=True,
                                 null=True)
@@ -195,7 +195,7 @@ class HomeCollectionAppointment(MyBaseModel):
     document = models.FileField(upload_to=generate_service_prescription_file_path,
                                 storage=FileStorage(),
                                 validators=[FileExtensionValidator(
-                                            VALID_FILE_EXTENSIONS), validate_file_size,
+                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
                                             validate_file_authenticity],
                                 blank=True,
                                 null=True)

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -6,7 +7,6 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from apps.manipal_admin.models import ManipalAdmin
-from manipal_api.settings import EMAIL_FROM_USER
 
 
 def send_reset_password_email(request, user_id):
@@ -31,5 +31,5 @@ def send_reset_password_email(request, user_id):
         user.name, activate_url)
 
     email = EmailMultiAlternatives(
-        subject, text_content, EMAIL_FROM_USER, recipients)
+        subject, text_content, settings.EMAIL_FROM_USER, recipients)
     email.send()

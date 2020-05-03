@@ -2,8 +2,31 @@ from import_export import resources
 
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import (Country, Gender, IDProof, MaritalStatus, Nationality,
-                     Province, Region, Relation, Religion, Speciality, Title)
+from .models import (City, Country, Gender, IDProof, MaritalStatus,
+                     Nationality, Province, Region, Relation, Religion,
+                     Speciality, Title, Zipcode)
+
+
+class CountrySerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = Country
+        exclude = ('created_at', 'updated_at',)
+        extra_kwargs = {
+            'from_date': {'write_only': True, },
+            'to_date': {'write_only': True, },
+            'is_active': {'write_only': True, },
+        }
+
+
+class RegionSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = Region
+        exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        response_object['country'] = CountrySerializer(instance.country).data
+        return response_object
 
 
 class ProvinceSerializer(DynamicFieldsModelSerializer):
@@ -11,21 +34,35 @@ class ProvinceSerializer(DynamicFieldsModelSerializer):
         model = Province
         exclude = ('created_at', 'updated_at',)
 
-class RegionSerializer(DynamicFieldsModelSerializer):
+
+class CitySerializer(DynamicFieldsModelSerializer):
     class Meta:
-        model = Region
+        model = City
         exclude = ('created_at', 'updated_at',)
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        response_object['region'] = RegionSerializer(
+            instance.province.region).data
+        return response_object
 
-class CountrySerializer(DynamicFieldsModelSerializer):
+
+class ZipcodeSerializer(DynamicFieldsModelSerializer):
     class Meta:
-        model = Country
+        model = Zipcode
         exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        response_object['city'] = CitySerializer(instance.city).data
+        return response_object
+
 
 class IDProofSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = IDProof
         exclude = ('created_at', 'updated_at',)
+
 
 class TitleSerializer(DynamicFieldsModelSerializer):
     class Meta:

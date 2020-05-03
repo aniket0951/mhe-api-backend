@@ -35,6 +35,7 @@ pylint = "*"
 gdal = "*"
 fcm-django = "*"
 celery = {extras = ["sqs"],version = "*"}
+django-ses = "*"
 
 [requires]
 python_version = "3.8"

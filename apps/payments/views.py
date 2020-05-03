@@ -6,11 +6,24 @@ from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
+<<<<<<< HEAD
+=======
+from django.conf import settings
+>>>>>>> 71a725725e84a84d202e60a2e86765d3c8300dec
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status
+from rest_framework.decorators import (api_view, parser_classes,
+                                       permission_classes)
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (
@@ -26,25 +39,12 @@ from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,
                                        PatientSpecificSerializer)
-from django_filters.rest_framework import DjangoFilterBackend
-from manipal_api.settings import (REDIRECT_URL, SALUCRO_AUTH_KEY,
-                                  SALUCRO_AUTH_USER, SALUCRO_MID,
-                                  SALUCRO_RESPONSE_URL, SALUCRO_RETURN_URL,
-                                  SALUCRO_SECRET_KEY, SALUCRO_USERNAME)
 from proxy.custom_serializables import \
     EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,
-                                       permission_classes)
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
-from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
@@ -347,7 +347,7 @@ class PaymentResponse(APIView):
             uhid = "-1"
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
-        return HttpResponseRedirect(REDIRECT_URL + param)
+        return HttpResponseRedirect(settings.REDIRECT_URL + param)
 
 
 class PaymentReturn(APIView):
@@ -374,7 +374,7 @@ class PaymentReturn(APIView):
 
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
-        return HttpResponseRedirect(REDIRECT_URL + param)
+        return HttpResponseRedirect(settings.REDIRECT_URL + param)
 
 
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
