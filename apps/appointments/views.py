@@ -93,13 +93,14 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class CreateMyAppointment(ProxyView):
-    permission_classes = [IsSelfUserOrFamilyMember]
+    permission_classes = [IsPatientUser]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
 
         patient_id = request.user.id
         family_member_id = request.data.pop("user_id", None)
+        amount = request.data.pop("amount", None)
         patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(
             id=family_member_id).first()
@@ -137,6 +138,8 @@ class CreateMyAppointment(ProxyView):
         request.data["family_member"] = family_member
         request.data["hospital"] = hospital
         request.data["doctor"] = doctor
+        request.data["department"] = department
+        request.data["consultation_amount"] = amount
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -168,6 +171,9 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["appointment_identifier"] = appointment_identifier
                 new_appointment["patient"] = data.get("patient").id
                 new_appointment["uhid"] = data.get("patient").uhid_number
+                new_appointment["department"] = data.get("department").id
+                new_appointment["consultation_amount"] = data.get(
+                    "consultation_amount")
                 if family_member:
                     new_appointment["family_member"] = family_member.id
                     new_appointment["uhid"] = family_member.uhid_number
@@ -203,7 +209,7 @@ class CreateMyAppointment(ProxyView):
 
 class CancelMyAppointment(ProxyView):
     source = 'cancelAppointment'
-    permission_classes = [IsSelfUserOrFamilyMember]
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
 
     def get_request_data(self, request):
         data = request.data
@@ -286,7 +292,7 @@ class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class HealthPackageAppointmentView(ProxyView):
-    permission_classes = [IsSelfUserOrFamilyMember]
+    permission_classes = [IsPatientUser]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
@@ -298,13 +304,14 @@ class HealthPackageAppointmentView(ProxyView):
         previous_appointment = request.data.get("previous_appointment", None)
         payment_id = request.data.get("payment_id", None)
         if previous_appointment and payment_id:
-            appointment_instance = HealthPackageAppointment.objects.filter(appointment_identifier=previous_appointment).first()
+            appointment_instance = HealthPackageAppointment.objects.filter(
+                appointment_identifier=previous_appointment).first()
             if not appointment_instance:
                 raise ValidationError("Appointment does not Exist")
-            serializer = HealthPackageAppointmentSerializer(appointment_instance, data = {"appointment_status":"ReBooked"}, partial = True)
+            serializer = HealthPackageAppointmentSerializer(
+                appointment_instance, data={"appointment_status": "ReBooked"}, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-
         health_package_appointment = HealthPackageAppointmentSerializer(data={"patient": patient_id, "family_member": family_member_id,
                                                                               "hospital": request.data.get("hospital_id"), "health_package": package_id_list,
                                                                               "payment": payment_id})
@@ -355,20 +362,19 @@ class HealthPackageAppointmentView(ProxyView):
                     instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
-                if instance.family_member:
-                    user_message = "Dear {0}, Your Health Package Appointment has been booked by {1} on {2} at {3} with appointment id:{4} at {5}".format(
-                                   instance.family_member.first_name, instance.patient.first_name, instance.appointment_date.date(), instance.appointment_date.time(), instance.appointment_identifier, instance.hospital.address)
-                    if str(instance.family_member.mobile) != str(instance.patient.mobile):
+                if self.request.data.get("previous_appointment"):
+                    payment_obj = instance.payment
+                    payment_obj.health_package_appointment = instance
+                    payment_obj.save()
+                    if instance.family_member:
+                        user_message = "Hi {0},Your Health package appointment has been rebooked on {1} at {2}".format(instance.family_member.first_name, instance.appointment_date.date(),
+                                                                                                                       instance.appointment_date.time())
                         send_sms(mobile_number=str(
-                            instance.family_member.mobile), message=user_message)
+                            instance.family_member.mobile.raw_input), message=user_message)
+                    user_message = "Hi {0},Your Health package appointment has been rebooked on {1} at {2}".format(instance.patient.first_name, instance.appointment_date.date(),
+                                                                                                                   instance.appointment_date.time())
                     send_sms(mobile_number=str(
-                        instance.patient.mobile), message=user_message)
-                else:
-                    user_message = "Dear {0}, Your Health Package Appointment has been booked on {1} at {2} with appointment id:{3} at {4}".format(instance.patient.first_name,
-                                                                                                                                                   instance.appointment_date.date(), instance.appointment_date.time(), instance.appointment_identifier, instance.hospital.address)
-                    send_sms(mobile_number=str(
-                        instance.patient.mobile), message=user_message)
-                # send_new_health_package_appointment_notification(instance = instance, created = True)
+                        instance.patient.mobile.raw_input), message=user_message)
                 response_success = True
                 response_message = "Health Package Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
@@ -447,7 +453,7 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 class CancelHealthPackageAppointment(ProxyView):
     source = 'cancelAppointment'
-    permission_classes = [IsSelfUserOrFamilyMember]
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
 
     def get_request_data(self, request):
         data = request.data
