@@ -18,6 +18,7 @@ def get_payment_param(data=None):
     token["auth"]["key"] = settings.SALUCRO_AUTH_KEY
     token["username"] = settings.SALUCRO_USERNAME
     location_code = data["location_code"]
+    token["accounts"] = []
     if not data["account"]:
         raise ValidationError("Account is empty")
     if not data["account"]["email"]:
@@ -30,7 +31,7 @@ def get_payment_param(data=None):
     token["transaction_type"] = ""
     hospital_key_info = PaymentHospitalKey.objects.filter(
         hospital_id__code=location_code).first()
-    if not hospital:
+    if not hospital_key_info:
         raise ValidationError("Hospital does not exist")
     mid = hospital_key_info.mid
     secret_key = hospital_key_info.secret_key
