@@ -70,6 +70,7 @@ class Appointment(models.Model):
             if ((self.appointment_date > datetime.now().date()) and (self.status == 1)):
                 return True
         return False
+    
 
 
 class HealthPackageAppointment(models.Model):
@@ -114,3 +115,5 @@ class HealthPackageAppointment(models.Model):
             if ((self.appointment_date > datetime.now()) and (self.appointment_status != "Cancelled")):
                 return True
         return False
+
+    
