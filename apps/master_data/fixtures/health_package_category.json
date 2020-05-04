@@ -1,0 +1,52 @@
+[
+    {
+        "model": "health_packages.healthpackagecategory",
+        "pk": "01740fe9-6f13-452c-bc0e-3ad6371d83d7",
+        "fields": {
+            "created_at": "2020-02-26T18:47:24.893Z",
+            "updated_at": "2020-02-26T18:47:24.893Z",
+            "code": "Kidney",
+            "name": "Kidney"
+        }
+    },
+    {
+        "model": "health_packages.healthpackagecategory",
+        "pk": "01740fe9-6f13-452c-bc0e-3ad6371d83d7",
+        "fields": {
+            "created_at": "2020-02-26T18:47:24.893Z",
+            "updated_at": "2020-02-26T18:47:24.893Z",
+            "code": "DIABETES",
+            "name": "Diabetes"
+        }
+    },
+    {
+        "model": "health_packages.healthpackagecategory",
+        "pk": "01740fe9-6f13-452c-bc0e-3ad6371d83d8",
+        "fields": {
+            "created_at": "2020-02-26T18:47:24.893Z",
+            "updated_at": "2020-02-26T18:47:24.893Z",
+            "code": "Women",
+            "name": "Women"
+        }
+    },
+    {
+        "model": "health_packages.healthpackagecategory",
+        "pk": "01740fe9-6f13-452c-bc0e-3ad6371d83d1",
+        "fields": {
+            "created_at": "2020-02-26T18:47:24.893Z",
+            "updated_at": "2020-02-26T18:47:24.893Z",
+            "code": "Heart",
+            "name": "Heart"
+        }
+    },
+    {
+        "model": "health_packages.healthpackagecategory",
+        "pk": "01740fe9-6f13-452c-bc0e-3ad6371d83d2",
+        "fields": {
+            "created_at": "2020-02-26T18:47:24.893Z",
+            "updated_at": "2020-02-26T18:47:24.893Z",
+            "code": "Liver",
+            "name": "Liver"
+        }
+    }
+]
