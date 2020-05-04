@@ -4,6 +4,8 @@ import random
 import time
 
 from django.conf import settings
+
+from apps.payments.models import PaymentHospitalKey
 from rest_framework.serializers import ValidationError
 
 
@@ -15,6 +17,7 @@ def get_payment_param(data=None):
     token["auth"]["user"] = settings.SALUCRO_AUTH_USER
     token["auth"]["key"] = settings.SALUCRO_AUTH_KEY
     token["username"] = settings.SALUCRO_USERNAME
+    location_code = data["location_code"]
     token["accounts"] = []
     if not data["account"]:
         raise ValidationError("Account is empty")
@@ -26,10 +29,16 @@ def get_payment_param(data=None):
     token["response_url"] = settings.SALUCRO_RESPONSE_URL
     token["return_url"] = settings.SALUCRO_RETURN_URL
     token["transaction_type"] = ""
+    hospital_key_info = PaymentHospitalKey.objects.filter(
+        hospital_id__code=location_code).first()
+    if not hospital_key_info:
+        raise ValidationError("Hospital does not exist")
+    mid = hospital_key_info.mid
+    secret_key = hospital_key_info.secret_key
     param["token"] = token
-    param["mid"] = settings.SALUCRO_MID
+    param["mid"] = mid
     param["check_sum_hash"] = get_checksum(
-        settings.SALUCRO_AUTH_USER, settings.SALUCRO_AUTH_KEY, processing_id, settings.SALUCRO_MID, settings.SALUCRO_SECRET_KEY)
+        settings.SALUCRO_AUTH_USER, settings.SALUCRO_AUTH_KEY, processing_id, mid, secret_key)
     return param
 
 

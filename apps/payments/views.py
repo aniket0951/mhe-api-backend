@@ -12,15 +12,6 @@ from django.core import serializers
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,
-                                       permission_classes)
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
-from rest_framework.views import APIView
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (
@@ -36,12 +27,21 @@ from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,
                                        PatientSpecificSerializer)
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
     EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters, status
+from rest_framework.decorators import (api_view, parser_classes,
+                                       permission_classes)
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
@@ -254,6 +254,12 @@ class PaymentResponse(APIView):
             else:
                 payment_paydetail = payment_response["pre_registration_response"]
                 payment["receipt_number"] = payment_paydetail["receiptNo"]
+
+        if payment_instance.payment_for_ip_deposit:
+            payment_paydetail = payment_response["onlinePatientDeposit"]
+            if payment_paydetail["RecieptNumber"]:
+                bill_detail = json.loads(payment_paydetail["RecieptNumber"])[0]
+                payment["receipt_number"] = bill_detail["ReceiptNo"]
 
         payment["status"] = payment_response["status"]
         payment["payment_method"] = payment_response["card_type"] + \

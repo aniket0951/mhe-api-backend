@@ -6,6 +6,7 @@ from apps.health_packages.models import HealthPackage
 from apps.master_data.models import HomeCareService, Hospital
 from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient
+from fernet_fields import EncryptedTextField
 
 
 class Payment(MyBaseModel):
@@ -78,3 +79,15 @@ class Payment(MyBaseModel):
     raw_info_from_salucro_response = JSONField(blank=True,
                                                null=True
                                                )
+
+
+class PaymentHospitalKey(MyBaseModel):
+
+    hospital = models.ForeignKey(Hospital,
+                                 related_name="payment_hospital_key_hospital",
+                                 on_delete=models.PROTECT,
+                                 blank=True, null=True)
+
+    mid = EncryptedTextField(blank=True, null=True)
+
+    secret_key = EncryptedTextField(blank=True, null=True)
