@@ -267,19 +267,21 @@ class FamilyMember(MyBaseModel):
     def save(self, *args, **kwargs):
         if self.pk:
             cls = self.__class__
-            old = cls.objects.get(pk=self.pk)
-            new = self 
-            changed_fields = []
-            for field in cls._meta.get_fields():
-                field_name = field.name
-                try:
-                    if getattr(old, field_name) != getattr(new, field_name):
-                        if not getattr(old, field_name):
-                            changed_fields.append(field_name)
-                except Exception as ex:  
-                    pass
-            kwargs['update_fields'] = changed_fields
+            old = cls.objects.filter(pk=self.pk).first()
+            if old:
+                new = self 
+                changed_fields = []
+                for field in cls._meta.get_fields():
+                    field_name = field.name
+                    try:
+                        if getattr(old, field_name) != getattr(new, field_name):
+                            if not getattr(old, field_name):
+                                changed_fields.append(field_name)
+                    except Exception as ex:  
+                        pass
+                kwargs['update_fields'] = changed_fields
         super().save(*args, **kwargs)
+
         
 
     class Meta:
