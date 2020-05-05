@@ -59,7 +59,7 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         appointment = PatientServiceAppointment.objects.create(**validated_data)
-        address = PatientAddressSerializer(appointment.final_address).data
+        address = PatientAddressSerializer(appointment.referenced_address).data
         appointment.address = address
         appointment.save()
         return appointment
@@ -109,7 +109,7 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
         home_collections = validated_data.pop("home_collections")
         appointment = HomeCollectionAppointment.objects.create(**validated_data)
         appointment.home_collections.set(home_collections)
-        address = PatientAddressSerializer(appointment.final_address).data
+        address = PatientAddressSerializer(appointment.referenced_address).data
         appointment.address = address
         appointment.save()
         return appointment
