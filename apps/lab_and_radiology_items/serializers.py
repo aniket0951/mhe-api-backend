@@ -58,13 +58,11 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-
         appointment = PatientServiceAppointment.objects.create(**validated_data)
-
-        address = PatientServiceAppointmentSerializer(appointment, fields=['address']).data
-
-        appointment.final_address = address
+        address = PatientAddressSerializer(appointment.final_address).data
+        appointment.address = address
         appointment.save()
+        return appointment
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
@@ -78,10 +76,6 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.service:
             response_object['service'] = HomeCareServiceSerializer(
                 instance.service).data
-
-        if instance.address:
-            response_object['address'] = PatientAddressSerializer(
-                instance.address).data
 
         if instance.reason:
             response_object['reason'] = CancellationReasonSerializer(
@@ -112,13 +106,13 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-
+        home_collections = validated_data.pop("home_collections")
         appointment = HomeCollectionAppointment.objects.create(**validated_data)
-
-        address = HomeCollectionAppointmentSerializer(appointment, fields=['address']).data
-
-        appointment.final_address = address
+        appointment.home_collections.set(home_collections)
+        address = PatientAddressSerializer(appointment.final_address).data
+        appointment.address = address
         appointment.save()
+        return appointment
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
@@ -134,10 +128,6 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
                     instance.document.url)
         except Exception as error:
             response_object['display_picture'] = None
-
-        if instance.address:
-            response_object['address'] = PatientAddressSerializer(
-                instance.address).data
 
         if instance.reason:
             response_object['reason'] = CancellationReasonSerializer(
