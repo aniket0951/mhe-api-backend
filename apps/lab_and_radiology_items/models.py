@@ -231,6 +231,8 @@ class HomeCollectionAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
+    
+    final_address = JSONField(null=True, blank=True)
 
     @property
     def is_cancellable(self):
