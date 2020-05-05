@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 from apps.appointments.models import CancellationReason
 from apps.master_data.models import (BillingGroup, BillingSubGroup,
@@ -140,6 +141,9 @@ class PatientServiceAppointment(MyBaseModel):
                                on_delete=models.PROTECT,
                                null=True, blank=True)
 
+    final_address = JSONField(null=True, blank=True)
+
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
@@ -223,7 +227,7 @@ class HomeCollectionAppointment(MyBaseModel):
                               default='Pending',
                               max_length=11
                               )
-
+                              
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from django.db import transaction
 from apps.appointments.serializers import CancellationReasonSerializer
 from apps.master_data.models import HomeCareService
 from apps.master_data.serializers import HospitalSerializer
@@ -54,6 +55,16 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = PatientServiceAppointment
         fields = '__all__'
+
+    @transaction.atomic
+    def create(self, validated_data):
+
+        appointment = PatientServiceAppointment.objects.create(**validated_data)
+
+        address = PatientServiceAppointmentSerializer(appointment, fields=['appointment']).data
+
+        appointment.final_address = address
+        appointment.save()
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
