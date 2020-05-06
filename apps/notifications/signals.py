@@ -98,7 +98,7 @@ def send_new_home_collection_appointment_notification(sender, **kwargs):
         send_push_notification.delay(notification_data=notification_data)
 
 
-# @receiver(post_save, sender=PatientServiceAppointment)
+@receiver(post_save, sender=PatientServiceAppointment)
 def send_new_patient_service_appointment_notification(sender, **kwargs):
     appointment_instance = kwargs['instance']
     notification_data = {}
@@ -135,7 +135,7 @@ def rebook_appointment_for_family_member(sender,instance, created,**kwargs):
                     RescheduleDoctorAppointment.as_view()(request_param)
     return
 
-@receiver(post_save, sender=Patient)
+# @receiver(post_save, sender=Patient)
 def rebook_appointment_for_patient(sender, instance, created, **kwargs):
     if not created:
         if item == 'uhid_number':
