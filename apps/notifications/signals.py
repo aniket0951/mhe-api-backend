@@ -98,7 +98,7 @@ def send_new_home_collection_appointment_notification(sender, **kwargs):
         send_push_notification.delay(notification_data=notification_data)
 
 
-@receiver(post_save, sender=PatientServiceAppointment)
+# @receiver(post_save, sender=PatientServiceAppointment)
 def send_new_patient_service_appointment_notification(sender, **kwargs):
     appointment_instance = kwargs['instance']
     notification_data = {}
@@ -120,41 +120,35 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
         send_push_notification.delay(notification_data=notification_data)
 
 # @receiver(post_save, sender=FamilyMember)
-def rebook_appointment_for_family_member(sender, **kwargs):
-    created = kwargs["created"]
-    instance = kwargs["instance"]
+def rebook_appointment_for_family_member(sender,instance, created,**kwargs):
     if not created:
-            for item in iter(kwargs.get('update_fields')):
-                if item == 'uhid_number':
-                    appointments = instance.family_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
-                    for appointment in appointments:
-                        param = dict()
-                        param["appointment_identifier"] = appointment.appointment_identifier
-                        param["reason_id"] = "1"
-                        request_param = cancel_parameters(param)
-                        response = CancelMyAppointment.as_view()(request_param)
-                        if response.status_code == 200:
-                            request_param = rebook_parameters(appointment)
-                            RescheduleDoctorAppointment.as_view()(request_param)
+        if item == 'uhid_number':
+            appointments = instance.family_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
+            for appointment in appointments:
+                param = dict()
+                param["appointment_identifier"] = appointment.appointment_identifier
+                param["reason_id"] = "1"
+                request_param = cancel_parameters(param)
+                response = CancelMyAppointment.as_view()(request_param)
+                if response.status_code == 200:
+                    request_param = rebook_parameters(appointment)
+                    RescheduleDoctorAppointment.as_view()(request_param)
     return
 
-# @receiver(post_save, sender=Patient)
+@receiver(post_save, sender=Patient)
 def rebook_appointment_for_patient(sender, **kwargs):
-    created = kwargs["created"]
-    instance = kwargs["instance"]
     if not created:
-            for item in iter(kwargs.get('update_fields')):
-                if item == 'uhid_number':
-                    appointments = instance.patient_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
-                    for appointment in appointments:
-                        param = dict()
-                        param["appointment_identifier"] = appointment.appointment_identifier
-                        param["reason_id"] = "1"
-                        request_param = cancel_parameters(param)
-                        response = CancelMyAppointment.as_view()(request_param)
-                        if response.status_code == 200:
-                            request_param = rebook_parameters(appointment)
-                            RescheduleDoctorAppointment.as_view()(request_param)
+        if item == 'uhid_number':
+            appointments = instance.family_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
+            for appointment in appointments:
+                param = dict()
+                param["appointment_identifier"] = appointment.appointment_identifier
+                param["reason_id"] = "1"
+                request_param = cancel_parameters(param)
+                response = CancelMyAppointment.as_view()(request_param)
+                if response.status_code == 200:
+                    request_param = rebook_parameters(appointment)
+                    RescheduleDoctorAppointment.as_view()(request_param)
     return
 
                     

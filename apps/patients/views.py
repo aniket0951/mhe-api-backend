@@ -715,7 +715,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         uhid_user_info = fetch_uhid_user_details(request)
 
-        family_member = self.get_object()
+        family_member = self.model.objects.filter(id = self.pk).first()
 
         if is_capture_details_enabled:
             family_member.mobile_verified = True

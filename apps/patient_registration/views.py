@@ -6,18 +6,19 @@ from datetime import datetime
 import requests
 from django.core import serializers
 from django.db.models import Q
+
+from apps.patients.models import FamilyMember, Patient
+from apps.patients.serializers import (FamilyMemberSpecificSerializer,
+                                       PatientSerializer,
+                                       PatientSpecificSerializer)
 from django_filters.rest_framework import DjangoFilterBackend
+from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_views import ProxyView
 from rest_framework import filters, status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-
-from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import (FamilyMemberSpecificSerializer,
-                                       PatientSerializer)
-from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
-from proxy.custom_serializers import ObjectSerializer as custom_serializer
-from proxy.custom_views import ProxyView
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 
@@ -158,7 +159,7 @@ class UHIDRegistrationView(ProxyView):
             else:
                 patient = Patient.objects.filter(
                     id=self.request.user.id).first()
-                patient_serializer = PatientSerializer(
+                patient_serializer = PatientSpecificSerializer(
                     patient, data=response_data, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()

@@ -1,11 +1,14 @@
 from datetime import datetime
 
+from django.db import transaction
+
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
                                       DoctorSpecificSerializer,
                                       HospitalSerializer)
 from apps.health_packages.models import HealthPackagePricing
-from apps.health_packages.serializers import (HealthPackagePricingSerializer,
+from apps.health_packages.serializers import (HealthPackageDetailSerializer,
+                                              HealthPackagePricingSerializer,
                                               HealthPackageSpecificSerializer)
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
@@ -59,6 +62,18 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = HealthPackageAppointment
         fields = '__all__'
+
+    def create(self, validated_data):
+        health_package = validated_data.pop("health_package")
+        appointment = HealthPackageAppointment.objects.create(**validated_data)
+        appointment.health_package.set(health_package)
+        health_package = HealthPackageSpecificSerializer(appointment.health_package, context={
+            "hospital": appointment.hospital
+        }, fields=['id', 'included_health_tests_count', 'pricing', 'included_health_tests'],
+            many=True).data
+        appointment.health_package_original = str(health_package)
+        appointment.save()
+        return appointment
 
 
 class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):

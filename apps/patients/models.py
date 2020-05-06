@@ -253,6 +253,12 @@ class FamilyMember(MyBaseModel):
     def __str__(self):
         return self.representation
 
+    def save(self, args, *kwargs):
+        if self.__class__.objects.filter(pk=self.pk).exists():
+            if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
+                self._uhid_updated = True
+        super().save(*args, **kwargs)
+
 
 class PatientAddress(MyBaseModel):
     ADDRESS_CHOICES = (
@@ -299,3 +305,9 @@ class PatientAddress(MyBaseModel):
 
     def __str__(self):
         return self.representation
+
+    def save(self, args, *kwargs):
+        if self.__class__.objects.filter(pk=self.pk).exists():
+            if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
+                self._uhid_updated = True
+        super().save(*args, **kwargs)
