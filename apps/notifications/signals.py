@@ -136,7 +136,7 @@ def rebook_appointment_for_family_member(sender,instance, created,**kwargs):
     return
 
 @receiver(post_save, sender=Patient)
-def rebook_appointment_for_patient(sender, instance, created **kwargs):
+def rebook_appointment_for_patient(sender, instance, created, **kwargs):
     if not created:
         if item == 'uhid_number':
             appointments = instance.family_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
