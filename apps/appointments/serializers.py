@@ -70,9 +70,15 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
         appointment.health_package.set(health_package)
         health_package = HealthPackageSpecificSerializer(appointment.health_package, context={
             "hospital": appointment.hospital
-        }, fields=['id', 'included_health_tests_count', 'pricing', 'included_health_tests'],
+        }, fields=['id', 'included_health_tests_count', 'pricing'],
             many=True).data
-        appointment.health_package_original = json.dumps(str(health_package))
+        for package in health_package:
+            if package.get("pricing"):
+                if package.get("pricing").get("hospital"):
+                    package["pricing"]["hospital"] = str(package.get("pricing").get("hospital"))
+                if package.get("pricing").get("health_package"):
+                    package["pricing"]["health_package"] = str(package.get("pricing").get("health_package"))
+        appointment.health_package_original = {"health_package": str(health_package)}
         appointment.save()
         return appointment
 
