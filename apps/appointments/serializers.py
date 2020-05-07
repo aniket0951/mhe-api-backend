@@ -72,7 +72,6 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
             "hospital": appointment.hospital
         }, fields=['id', 'included_health_tests_count', 'pricing', 'included_health_tests'],
             many=True).data
-        import pdb; pdb.set_trace()
         appointment.health_package_original = json.dumps(str(health_package))
         appointment.save()
         return appointment
