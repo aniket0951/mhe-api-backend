@@ -1,3 +1,5 @@
+from django.db.models import Q
+from django.utils.timezone import datetime
 from rest_framework import serializers
 
 from django.db import transaction
@@ -24,6 +26,7 @@ class LabRadiologyItemPricingSerializer(DynamicFieldsModelSerializer):
 
 class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
     price = serializers.SerializerMethodField()
+    is_date_expired = serializers.SerializerMethodField()
     is_added_to_cart = serializers.BooleanField(default=False,
                                                 read_only=True)
 
@@ -39,6 +42,16 @@ class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
             hospital_id = self.context['request'].query_params.get(
                 'hospital__id')
         return instance.lab_radiology_item_pricing.get(hospital_id=hospital_id).price
+
+    def get_is_date_expired(self, instance):
+        if 'hospital__id' in self.context:
+            hospital_id = self.context['hospital__id']
+        else:
+            hospital_id = self.context['request'].query_params.get(
+                'hospital__id')
+
+        return not instance.lab_radiology_item_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+                                                                                              Q(start_date__lte=datetime.now().date())).exists()
 
 
 class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
