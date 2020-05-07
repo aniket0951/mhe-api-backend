@@ -14,7 +14,8 @@ from rest_framework.response import Response
 
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,
-                                       PatientSerializer)
+                                       PatientSerializer,
+                                       PatientSpecificSerializer)
 from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
@@ -158,7 +159,7 @@ class UHIDRegistrationView(ProxyView):
             else:
                 patient = Patient.objects.filter(
                     id=self.request.user.id).first()
-                patient_serializer = PatientSerializer(
+                patient_serializer = PatientSpecificSerializer(
                     patient, data=response_data, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()

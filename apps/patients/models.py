@@ -142,22 +142,11 @@ class Patient(BaseUser):
         return self.representation
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            cls = self.__class__
-            old = cls.objects.filter(pk=self.pk).first()
-            if old:
-                new = self 
-                changed_fields = []
-                for field in cls._meta.get_fields():
-                    field_name = field.name
-                    try:
-                        if getattr(old, field_name) != getattr(new, field_name):
-                            if not getattr(old, field_name):
-                                changed_fields.append(field_name)
-                    except Exception as ex:  
-                        pass
-                kwargs['update_fields'] = changed_fields
+        if self.__class__.objects.filter(pk=self.pk).exists():
+            if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
+                self._uhid_updated = True
         super().save(*args, **kwargs)
+
 
 
 class FamilyMember(MyBaseModel):
@@ -264,32 +253,19 @@ class FamilyMember(MyBaseModel):
         return 'Patient name: {} Patient family member name: {}'\
             .format(self.patient_info.first_name, self.first_name)
 
-    def save(self, *args, **kwargs):
-        if self.pk:
-            cls = self.__class__
-            old = cls.objects.filter(pk=self.pk).first()
-            if old:
-                new = self 
-                changed_fields = []
-                for field in cls._meta.get_fields():
-                    field_name = field.name
-                    try:
-                        if getattr(old, field_name) != getattr(new, field_name):
-                            if not getattr(old, field_name):
-                                changed_fields.append(field_name)
-                    except Exception as ex:  
-                        pass
-                kwargs['update_fields'] = changed_fields
-        super().save(*args, **kwargs)
-
-        
-
     class Meta:
         verbose_name = "Family Member"
         verbose_name_plural = "Family Members"
 
     def __str__(self):
         return self.representation
+
+    def save(self, *args, **kwargs):
+        if self.__class__.objects.filter(pk=self.pk).exists():
+            if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
+                self._uhid_updated = True
+        super().save(*args, **kwargs)
+
 
 
 class PatientAddress(MyBaseModel):
