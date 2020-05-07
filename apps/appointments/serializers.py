@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db import transaction
+import json
 
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
@@ -71,7 +72,8 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
             "hospital": appointment.hospital
         }, fields=['id', 'included_health_tests_count', 'pricing', 'included_health_tests'],
             many=True).data
-        appointment.health_package_original = str(health_package)
+        import pdb; pdb.set_trace()
+        appointment.health_package_original = json.dumps(str(health_package))
         appointment.save()
         return appointment
 
