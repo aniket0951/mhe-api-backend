@@ -1,7 +1,6 @@
 import ast
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
 
 import requests
 from django.core import serializers
@@ -10,6 +9,14 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.utils.timezone import datetime
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -18,7 +25,6 @@ from apps.doctors.serializers import (DepartmentSerializer,
                                       DoctorSerializer, HospitalSerializer)
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.models import Department, Hospital, Specialisation
-from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
     DoctorSchedule as serializable_DoctorSchedule
 from proxy.custom_serializables import \
@@ -27,15 +33,10 @@ from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 from utils.exceptions import InvalidRequest
+from utils.utils import manipal_admin_object
 
 
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -52,13 +53,15 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
 
     def get_queryset(self):
-        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+        if manipal_admin_object(self.request):
             return super().get_queryset()
 
         location_id = self.request.query_params.get('location_id', None)
         date = self.request.query_params.get('date', None)
+
         return Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
-            Q(end_date__gte=date) | Q(end_date__isnull=True))
+            (Q(end_date__gte=date) | Q(end_date__isnull=True)) &
+            Q(start_date__lte=datetime.now().date()))
 
 
 class DoctorSlotAvailability(ProxyView):
