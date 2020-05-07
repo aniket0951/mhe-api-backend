@@ -78,7 +78,8 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
                     package["pricing"]["hospital"] = str(package.get("pricing").get("hospital"))
                 if package.get("pricing").get("health_package"):
                     package["pricing"]["health_package"] = str(package.get("pricing").get("health_package"))
-        appointment.health_package_original = {"health_package": str(health_package)}
+        import pdb; pdb.set_trace()
+        appointment.health_package_original = {"health_package": health_package}
         appointment.save()
         return appointment
 
