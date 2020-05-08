@@ -122,8 +122,9 @@ def send_new_patient_service_appointment_notification(sender, **kwargs):
 # @receiver(post_save, sender=FamilyMember)
 def rebook_appointment_for_family_member(sender,instance, created,**kwargs):
     if not created:
-        if item == 'uhid_number':
-            appointments = instance.family_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
+        if instance._uhid_updated:
+            appointments = instance.family_appointment.all().filter(
+                appointment_date__gte=datetime.today().date(), status=1, payment_status__isnull=True)
             for appointment in appointments:
                 param = dict()
                 param["appointment_identifier"] = appointment.appointment_identifier
@@ -132,14 +133,15 @@ def rebook_appointment_for_family_member(sender,instance, created,**kwargs):
                 response = CancelMyAppointment.as_view()(request_param)
                 if response.status_code == 200:
                     request_param = rebook_parameters(appointment)
-                    RescheduleDoctorAppointment.as_view()(request_param)
+                    response = RescheduleDoctorAppointment.as_view()(request_param)
     return
 
 # @receiver(post_save, sender=Patient)
 def rebook_appointment_for_patient(sender, instance, created, **kwargs):
     if not created:
-        if item == 'uhid_number':
-            appointments = instance.family_appointment.all().filter(appointment_date__gte = datetime.today().date(), status = 1)
+        if instance._uhid_updated:
+            appointments = instance.patient_appointment.all().filter(
+                appointment_date__gte=datetime.today().date(), status = 1, payment_status__isnull=True)
             for appointment in appointments:
                 param = dict()
                 param["appointment_identifier"] = appointment.appointment_identifier
@@ -148,7 +150,7 @@ def rebook_appointment_for_patient(sender, instance, created, **kwargs):
                 response = CancelMyAppointment.as_view()(request_param)
                 if response.status_code == 200:
                     request_param = rebook_parameters(appointment)
-                    RescheduleDoctorAppointment.as_view()(request_param)
+                    response = RescheduleDoctorAppointment.as_view()(request_param)
     return
 
                     
