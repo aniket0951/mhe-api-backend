@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 
 from apps.appointments.models import CancellationReason
 from apps.master_data.models import (BillingGroup, BillingSubGroup,
@@ -127,9 +128,9 @@ class PatientServiceAppointment(MyBaseModel):
                                       related_name='family_service_appointment',
                                       blank=True,
                                       null=True)
-
-    address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
-                                related_name='patient_service_appointment')
+    
+    referenced_address = models.ForeignKey(PatientAddress, on_delete=models.SET_NULL,
+                                related_name='patient_service_appointment', null=True)
 
     status = models.CharField(choices=SERVICE_APPOINTMENT_STATUS_CHOICES,
                               default='Pending',
@@ -139,6 +140,9 @@ class PatientServiceAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
+    
+    address = JSONField(null=True, blank=True)
+
 
     @property
     def is_cancellable(self):
@@ -215,18 +219,20 @@ class HomeCollectionAppointment(MyBaseModel):
                                       related_name='family_home_collection_appointment',
                                       blank=True,
                                       null=True)
-
-    address = models.ForeignKey(PatientAddress, on_delete=models.PROTECT,
-                                related_name='patient_home_collection_appointment')
+    
+    referenced_address = models.ForeignKey(PatientAddress, on_delete=models.SET_NULL,
+                                related_name='patient_home_collection_appointment', null=True)
 
     status = models.CharField(choices=HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES,
                               default='Pending',
                               max_length=11
                               )
-
+                              
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
+
+    address = JSONField(null=True, blank=True)
 
     @property
     def is_cancellable(self):

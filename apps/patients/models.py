@@ -143,10 +143,10 @@ class Patient(BaseUser):
 
     def save(self, *args, **kwargs):
         if self.__class__.objects.filter(pk=self.pk).exists():
+            self._uhid_updated = False
             if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
                 self._uhid_updated = True
         super().save(*args, **kwargs)
-
 
 
 class FamilyMember(MyBaseModel):
@@ -262,10 +262,10 @@ class FamilyMember(MyBaseModel):
 
     def save(self, *args, **kwargs):
         if self.__class__.objects.filter(pk=self.pk).exists():
+            self._uhid_updated = False
             if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
                 self._uhid_updated = True
         super().save(*args, **kwargs)
-
 
 
 class PatientAddress(MyBaseModel):
