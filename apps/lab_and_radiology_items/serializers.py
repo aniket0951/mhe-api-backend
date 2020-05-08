@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.utils.timezone import datetime
 from rest_framework import serializers
 
+from django.db import transaction
 from apps.appointments.serializers import CancellationReasonSerializer
 from apps.master_data.models import HomeCareService
 from apps.master_data.serializers import HospitalSerializer
@@ -68,6 +69,14 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
         model = PatientServiceAppointment
         fields = '__all__'
 
+    @transaction.atomic
+    def create(self, validated_data):
+        appointment = PatientServiceAppointment.objects.create(**validated_data)
+        address = PatientAddressSerializer(appointment.referenced_address).data
+        appointment.address = address
+        appointment.save()
+        return appointment
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         try:
@@ -80,10 +89,6 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.service:
             response_object['service'] = HomeCareServiceSerializer(
                 instance.service).data
-
-        if instance.address:
-            response_object['address'] = PatientAddressSerializer(
-                instance.address).data
 
         if instance.reason:
             response_object['reason'] = CancellationReasonSerializer(
@@ -112,6 +117,16 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
         model = HomeCollectionAppointment
         fields = '__all__'
 
+    @transaction.atomic
+    def create(self, validated_data):
+        home_collections = validated_data.pop("home_collections")
+        appointment = HomeCollectionAppointment.objects.create(**validated_data)
+        appointment.home_collections.set(home_collections)
+        address = PatientAddressSerializer(appointment.referenced_address).data
+        appointment.address = address
+        appointment.save()
+        return appointment
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.home_collections:
@@ -126,10 +141,6 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
                     instance.document.url)
         except Exception as error:
             response_object['display_picture'] = None
-
-        if instance.address:
-            response_object['address'] = PatientAddressSerializer(
-                instance.address).data
 
         if instance.reason:
             response_object['reason'] = CancellationReasonSerializer(

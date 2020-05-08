@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from apps.doctors.models import Doctor
@@ -70,7 +71,6 @@ class Appointment(models.Model):
             if ((self.appointment_date > datetime.now().date()) and (self.status == 1)):
                 return True
         return False
-    
 
 
 class HealthPackageAppointment(models.Model):
@@ -95,6 +95,7 @@ class HealthPackageAppointment(models.Model):
                                             blank=True,
                                             null=True
                                             )
+    health_package_original = JSONField(null=True, blank=True)
 
     payment = models.ForeignKey('payments.Payment', on_delete=models.PROTECT,
                                 related_name='payment_health_package_appointment',
@@ -115,5 +116,3 @@ class HealthPackageAppointment(models.Model):
             if ((self.appointment_date > datetime.now()) and (self.appointment_status != "Cancelled")):
                 return True
         return False
-
-    
