@@ -83,7 +83,8 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_class = HealthPackageFilter
-    search_fields = ['name', 'code']
+    search_fields = [
+        'name', 'code', 'included_health_tests__description', 'included_health_tests__code']
     ordering_fields = ('health_package_pricing__price', 'name')
 
     def get_permissions(self):
@@ -118,7 +119,7 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
 
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
-            Q(start_date__lte=datetime.now().date())).values_list('health_package_id', flat=True)
+                                         Q(start_date__lte=datetime.now().date())).values_list('health_package_id', flat=True)
 
         user_cart_packages = HealthPackageCart.objects.filter(
             patient_info_id=self.request.user.id,  health_packages=OuterRef('pk'), hospital_id=hospital_id)
