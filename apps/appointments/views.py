@@ -23,6 +23,7 @@ from apps.patients.models import FamilyMember, Patient
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
+from apps.notifications.utils import cancel_parameters,doctor_rebook_parameters
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
 from proxy.custom_serializables import \
@@ -558,7 +559,7 @@ class ReBookView(ProxyView):
         return Response(status=status.HTTP_200_OK)
         
 
-class RescheduleDoctorAppointment(ProxyView):
+class ReBookDoctorAppointment(ProxyView):
     permission_classes = [IsPatientUser | InternalAPICall]
     source = 'bookAppointment'
 
@@ -579,7 +580,7 @@ class RescheduleDoctorAppointment(ProxyView):
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
-                message = root.find("Message").text
+                response_message = root.find("Message").text  
             else:
                 appointment_date_time = data.pop("appointment_date_time")
                 datetime_object = datetime.strptime(
@@ -599,3 +600,30 @@ class RescheduleDoctorAppointment(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
+
+class RescheduleAppointmentView(APIView):
+
+    def post(self, request, format=None):
+        import pdb; pdb.set_trace()
+        param = {}
+        param["appointment_identifier"] = request.data.get("appointment_identifier")
+        param["reason_id"] = request.data.get("reason_id")
+        import pdb; pdb.set_trace()
+        if not (param["appointment_identifier"] and param["reason_id"]):
+            raise ValidationError("Appointment id or Reason is missing")
+        request_param = cancel_parameters(param)
+        response = CancelMyAppointment.as_view()(request_param)
+        if response.status_code == 200:
+            appointment = Appointment.objects.filter(
+                appointment_identifier = request.data.get("appointment_identifier")).first()
+            if not appointment:
+                raise ValidationError("Appointment is not present")
+            new_date = request.data.get("appointment_date_time")
+            request_param = doctor_rebook_parameters(appointment, new_date)
+            response = ReBookDoctorAppointment.as_view()(request_param)
+            if not (response.status_code == 200 and response.data['success']):
+                raise ValidationError(response.data['message'])
+            return self.custom_success_response(message=response.response_message,
+                                            success=response.response_success, data=response.response_data)
+        raise ValidationError("Could not process your request.Please try again sometime")
+
