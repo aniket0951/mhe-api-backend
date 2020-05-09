@@ -191,7 +191,7 @@ class HomeCollectionAppointment(MyBaseModel):
         ('In Progress', 'In Progress'),
         ('Cancelled', 'Cancelled')
     )
-    appointment_date = models.DateTimeField()
+    appointment_date = models.DateField()
 
     home_collections = models.ManyToManyField(LabRadiologyItem,
                                               blank=True)

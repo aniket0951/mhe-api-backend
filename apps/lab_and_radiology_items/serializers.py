@@ -150,7 +150,7 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
             response_object['family_member'] = FamilyMemberSerializer(
                 instance.family_member,
                 fields=('id', 'mobile', 'relation_name', 'uhid_number', 'display_picture',
-                        'gender', 'first_name', 'last_name')).data
+                        'gender', 'first_name', 'last_name', 'email')).data
 
         if instance.hospital:
             response_object['hospital'] = HospitalSerializer(
@@ -159,6 +159,6 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
         response_object['patient'] = PatientSerializer(
             instance.patient,
             fields=('id', 'mobile', 'uhid_number', 'first_name', 'display_picture',
-                    'email', 'gender', 'last_name')).data
+                    'email', 'gender', 'last_name', 'email')).data
 
         return response_object
