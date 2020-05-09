@@ -18,12 +18,13 @@ from apps.master_data.exceptions import (
     DepartmentDoesNotExistsValidationException,
     HospitalDoesNotExistsValidationException)
 from apps.master_data.models import Department, Hospital, Specialisation
+from apps.notifications.utils import (cancel_parameters,
+                                      doctor_rebook_parameters)
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
-from apps.notifications.utils import cancel_parameters,doctor_rebook_parameters
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
 from proxy.custom_serializables import \
@@ -40,8 +41,9 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from utils import custom_viewsets
-from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
-                                      IsSelfUserOrFamilyMember, SelfUserAccess, InternalAPICall)
+from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser,
+                                      IsPatientUser, IsSelfUserOrFamilyMember,
+                                      SelfUserAccess)
 from utils.custom_sms import send_sms
 
 from .exceptions import (AppointmentAlreadyExistsException,
@@ -132,7 +134,6 @@ class CreateMyAppointment(ProxyView):
 
         slot_book = serializable_BookMySlot(request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
-        print(request_data)
 
         request.data["patient"] = patient
         request.data["family_member"] = family_member
@@ -272,8 +273,9 @@ class CancelMyAppointment(ProxyView):
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
                 return self.custom_success_response(message=response_message,
-                                            success=success_status, data=None)
-        raise ValidationError("Could not process the request. PLease try again")
+                                                    success=success_status, data=None)
+        raise ValidationError(
+            "Could not process the request. PLease try again")
 
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
@@ -508,8 +510,9 @@ class CancelHealthPackageAppointment(ProxyView):
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
             return self.custom_success_response(message=response_message,
-                                            success=success_status, data=None)
-        raise ValidationError("Could not process your request. Please try again")
+                                                success=success_status, data=None)
+        raise ValidationError(
+            "Could not process your request. Please try again")
 
 
 class CancelAndRefundView(ProxyView):
@@ -533,8 +536,8 @@ class CancelAndRefundView(ProxyView):
             status = root.find("Status").text
             message = root.find("Message")
             updated_response = root.find("UpdateAppResp")
-            return Response(data = {"status":status,"message":message, "updated_response": updated_response})
-        return Response(status=status.HTTP_200_OK) 
+            return Response(data={"status": status, "message": message, "updated_response": updated_response})
+        return Response(status=status.HTTP_200_OK)
 
 
 class ReBookView(ProxyView):
@@ -555,17 +558,21 @@ class ReBookView(ProxyView):
             status = root.find("Status").text
             message = root.find("Message")
             rebook_app_response = root.find("RebookAppResp")
-            return Response(data = {"status":status,"message":message, "rebook_app_response": rebook_app_response})
+            return Response(data={"status": status, "message": message, "rebook_app_response": rebook_app_response})
         return Response(status=status.HTTP_200_OK)
-        
+
 
 class ReBookDoctorAppointment(ProxyView):
     permission_classes = [IsPatientUser | InternalAPICall]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
+        instance_id = request.data.pop("instance")
+        rescheduled = request.data.pop("rescheduled")
         slot_book = serializable_BookMySlot(request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
+        request.data["instance"] = instance_id
+        request.data["rescheduled"] = rescheduled
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -575,14 +582,18 @@ class ReBookDoctorAppointment(ProxyView):
         response_message = "Unable to Book the Appointment. Please try again"
         response_data = {}
         response_success = False
+        instance = Appointment.objects.filter(
+            id=self.request.data["instance"]).first()
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
             if status == "FAILED":
-                response_message = root.find("Message").text  
+                response_message = root.find("Message").text
             else:
-                appointment_date_time = data.pop("appointment_date_time")
+                new_appointment = dict()
+                appointment_date_time = self.request.data.get(
+                    "appointment_date_time")
                 datetime_object = datetime.strptime(
                     appointment_date_time, '%Y%m%d%H%M%S')
                 time = datetime_object.time()
@@ -591,39 +602,42 @@ class ReBookDoctorAppointment(ProxyView):
                     "%H:%M:%S %p")
                 new_appointment["status"] = 1
                 new_appointment["appointment_identifier"] = appointment_identifier
-                appointment = AppointmentSerializer(instance, data=new_appointment, partial = True)
+                appointment = AppointmentSerializer(
+                    instance, data=new_appointment, partial=True)
                 appointment.is_valid(raise_exception=True)
-                appointment.save()                 
+                appointment.save()
                 response_success = True
                 response_message = "Appointment has been Rebooked"
                 response_data["appointment_identifier"] = appointment_identifier
+                return self.custom_success_response(message=response_message,
+                                                    success=response_success, data=response_data)
+        instance.delete()
+        if not self.request.data["rescheduled"]:
+            return self.custom_success_response(message=response_message,
+                                                success=response_success, data=response_data)
+        raise ValidationError(response_message)
 
-        return self.custom_success_response(message=response_message,
-                                            success=response_success, data=response_data)
 
 class RescheduleAppointmentView(APIView):
 
     def post(self, request, format=None):
-        import pdb; pdb.set_trace()
         param = {}
-        param["appointment_identifier"] = request.data.get("appointment_identifier")
+        param["appointment_identifier"] = request.data.get(
+            "appointment_identifier")
         param["reason_id"] = request.data.get("reason_id")
-        import pdb; pdb.set_trace()
         if not (param["appointment_identifier"] and param["reason_id"]):
             raise ValidationError("Appointment id or Reason is missing")
         request_param = cancel_parameters(param)
         response = CancelMyAppointment.as_view()(request_param)
         if response.status_code == 200:
             appointment = Appointment.objects.filter(
-                appointment_identifier = request.data.get("appointment_identifier")).first()
+                appointment_identifier=request.data.get("appointment_identifier")).first()
             if not appointment:
                 raise ValidationError("Appointment is not present")
             new_date = request.data.get("appointment_date_time")
             request_param = doctor_rebook_parameters(appointment, new_date)
             response = ReBookDoctorAppointment.as_view()(request_param)
-            if not (response.status_code == 200 and response.data['success']):
-                raise ValidationError(response.data['message'])
-            return self.custom_success_response(message=response.response_message,
-                                            success=response.response_success, data=response.response_data)
-        raise ValidationError("Could not process your request.Please try again sometime")
-
+            if response.status_code == 200:
+                return Response({"message": response.data["message"],
+                                 "success": response.data["success"], "data": response.data["data"]})
+            raise ValidationError(str(response.data["errors"][0]["message"]))
