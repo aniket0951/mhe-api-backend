@@ -29,12 +29,6 @@ def doctor_rebook_parameters(instance, new_date=None, factory=APIRequestFactory(
     param['email'] = str(user.email)
     param['speciality_code'] = instance.department.code
     param["mrn"] = user.uhid_number
-    instance.pk = None
-    instance.save()
-    instance.appointment_identifier = "0000000"
-    instance.uhid = user.uhid_number
-    instance.reason = None
-    instance.save()
     param["instance"] = instance.id
     param["rescheduled"] = rescheduled
     return factory.post(

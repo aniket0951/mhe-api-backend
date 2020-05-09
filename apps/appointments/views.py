@@ -602,16 +602,27 @@ class ReBookDoctorAppointment(ProxyView):
                     "%H:%M:%S %p")
                 new_appointment["status"] = 1
                 new_appointment["appointment_identifier"] = appointment_identifier
-                appointment = AppointmentSerializer(
-                    instance, data=new_appointment, partial=True)
+                new_appointment["patient"] = instance.patient.id
+                new_appointment["uhid"] = self.request.data.get("mrn")
+                new_appointment["department"] = instance.department.id
+                new_appointment["consultation_amount"] = instance.consultation_amount
+                new_appointment["payment_status"] = instance.payment_status
+                if instance.family_member:
+                    new_appointment["family_member"] = instance.family_member.id
+                new_appointment["doctor"] = instance.doctor.id
+                new_appointment["hospital"] = instance.hospital.id
+                appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
-                appointment.save()
+                appointment = appointment.save()
+                if instance.payment_appointment.exists():
+                    payment_instance = instance.payment_appointment.get()
+                    payment_instance.appointment = appointment
+                    payment_instance.save()
                 response_success = True
                 response_message = "Appointment has been Rebooked"
                 response_data["appointment_identifier"] = appointment_identifier
                 return self.custom_success_response(message=response_message,
                                                     success=response_success, data=response_data)
-        instance.delete()
         if not self.request.data["rescheduled"]:
             return self.custom_success_response(message=response_message,
                                                 success=response_success, data=response_data)
@@ -633,11 +644,11 @@ class RescheduleAppointmentView(APIView):
             appointment = Appointment.objects.filter(
                 appointment_identifier=request.data.get("appointment_identifier")).first()
             if not appointment:
-                raise ValidationError("Appointment is not present")
+                raise ValidationError("Appointment does not Exist")
             new_date = request.data.get("appointment_date_time")
             request_param = doctor_rebook_parameters(appointment, new_date)
             response = ReBookDoctorAppointment.as_view()(request_param)
             if response.status_code == 200:
                 return Response({"message": response.data["message"],
                                  "success": response.data["success"], "data": response.data["data"]})
-            raise ValidationError(str(response.data["errors"][0]["message"]))
+        raise ValidationError(str(response.data["errors"][0]["message"]))
