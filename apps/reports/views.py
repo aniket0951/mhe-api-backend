@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -13,6 +14,7 @@ from utils import custom_viewsets
 from utils.custom_permissions import InternalAPICall, IsPatientUser
 from utils.utils import patient_user_object
 
+from .filters import ReportFilter
 from .models import (FreeTextReportDetails, NumericReportDetails, Report,
                      StringReportDetails, TextReportDetails)
 from .serializers import (FreeTextReportDetailsSerializer,
@@ -30,7 +32,8 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
     serializer_class = ReportSerializer
     create_success_message = "New report is added successfully."
     list_success_message = 'Report list returned successfully!'
-    filter_fields = ('numeric_report__identifier', 'patient_class',)
+    filter_backends = (DjangoFilterBackend,)
+    filter_class = ReportFilter
 
     def get_permissions(self):
         if self.action in ['list', ]:
@@ -73,7 +76,7 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             if filter_by == "current_week":
                 current_week = date.today().isocalendar()[1]
                 current_year = date.today().isocalendar()[0]
-                return qs.filter(time__week=current_week, time__year = current_year)
+                return qs.filter(time__week=current_week, time__year=current_year)
             elif filter_by == "last_week":
                 previous_week = date.today() - timedelta(weeks=1)
                 last_week = previous_week.isocalendar()[1]
@@ -88,14 +91,6 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             else:
                 return qs.filter(time__date=filter_by)
 
-        if self.request.query_params.get('text_report__isnull') and\
-                self.request.query_params.get('text_report__isnull') == 'False':
-            # Looking for lab and radiology reports
-            qs = qs.filter(text_report__isnull=False)
-        else:
-            qs = qs.filter(Q(numeric_report__isnull=False)
-                           | Q(string_report__isnull=False)
-                           | Q(free_text_report__isnull=False))
         return qs
 
 
