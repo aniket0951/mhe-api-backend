@@ -5,8 +5,8 @@ from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import patient_user_object
 
-from .models import (NumericReportDetails, Report, StringReportDetails,
-                     TextReportDetails, FreeTextReportDetails)
+from .models import (FreeTextReportDetails, NumericReportDetails, Report,
+                     StringReportDetails, TextReportDetails)
 
 
 class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
@@ -14,10 +14,12 @@ class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
         model = NumericReportDetails
         exclude = ('created_at', 'updated_at',)
 
+
 class FreeTextReportDetailsSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = FreeTextReportDetails
         exclude = ('created_at', 'updated_at',)
+
 
 class StringReportDetailsSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -46,22 +48,18 @@ class ReportSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if not self.context['request'].query_params.get('numeric_report__identifier', None):
 
-            if self.context['request'].query_params.get('text_report__isnull') and\
-                    self.context['request'].query_params.get('text_report__isnull') == 'False':
-
-                response_object['text_reports'] = TextReportDetailsSerializer(
-                    instance.text_report.all(),
-                    many=True).data
-            else:
-                response_object['string_reports'] = StringReportDetailsSerializer(
-                    instance.string_report.all(),
-                    many=True).data
-                response_object['numeric_reports'] = NumericReportDetailsSerializer(
-                    instance.numeric_report.all(),
-                    many=True).data
-                response_object['free_text_reports'] = FreeTextReportDetailsSerializer(
-                    instance.free_text_report.all(),
-                    many=True).data
+            response_object['text_reports'] = TextReportDetailsSerializer(
+                instance.text_report.all(),
+                many=True).data
+            response_object['string_reports'] = StringReportDetailsSerializer(
+                instance.string_report.all(),
+                many=True).data
+            response_object['numeric_reports'] = NumericReportDetailsSerializer(
+                instance.numeric_report.all(),
+                many=True).data
+            response_object['free_text_reports'] = FreeTextReportDetailsSerializer(
+                instance.free_text_report.all(),
+                many=True).data
         else:
             response_object['numeric_reports'] = NumericReportDetailsSerializer(
                 instance.numeric_report.all().filter(
