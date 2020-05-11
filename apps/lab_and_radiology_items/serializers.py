@@ -58,6 +58,18 @@ class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = HomeCareService
         exclude = ('created_at', 'updated_at',)
+    
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.document:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image)
+        except Exception as error:
+            response_object['image'] = None
+
+        return response_object
 
 
 class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
