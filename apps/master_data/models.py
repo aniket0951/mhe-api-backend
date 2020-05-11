@@ -5,6 +5,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 from apps.meta_app.models import MyBaseModel
 from django.contrib.gis.db import models
+from utils.custom_storage import LocalFileStorage, MediaStorage
+from utils.validators import validate_file_authenticity, validate_file_size
 
 
 class Hospital(MyBaseModel):
@@ -204,6 +206,10 @@ class HomeCareService(MyBaseModel):
     name = models.CharField(max_length=200,
                             null=True,
                             blank=True,)
+    
+    image = models.ImageField(blank=True,
+                              null=True,
+                              verbose_name='Display Picture')
 
     class Meta:
         verbose_name = "Home Care Service"
