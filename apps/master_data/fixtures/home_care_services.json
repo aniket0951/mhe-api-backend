@@ -6,7 +6,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Diagnostic",
-            "image":"https://mhedev.s3.ap-south-1.amazonaws.com/home_services/Dia+1.png"
+            "image":"home_services/Dia+1.png"
         }
     },
     {
@@ -16,7 +16,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Doctor",
-            "image":"home_services/Dia+1.png"
+            "image":"home_services/Doctor+4.jpg"
         }
     },
     {
@@ -26,7 +26,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Nurse",
-            "image":"home_services/Dia+1.png"
+            "image":"home_services/Nurse+2.jpg"
         }
     },
     {
@@ -36,7 +36,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Physio",
-            "image":"home_services/Dia+1.png"
+            "image":"home_services/Doctor+4.jpg"
         }
     },
     {
@@ -46,7 +46,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Medical equipment",
-            "image":"home_services/Dia+1.png"
+            "image":"home_services/med+3.png"
         }
     }
 
