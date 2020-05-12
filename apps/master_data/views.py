@@ -27,7 +27,7 @@ from proxy.custom_views import ProxyView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser)
+                                      IsManipalAdminUser, InternalAPICall)
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -142,7 +142,7 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
 
 
 class DepartmentsView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InternalAPICall]
     source = SYNC_SERVICE
     success_msg = 'Departments list returned successfully'
     sync_method = 'department'
@@ -213,7 +213,7 @@ class DepartmentsView(ProxyView):
 
 
 class DoctorsView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InternalAPICall]
 
     source = SYNC_SERVICE
     success_msg = 'Doctors list returned successfully'
@@ -300,7 +300,7 @@ class DoctorsView(ProxyView):
 
 
 class HealthPackagesView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [InternalAPICall]
     source = SYNC_SERVICE
     success_msg = 'Health Packages list returned successfully'
     sync_method = 'healthcheck'
@@ -432,7 +432,7 @@ class HealthPackagesView(ProxyView):
 
 
 class LabRadiologyItemsView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InternalAPICall]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'labraditems'
