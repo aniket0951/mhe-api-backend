@@ -1,6 +1,9 @@
-from apps.master_data.models import Specialisation
+from django.db.models import Q
+from django.utils.timezone import datetime
 from rest_framework import serializers
 from rest_framework.serializers import ValidationError
+
+from apps.master_data.models import Specialisation
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import HealthPackage, HealthPackagePricing, HealthTest
@@ -23,6 +26,7 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
     included_health_tests = HealthTestSerializer(many=True)
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
+    is_date_expired = serializers.SerializerMethodField()
     is_added_to_cart = serializers.BooleanField(default=False,
                                                 read_only=True)
 
@@ -31,16 +35,31 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
         exclude = ('created_at', 'updated_at',)
 
     def get_pricing(self, instance):
-        hospital_id = self.context['request'].query_params.get('hospital__id')
+        if 'hospital__id' in self.context:
+            hospital_id = self.context['hospital__id']
+        else:
+            hospital_id = self.context['request'].query_params.get(
+                'hospital__id')
         return HealthPackagePricingSerializer(instance.health_package_pricing.get(hospital_id=hospital_id)).data
 
     def get_included_health_tests_count(self, instance):
         return instance.included_health_tests.count()
 
+    def get_is_date_expired(self, instance):
+        if 'hospital__id' in self.context:
+            hospital_id = self.context['hospital__id']
+        else:
+            hospital_id = self.context['request'].query_params.get(
+                'hospital__id')
+
+        return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+                                                                                          Q(start_date__lte=datetime.now().date())).exists()
+
 
 class HealthPackageSerializer(DynamicFieldsModelSerializer):
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
+    is_date_expired = serializers.SerializerMethodField()
     is_added_to_cart = serializers.BooleanField(default=False,
                                                 read_only=True)
 
@@ -58,6 +77,16 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
 
     def get_included_health_tests_count(self, instance):
         return instance.included_health_tests.count()
+
+    def get_is_date_expired(self, instance):
+        if 'hospital__id' in self.context:
+            hospital_id = self.context['hospital__id']
+        else:
+            hospital_id = self.context['request'].query_params.get(
+                'hospital__id')
+
+        return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+                                                                                          Q(start_date__lte=datetime.now().date())).exists()
 
 
 class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
@@ -85,15 +114,19 @@ class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
         model = Specialisation
         exclude = ('created_at', 'updated_at',)
 
+
 class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
     included_health_tests = HealthTestSerializer(many=True)
+    included_health_tests_count = serializers.SerializerMethodField()
     pricing = serializers.SerializerMethodField()
+
     class Meta:
         model = HealthPackage
         fields = '__all__'
 
     def get_pricing(self, instance):
-        hospital_id = self.context["hospital"].id 
+        hospital_id = self.context["hospital"].id
         return HealthPackagePricingSerializer(instance.health_package_pricing.get(hospital_id=hospital_id)).data
 
-
+    def get_included_health_tests_count(self, instance):
+        return instance.included_health_tests.count()

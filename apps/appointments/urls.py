@@ -7,7 +7,8 @@ from .views import (AppointmentsAPIView, CancelAndRefundView,
                     CancelHealthPackageAppointment, CancellationReasonlistView,
                     CancelMyAppointment, CreateMyAppointment,
                     HealthPackageAppointmentView, OfflineAppointment,
-                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
+                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView,
+                    RescheduleAppointmentView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -23,6 +24,7 @@ urlpatterns = [
          CancelHealthPackageAppointment.as_view()),
     path('create_appointment', CreateMyAppointment.as_view()),
     path('offline_appointment', OfflineAppointment.as_view()),
+    path('reschedule_appointment', RescheduleAppointmentView.as_view()),
     path('create_health_package_appointment',
          HealthPackageAppointmentView.as_view()),
     path('cancellation_reason',

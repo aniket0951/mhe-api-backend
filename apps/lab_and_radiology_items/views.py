@@ -1,4 +1,5 @@
 from django.db.models import Exists, OuterRef, Q
+from django.utils.timezone import datetime
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -64,7 +65,8 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
             description='Lab Diagnostic Services').first()
 
         hospital_related_items = LabRadiologyItemPricing.objects.filter(
-            hospital=hospital_id).values_list('item_id', flat=True)
+            hospital=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
+            Q(start_date__lte=datetime.now().date())).values_list('item_id', flat=True)
 
         user_cart_collections = HomeCollectionCart.objects.filter(
             patient_info_id=self.request.user.id,  home_collections=OuterRef('pk'), hospital_id=hospital_id)
@@ -140,7 +142,7 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
                                                  patient_info_id=self.request.user.id).first()
             if not member:
                 raise InvalidFamilyMemberValidationException
-            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)& Q(family_member__isnull=True))
+            return super().get_queryset().filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True))
                                                  | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()

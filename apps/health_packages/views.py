@@ -1,20 +1,20 @@
 import ast
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
 
 from django.db.models import Exists, OuterRef, Q
+from django.utils.timezone import datetime
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.serializers import ValidationError
 
 from apps.cart_items.models import HealthPackageCart
-from apps.master_data.models import Specialisation, Hospital
-from django_filters.rest_framework import DjangoFilterBackend
+from apps.master_data.models import Hospital, Specialisation
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -58,12 +58,16 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         hospital_id = self.request.query_params.get('hospital__id')
+
         if not hospital_id:
             raise ValidationError("Hospital ID is missing!")
+
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
             hospital=hospital_id).values_list('health_package_id', flat=True)
+
         return Specialisation.objects.filter(health_package__id__in=hospital_related_health_packages).filter(
-            Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)).distinct('description',)
+            (Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+            Q(start_date__lte=datetime.now().date())).distinct('description',)
 
 
 class HealthPackageViewSet(custom_viewsets.ModelViewSet):
@@ -79,7 +83,8 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_class = HealthPackageFilter
-    search_fields = ['name', 'code']
+    search_fields = [
+        'name', 'code', 'included_health_tests__description', 'included_health_tests__code']
     ordering_fields = ('health_package_pricing__price', 'name')
 
     def get_permissions(self):
@@ -108,10 +113,13 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
 
     def get_queryset(self):
         hospital_id = self.request.query_params.get('hospital__id')
+
         if not hospital_id:
             raise ValidationError("Hospital ID is missiing!")
+
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
-            hospital=hospital_id).values_list('health_package_id', flat=True)
+            hospital=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
+                                         Q(start_date__lte=datetime.now().date())).values_list('health_package_id', flat=True)
 
         user_cart_packages = HealthPackageCart.objects.filter(
             patient_info_id=self.request.user.id,  health_packages=OuterRef('pk'), hospital_id=hospital_id)
@@ -130,7 +138,7 @@ class HealthPackageSlotAvailability(ProxyView):
         location_code = data.get("location_code", None)
         if not location_code:
             raise ValidationError("Hospital code is missiing!")
-        hospital = Hospital.objects.filter(code = location_code).first()
+        hospital = Hospital.objects.filter(code=location_code).first()
         y, m, d = date.split("-")
         if not hospital.is_health_package_online_purchase_supported:
             raise FeatureNotAvailableException
@@ -151,7 +159,7 @@ class HealthPackageSlotAvailability(ProxyView):
         morning_slot = []
         afternoon_slot = []
         evening_slot = []
-        slot_list  = []
+        slot_list = []
         if slots:
             slot_list = ast.literal_eval(slots)
         response = {}

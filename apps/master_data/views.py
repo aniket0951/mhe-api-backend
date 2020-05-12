@@ -1,10 +1,15 @@
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Q
+from django.utils.timezone import datetime
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -12,7 +17,6 @@ from apps.health_packages.models import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
-from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -20,13 +24,10 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser)
+                                      IsManipalAdminUser, InternalAPICall)
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -97,7 +98,8 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True))
+            (Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+            Q(start_date__lte=datetime.now().date()))
 
 
 class SpecialisationViewSet(custom_viewsets.ModelViewSet):
@@ -133,9 +135,14 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()
 
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            (Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+            Q(start_date__lte=datetime.now().date()))
+
 
 class DepartmentsView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InternalAPICall]
     source = SYNC_SERVICE
     success_msg = 'Departments list returned successfully'
     sync_method = 'department'
@@ -206,7 +213,7 @@ class DepartmentsView(ProxyView):
 
 
 class DoctorsView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InternalAPICall]
 
     source = SYNC_SERVICE
     success_msg = 'Doctors list returned successfully'
@@ -293,7 +300,7 @@ class DoctorsView(ProxyView):
 
 
 class HealthPackagesView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [InternalAPICall]
     source = SYNC_SERVICE
     success_msg = 'Health Packages list returned successfully'
     sync_method = 'healthcheck'
@@ -316,7 +323,8 @@ class HealthPackagesView(ProxyView):
 
         all_health_packages = list()
         health_packages_sorted_keys = [
-            'age_group',
+            'age_from',
+            'age_to',
             'billing_group',
             'billing_subgroup',
             'start_date',
@@ -330,12 +338,20 @@ class HealthPackagesView(ProxyView):
             'price',
             'specialisation_name'
         ]
-
         for each_health_package in response_content:
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
                 if not each_health_package[key]:
                     each_health_package[key] = None
+
+                if key =='AgeFrom' and not each_health_package[key]:
+                    each_health_package[key] = 0
+
+                if key =='AgeTo' and not each_health_package[key]:
+                    each_health_package[key] = 120
+                    
+                if key =='Gender' and (not each_health_package[key] in ['Male', 'Female'] or not each_health_package[key]) :
+                    each_health_package[key] = 'Male and Female'
 
                 if key in ['DateFrom', 'DateTo'] and each_health_package[key]:
                     each_health_package[key] = datetime.strptime(
@@ -381,11 +397,11 @@ class HealthPackagesView(ProxyView):
 
             health_package_kwargs['code'] = health_package_details['code']
 
-            if health_package_details['age_group']:
-                health_package_kwargs['age_group'] = health_package_details['age_group']
+            # if health_package_details['age_group']:
+            #     health_package_kwargs['age_group'] = health_package_details['age_group']
 
-            if health_package_details['gender']:
-                health_package_kwargs['gender'] = health_package_details['gender']
+            # if health_package_details['gender']:
+            #     health_package_kwargs['gender'] = health_package_details['gender']
 
             specialisation_name = health_package_details.pop(
                 'specialisation_name')
@@ -416,7 +432,7 @@ class HealthPackagesView(ProxyView):
 
 
 class LabRadiologyItemsView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InternalAPICall]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'labraditems'

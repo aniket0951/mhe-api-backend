@@ -6,10 +6,13 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHB",
-            "description": "MANIPAL HOSPITAL BANGALORE",
+            "description": "Manipal Hospital HAL Airport Road, Bengaluru",
             "email": "www.manipalhospitals.com",
             "mobile": "080-25023344",
-            "address": "#98 HAL Airport Road, Bangalore 560017"
+            "address": "#98 HAL Airport Road, Bangalore 560017",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHBHC",
+            "health_package_department_code":"MHBHSVC"
         }
     },{
         "model": "master_data.hospital",
@@ -18,7 +21,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHN",
-            "description": "MANIPAL NORTH SIDE HOSPITAL",
+            "description": "Manipal Hospital Malleshwaram, Bengaluru",
             "email": "www.manipalhospitals.com",
             "mobile": "080-49007000",
             "address": "No.71,11th Main,Opposite Malleswaram Railway Station,Bangalore-560003"
@@ -30,7 +33,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MMH",
-            "description": "DR MALATHI MANIPAL HOSPITAL BANGALORE",
+            "description": " Manipal Hospital Jayanagar, Bengaluru",
             "email": "www.manipalhospitals.com"
         }
     },{
@@ -40,7 +43,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHW",
-            "description": "MANIPAL HOSPITAL WHITEFIELD",
+            "description": "Manipal Hospital Whitefield, Bengaluru",
             "email": "www.manipalhospitals.com",
             "mobile": "080-25027000",
             "address": "#143,212-215, EPIP Industrial Area, Hoodi Village K R Puram Hobli, Bengaluru 560066"
@@ -52,7 +55,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHD",
-            "description": "MANIPAL HOSPITAL DWARKA",
+            "description": "Manipal Hospital Dwarka, Delhi",
             "email": "www.manipalhospitals.com"
         }
     },{
@@ -62,7 +65,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHJ",
-            "description": "MANIPAL HOSPITAL JAIPUR",
+            "description": "Manipal Hospital Jaipur",
             "email": "www.manipalhospitals.com",
             "mobile": "+91 141 5164 000",
             "address": "Sector 5, Vidhyadhar Nagar, Jaipur-302013, Rajasthan"
@@ -74,7 +77,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHV",
-            "description": "MANIPAL HOSPITAL VIJAYAWADA",
+            "description": "Manipal Hospital Vijayawada",
             "email": "www.manipalhospitals.com",
             "mobile": "0866-25027000",
             "address": "Near Varadhi,(Near Vijayawada), Tadepalli,Guntur Dist - 522501"
@@ -86,7 +89,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHG",
-            "description": "MANIPAL HOSPITAL GOA",
+            "description": "Manipal Hospital Goa",
             "email": "www.manipalhospitals.com",
             "mobile": "083-26632500",
             "address": "(A Unit of Manipal Health Enterprises Pvt. Ltd), Dr E Borges Road, Dona Paula Panaji - 403004"
@@ -98,7 +101,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHS",
-            "description": "MANIPAL HOSPITAL SALEM",
+            "description": "Manipal Hospital Salem",
             "email": "www.manipalhospitals.com",
             "mobile": "0427-2346600",
             "address": " (A Unit of Manipal Health Enterprises Pvt. Ltd.)  Dalmia Board, Salem-Bengaluru Highway, Salem 636012"
@@ -110,7 +113,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "KMC",
-            "description": "KMC HOSPITAL",
+            "description": "KMC, Manipal Hospital Mangalore",
             "email": "www.manipalhospitals.com",
             "mobile": "0824-2444590",
             "address": "DR.B.R.Ambedkar Circle,Mangaluru 575 001"
