@@ -216,6 +216,7 @@ class CancelMyAppointment(ProxyView):
         data = request.data
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
+        status = data.pop("status",None)
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
         if not instance:
@@ -225,6 +226,7 @@ class CancelMyAppointment(ProxyView):
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
         data["reason_id"] = reason_id
+        data["status"] = status
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -246,6 +248,8 @@ class CancelMyAppointment(ProxyView):
                 if not instance:
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
+                if self.request.data.get("status"):
+                    instance.status = self.request.data.get("status")
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
                 success_status = True
@@ -636,19 +640,19 @@ class RescheduleAppointmentView(APIView):
         param["appointment_identifier"] = request.data.get(
             "appointment_identifier")
         param["reason_id"] = request.data.get("reason_id")
+        param["status"] = 5
         if not (param["appointment_identifier"] and param["reason_id"]):
             raise ValidationError("Appointment id or Reason is missing")
-        request_param = cancel_parameters(param)
-        response = CancelMyAppointment.as_view()(request_param)
-        if response.status_code == 200:
-            appointment = Appointment.objects.filter(
+        appointment = Appointment.objects.filter(
                 appointment_identifier=request.data.get("appointment_identifier")).first()
-            if not appointment:
+        if not appointment:
                 raise ValidationError("Appointment does not Exist")
-            new_date = request.data.get("appointment_date_time")
-            request_param = doctor_rebook_parameters(appointment, new_date)
-            response = ReBookDoctorAppointment.as_view()(request_param)
-            if response.status_code == 200:
-                return Response({"message": response.data["message"],
+        new_date = request.data.get("appointment_date_time")
+        request_param = doctor_rebook_parameters(appointment, new_date)
+        response = ReBookDoctorAppointment.as_view()(request_param)
+        if response.status_code == 200 and response.data["success"]:
+            request_param = cancel_parameters(param)
+            response_cancel = CancelMyAppointment.as_view()(request_param)
+            return Response({"message": response.data["message"],
                                  "success": response.data["success"], "data": response.data["data"]})
         raise ValidationError(str(response.data["errors"][0]["message"]))

@@ -160,6 +160,7 @@ def rebook_appointment_for_patient(sender, instance, created, **kwargs):
                 param = dict()
                 param["appointment_identifier"] = appointment.appointment_identifier
                 param["reason_id"] = "1"
+                param["status"] = "6"
                 request_param = cancel_parameters(param)
                 response = CancelMyAppointment.as_view()(request_param)
                 if response.status_code == 200:
