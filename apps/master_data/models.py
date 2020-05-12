@@ -5,8 +5,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 from apps.meta_app.models import MyBaseModel
 from django.contrib.gis.db import models
-from utils.custom_storage import LocalFileStorage, MediaStorage
-from utils.validators import validate_file_authenticity, validate_file_size
 
 
 class Hospital(MyBaseModel):
