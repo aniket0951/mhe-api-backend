@@ -63,9 +63,9 @@ class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         try:
-            if instance.document:
+            if instance.image:
                 response_object['image'] = generate_pre_signed_url(
-                    instance.image)
+                    instance.image.url)
         except Exception as error:
             response_object['image'] = None
 
