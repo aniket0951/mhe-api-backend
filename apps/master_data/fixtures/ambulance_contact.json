@@ -1,0 +1,103 @@
+[
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd1",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8205",
+            "mobile":"080 2502 7001"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd2",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8206",
+            "mobile":"011-4040 7070"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd3",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8207",
+            "mobile":"+91-900133 3444"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd4",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8208",
+            "mobile":"0866 246 9700"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd5",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8209",
+            "mobile":"+91-88887 02222"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd6",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8210",
+            "mobile":"0427-234 6666"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd7",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8211",
+            "mobile":"0824-2444590"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bdd",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "mobile":"080-22221111"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bde",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
+            "mobile":"080-4900 7000"
+        }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bdf",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8204",
+            "mobile":"080-4009 1234"
+        }
+    }
+
+]

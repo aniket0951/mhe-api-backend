@@ -1,6 +1,6 @@
 [
     {
-        "model": "master_data.homecareservice",
+        "model": "master_data.hospital",
         "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
@@ -9,7 +9,10 @@
             "description": "Manipal Hospital HAL Airport Road, Bengaluru",
             "email": "www.manipalhospitals.com",
             "mobile": "080-25023344",
-            "address": "#98 HAL Airport Road, Bangalore 560017"
+            "address": "#98 HAL Airport Road, Bangalore 560017",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHBHC",
+            "health_package_department_code":"MHBHSVC"
         }
     },{
         "model": "master_data.hospital",
