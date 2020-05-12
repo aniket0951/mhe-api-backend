@@ -275,6 +275,10 @@ class PaymentResponse(APIView):
         if payment["uhid_number"] and payment["uhid_number"][:2] == "MH":
             uhid_info["uhid_number"] = payment["uhid_number"]
         if (payment_instance.payment_for_uhid_creation):
+            if payment_instance.appointment:
+                appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
+                appointment.status = 6
+                appointment.save()
             if payment_instance.payment_done_for_patient:
                 patient = Patient.objects.filter(
                     id=payment_instance.payment_done_for_patient.id).first()
@@ -301,8 +305,10 @@ class PaymentResponse(APIView):
             appointment = Appointment.objects.filter(
                 id=payment_instance.appointment.id).first()
             update_data = {"payment_status": payment_response["status"]}
+            update_data["consultation_amount"] = appointment.doctor.consultation_charges
             if payment_instance.payment_for_uhid_creation:
                 update_data["appointment_identifier"] = new_appointment_id
+                update_data["status"] = 1
             appointment_serializer = AppointmentSerializer(
                 appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
