@@ -204,6 +204,10 @@ class HomeCareService(MyBaseModel):
     name = models.CharField(max_length=200,
                             null=True,
                             blank=True,)
+    
+    image = models.ImageField(blank=True,
+                              null=True,
+                              verbose_name='Display Picture')
 
     class Meta:
         verbose_name = "Home Care Service"

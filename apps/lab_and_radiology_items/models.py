@@ -237,7 +237,7 @@ class HomeCollectionAppointment(MyBaseModel):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            if ((self.appointment_date.date() > datetime.now().date()) and (self.status != "Cancelled")):
+            if ((self.appointment_date > datetime.now().date()) and (self.status != "Cancelled")):
                 return True
         return False
 
