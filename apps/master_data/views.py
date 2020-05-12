@@ -323,7 +323,8 @@ class HealthPackagesView(ProxyView):
 
         all_health_packages = list()
         health_packages_sorted_keys = [
-            'age_group',
+            'age_from',
+            'age_to',
             'billing_group',
             'billing_subgroup',
             'start_date',
@@ -337,12 +338,20 @@ class HealthPackagesView(ProxyView):
             'price',
             'specialisation_name'
         ]
-
         for each_health_package in response_content:
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
                 if not each_health_package[key]:
                     each_health_package[key] = None
+
+                if key =='AgeFrom' and not each_health_package[key]:
+                    each_health_package[key] = 0
+
+                if key =='AgeTo' and not each_health_package[key]:
+                    each_health_package[key] = 120
+                    
+                if key =='Gender' and (not each_health_package[key] in ['Male', 'Female'] or not each_health_package[key]) :
+                    each_health_package[key] = 'Male and Female'
 
                 if key in ['DateFrom', 'DateTo'] and each_health_package[key]:
                     each_health_package[key] = datetime.strptime(
@@ -388,11 +397,11 @@ class HealthPackagesView(ProxyView):
 
             health_package_kwargs['code'] = health_package_details['code']
 
-            if health_package_details['age_group']:
-                health_package_kwargs['age_group'] = health_package_details['age_group']
+            # if health_package_details['age_group']:
+            #     health_package_kwargs['age_group'] = health_package_details['age_group']
 
-            if health_package_details['gender']:
-                health_package_kwargs['gender'] = health_package_details['gender']
+            # if health_package_details['gender']:
+            #     health_package_kwargs['gender'] = health_package_details['gender']
 
             specialisation_name = health_package_details.pop(
                 'specialisation_name')
