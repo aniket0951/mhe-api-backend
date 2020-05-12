@@ -309,6 +309,7 @@ class PaymentResponse(APIView):
             if payment_instance.payment_for_uhid_creation:
                 update_data["appointment_identifier"] = new_appointment_id
                 update_data["status"] = 1
+                update_data["uhid"] = payment["uhid_number"]
             appointment_serializer = AppointmentSerializer(
                 appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
