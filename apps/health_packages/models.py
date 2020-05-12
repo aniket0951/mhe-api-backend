@@ -7,6 +7,11 @@ from apps.meta_app.models import MyBaseModel
 
 
 class HealthPackage(MyBaseModel):
+    GENDER_CHOICES = (
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+        ('Male and Female', 'Male and Female')
+    )
 
     code = models.SlugField(unique=True,
                             blank=True,
@@ -17,17 +22,14 @@ class HealthPackage(MyBaseModel):
                             blank=False,
                             )
 
-    age_group = models.CharField(max_length=50,
-                                 null=True,
-                                 blank=True,
-                                 default='All age groups'
-                                 )
+    age_from = models.IntegerField(default=0)
 
-    gender = models.CharField(max_length=50,
-                              null=True,
-                              blank=True,
-                              default='Men and Women'
-                              )
+    age_to = models.IntegerField(default=120)
+
+    gender = models.CharField(choices=GENDER_CHOICES,
+                              default='Male and Female',
+                              max_length=15,
+                              verbose_name='Gender')
 
     specialisation = models.ForeignKey(Specialisation,
                                        related_name='health_package',
