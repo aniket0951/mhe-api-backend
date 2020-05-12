@@ -651,6 +651,8 @@ class RescheduleAppointmentView(APIView):
         request_param = doctor_rebook_parameters(appointment, new_date)
         response = ReBookDoctorAppointment.as_view()(request_param)
         if response.status_code == 200 and response.data["success"]:
+            appointment.status = 5
+            appointment.save()
             request_param = cancel_parameters(param)
             response_cancel = CancelMyAppointment.as_view()(request_param)
             if response_cancel.status_code == 200 and response_cancel.data["success"]:
