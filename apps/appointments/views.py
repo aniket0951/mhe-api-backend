@@ -653,6 +653,7 @@ class RescheduleAppointmentView(APIView):
         if response.status_code == 200 and response.data["success"]:
             request_param = cancel_parameters(param)
             response_cancel = CancelMyAppointment.as_view()(request_param)
-            return Response({"message": response.data["message"],
+            if response_cancel.status_code == 200 and response_cancel.data["success"]:
+                return Response({"message": response.data["message"],
                                  "success": response.data["success"], "data": response.data["data"]})
         raise ValidationError(str(response.data["errors"][0]["message"]))
