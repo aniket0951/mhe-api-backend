@@ -62,7 +62,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    ordering = ('-appointment_date', '-appointment_slot', 'status')
+    ordering = ('appointment_date', '-appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
