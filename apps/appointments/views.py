@@ -62,7 +62,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    ordering = ('-appointment_date', '-appointment_slot', 'status')
+    ordering = ('appointment_date', '-appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
@@ -85,12 +85,12 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 raise PatientDoesNotExistsValidationException
             if is_upcoming:
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
-            return super().get_queryset().filter((Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)) | Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+            return super().get_queryset().filter((Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)) | Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if is_upcoming:
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter((Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
-            return super().get_queryset().filter((Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2))
+            return super().get_queryset().filter((Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5))
 
 
 class CreateMyAppointment(ProxyView):
@@ -216,6 +216,7 @@ class CancelMyAppointment(ProxyView):
         data = request.data
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
+        status = data.pop("status",None)
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
         if not instance:
@@ -225,6 +226,7 @@ class CancelMyAppointment(ProxyView):
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
         data["reason_id"] = reason_id
+        data["status"] = status
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -246,6 +248,8 @@ class CancelMyAppointment(ProxyView):
                 if not instance:
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
+                if self.request.data.get("status"):
+                    instance.status = self.request.data.get("status")
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
                 success_status = True
@@ -636,19 +640,22 @@ class RescheduleAppointmentView(APIView):
         param["appointment_identifier"] = request.data.get(
             "appointment_identifier")
         param["reason_id"] = request.data.get("reason_id")
+        param["status"] = 5
         if not (param["appointment_identifier"] and param["reason_id"]):
             raise ValidationError("Appointment id or Reason is missing")
-        request_param = cancel_parameters(param)
-        response = CancelMyAppointment.as_view()(request_param)
-        if response.status_code == 200:
-            appointment = Appointment.objects.filter(
+        appointment = Appointment.objects.filter(
                 appointment_identifier=request.data.get("appointment_identifier")).first()
-            if not appointment:
+        if not appointment:
                 raise ValidationError("Appointment does not Exist")
-            new_date = request.data.get("appointment_date_time")
-            request_param = doctor_rebook_parameters(appointment, new_date)
-            response = ReBookDoctorAppointment.as_view()(request_param)
-            if response.status_code == 200:
+        new_date = request.data.get("appointment_date_time")
+        request_param = doctor_rebook_parameters(appointment, new_date)
+        response = ReBookDoctorAppointment.as_view()(request_param)
+        if response.status_code == 200 and response.data["success"]:
+            appointment.status = 5
+            appointment.save()
+            request_param = cancel_parameters(param)
+            response_cancel = CancelMyAppointment.as_view()(request_param)
+            if response_cancel.status_code == 200 and response_cancel.data["success"]:
                 return Response({"message": response.data["message"],
                                  "success": response.data["success"], "data": response.data["data"]})
         raise ValidationError(str(response.data["errors"][0]["message"]))

@@ -23,11 +23,15 @@ class Appointment(models.Model):
     CANCELLED = 2
     WAITING = 3
     COMPLETED = 4
+    RESCHEDULED = 5
+    REBOOKED = 6
     STATUS_CODES = (
         (CONFIRMED, 'Confirmed'),
         (CANCELLED, 'Cancelled'),
         (WAITING, 'Waiting'),
         (COMPLETED, 'Completed'),
+        (RESCHEDULED, 'Rescheduled'),
+        (REBOOKED, 'Rebooked'),
     )
     appointment_date = models.DateField()
     appointment_slot = models.TimeField()
