@@ -50,7 +50,6 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
         family_member_id = self.request.query_params.get('user_id', None)
         filter_by = self.request.query_params.get("filter_by", None)
         request_patient_obj = patient_user_object(self.request)
-        qs = None
 
         if family_member_id:
             family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,
@@ -64,11 +63,10 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
 
             qs = Report.objects.filter(
                 uhid=family_member.uhid_number).distinct()
+        else:
+            if not request_patient_obj.uhid_number:
+                raise ValidationError("Your UHID is not linked!")
 
-        if not qs and not request_patient_obj.uhid_number:
-            raise ValidationError("Your UHID is not linked!")
-
-        if not qs:
             qs = Report.objects.filter(
                 uhid=request_patient_obj.uhid_number).distinct()
 
