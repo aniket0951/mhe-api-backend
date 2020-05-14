@@ -28,7 +28,7 @@ class PatientPersonalDocumentsViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['name', 'description']
-    ordering_fields = ('name', 'updated_at', 'created_at')
+    # ordering_fields = ('name', 'updated_at', 'created_at')
 
     def get_permissions(self):
         if self.action in ['list', 'create', ]:
