@@ -26,9 +26,8 @@ class PatientPersonalDocumentsViewSet(custom_viewsets.ModelViewSet):
     update_success_message = 'Document information is updated successfuly!'
     delete_success_message = 'Your document is deleted successfuly!'
     filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter, filters.OrderingFilter,)
+                       filters.SearchFilter, )
     search_fields = ['name', 'description']
-    # ordering_fields = ('name', 'updated_at', 'created_at')
 
     def get_permissions(self):
         if self.action in ['list', 'create', ]:

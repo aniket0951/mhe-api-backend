@@ -33,9 +33,8 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
     retrieve_success_message = 'Home collection information returned successfully!'
     update_success_message = 'Home collection information is updated successfuly!'
     filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter, filters.OrderingFilter,)
+                       filters.SearchFilter,)
     search_fields = ['description', ]
-    # ordering_fields = ('lab_radiology_item_pricing__price', 'description')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
