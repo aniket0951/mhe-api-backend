@@ -26,7 +26,7 @@ from .serializers import (HomeCareServiceSerializer,
 class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = LabRadiologyItem
-    queryset = LabRadiologyItem.objects.all()
+    queryset = LabRadiologyItem.objects.all().order_by('description')
     serializer_class = LabRadiologyItemSerializer
     create_success_message = "New home collection is added successfully."
     list_success_message = 'Home collection list returned successfully!'
@@ -35,7 +35,7 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['description', ]
-    ordering_fields = ('lab_radiology_item_pricing__price', 'description')
+    # ordering_fields = ('lab_radiology_item_pricing__price', 'description')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
@@ -71,7 +71,7 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
         user_cart_collections = HomeCollectionCart.objects.filter(
             patient_info_id=self.request.user.id,  home_collections=OuterRef('pk'), hospital_id=hospital_id)
 
-        return LabRadiologyItem.objects.filter(id__in=hospital_related_items,
+        return super().get_queryset().filter(id__in=hospital_related_items,
                                                billing_group=home_collection_billing_group)\
             .distinct().annotate(is_added_to_cart=Exists(user_cart_collections))
 
