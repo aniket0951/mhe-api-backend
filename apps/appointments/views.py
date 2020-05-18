@@ -58,7 +58,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
                      'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
                      'patient__mobile', 'patient__email']
-    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
@@ -78,10 +78,6 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return super().get_queryset().filter(status=2)
             if is_cancelled == "false":
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1)
-            if is_cancelled == "rebooked":
-                return super().get_queryset().filter(status=6)
-            if is_cancelled == "rescheduled":
-                return super().get_queryset().filter(status=5)
             return super().get_queryset()
 
         elif (family_member is not None):
