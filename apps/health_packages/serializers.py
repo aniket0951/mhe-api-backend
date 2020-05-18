@@ -23,7 +23,7 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
 
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
-    included_health_tests = HealthTestSerializer(many=True)
+    included_health_tests = serializers.SerializerMethodField()
     pricing = serializers.SerializerMethodField()
     included_health_tests_count = serializers.SerializerMethodField()
     is_date_expired = serializers.SerializerMethodField()
@@ -54,6 +54,10 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
 
         return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
                                                                                           Q(start_date__lte=datetime.now().date())).exists()
+
+    def get_included_health_tests(self, instance):
+        health_tests = instance.included_health_tests.all().order_by('description')
+        return HealthTestSerializer(health_tests, many=True).data
 
 
 class HealthPackageSerializer(DynamicFieldsModelSerializer):

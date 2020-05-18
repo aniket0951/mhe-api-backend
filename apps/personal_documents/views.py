@@ -3,7 +3,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from apps.patients.exceptions import PatientDoesNotExistsValidationException
+from apps.patients.exceptions import InvalidFamilyMemberValidationException
 from apps.patients.models import FamilyMember
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
@@ -18,7 +18,7 @@ from .serializers import PatientPersonalDocumentsSerializer
 class PatientPersonalDocumentsViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = PatientPersonalDocuments
-    queryset = PatientPersonalDocuments.objects.all()
+    queryset = PatientPersonalDocuments.objects.all().order_by('-created_at')
     serializer_class = PatientPersonalDocumentsSerializer
     create_success_message = "New personal document is uploaded successfully."
     list_success_message = 'Documents returned successfully!'
@@ -26,9 +26,8 @@ class PatientPersonalDocumentsViewSet(custom_viewsets.ModelViewSet):
     update_success_message = 'Document information is updated successfuly!'
     delete_success_message = 'Your document is deleted successfuly!'
     filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter, filters.OrderingFilter,)
+                       filters.SearchFilter, )
     search_fields = ['name', 'description']
-    ordering_fields = ('name', 'updated_at', 'created_at')
 
     def get_permissions(self):
         if self.action in ['list', 'create', ]:
@@ -51,7 +50,7 @@ class PatientPersonalDocumentsViewSet(custom_viewsets.ModelViewSet):
             family_member_obj = FamilyMember.objects.filter(id=family_member,
                                                             patient_info_id=self.request.user.id).first()
             if not family_member_obj:
-                raise PatientDoesNotExistsValidationException
+                raise InvalidFamilyMemberValidationException
             return super().get_queryset().filter((Q(patient_info_id=self.request.user.id) & Q(family_member_id=family_member)))
         else:
             return super().get_queryset().filter((Q(patient_info_id=self.request.user.id) & Q(family_member__isnull=True)))

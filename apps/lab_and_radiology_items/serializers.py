@@ -98,6 +98,10 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
         except Exception as error:
             response_object['display_picture'] = None
 
+        if instance.hospital:
+            response_object['hospital'] = HospitalSerializer(
+                instance.hospital).data
+
         if instance.service:
             response_object['service'] = HomeCareServiceSerializer(
                 instance.service).data
