@@ -445,17 +445,18 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
     list_success_message = 'Health Package list returned successfully!'
 
     def get_queryset(self):
+        qs = super().get_queryset()
         uhid = self.request.query_params.get("uhid", None)
         is_booked = self.request.query_params.get("is_booked", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             if date_from and date_to:
-                super().get_queryset().filter(payment_id__status="success", appointment_date__date__range= [date_from, date_to])
-            return super().get_queryset().filter(payment_id__status="success")
+                qs = qs.filter(payment_id__status="success", appointment_date__date__range= [date_from, date_to])
+            return qs.filter(payment_id__status="success")
         if is_booked:
-            return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
-        return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
+            return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
+        return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
 
 
 class PayBillView(ProxyView):
