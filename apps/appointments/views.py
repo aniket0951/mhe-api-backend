@@ -64,6 +64,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     filter_fields = ('status',)
     ordering = ('appointment_date', '-appointment_slot', 'status')
+    ordering_fields = ('appointment_date',)
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'

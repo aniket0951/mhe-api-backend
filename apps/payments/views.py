@@ -439,6 +439,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = HealthPackageAppointment.objects.all()
     ordering = ('-payment_id__created_at',)
     filter_fields = ('appointment_status', 'payment_id__status')
+    ordering_fields = ('appointment_date',)
     serializer_class = HealthPackageAppointmentDetailSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Health Package list returned successfully!'
@@ -447,7 +448,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
         uhid = self.request.query_params.get("uhid", None)
         is_booked = self.request.query_params.get("is_booked", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
-            return super().get_queryset().filter(payment_id__status="success").order_by('appointment_date')
+            return super().get_queryset().filter(payment_id__status="success")
         if is_booked:
             return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
         return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
