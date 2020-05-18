@@ -62,6 +62,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    filter_fields = ('status',)
     ordering = ('appointment_date', '-appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
@@ -77,6 +78,10 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return super().get_queryset().filter(status=2)
             if is_cancelled == "false":
                 return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1)
+            if is_cancelled == "rebooked":
+                return super().get_queryset().filter(status=6)
+            if is_cancelled == "rescheduled":
+                return super().get_queryset().filter(status=5)
             return super().get_queryset()
 
         elif (family_member is not None):

@@ -420,6 +420,10 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             elif filter_by == "current_month":
                 current_month = datetime.today()
                 return super().get_queryset().filter(uhid_number=uhid, created_at__month=current_month.month, created_at__year=current_month.year)
+            elif filter_by == "date_range":
+                date_from = self.request.query_params.get("date_from", None)
+                date_to = self.request.query_params.get("date_to", None)
+                return super().get_queryset().filter(uhid_number=uhid, created_at__date__range= [date_from, date_to])
             else:
                 return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
@@ -443,7 +447,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
         uhid = self.request.query_params.get("uhid", None)
         is_booked = self.request.query_params.get("is_booked", None)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
-            return super().get_queryset().filter(payment_id__status="success")
+            return super().get_queryset().filter(payment_id__status="success").order_by('appointment_date')
         if is_booked:
             return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
         return super().get_queryset().filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
