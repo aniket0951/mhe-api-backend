@@ -16,7 +16,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Doctor",
-            "image":"home_services/Doctor.jpg"
+            "image":"home_services/Doctor.png"
         }
     },
     {
@@ -26,7 +26,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Nurse",
-            "image":"home_services/Nurse.jpg"
+            "image":"home_services/Nurse.png"
         }
     },
     {
@@ -36,7 +36,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "name":"Physio",
-            "image":"home_services/Diagnostic2.jpg"
+            "image":"home_services/Diagnostic2.png"
         }
     },
     {
@@ -45,7 +45,7 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "name":"Medical equipment",
+            "name":"Medical Equipment",
             "image":"home_services/Medical.png"
         }
     }
