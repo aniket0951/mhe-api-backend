@@ -89,11 +89,24 @@ class RegionViewSet(custom_viewsets.ModelViewSet):
     ordering_fields = ('description',)
     filter_fields = ('country',)
 
+class ProvinceViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser]
+    model = Province
+    queryset = Province.objects.all().prefetch_related('region',
+                                                   'region__country')
+    serializer_class = ProvinceSerializer
+    list_success_message = 'Provinces list returned successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['description', ]
+    ordering_fields = ('description',)
+    filter_fields = ('region',)
 
 class CityViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsPatientUser]
     model = City
-    queryset = City.objects.all().prefetch_related('province__region',
+    queryset = City.objects.all().prefetch_related('province', 'province__region',
                                                    'province__region__country')
     serializer_class = CitySerializer
     list_success_message = 'Cities list returned successfully!'
@@ -102,7 +115,7 @@ class CityViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['description', ]
     ordering_fields = ('description',)
-    filter_fields = ('province__region',)
+    filter_fields = ('province',)
 
 
 class ZipcodeViewSet(custom_viewsets.ModelViewSet):

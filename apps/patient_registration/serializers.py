@@ -34,6 +34,11 @@ class ProvinceSerializer(DynamicFieldsModelSerializer):
         model = Province
         exclude = ('created_at', 'updated_at',)
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        response_object['region'] = RegionSerializer(instance.region).data
+        return response_object
+
 
 class CitySerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -42,8 +47,8 @@ class CitySerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-        response_object['region'] = RegionSerializer(
-            instance.province.region).data
+        response_object['province'] = ProvinceSerializer(
+            instance.province).data
         return response_object
 
 
