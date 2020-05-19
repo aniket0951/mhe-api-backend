@@ -58,26 +58,33 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
                      'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
                      'patient__mobile', 'patient__email']
-    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    filter_fields = ('status',)
     ordering = ('appointment_date', '-appointment_slot', 'status')
+    ordering_fields = ('appointment_date',)
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
     update_success_message = None
 
     def get_queryset(self):
+        qs = super().get_queryset()
         family_member = self.request.query_params.get("user_id", None)
         is_upcoming = self.request.query_params.get("is_upcoming", False)
         is_cancelled = self.request.query_params.get("is_cancelled", False)
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            date_from = self.request.query_params.get("date_from", None)
+            date_to = self.request.query_params.get("date_to", None)
+            if date_from and date_to:
+                qs = qs.filter(appointment_date__range= [date_from, date_to])
             if is_cancelled == "true":
-                return super().get_queryset().filter(status=2)
+                return qs.filter(status=2)
             if is_cancelled == "false":
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1)
-            return super().get_queryset()
+                return qs.filter(appointment_date__gte=datetime.now().date(), status=1)
+            return qs
 
         elif (family_member is not None):
             member = FamilyMember.objects.filter(id=family_member).first()
