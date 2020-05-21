@@ -228,6 +228,7 @@ class PaymentResponse(APIView):
         response_token_json = json.loads(response_token)
         status_code = response_token_json["status_code"]
         payment_response = response_token_json["payment_response"]
+        uhid = "-1"
         if status_code == 1200:
             processing_id = response_token_json["processing_id"]
             try:
@@ -276,6 +277,7 @@ class PaymentResponse(APIView):
             uhid_info = {}
             if payment["uhid_number"] and payment["uhid_number"][:2] == "MH":
                 uhid_info["uhid_number"] = payment["uhid_number"]
+                uhid = payment["uhid_number"]
             if (payment_instance.payment_for_uhid_creation):
                 if payment_instance.appointment:
                     appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
@@ -354,9 +356,6 @@ class PaymentResponse(APIView):
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
-        uhid = payment["uhid_number"]
-        if not uhid:
-            uhid = "-1"
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
         return HttpResponseRedirect(settings.REDIRECT_URL + param)
