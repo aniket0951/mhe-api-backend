@@ -2,10 +2,19 @@ from import_export import resources
 
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import (City, Country, Gender, IDProof, MaritalStatus,
+from .models import (City, Country, Gender, IDProof, Language, MaritalStatus,
                      Nationality, Province, Region, Relation, Religion,
                      Speciality, Title, Zipcode)
 
+
+class LanguageSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = Language
+        exclude = ('created_at', 'updated_at',)
+        extra_kwargs = {
+            'from_date': {'write_only': True, },
+            'to_date': {'write_only': True, },
+        }
 
 class CountrySerializer(DynamicFieldsModelSerializer):
     class Meta:
