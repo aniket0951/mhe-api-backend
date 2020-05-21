@@ -25,7 +25,7 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
         exclude = ('created_at', 'updated_at',)
 
     def get_is_discount_applicable(self, instance):
-        if instance.discount_start_date < datetime.now().date() and \
+        if instance.discount_percentage and instance.discount_start_date < datetime.now().date() and \
                 (not instance.discount_end_date or instance.discount_end_date > datetime.now().date()):
             return True
         return False
