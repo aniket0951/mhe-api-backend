@@ -227,6 +227,7 @@ class PaymentResponse(APIView):
         response_token = request.data["responseToken"]
         response_token_json = json.loads(response_token)
         status_code = response_token_json["status_code"]
+        payment_response = response_token_json["payment_response"]
         if status_code == 1200:
             processing_id = response_token_json["processing_id"]
             try:
@@ -234,7 +235,6 @@ class PaymentResponse(APIView):
             except Exception:
                 raise ProcessingIdDoesNotExistsValidationException
             payment = {}
-            payment_response = response_token_json["payment_response"]
             payment_account = response_token_json["accounts"]
             payment["uhid_number"] = payment_account["account_number"]
 
