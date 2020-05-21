@@ -661,7 +661,6 @@ class DoctorRescheduleAppointmentView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        import pdb; pdb.set_trace()
         response_message = "Unable to Book the Reschedule Appointment. Please try again"
         response_data = {}
         response_success = False
