@@ -31,7 +31,7 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
         return False
 
     def get_final_price(self, instance):
-        return (100 - instance.discount_percentage) * instance.price / 100
+        return round((100 - instance.discount_percentage) * instance.price / 100)
 
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
