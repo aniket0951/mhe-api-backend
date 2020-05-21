@@ -1,6 +1,7 @@
 import base64
 import datetime
 import hashlib
+import ast
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -31,6 +32,9 @@ from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
 from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
+from proxy.custom_serializables import \
+    RescheduleAppointment as serializable_RescheduleAppointment
+
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -639,30 +643,70 @@ class ReBookDoctorAppointment(ProxyView):
                                                 success=response_success, data=response_data)
         raise ValidationError(response_message)
 
+class DoctorRescheduleAppointmentView(ProxyView):
+    permission_classes = [IsPatientUser | InternalAPICall]
+    source = 'ReScheduleApp'
 
-class RescheduleAppointmentView(APIView):
+    def get_request_data(self, request):
+        reason_id = request.data.pop("reason_id")
+        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
+        if not instance:
+            raise ValidationError("Appointment doesn't Exist")
+        slot_book = serializable_RescheduleAppointment(**request.data)
+        request_data = custom_serializer().serialize(slot_book, 'XML')
+        request.data["reason_id"] = reason_id
+        return request_data
 
-    def post(self, request, format=None):
-        param = {}
-        param["appointment_identifier"] = request.data.get(
-            "appointment_identifier")
-        param["reason_id"] = request.data.get("reason_id")
-        param["status"] = 5
-        if not (param["appointment_identifier"] and param["reason_id"]):
-            raise ValidationError("Appointment id or Reason is missing")
-        appointment = Appointment.objects.filter(
-                appointment_identifier=request.data.get("appointment_identifier")).first()
-        if not appointment:
-                raise ValidationError("Appointment does not Exist")
-        new_date = request.data.get("appointment_date_time")
-        request_param = doctor_rebook_parameters(appointment, new_date)
-        response = ReBookDoctorAppointment.as_view()(request_param)
-        if response.status_code == 200 and response.data["success"]:
-            appointment.status = 5
-            appointment.save()
-            request_param = cancel_parameters(param)
-            response_cancel = CancelMyAppointment.as_view()(request_param)
-            if response_cancel.status_code == 200 and response_cancel.data["success"]:
-                return Response({"message": response.data["message"],
-                                 "success": response.data["success"], "data": response.data["data"]})
-        raise ValidationError(str(response.data["errors"][0]["message"]))
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        import pdb; pdb.set_trace()
+        response_message = "Unable to Book the Reschedule Appointment. Please try again"
+        response_data = {}
+        response_success = False
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            status = root.find("Status").text
+            if status == "1":
+                reschedule_response =root.find("ReScheduleAppResp").text
+                if reschedule_response:
+                    new_appointment_response = ast.literal_eval(reschedule_response)[0]
+                    message = new_appointment_response["Message"]
+                    response_message = message
+                    if message == "Appointment Rescheduled Successfully":
+                        new_appointment = dict()
+                        appointment_id = new_appointment_response["NewApptId"]
+                        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
+                        appointment_date_time = self.request.data.get("new_date")
+                        datetime_object = datetime.strptime(appointment_date_time, '%Y%m%d%H%M%S')
+                        time = datetime_object.time()
+                        new_appointment["appointment_date"] = datetime_object.date()
+                        new_appointment["appointment_slot"] = time.strftime("%H:%M:%S %p")
+                        new_appointment["status"] = 1
+                        new_appointment["appointment_identifier"] = appointment_id
+                        new_appointment["patient"] = instance.patient.id
+                        new_appointment["uhid"] = instance.uhid 
+                        new_appointment["department"] = instance.department.id
+                        new_appointment["consultation_amount"] = instance.consultation_amount
+                        new_appointment["payment_status"] = instance.payment_status
+                        if instance.family_member:
+                            new_appointment["family_member"] = instance.family_member.id
+                        new_appointment["doctor"] = instance.doctor.id
+                        new_appointment["hospital"] = instance.hospital.id
+                        appointment = AppointmentSerializer(data=new_appointment)
+                        appointment.is_valid(raise_exception=True)
+                        appointment = appointment.save()
+                        if instance.payment_appointment.exists():
+                            payment_instance = instance.payment_appointment.get()
+                            payment_instance.appointment = appointment
+                            payment_instance.save()
+                        instance.status = 5
+                        instance.reason_id = self.request.data.get("reason_id")
+                        instance.save()
+                        response_success = True
+                        response_message = "Appointment has been Rescheduled"
+                        response_data["appointment_identifier"] = appointment_id
+                        return self.custom_success_response(message=response_message,
+                                                            success=response_success, data=response_data)
+        raise ValidationError(response_message)
