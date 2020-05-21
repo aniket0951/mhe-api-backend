@@ -226,128 +226,130 @@ class PaymentResponse(APIView):
     def post(self, request, format=None):
         response_token = request.data["responseToken"]
         response_token_json = json.loads(response_token)
-        processing_id = response_token_json["processing_id"]
-        try:
-            payment_instance = Payment.objects.get(processing_id=processing_id)
-        except Exception:
-            raise ProcessingIdDoesNotExistsValidationException
-        payment = {}
-        payment_response = response_token_json["payment_response"]
-        payment_account = response_token_json["accounts"]
-        payment["uhid_number"] = payment_account["account_number"]
+        status_code = response_token_json["status_code"]
+        if status_code == 1200:
+            processing_id = response_token_json["processing_id"]
+            try:
+                payment_instance = Payment.objects.get(processing_id=processing_id)
+            except Exception:
+                raise ProcessingIdDoesNotExistsValidationException
+            payment = {}
+            payment_response = response_token_json["payment_response"]
+            payment_account = response_token_json["accounts"]
+            payment["uhid_number"] = payment_account["account_number"]
 
-        if payment_instance.appointment or payment_instance.payment_for_health_package:
-            payment_paydetail = payment_response["payDetailAPIResponse"]
-            if payment_paydetail["BillDetail"]:
-                bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
-                new_appointment_id = bill_detail["AppointmentId"]
-                payment["receipt_number"] = bill_detail["ReceiptNo"]
-
-        if payment_instance.payment_for_uhid_creation:
             if payment_instance.appointment or payment_instance.payment_for_health_package:
                 payment_paydetail = payment_response["payDetailAPIResponse"]
                 if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(
-                        payment_paydetail["BillDetail"])[0]
+                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
                     new_appointment_id = bill_detail["AppointmentId"]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
-            else:
-                payment_paydetail = payment_response["pre_registration_response"]
-                payment["receipt_number"] = payment_paydetail["receiptNo"]
 
-        if payment_instance.payment_for_ip_deposit:
-            payment_paydetail = payment_response["onlinePatientDeposit"]
-            if payment_paydetail["RecieptNumber"]:
-                bill_detail = json.loads(payment_paydetail["RecieptNumber"])[0]
-                payment["receipt_number"] = bill_detail["ReceiptNo"]
-
-        payment["status"] = payment_response["status"]
-        payment["payment_method"] = payment_response["card_type"] + \
-            "-" + payment_response["mode"]
-        payment["transaction_id"] = payment_response["txnid"]
-        payment["amount"] = payment_response["net_amount_debit"]
-        payment["raw_info_from_salucro_response"] = response_token_json
-        payment_serializer = PaymentSerializer(
-            payment_instance, data=payment, partial=True)
-        payment_serializer.is_valid(raise_exception=True)
-        payment_serializer.save()
-        uhid_info = {}
-        if payment["uhid_number"] and payment["uhid_number"][:2] == "MH":
-            uhid_info["uhid_number"] = payment["uhid_number"]
-        if (payment_instance.payment_for_uhid_creation):
-            if payment_instance.appointment:
-                appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
-                appointment.status = 6
-                appointment.save()
-            if payment_instance.payment_done_for_patient:
-                patient = Patient.objects.filter(
-                    id=payment_instance.payment_done_for_patient.id).first()
-                patient_serializer = PatientSpecificSerializer(
-                    patient, data=uhid_info, partial=True)
-                patient_serializer.is_valid(raise_exception=True)
-                patient_serializer.save()
-                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
-                    patient.first_name, patient.uhid_number)
-                send_sms(mobile_number=str(patient.mobile.raw_input),
-                         message=user_message)
-            if payment_instance.payment_done_for_family_member:
-                family_member = FamilyMember.objects.filter(
-                    id=payment_instance.payment_done_for_family_member.id).first()
-                patient_serializer = FamilyMemberSpecificSerializer(
-                    family_member, data=uhid_info, partial=True)
-                patient_serializer.is_valid(raise_exception=True)
-                patient_serializer.save()
-                user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
-                    family_member.first_name, family_member.uhid_number)
-                send_sms(mobile_number=str(
-                    family_member.mobile.raw_input), message=user_message)
-        if payment_instance.appointment:
-            appointment = Appointment.objects.filter(
-                id=payment_instance.appointment.id).first()
-            update_data = {"payment_status": payment_response["status"]}
-            update_data["consultation_amount"] = appointment.doctor.consultation_charges
             if payment_instance.payment_for_uhid_creation:
-                update_data["appointment_identifier"] = new_appointment_id
-                update_data["status"] = 1
-                update_data["uhid"] = payment["uhid_number"]
-            appointment_serializer = AppointmentSerializer(
-                appointment, data=update_data, partial=True)
-            appointment_serializer.is_valid(raise_exception=True)
-            appointment_serializer.save()
-
-        if payment_instance.payment_for_health_package:
-            appointment = HealthPackageAppointment.objects.filter(
-                id=payment_instance.health_package_appointment.id).first()
-            update_data = {}
-            update_data["payment"] = payment_instance.id
-            package_name = ""
-            package_list = appointment.health_package.all()
-            for package in package_list:
-                if not package_name:
-                    package_name = package.name
+                if payment_instance.appointment or payment_instance.payment_for_health_package:
+                    payment_paydetail = payment_response["payDetailAPIResponse"]
+                    if payment_paydetail["BillDetail"]:
+                        bill_detail = json.loads(
+                            payment_paydetail["BillDetail"])[0]
+                        new_appointment_id = bill_detail["AppointmentId"]
+                        payment["receipt_number"] = bill_detail["ReceiptNo"]
                 else:
-                    package_name = package_name + "," + package.name
+                    payment_paydetail = payment_response["pre_registration_response"]
+                    payment["receipt_number"] = payment_paydetail["receiptNo"]
 
-            if payment_instance.payment_done_for_patient:
-                patient = Patient.objects.filter(
-                    id=payment_instance.payment_done_for_patient.id).first()
-                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(patient.first_name, package_name, appointment.appointment_date.date(),
-                                                                                                                               appointment.appointment_date.time())
-                send_sms(mobile_number=str(patient.mobile.raw_input),
-                         message=user_message)
-            if payment_instance.payment_done_for_family_member:
-                family_member = FamilyMember.objects.filter(
-                    id=payment_instance.payment_done_for_family_member.id).first()
-                user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(family_member.first_name, package_name, appointment.appointment_date.date(),
-                                                                                                                               appointment.appointment_date.time())
-                send_sms(mobile_number=str(
-                    family_member.mobile.raw_input), message=user_message)
-            if payment_instance.payment_for_uhid_creation:
-                update_data["appointment_identifier"] = new_appointment_id
-            appointment_serializer = HealthPackageAppointmentSerializer(
-                appointment, data=update_data, partial=True)
-            appointment_serializer.is_valid(raise_exception=True)
-            appointment_serializer.save()
+            if payment_instance.payment_for_ip_deposit:
+                payment_paydetail = payment_response["onlinePatientDeposit"]
+                if payment_paydetail["RecieptNumber"]:
+                    bill_detail = json.loads(payment_paydetail["RecieptNumber"])[0]
+                    payment["receipt_number"] = bill_detail["ReceiptNo"]
+
+            payment["status"] = payment_response["status"]
+            payment["payment_method"] = payment_response["card_type"] + \
+                "-" + payment_response["mode"]
+            payment["transaction_id"] = payment_response["txnid"]
+            payment["amount"] = payment_response["net_amount_debit"]
+            payment["raw_info_from_salucro_response"] = response_token_json
+            payment_serializer = PaymentSerializer(
+                payment_instance, data=payment, partial=True)
+            payment_serializer.is_valid(raise_exception=True)
+            payment_serializer.save()
+            uhid_info = {}
+            if payment["uhid_number"] and payment["uhid_number"][:2] == "MH":
+                uhid_info["uhid_number"] = payment["uhid_number"]
+            if (payment_instance.payment_for_uhid_creation):
+                if payment_instance.appointment:
+                    appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
+                    appointment.status = 6
+                    appointment.save()
+                if payment_instance.payment_done_for_patient:
+                    patient = Patient.objects.filter(
+                        id=payment_instance.payment_done_for_patient.id).first()
+                    patient_serializer = PatientSpecificSerializer(
+                        patient, data=uhid_info, partial=True)
+                    patient_serializer.is_valid(raise_exception=True)
+                    patient_serializer.save()
+                    user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
+                        patient.first_name, patient.uhid_number)
+                    send_sms(mobile_number=str(patient.mobile.raw_input),
+                            message=user_message)
+                if payment_instance.payment_done_for_family_member:
+                    family_member = FamilyMember.objects.filter(
+                        id=payment_instance.payment_done_for_family_member.id).first()
+                    patient_serializer = FamilyMemberSpecificSerializer(
+                        family_member, data=uhid_info, partial=True)
+                    patient_serializer.is_valid(raise_exception=True)
+                    patient_serializer.save()
+                    user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
+                        family_member.first_name, family_member.uhid_number)
+                    send_sms(mobile_number=str(
+                        family_member.mobile.raw_input), message=user_message)
+            if payment_instance.appointment:
+                appointment = Appointment.objects.filter(
+                    id=payment_instance.appointment.id).first()
+                update_data = {"payment_status": payment_response["status"]}
+                update_data["consultation_amount"] = appointment.doctor.consultation_charges
+                if payment_instance.payment_for_uhid_creation:
+                    update_data["appointment_identifier"] = new_appointment_id
+                    update_data["status"] = 1
+                    update_data["uhid"] = payment["uhid_number"]
+                appointment_serializer = AppointmentSerializer(
+                    appointment, data=update_data, partial=True)
+                appointment_serializer.is_valid(raise_exception=True)
+                appointment_serializer.save()
+
+            if payment_instance.payment_for_health_package:
+                appointment = HealthPackageAppointment.objects.filter(
+                    id=payment_instance.health_package_appointment.id).first()
+                update_data = {}
+                update_data["payment"] = payment_instance.id
+                package_name = ""
+                package_list = appointment.health_package.all()
+                for package in package_list:
+                    if not package_name:
+                        package_name = package.name
+                    else:
+                        package_name = package_name + "," + package.name
+
+                if payment_instance.payment_done_for_patient:
+                    patient = Patient.objects.filter(
+                        id=payment_instance.payment_done_for_patient.id).first()
+                    user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(patient.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                                appointment.appointment_date.time())
+                    send_sms(mobile_number=str(patient.mobile.raw_input),
+                            message=user_message)
+                if payment_instance.payment_done_for_family_member:
+                    family_member = FamilyMember.objects.filter(
+                        id=payment_instance.payment_done_for_family_member.id).first()
+                    user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(family_member.first_name, package_name, appointment.appointment_date.date(),
+                                                                                                                                appointment.appointment_date.time())
+                    send_sms(mobile_number=str(
+                        family_member.mobile.raw_input), message=user_message)
+                if payment_instance.payment_for_uhid_creation:
+                    update_data["appointment_identifier"] = new_appointment_id
+                appointment_serializer = HealthPackageAppointmentSerializer(
+                    appointment, data=update_data, partial=True)
+                appointment_serializer.is_valid(raise_exception=True)
+                appointment_serializer.save()
 
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
