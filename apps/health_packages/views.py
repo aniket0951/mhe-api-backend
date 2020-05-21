@@ -66,7 +66,7 @@ class HealthPackageSpecialisationViewSet(custom_viewsets.ReadOnlyModelViewSet):
             hospital=hospital_id).values_list('health_package_id', flat=True)
 
         return Specialisation.objects.filter(health_package__id__in=hospital_related_health_packages).filter(
-            (Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+            (Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
             Q(start_date__lte=datetime.now().date())).distinct('description',)
 
 

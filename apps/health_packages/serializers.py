@@ -17,9 +17,21 @@ class HealthTestSerializer(DynamicFieldsModelSerializer):
 
 
 class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
+    is_discount_applicable = serializers.SerializerMethodField()
+    final_price = serializers.SerializerMethodField()
+
     class Meta:
         model = HealthPackagePricing
         exclude = ('created_at', 'updated_at',)
+
+    def get_is_discount_applicable(self, instance):
+        if instance.discount_start_date < datetime.now().date() and \
+                (not instance.discount_end_date or instance.discount_end_date > datetime.now().date()):
+            return True
+        return False
+
+    def get_final_price(self, instance):
+        return (100 - instance.discount_percentage) * instance.price / 100
 
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
@@ -52,7 +64,7 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
             hospital_id = self.context['request'].query_params.get(
                 'hospital__id')
 
-        return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+        return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
                                                                                           Q(start_date__lte=datetime.now().date())).exists()
 
     def get_included_health_tests(self, instance):
@@ -89,7 +101,7 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
             hospital_id = self.context['request'].query_params.get(
                 'hospital__id')
 
-        return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+        return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
                                                                                           Q(start_date__lte=datetime.now().date())).exists()
 
 

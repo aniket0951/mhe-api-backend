@@ -50,7 +50,7 @@ class LabRadiologyItemSerializer(DynamicFieldsModelSerializer):
             hospital_id = self.context['request'].query_params.get(
                 'hospital__id')
 
-        return not instance.lab_radiology_item_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+        return not instance.lab_radiology_item_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
                                                                                               Q(start_date__lte=datetime.now().date())).exists()
 
 

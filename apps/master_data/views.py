@@ -27,7 +27,7 @@ from proxy.custom_views import ProxyView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser, InternalAPICall)
+                                      InternalAPICall, IsManipalAdminUser)
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -98,7 +98,7 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            (Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+            (Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
             Q(start_date__lte=datetime.now().date()))
 
 
@@ -137,7 +137,7 @@ class SpecialisationViewSet(custom_viewsets.ModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().filter(
-            (Q(end_date__gte=datetime.now()) | Q(end_date__isnull=True)) &
+            (Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
             Q(start_date__lte=datetime.now().date()))
 
 
@@ -325,10 +325,15 @@ class HealthPackagesView(ProxyView):
         health_packages_sorted_keys = [
             'age_from',
             'age_to',
+            'benefits',
             'billing_group',
             'billing_subgroup',
             'start_date',
             'end_date',
+            'description',
+            'discount_percentage',
+            'discount_start_date',
+            'discount_end_date',
             'gender',
             'hospital_code',
             'item_code',
@@ -344,16 +349,16 @@ class HealthPackagesView(ProxyView):
                 if not each_health_package[key]:
                     each_health_package[key] = None
 
-                if key =='AgeFrom' and not each_health_package[key]:
+                if key == 'AgeFrom' and not each_health_package[key]:
                     each_health_package[key] = 0
 
-                if key =='AgeTo' and not each_health_package[key]:
+                if key == 'AgeTo' and not each_health_package[key]:
                     each_health_package[key] = 120
-                    
-                if key =='Gender' and (not each_health_package[key] in ['Male', 'Female'] or not each_health_package[key]) :
+
+                if key == 'Gender' and (not each_health_package[key] in ['Male', 'Female'] or not each_health_package[key]):
                     each_health_package[key] = 'Male and Female'
 
-                if key in ['DateFrom', 'DateTo'] and each_health_package[key]:
+                if key in ['DateFrom', 'DateTo', 'DiscDateFrom', 'DiscDateTo'] and each_health_package[key]:
                     each_health_package[key] = datetime.strptime(
                         each_health_package[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
@@ -392,6 +397,12 @@ class HealthPackagesView(ProxyView):
                 'end_date')
             hospital_health_package_details['price'] = health_package_details.pop(
                 'price')
+            hospital_health_package_details['discount_percentage'] = health_package_details.pop(
+                'discount_percentage')
+            hospital_health_package_details['discount_start_date'] = health_package_details.pop(
+                'discount_start_date')
+            hospital_health_package_details['discount_end_date'] = health_package_details.pop(
+                'discount_end_date')
 
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
@@ -400,8 +411,8 @@ class HealthPackagesView(ProxyView):
             # if health_package_details['age_group']:
             #     health_package_kwargs['age_group'] = health_package_details['age_group']
 
-            # if health_package_details['gender']:
-            #     health_package_kwargs['gender'] = health_package_details['gender']
+            if health_package_details['gender']:
+                health_package_kwargs['gender'] = health_package_details['gender']
 
             specialisation_name = health_package_details.pop(
                 'specialisation_name')
