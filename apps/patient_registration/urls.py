@@ -2,13 +2,14 @@ from django.conf.urls import url
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import (CityViewSet, CountryViewSet, RegionViewSet,
+from .views import (CityViewSet, CountryViewSet, RegionViewSet, ProvinceViewSet,
                     RegistrationAPIView, UHIDRegistrationView, ZipcodeViewSet)
 
 router = DefaultRouter(trailing_slash=False)
 
 router.register('countries', CountryViewSet)
 router.register('regions', RegionViewSet)
+router.register('provinces', ProvinceViewSet)
 router.register('cities', CityViewSet)
 router.register('zipcodes', ZipcodeViewSet)
 

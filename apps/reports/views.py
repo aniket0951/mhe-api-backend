@@ -50,7 +50,8 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
         family_member_id = self.request.query_params.get('user_id', None)
         filter_by = self.request.query_params.get("filter_by", None)
         request_patient_obj = patient_user_object(self.request)
-        qs = None
+        
+        qs = Report.objects.none()
 
         if family_member_id:
             family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,
@@ -64,11 +65,10 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
 
             qs = Report.objects.filter(
                 uhid=family_member.uhid_number).distinct()
+        else:
+            if not request_patient_obj.uhid_number:
+                raise ValidationError("Your UHID is not linked!")
 
-        if not qs and not request_patient_obj.uhid_number:
-            raise ValidationError("Your UHID is not linked!")
-
-        if not qs:
             qs = Report.objects.filter(
                 uhid=request_patient_obj.uhid_number).distinct()
 
@@ -88,6 +88,10 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             elif filter_by == "current_month":
                 current_month = datetime.today()
                 return qs.filter(time__month=current_month.month, time__year=current_month.year)
+            elif filter_by == "date_range":
+                date_from = self.request.query_params.get("date_from", None)
+                date_to = self.request.query_params.get("date_to", None)
+                return qs.filter(uhid_number=uhid, time__date__range= [date_from, date_to])
             else:
                 return qs.filter(time__date=filter_by)
 

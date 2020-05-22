@@ -1,7 +1,8 @@
+import json
 from datetime import datetime
 
 from django.db import transaction
-import json
+from rest_framework import serializers
 
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
@@ -14,7 +15,6 @@ from apps.health_packages.serializers import (HealthPackageDetailSerializer,
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
-from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import Appointment, CancellationReason, HealthPackageAppointment
@@ -70,15 +70,18 @@ class HealthPackageAppointmentSerializer(DynamicFieldsModelSerializer):
         appointment.health_package.set(health_package)
         health_package = HealthPackageSpecificSerializer(appointment.health_package, context={
             "hospital": appointment.hospital
-        }, fields=['id', 'name','included_health_tests_count', 'pricing'],
+        }, fields=['id', 'name', 'included_health_tests_count', 'pricing'],
             many=True).data
         for package in health_package:
             if package.get("pricing"):
                 if package.get("pricing").get("hospital"):
-                    package["pricing"]["hospital"] = str(package.get("pricing").get("hospital"))
+                    package["pricing"]["hospital"] = str(
+                        package.get("pricing").get("hospital"))
                 if package.get("pricing").get("health_package"):
-                    package["pricing"]["health_package"] = str(package.get("pricing").get("health_package"))
-        appointment.health_package_original = {"health_package": health_package}
+                    package["pricing"]["health_package"] = str(
+                        package.get("pricing").get("health_package"))
+        appointment.health_package_original = {
+            "health_package": health_package}
         appointment.save()
         return appointment
 

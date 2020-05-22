@@ -128,9 +128,14 @@ class PatientServiceAppointment(MyBaseModel):
                                       related_name='family_service_appointment',
                                       blank=True,
                                       null=True)
-    
+
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 null=True,
+                                 blank=True)
+
     referenced_address = models.ForeignKey(PatientAddress, on_delete=models.SET_NULL,
-                                related_name='patient_service_appointment', null=True)
+                                           related_name='patient_service_appointment', null=True)
 
     status = models.CharField(choices=SERVICE_APPOINTMENT_STATUS_CHOICES,
                               default='Pending',
@@ -140,9 +145,8 @@ class PatientServiceAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
-    
-    address = JSONField(null=True, blank=True)
 
+    address = JSONField(null=True, blank=True)
 
     @property
     def is_cancellable(self):
@@ -219,15 +223,15 @@ class HomeCollectionAppointment(MyBaseModel):
                                       related_name='family_home_collection_appointment',
                                       blank=True,
                                       null=True)
-    
+
     referenced_address = models.ForeignKey(PatientAddress, on_delete=models.SET_NULL,
-                                related_name='patient_home_collection_appointment', null=True)
+                                           related_name='patient_home_collection_appointment', null=True)
 
     status = models.CharField(choices=HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES,
                               default='Pending',
                               max_length=11
                               )
-                              
+
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)

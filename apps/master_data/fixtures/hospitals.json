@@ -12,7 +12,9 @@
             "address": "#98 HAL Airport Road, Bangalore 560017",
             "is_health_package_online_purchase_supported": "True",
             "health_package_doctor_code":"MHBHC",
-            "health_package_department_code":"MHBHSVC"
+            "health_package_department_code":"MHBHSVC",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E610000044696FF08569534009F9A067B3EA2940"
         }
     },{
         "model": "master_data.hospital",
@@ -24,7 +26,8 @@
             "description": "Manipal Hospital Malleshwaram, Bengaluru",
             "email": "www.manipalhospitals.com",
             "mobile": "080-49007000",
-            "address": "No.71,11th Main,Opposite Malleswaram Railway Station,Bangalore-560003"
+            "address": "No.71,11th Main,Opposite Malleswaram Railway Station,Bangalore-560003",
+            "location":"0101000020E6100000B98D06F0166453408D976E1283002A40"
         }
     },{
         "model": "master_data.hospital",
@@ -34,7 +37,8 @@
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MMH",
             "description": " Manipal Hospital Jayanagar, Bengaluru",
-            "email": "www.manipalhospitals.com"
+            "email": "www.manipalhospitals.com",
+            "location":"0101000020E6100000A089B0E1E96553406891ED7C3FD52940"
         }
     },{
         "model": "master_data.hospital",
@@ -46,7 +50,8 @@
             "description": "Manipal Hospital Whitefield, Bengaluru",
             "email": "www.manipalhospitals.com",
             "mobile": "080-25027000",
-            "address": "#143,212-215, EPIP Industrial Area, Hoodi Village K R Puram Hobli, Bengaluru 560066"
+            "address": "#143,212-215, EPIP Industrial Area, Hoodi Village K R Puram Hobli, Bengaluru 560066",
+            "location":"0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940"
         }
     },{
         "model": "master_data.hospital",
@@ -56,7 +61,8 @@
             "updated_at": "2020-02-06T00:00:00+05:30",
             "code": "MHD",
             "description": "Manipal Hospital Dwarka, Delhi",
-            "email": "www.manipalhospitals.com"
+            "email": "www.manipalhospitals.com",
+            "location":"0101000020E61000004DF38E53744453404694F6065F983C40"
         }
     },{
         "model": "master_data.hospital",
@@ -68,7 +74,8 @@
             "description": "Manipal Hospital Jaipur",
             "email": "www.manipalhospitals.com",
             "mobile": "+91 141 5164 000",
-            "address": "Sector 5, Vidhyadhar Nagar, Jaipur-302013, Rajasthan"
+            "address": "Sector 5, Vidhyadhar Nagar, Jaipur-302013, Rajasthan",
+            "location":"0101000020E61000002FDD240681F152402B1895D409F83A40"
         }
     },{
         "model": "master_data.hospital",
@@ -80,7 +87,8 @@
             "description": "Manipal Hospital Vijayawada",
             "email": "www.manipalhospitals.com",
             "mobile": "0866-25027000",
-            "address": "Near Varadhi,(Near Vijayawada), Tadepalli,Guntur Dist - 522501"
+            "address": "Near Varadhi,(Near Vijayawada), Tadepalli,Guntur Dist - 522501",
+            "location":"0101000020E6100000C139234A7B27544079E92631087C3040"
         }
     },{
         "model": "master_data.hospital",
@@ -92,7 +100,8 @@
             "description": "Manipal Hospital Goa",
             "email": "www.manipalhospitals.com",
             "mobile": "083-26632500",
-            "address": "(A Unit of Manipal Health Enterprises Pvt. Ltd), Dr E Borges Road, Dona Paula Panaji - 403004"
+            "address": "(A Unit of Manipal Health Enterprises Pvt. Ltd), Dr E Borges Road, Dona Paula Panaji - 403004",
+            "location": "0101000020E6100000F2D24D6210745240EC51B81E85EB2E40"
         }
     },{
         "model": "master_data.hospital",
@@ -104,7 +113,8 @@
             "description": "Manipal Hospital Salem",
             "email": "www.manipalhospitals.com",
             "mobile": "0427-2346600",
-            "address": " (A Unit of Manipal Health Enterprises Pvt. Ltd.)  Dalmia Board, Salem-Bengaluru Highway, Salem 636012"
+            "address": "(A Unit of Manipal Health Enterprises Pvt. Ltd.)  Dalmia Board, Salem-Bengaluru Highway, Salem 636012",
+            "location": "0101000020E6100000D8817346948653400E2DB29DEF672740"
         }
     },{
         "model": "master_data.hospital",
@@ -116,7 +126,8 @@
             "description": "KMC, Manipal Hospital Mangalore",
             "email": "www.manipalhospitals.com",
             "mobile": "0824-2444590",
-            "address": "DR.B.R.Ambedkar Circle,Mangaluru 575 001"
+            "address": "DR.B.R.Ambedkar Circle,Mangaluru 575 001",
+            "location":"0101000020E6100000984C158C4AB65240CAC342AD69BE2940"
         }
     }
 

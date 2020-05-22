@@ -10,7 +10,7 @@ class MobileDevice(models.Model):
         Patient, related_name='device', on_delete=models.PROTECT)
     platform = models.CharField(max_length=20, choices=(
         ('iOS', 'iOS'), ('Android', 'Android'),))
-    version = models.CharField(max_length=10, blank=True, null=True)
+    version = models.CharField(max_length=30, blank=True, null=True)
     token = models.TextField()
     device_id = models.TextField(blank=True, null=True)
 
