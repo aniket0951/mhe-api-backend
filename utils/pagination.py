@@ -17,7 +17,7 @@ class CustomPagination(pagination.PageNumberPagination):
             return None
         return self.page.next_page_number()
 
-    def get_paginated_response(self, data):
+    def get_paginated_response(self):
         return OrderedDict([
             ('total_count', self.page.paginator.count),
             ('next_page', self.get_next_link()),
