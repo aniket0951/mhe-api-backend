@@ -148,6 +148,8 @@ class CreateUHID:
         self.passport_no = param.get("passport_no", None)
         self.passport_issue_date = param.get("passport_issue_date", None)
         self.passport_expiry_date = param.get("passport_expiry_date", None)
+        self.language = param.get("language", None)
+        self.locality = param.get("locality", None)
 
     def serialize(self, serializer):
         serializer.start_object('PreRegparam')
@@ -186,6 +188,8 @@ class CreateUHID:
         serializer.add_property('PassportIssueDate', self.passport_issue_date)
         serializer.add_property('PassportExpiryDate',
                                 self.passport_expiry_date)
+        serializer.add_property('language', self.language)
+        serializer.add_property('locality', self.locality)
 
 
 class IPBills:
@@ -277,4 +281,16 @@ class UpdateRebookStatus:
         serializer.add_property('TotAmt', self.total_amount)
         serializer.add_property('ReceiptNo', self.receipt_no)
         serializer.add_property('Transid', self.trans_id)
+        serializer.add_property('locationCode', self.location_code)
+
+class RescheduleAppointment:
+    def __init__(self, app_id=None, location_code=None, new_date=None):
+        self.app_id = app_id
+        self.location_code = location_code
+        self.new_date = new_date
+
+    def serialize(self, serializer):
+        serializer.start_object('ReScheduleAppParam')
+        serializer.add_property('AppId', self.app_id)
+        serializer.add_property('newdate', self.new_date)
         serializer.add_property('locationCode', self.location_code)

@@ -157,7 +157,8 @@ class UHIDRegistrationView(ProxyView):
     permission_classes = [IsPatientUser]
 
     def get_request_data(self, request):
-        request.data["dob"] = "".join(request.data["dob"].split("/"))
+        d, m, y = request.data["dob"].split("/")
+        request.data["dob"] = m + d + y
         uhid_registration = serializable_CreateUHID(request.data)
         request_data = custom_serializer().serialize(uhid_registration, 'XML')
         return request_data
