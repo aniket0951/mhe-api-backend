@@ -61,7 +61,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
                      'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
                      'patient__mobile', 'patient__email']
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter)
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
@@ -82,7 +83,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             if date_from and date_to:
-                qs = qs.filter(appointment_date__range= [date_from, date_to])
+                qs = qs.filter(appointment_date__range=[date_from, date_to])
             if is_cancelled == "true":
                 return qs.filter(status=2)
             if is_cancelled == "false":
@@ -94,13 +95,35 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             if not member:
                 raise PatientDoesNotExistsValidationException
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
-            return super().get_queryset().filter((Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)) | Q(family_member_id=family_member) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5))
+                return super().get_queryset().filter(
+                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
+                        Q(family_member_id=family_member) |
+                        (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) |
+                        (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) |
+                        (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
+            return super().get_queryset().filter(
+                (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)) |
+                Q(family_member_id=family_member) |
+                (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) |
+                (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(
+                    (Q(appointment_date__lt=datetime.now().date()) |
+                     (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__lt=datetime.now().time())) |
+                     Q(status=2) | Q(status=5)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if is_upcoming:
-                return super().get_queryset().filter(appointment_date__gte=datetime.now().date(), status=1).filter((Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
-            return super().get_queryset().filter((Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number))).filter(Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5))
+                return super().get_queryset().filter(
+                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
+                        (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) |
+                        (Q(patient_id=patient.id) & Q(family_member__isnull=True)) |
+                        (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
+            return super().get_queryset().filter(
+                (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) |
+                (Q(patient_id=patient.id) & Q(family_member__isnull=True)) |
+                (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number))).filter(
+                    (Q(appointment_date__lt=datetime.now().date()) |
+                     (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__lt=datetime.now().time())) |
+                     Q(status=2) | Q(status=5)))
 
 
 class CreateMyAppointment(ProxyView):
@@ -209,7 +232,7 @@ class CancelMyAppointment(ProxyView):
         data = request.data
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
-        status = data.pop("status",None)
+        status = data.pop("status", None)
         instance = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
         if not instance:
@@ -599,13 +622,15 @@ class ReBookDoctorAppointment(ProxyView):
                                                 success=response_success, data=response_data)
         raise ValidationError(response_message)
 
+
 class DoctorRescheduleAppointmentView(ProxyView):
     permission_classes = [IsPatientUser | InternalAPICall]
     source = 'ReScheduleApp'
 
     def get_request_data(self, request):
         reason_id = request.data.pop("reason_id")
-        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
+        instance = Appointment.objects.filter(
+            appointment_identifier=self.request.data["app_id"]).first()
         if not instance:
             raise ValidationError("Appointment doesn't Exist")
         slot_book = serializable_RescheduleAppointment(**request.data)
@@ -624,24 +649,30 @@ class DoctorRescheduleAppointmentView(ProxyView):
             root = ET.fromstring(response.content)
             status = root.find("Status").text
             if status == "1":
-                reschedule_response =root.find("ReScheduleAppResp").text
+                reschedule_response = root.find("ReScheduleAppResp").text
                 if reschedule_response:
-                    new_appointment_response = ast.literal_eval(reschedule_response)[0]
+                    new_appointment_response = ast.literal_eval(
+                        reschedule_response)[0]
                     message = new_appointment_response["Message"]
                     response_message = message
                     if message == "Appointment Rescheduled Successfully":
                         new_appointment = dict()
                         appointment_id = new_appointment_response["NewApptId"]
-                        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
-                        appointment_date_time = self.request.data.get("new_date")
-                        datetime_object = datetime.strptime(appointment_date_time, '%Y%m%d%H%M%S')
+                        instance = Appointment.objects.filter(
+                            appointment_identifier=self.request.data["app_id"]).first()
+                        appointment_date_time = self.request.data.get(
+                            "new_date")
+                        datetime_object = datetime.strptime(
+                            appointment_date_time, '%Y%m%d%H%M%S')
                         time = datetime_object.time()
-                        new_appointment["appointment_date"] = datetime_object.date()
-                        new_appointment["appointment_slot"] = time.strftime("%H:%M:%S %p")
+                        new_appointment["appointment_date"] = datetime_object.date(
+                        )
+                        new_appointment["appointment_slot"] = time.strftime(
+                            "%H:%M:%S %p")
                         new_appointment["status"] = 1
                         new_appointment["appointment_identifier"] = appointment_id
                         new_appointment["patient"] = instance.patient.id
-                        new_appointment["uhid"] = instance.uhid 
+                        new_appointment["uhid"] = instance.uhid
                         new_appointment["department"] = instance.department.id
                         new_appointment["consultation_amount"] = instance.consultation_amount
                         new_appointment["payment_status"] = instance.payment_status
@@ -649,7 +680,8 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             new_appointment["family_member"] = instance.family_member.id
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
-                        appointment = AppointmentSerializer(data=new_appointment)
+                        appointment = AppointmentSerializer(
+                            data=new_appointment)
                         appointment.is_valid(raise_exception=True)
                         appointment = appointment.save()
                         if instance.payment_appointment.exists():
