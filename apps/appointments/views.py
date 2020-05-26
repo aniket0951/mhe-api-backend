@@ -48,7 +48,6 @@ from utils import custom_viewsets
 from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser,
                                       IsPatientUser, IsSelfUserOrFamilyMember,
                                       SelfUserAccess)
-from utils.custom_sms import send_sms
 
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
@@ -194,23 +193,6 @@ class CreateMyAppointment(ProxyView):
                 appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
-                appointment_data = appointment.data
-                if appointment_data["family_member"]:
-                    user_message = "Dear {0}, Your Appointment has been booked by {6} with {1} on {2} at {3} with appointment id:{4} at {5}".format(appointment_data["family_member"]["first_name"], appointment_data["doctor"][
-                                                                                                                                                    "name"], appointment_data["appointment_date"], appointment_data["appointment_slot"], appointment_data["appointment_identifier"], appointment_data["hospital"]["address"], appointment_data["patient"]["first_name"])
-                    if str(appointment_data["family_member"]["mobile"]) == str(appointment_data["patient"]["mobile"]):
-                        send_sms(mobile_number=str(
-                            appointment_data["family_member"]["mobile"]), message=user_message)
-                    else:
-                        send_sms(mobile_number=str(
-                            appointment_data["patient"]["mobile"]), message=user_message)
-                        send_sms(mobile_number=str(
-                            appointment_data["family_member"]["mobile"]), message=user_message)
-                else:
-                    user_message = "Dear {0}, Your Appointment has been booked with {1} on {2} at {3} with appointment id:{4} at {5}".format(
-                        appointment_data["patient"]["first_name"], appointment_data["doctor"]["name"], appointment_data["appointment_date"], appointment_data["appointment_slot"], appointment_data["appointment_identifier"], appointment_data["hospital"]["address"])
-                    send_sms(mobile_number=str(
-                        appointment_data["patient"]["mobile"]), message=user_message)
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
@@ -268,23 +250,6 @@ class CancelMyAppointment(ProxyView):
                 param["app_id"] = instance.appointment_identifier
                 param["cancel_remark"] = instance.reason.reason
                 param["location_code"] = instance.hospital.code
-
-                if instance.family_member:
-                    user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled by {5}".format(instance.family_member.first_name,
-                                                                                                                                                instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier, instance.patient.first_name)
-                    if str(instance.family_member.mobile) == str(instance.patient.mobile):
-                        send_sms(mobile_number=str(
-                            instance.patient.mobile.raw_input), message=user_message)
-                    else:
-                        send_sms(mobile_number=str(
-                            instance.patient.mobile.raw_input), message=user_message)
-                        send_sms(mobile_number=str(
-                            instance.family_member.mobile.raw_input), message=user_message)
-                else:
-                    user_message = "Dear {0}, Your Appointment with {1} on {2} at {3} with appointment id:{4} has been cancelled as per your request".format(instance.patient.first_name,
-                                                                                                                                                             instance.doctor.name, instance.appointment_date, instance.appointment_slot, instance.appointment_identifier)
-                    send_sms(mobile_number=str(
-                        instance.patient.mobile.raw_input), message=user_message)
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
                 return self.custom_success_response(message=response_message,
@@ -391,15 +356,6 @@ class HealthPackageAppointmentView(ProxyView):
                     payment_obj = instance.payment
                     payment_obj.health_package_appointment = instance
                     payment_obj.save()
-                    if instance.family_member:
-                        user_message = "Hi {0},Your Health package appointment has been rebooked on {1} at {2}".format(instance.family_member.first_name, instance.appointment_date.date(),
-                                                                                                                       instance.appointment_date.time())
-                        send_sms(mobile_number=str(
-                            instance.family_member.mobile.raw_input), message=user_message)
-                    user_message = "Hi {0},Your Health package appointment has been rebooked on {1} at {2}".format(instance.patient.first_name, instance.appointment_date.date(),
-                                                                                                                   instance.appointment_date.time())
-                    send_sms(mobile_number=str(
-                        instance.patient.mobile.raw_input), message=user_message)
                     request_param = rebook_parameters(instance)
                     response = ReBookView.as_view()(request_param)
                 response_success = True
