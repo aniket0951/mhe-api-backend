@@ -47,6 +47,8 @@ class HospitalDepartmentSerializer(DynamicFieldsModelSerializer):
 
 
 class AmbulanceContactSerializer(DynamicFieldsModelSerializer):
+    distance = serializers.CharField(
+        source='calculated_distance', default=None)
     class Meta:
         model = AmbulanceContact
         exclude = ('created_at', 'updated_at',)
@@ -56,4 +58,9 @@ class AmbulanceContactSerializer(DynamicFieldsModelSerializer):
         if instance.hospital:
             response_object['hospital'] = HospitalSerializer(
                 instance.hospital).data
+        try:
+            if 'distance' in response_object and instance.calculated_distance:
+                response_object['distance'] = instance.calculated_distance.km
+        except Exception:
+            pass
         return response_object
