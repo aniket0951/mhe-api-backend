@@ -67,6 +67,8 @@ class Appointment(models.Model):
                             null=True)
     consultation_amount = models.FloatField(default=0,
                                             null=True)
+    refundable_amount = models.FloatField(default=0,
+                                          null=True)
     booked_via_app = models.BooleanField(default=True)
 
     @property
@@ -74,15 +76,23 @@ class Appointment(models.Model):
         if self.appointment_date:
             if ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
                 if self.appointment_date > datetime.now().date():
+                    if self.payment_status == "success":
+                        self.refundable_amount = self.consultation_amount
                     return True
                 if self.appointment_date == datetime.now().date():
                     if not self.payment_status:
                         return True
                     if self.appointment_slot > datetime.now().time():
-                        dateTimeA = datetime.combine(datetime.now(), self.appointment_slot)
-                        dateTimeB = datetime.combine(datetime.now(), datetime.now().time())
-                        time_delta = (dateTimeA - dateTimeB).total_seconds()/3600
+                        dateTimeA = datetime.combine(
+                            datetime.now(), self.appointment_slot)
+                        dateTimeB = datetime.combine(
+                            datetime.now(), datetime.now().time())
+                        time_delta = (
+                            dateTimeA - dateTimeB).total_seconds()/3600
                         if time_delta > 2:
+                            self.refundable_amount = self.consultation_amount
+                            if time_delta <= 4:
+                                self.refundable_amount = self.consultation_amount - 100.0
                             return True
         return False
 
