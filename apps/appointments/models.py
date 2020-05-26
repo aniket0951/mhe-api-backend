@@ -72,8 +72,18 @@ class Appointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            if ((self.appointment_date > datetime.now().date()) and (self.status == 1)):
-                return True
+            if ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
+                if self.appointment_date > datetime.now().date():
+                    return True
+                if self.appointment_date == datetime.now().date():
+                    if not self.payment_status:
+                        return True
+                    if self.appointment_slot > datetime.now().time():
+                        dateTimeA = datetime.combine(datetime.now(), self.appointment_slot)
+                        dateTimeB = datetime.combine(datetime.now(), datetime.now().time())
+                        time_delta = (dateTimeA - dateTimeB).total_seconds()/3600
+                        if time_delta > 2:
+                            return True
         return False
 
 
