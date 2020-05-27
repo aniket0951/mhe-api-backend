@@ -619,7 +619,7 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
             latitude = float(self.request.query_params.get("latitude", 0))
             if longitude and latitude:
                 user_location = Point(longitude, latitude, srid=4326)
-                return self.get_queryset().annotate(calculated_distance=Django_Distance('location',
+                return self.get_queryset().annotate(calculated_distance=Django_Distance('hospital__location',
                                                                                         user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
