@@ -103,6 +103,12 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
 
         return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
                                                                                           Q(start_date__lte=datetime.now().date())).exists()
+    
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+        return response_object
 
 
 class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
