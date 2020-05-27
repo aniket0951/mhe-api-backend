@@ -58,6 +58,9 @@ class Appointment(models.Model):
     reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
                                related_name='cancellation_reason_appointment',
                                null=True, blank=True)
+    other_reason = models.TextField(blank=True,
+                                    null=True,
+                                    max_length=500)
 
     payment_status = models.CharField(max_length=10,
                                       blank=True,
@@ -131,6 +134,9 @@ class HealthPackageAppointment(models.Model):
     reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
                                related_name='cancellation_reason_health_appointment',
                                null=True, blank=True)
+    other_reason = models.TextField(blank=True,
+                                    null=True,
+                                    max_length=500)
 
     booked_via_app = models.BooleanField(default=True)
 

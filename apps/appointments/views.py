@@ -237,6 +237,7 @@ class CancelMyAppointment(ProxyView):
             appointment_identifier=appointment_id).first()
         if not instance:
             raise AppointmentDoesNotExistsValidationException
+        instance.other_reason = data.pop("other", None)
         request.data["location_code"] = instance.hospital.code
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
@@ -277,6 +278,7 @@ class CancelMyAppointment(ProxyView):
                 response = CancelAndRefundView.as_view()(request_param)
                 return self.custom_success_response(message=response_message,
                                                     success=success_status, data=None)
+        instance.other_reason = None
         raise ValidationError(
             "Could not process the request. PLease try again")
 
@@ -470,6 +472,7 @@ class CancelHealthPackageAppointment(ProxyView):
         if not instance:
             raise AppointmentDoesNotExistsValidationException
         request.data["location_code"] = instance.hospital.code
+        instance.other_reason = data.pop("other", None)
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
@@ -505,6 +508,7 @@ class CancelHealthPackageAppointment(ProxyView):
                 response = CancelAndRefundView.as_view()(request_param)
             return self.custom_success_response(message=response_message,
                                                 success=success_status, data=None)
+        instance.other_reason = None
         raise ValidationError(
             "Could not process your request. Please try again")
 
