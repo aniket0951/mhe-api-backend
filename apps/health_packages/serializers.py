@@ -21,8 +21,6 @@ class HealthTestSerializer(DynamicFieldsModelSerializer):
             response_object['description'] = instance.description.title()
         return response_object
 
-    
-
 
 class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
     is_discount_applicable = serializers.SerializerMethodField()
@@ -117,7 +115,7 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
 
         return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
                                                                                           Q(start_date__lte=datetime.now().date())).exists()
-    
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.name:
@@ -142,7 +140,7 @@ class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
 
         return HealthPackageSerializer(instance.health_package.filter(id__in=hospital_related_health_packages), many=True,
                                        context=self.context).data
-    
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.name:
