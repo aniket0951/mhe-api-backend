@@ -43,10 +43,12 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
     search_fields = [
         'name', 'hospital_departments__department__name', 'hospital__code', 'code']
-    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    filter_backends = (filters.SearchFilter,
+                       filters.OrderingFilter, DjangoFilterBackend)
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     ordering = ('name',)
+    filter_fields = ('hospital_departments__department__id',)
     create_success_message = None
     list_success_message = 'Doctors list returned successfully!'
     retrieve_success_message = 'Doctors information returned successfully!'
@@ -54,14 +56,14 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         if manipal_admin_object(self.request):
-            return super().get_queryset()
+            return super().get_queryset().distinct()
 
         location_id = self.request.query_params.get('location_id', None)
         date = self.request.query_params.get('date', None)
 
         return Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
             (Q(end_date__gte=date) | Q(end_date__isnull=True)) &
-            Q(start_date__lte=datetime.now().date()))
+            Q(start_date__lte=datetime.now().date())).distinct()
 
 
 class DoctorSlotAvailability(ProxyView):
