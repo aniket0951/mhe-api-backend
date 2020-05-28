@@ -33,12 +33,6 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
     def get_final_price(self, instance):
         return round((100 - instance.discount_percentage) * instance.price / 100)
 
-    def to_representation(self, instance):
-        response_object = super().to_representation(instance)
-        if instance.name:
-            response_object['name'] = instance.name.title()
-        return response_object
-
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
     included_health_tests = serializers.SerializerMethodField()
