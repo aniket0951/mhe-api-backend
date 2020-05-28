@@ -181,7 +181,7 @@ class DepartmentsView(ProxyView):
                     each_department[key] = datetime.strptime(
                         each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
                 
-                if key == "name" and each_department["key"]:
+                if key == "DeptName" and each_department["key"]:
                     each_department["key"] = each_department["key"].title()
 
                 department_details[department_sorted_keys[index]
@@ -272,7 +272,7 @@ class DoctorsView(ProxyView):
                     each_doctor[key] = datetime.strptime(
                         each_doctor[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
-                if key == "name" and each_doctor[key]:
+                if key == "DocName" and each_doctor[key]:
                     each_doctor[key] = each_doctor[key].title()
 
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
@@ -368,7 +368,7 @@ class HealthPackagesView(ProxyView):
                     each_health_package[key] = datetime.strptime(
                         each_health_package[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
-                if key == 'name' and each_health_package[key]:
+                if key == 'PackageName' and each_health_package[key]:
                     each_health_package[key] = each_health_package[key].title()
 
                 health_package_details[health_packages_sorted_keys[index]
@@ -492,7 +492,7 @@ class LabRadiologyItemsView(ProxyView):
                     each_lab_radiology_item[key] = datetime.strptime(
                         each_lab_radiology_item[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
-                if key == 'description' and each_lab_radiology_item[key]:
+                if key == 'ItemDesc' and each_lab_radiology_item[key]:
                     each_lab_radiology_item[key] = each_lab_radiology_item[key].title()
 
                 hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
