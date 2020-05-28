@@ -33,6 +33,12 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
     def get_final_price(self, instance):
         return round((100 - instance.discount_percentage) * instance.price / 100)
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+        return response_object
+
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
     included_health_tests = serializers.SerializerMethodField()
@@ -70,6 +76,12 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
     def get_included_health_tests(self, instance):
         health_tests = instance.included_health_tests.all().order_by('description')
         return HealthTestSerializer(health_tests, many=True).data
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+        return response_object
 
 
 class HealthPackageSerializer(DynamicFieldsModelSerializer):
@@ -128,6 +140,12 @@ class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
 
         return HealthPackageSerializer(instance.health_package.filter(id__in=hospital_related_health_packages), many=True,
                                        context=self.context).data
+    
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+        return response_object
 
 
 class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
@@ -135,6 +153,12 @@ class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Specialisation
         exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+        return response_object
 
 
 class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
@@ -152,3 +176,9 @@ class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
 
     def get_included_health_tests_count(self, instance):
         return instance.included_health_tests.count()
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+        return response_object
