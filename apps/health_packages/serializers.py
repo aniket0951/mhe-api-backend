@@ -15,6 +15,14 @@ class HealthTestSerializer(DynamicFieldsModelSerializer):
         exclude = ('created_at', 'updated_at',
                    'billing_sub_group', 'billing_group')
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.description:
+            response_object['description'] = instance.description.title()
+        return response_object
+
+    
+
 
 class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
     is_discount_applicable = serializers.SerializerMethodField()
