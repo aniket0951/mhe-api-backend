@@ -637,6 +637,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
             appointment_identifier=self.request.data["app_id"]).first()
         if not instance:
             raise ValidationError("Appointment doesn't Exist")
+        instance.other_reason = request.data.pop("other")
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
         request.data["reason_id"] = reason_id
@@ -700,4 +701,5 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         response_data["appointment_identifier"] = appointment_id
                         return self.custom_success_response(message=response_message,
                                                             success=response_success, data=response_data)
+        instance.other_reason = None
         raise ValidationError(response_message)
