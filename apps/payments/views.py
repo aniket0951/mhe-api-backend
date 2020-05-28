@@ -47,6 +47,7 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
 from utils.custom_sms import send_sms
 from utils.payment_parameter_generator import get_payment_param
+from utils.refund_parameter_generator import get_refund_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment
@@ -232,7 +233,8 @@ class PaymentResponse(APIView):
         if status_code == 1200:
             processing_id = response_token_json["processing_id"]
             try:
-                payment_instance = Payment.objects.get(processing_id=processing_id)
+                payment_instance = Payment.objects.get(
+                    processing_id=processing_id)
             except Exception:
                 raise ProcessingIdDoesNotExistsValidationException
             payment = {}
@@ -242,7 +244,8 @@ class PaymentResponse(APIView):
             if payment_instance.appointment or payment_instance.payment_for_health_package:
                 payment_paydetail = payment_response["payDetailAPIResponse"]
                 if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                    bill_detail = json.loads(
+                        payment_paydetail["BillDetail"])[0]
                     new_appointment_id = bill_detail["AppointmentId"]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
 
@@ -261,7 +264,8 @@ class PaymentResponse(APIView):
             if payment_instance.payment_for_ip_deposit:
                 payment_paydetail = payment_response["onlinePatientDeposit"]
                 if payment_paydetail["RecieptNumber"]:
-                    bill_detail = json.loads(payment_paydetail["RecieptNumber"])[0]
+                    bill_detail = json.loads(
+                        payment_paydetail["RecieptNumber"])[0]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
 
             payment["status"] = payment_response["status"]
@@ -280,7 +284,8 @@ class PaymentResponse(APIView):
                 uhid = payment["uhid_number"]
             if (payment_instance.payment_for_uhid_creation):
                 if payment_instance.appointment:
-                    appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
+                    appointment = Appointment.objects.filter(
+                        id=payment_instance.appointment.id).first()
                     appointment.status = 6
                     appointment.save()
                 if payment_instance.payment_done_for_patient:
@@ -408,7 +413,7 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             elif filter_by == "date_range":
                 date_from = self.request.query_params.get("date_from", None)
                 date_to = self.request.query_params.get("date_to", None)
-                return super().get_queryset().filter(uhid_number=uhid, created_at__date__range= [date_from, date_to])
+                return super().get_queryset().filter(uhid_number=uhid, created_at__date__range=[date_from, date_to])
             else:
                 return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
@@ -437,7 +442,8 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             if date_from and date_to:
-                qs = qs.filter(payment_id__status="success", appointment_date__date__range= [date_from, date_to])
+                qs = qs.filter(payment_id__status="success",
+                               appointment_date__date__range=[date_from, date_to])
             return qs.filter(payment_id__status="success")
         if is_booked:
             return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
@@ -529,3 +535,13 @@ class EpisodeItemView(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
+
+
+class RefundView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        param = get_refund_param(request.data)
+        url = settings.REFUND_URL
+        response = requests.post(url, data=param)
+        return Response(data="This is done")

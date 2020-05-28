@@ -1,7 +1,7 @@
+import ast
 import base64
 import datetime
 import hashlib
-import ast
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -23,18 +23,18 @@ from apps.notifications.utils import (cancel_parameters,
                                       doctor_rebook_parameters)
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
+from apps.payments.views import RefundView
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
 from proxy.custom_serializables import \
+    RescheduleAppointment as serializable_RescheduleAppointment
+from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
 from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
-from proxy.custom_serializables import \
-    RescheduleAppointment as serializable_RescheduleAppointment
-
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -269,13 +269,16 @@ class CancelMyAppointment(ProxyView):
                     instance.status = self.request.data.get("status")
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.save()
-                success_status = True
+                refund_param = cancel_and_refund_parameters(
+                    {"appointment_identifier": instance.appointment_identifier})
+                response = RefundView.as_view()(refund_param)
                 param = dict()
                 param["app_id"] = instance.appointment_identifier
                 param["cancel_remark"] = instance.reason.reason
                 param["location_code"] = instance.hospital.code
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
+                success_status = True
                 return self.custom_success_response(message=response_message,
                                                     success=success_status, data=None)
         instance.other_reason = None

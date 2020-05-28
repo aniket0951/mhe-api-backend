@@ -6,10 +6,6 @@ from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Q
 from django.utils.timezone import datetime
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -17,6 +13,7 @@ from apps.health_packages.models import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -24,6 +21,9 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -180,6 +180,9 @@ class DepartmentsView(ProxyView):
                 if key in ['DateFrom', 'DateTo'] and each_department[key]:
                     each_department[key] = datetime.strptime(
                         each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+
+                if key == "name" and each_department[key]:
+                    each_department[key] = each_department[key].title()
 
                 department_details[department_sorted_keys[index]
                                    ] = each_department[key]
