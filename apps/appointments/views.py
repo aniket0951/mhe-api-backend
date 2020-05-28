@@ -238,6 +238,7 @@ class CancelMyAppointment(ProxyView):
         if not instance:
             raise AppointmentDoesNotExistsValidationException
         instance.other_reason = data.pop("other", None)
+        instance.save()
         request.data["location_code"] = instance.hospital.code
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
@@ -279,6 +280,7 @@ class CancelMyAppointment(ProxyView):
                 return self.custom_success_response(message=response_message,
                                                     success=success_status, data=None)
         instance.other_reason = None
+        instance.save()
         raise ValidationError(
             "Could not process the request. PLease try again")
 
@@ -473,6 +475,7 @@ class CancelHealthPackageAppointment(ProxyView):
             raise AppointmentDoesNotExistsValidationException
         request.data["location_code"] = instance.hospital.code
         instance.other_reason = data.pop("other", None)
+        instance.save()
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
@@ -509,6 +512,7 @@ class CancelHealthPackageAppointment(ProxyView):
             return self.custom_success_response(message=response_message,
                                                 success=success_status, data=None)
         instance.other_reason = None
+        instance.save()
         raise ValidationError(
             "Could not process your request. Please try again")
 
@@ -638,6 +642,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
         if not instance:
             raise ValidationError("Appointment doesn't Exist")
         instance.other_reason = request.data.pop("other")
+        instance.save()
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
         request.data["reason_id"] = reason_id
@@ -702,4 +707,5 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         return self.custom_success_response(message=response_message,
                                                             success=response_success, data=response_data)
         instance.other_reason = None
+        instance.save()
         raise ValidationError(response_message)
