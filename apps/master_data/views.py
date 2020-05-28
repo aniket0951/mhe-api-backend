@@ -181,8 +181,8 @@ class DepartmentsView(ProxyView):
                     each_department[key] = datetime.strptime(
                         each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
                 
-                if key == "DeptName" and each_department["key"]:
-                    each_department["key"] = each_department["key"].title()
+                if key == "DeptName" and each_department[key]:
+                    each_department[key] = each_department[key].title()
 
                 department_details[department_sorted_keys[index]
                                    ] = each_department[key]
