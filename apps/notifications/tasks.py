@@ -27,9 +27,6 @@ def send_push_notification(self, **kwargs):
             "title": notification_instance.title, "message": notification_instance.message}, low_priority=False)
 
 
-
-
-
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
 def appointment_next_day_reminder_scheduler():
     now = datetime.today() + timedelta(hours=24)
