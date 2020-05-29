@@ -141,12 +141,26 @@ class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
         return HealthPackageSerializer(instance.health_package.filter(id__in=hospital_related_health_packages), many=True,
                                        context=self.context).data
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.description:
+            response_object['description'] = instance.description.title()
+        return response_object
+
 
 class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Specialisation
         exclude = ('created_at', 'updated_at',)
+    
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.description:
+            response_object['description'] = instance.description.title()
+        return response_object
+
+    
 
 
 class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
