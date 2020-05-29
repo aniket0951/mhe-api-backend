@@ -108,7 +108,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(
                     (Q(appointment_date__lt=datetime.now().date()) |
                      (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__lt=datetime.now().time())) |
-                     Q(status=2) | Q(status=5))).order_by('-appointment_date', '-appointment_slot', 'status')
+                     Q(status=2) | Q(status=5)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if is_upcoming:
@@ -123,7 +123,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number))).filter(
                     (Q(appointment_date__lt=datetime.now().date()) |
                      (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__lt=datetime.now().time())) |
-                     Q(status=2) | Q(status=5))).order_by('-appointment_date', '-appointment_slot', 'status')
+                     Q(status=2) | Q(status=5)))
 
 
 class CreateMyAppointment(ProxyView):
