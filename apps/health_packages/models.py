@@ -22,6 +22,10 @@ class HealthPackage(MyBaseModel):
                             blank=False,
                             )
 
+    description = models.TextField(max_length=1000, blank=True, null=True)
+
+    benefits = models.TextField(max_length=1000, blank=True, null=True)
+
     age_from = models.IntegerField(default=0)
 
     age_to = models.IntegerField(default=120)
@@ -77,6 +81,14 @@ class HealthPackagePricing(MyBaseModel):
     end_date = models.DateField(null=True,
                                 blank=True
                                 )
+
+    discount_percentage = models.IntegerField(default=0)
+
+    discount_start_date = models.DateField(default='2020-05-14')
+
+    discount_end_date = models.DateField(null=True,
+                                         blank=True
+                                         )
 
     class Meta:
         verbose_name = "Health Package Pricing"

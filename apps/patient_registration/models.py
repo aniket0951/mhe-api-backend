@@ -147,6 +147,31 @@ class IDProof(MyBaseModel):
         return self.code
 
 
+class Language(MyBaseModel):
+
+    description = models.CharField(unique=True,
+                                   blank=False,
+                                   max_length=300,
+                                   null=False)
+
+    translated_description = models.CharField(blank=False,
+                                              null=False,
+                                              max_length=300)
+
+    from_date = models.DateField(blank=False,
+                                 null=False)
+
+    to_date = models.DateField(blank=True,
+                               null=True)
+
+    class Meta:
+        verbose_name = "Language"
+        verbose_name_plural = "Languages"
+
+    def __str__(self):
+        return self.description
+
+
 class Country(MyBaseModel):
 
     code = models.CharField(unique=True,

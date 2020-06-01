@@ -6,9 +6,9 @@ from rest_framework.routers import DefaultRouter
 from .views import (AppointmentsAPIView, CancelAndRefundView,
                     CancelHealthPackageAppointment, CancellationReasonlistView,
                     CancelMyAppointment, CreateMyAppointment,
+                    DoctorRescheduleAppointmentView,
                     HealthPackageAppointmentView, OfflineAppointment,
-                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView,
-                    RescheduleAppointmentView)
+                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -24,7 +24,7 @@ urlpatterns = [
          CancelHealthPackageAppointment.as_view()),
     path('create_appointment', CreateMyAppointment.as_view()),
     path('offline_appointment', OfflineAppointment.as_view()),
-    path('reschedule_appointment', RescheduleAppointmentView.as_view()),
+    path('reschedule_appointment', DoctorRescheduleAppointmentView.as_view()),
     path('create_health_package_appointment',
          HealthPackageAppointmentView.as_view()),
     path('cancellation_reason',
