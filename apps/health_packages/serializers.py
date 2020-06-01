@@ -1,10 +1,11 @@
 from django.db.models import Q
 from django.utils.timezone import datetime
-from rest_framework import serializers
-from rest_framework.serializers import ValidationError
 
 from apps.master_data.models import Specialisation
+from rest_framework import serializers
+from rest_framework.serializers import ValidationError
 from utils.serializers import DynamicFieldsModelSerializer
+from utils.utils import generate_pre_signed_url
 
 from .models import HealthPackage, HealthPackagePricing, HealthTest
 
@@ -14,6 +15,12 @@ class HealthTestSerializer(DynamicFieldsModelSerializer):
         model = HealthTest
         exclude = ('created_at', 'updated_at',
                    'billing_sub_group', 'billing_group')
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.description:
+            response_object['description'] = instance.description.title()
+        return response_object
 
 
 class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
@@ -71,6 +78,20 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
         health_tests = instance.included_health_tests.all().order_by('description')
         return HealthTestSerializer(health_tests, many=True).data
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+
+        try:
+            if instance.image:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image.url)
+        except Exception as error:
+            response_object['image'] = None
+
+        return response_object
+
 
 class HealthPackageSerializer(DynamicFieldsModelSerializer):
     pricing = serializers.SerializerMethodField()
@@ -104,6 +125,20 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
         return not instance.health_package_pricing.filter(hospital_id=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
                                                                                           Q(start_date__lte=datetime.now().date())).exists()
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+
+        try:
+            if instance.image:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image.url)
+        except Exception as error:
+            response_object['image'] = None
+
+        return response_object
+
 
 class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
     packages = serializers.SerializerMethodField()
@@ -123,12 +158,24 @@ class HealthPackageSpecialisationDetailSerializer(DynamicFieldsModelSerializer):
         return HealthPackageSerializer(instance.health_package.filter(id__in=hospital_related_health_packages), many=True,
                                        context=self.context).data
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.description:
+            response_object['description'] = instance.description.title()
+        return response_object
+
 
 class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Specialisation
         exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.description:
+            response_object['description'] = instance.description.title()
+        return response_object
 
 
 class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
@@ -146,3 +193,17 @@ class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
 
     def get_included_health_tests_count(self, instance):
         return instance.included_health_tests.count()
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.name:
+            response_object['name'] = instance.name.title()
+
+        try:
+            if instance.image:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image.url)
+        except Exception as error:
+            response_object['image'] = None
+
+        return response_object

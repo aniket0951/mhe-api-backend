@@ -290,10 +290,6 @@ class PaymentResponse(APIView):
                         patient, data=uhid_info, partial=True)
                     patient_serializer.is_valid(raise_exception=True)
                     patient_serializer.save()
-                    user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
-                        patient.first_name, patient.uhid_number)
-                    send_sms(mobile_number=str(patient.mobile.raw_input),
-                            message=user_message)
                 if payment_instance.payment_done_for_family_member:
                     family_member = FamilyMember.objects.filter(
                         id=payment_instance.payment_done_for_family_member.id).first()
@@ -301,10 +297,6 @@ class PaymentResponse(APIView):
                         family_member, data=uhid_info, partial=True)
                     patient_serializer.is_valid(raise_exception=True)
                     patient_serializer.save()
-                    user_message = "Dear {0}. You have successfully registered with us and your UHID is {1}".format(
-                        family_member.first_name, family_member.uhid_number)
-                    send_sms(mobile_number=str(
-                        family_member.mobile.raw_input), message=user_message)
             if payment_instance.appointment:
                 appointment = Appointment.objects.filter(
                     id=payment_instance.appointment.id).first()
@@ -335,17 +327,9 @@ class PaymentResponse(APIView):
                 if payment_instance.payment_done_for_patient:
                     patient = Patient.objects.filter(
                         id=payment_instance.payment_done_for_patient.id).first()
-                    user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(patient.first_name, package_name, appointment.appointment_date.date(),
-                                                                                                                                appointment.appointment_date.time())
-                    send_sms(mobile_number=str(patient.mobile.raw_input),
-                            message=user_message)
                 if payment_instance.payment_done_for_family_member:
                     family_member = FamilyMember.objects.filter(
                         id=payment_instance.payment_done_for_family_member.id).first()
-                    user_message = "Dear {0}. You have successfully purchased and booked appointment for {1} on {2} at {3}".format(family_member.first_name, package_name, appointment.appointment_date.date(),
-                                                                                                                                appointment.appointment_date.time())
-                    send_sms(mobile_number=str(
-                        family_member.mobile.raw_input), message=user_message)
                 if payment_instance.payment_for_uhid_creation:
                     update_data["appointment_identifier"] = new_appointment_id
                 appointment_serializer = HealthPackageAppointmentSerializer(
@@ -434,7 +418,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['payment_id__payment_done_for_patient__first_name', 'payment_id__payment_done_for_family_member__first_name',
                      'payment_id__uhid_number', 'payment_id__payment_done_for_patient__mobile',
                      'payment_id__payment_done_for_family_member__mobile', 'payment_id__location__description',
-                     'payment_id__health_package__code', 'payment_id__health_package__name']
+                     'health_package__code','health_package__name']
     filter_backends = (filters.SearchFilter,
                        filters.OrderingFilter, DjangoFilterBackend)
     queryset = HealthPackageAppointment.objects.all()

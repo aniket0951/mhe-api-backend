@@ -58,6 +58,9 @@ class Appointment(models.Model):
     reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
                                related_name='cancellation_reason_appointment',
                                null=True, blank=True)
+    other_reason = models.TextField(blank=True,
+                                    null=True,
+                                    max_length=500)
 
     payment_status = models.CharField(max_length=10,
                                       blank=True,
@@ -67,13 +70,33 @@ class Appointment(models.Model):
                             null=True)
     consultation_amount = models.FloatField(default=0,
                                             null=True)
+    refundable_amount = models.FloatField(default=0,
+                                          null=True)
     booked_via_app = models.BooleanField(default=True)
 
     @property
     def is_cancellable(self):
         if self.appointment_date:
-            if ((self.appointment_date > datetime.now().date()) and (self.status == 1)):
-                return True
+            if ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
+                if self.appointment_date > datetime.now().date():
+                    if self.payment_status == "success":
+                        self.refundable_amount = self.consultation_amount
+                    return True
+                if self.appointment_date == datetime.now().date():
+                    if self.appointment_slot > datetime.now().time():
+                        if not self.payment_status:
+                            return True
+                        dateTimeA = datetime.combine(
+                            datetime.now(), self.appointment_slot)
+                        dateTimeB = datetime.combine(
+                            datetime.now(), datetime.now().time())
+                        time_delta = (
+                            dateTimeA - dateTimeB).total_seconds()/3600
+                        if time_delta > 2:
+                            self.refundable_amount = self.consultation_amount
+                            if time_delta <= 4:
+                                self.refundable_amount = self.consultation_amount - 100.0
+                            return True
         return False
 
 
@@ -111,6 +134,9 @@ class HealthPackageAppointment(models.Model):
     reason = models.ForeignKey(CancellationReason, on_delete=models.PROTECT,
                                related_name='cancellation_reason_health_appointment',
                                null=True, blank=True)
+    other_reason = models.TextField(blank=True,
+                                    null=True,
+                                    max_length=500)
 
     booked_via_app = models.BooleanField(default=True)
 
