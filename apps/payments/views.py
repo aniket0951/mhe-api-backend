@@ -544,4 +544,5 @@ class RefundView(APIView):
         param = get_refund_param(request.data)
         url = settings.REFUND_URL
         response = requests.post(url, data=param)
-        return Response(data="This is done")
+        data = json.loads(response.text)
+        return Response(data=data)

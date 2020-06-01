@@ -27,13 +27,13 @@ def get_refund_param(data=None):
     param["mid"] = mid
     param["auth_user"] = settings.SALUCRO_AUTH_USER
     param["auth_key"] = settings.SALUCRO_AUTH_KEY
-    param["username"] = settings.SALUCRO_USERNAME
     param["paymode"] = "payment-refund"
     patient = appointment_instance.patient
     if appointment_instance.family_member:
         patient = appointment_instance.family_member
     if not appointment_instance.payment_appointment.exists():
-        return 
+        return
+    param["username"] = patient.first_name
     param["patient_name"] = patient.first_name
     param["account_number"] = patient.uhid_number
     param["amount"] = appointment_instance.refundable_amount
@@ -56,7 +56,7 @@ def get_checksum(param, secret_key):
     hash_string = param["processing_id"] + '|' + param["mid"] + '|' + \
         param["auth_user"] + '|' + param["auth_key"] + '|' + param["username"] + '|' + \
             param["paymode"] + '|' + param["patient_name"] + '|' + param["account_number"] +   '|' + \
-                str(param["amount"]) + '|' + param["transaction_id"] + '|' + "LEVg8IWHfgRSjyFahy58KVKpdRVw7qJt"
+                str(param["amount"]) + '|' + param["transaction_id"] + '|' + secret_key
 
     sha_signature = hashlib.sha256(hash_string.encode()).hexdigest()
     checksum = base64.b64encode(sha_signature.encode('ascii'))
