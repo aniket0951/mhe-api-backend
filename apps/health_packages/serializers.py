@@ -1,10 +1,11 @@
 from django.db.models import Q
 from django.utils.timezone import datetime
-from rest_framework import serializers
-from rest_framework.serializers import ValidationError
 
 from apps.master_data.models import Specialisation
+from rest_framework import serializers
+from rest_framework.serializers import ValidationError
 from utils.serializers import DynamicFieldsModelSerializer
+from utils.utils import generate_pre_signed_url
 
 from .models import HealthPackage, HealthPackagePricing, HealthTest
 
@@ -81,7 +82,7 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
-        
+
         try:
             if instance.image:
                 response_object['image'] = generate_pre_signed_url(
@@ -169,14 +170,12 @@ class HealthPackageSpecialisationSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Specialisation
         exclude = ('created_at', 'updated_at',)
-    
+
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.description:
             response_object['description'] = instance.description.title()
         return response_object
-
-    
 
 
 class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
@@ -199,7 +198,7 @@ class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
-        
+
         try:
             if instance.image:
                 response_object['image'] = generate_pre_signed_url(
