@@ -1,3 +1,4 @@
+import base64
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -77,6 +78,7 @@ def free_text_report_hanlder(report_detail, report_id, factory=APIRequestFactory
         return factory.post(
             '', string_report_request_data, format='json')
 
+
 def text_report_hanlder(report_detail, report_id, factory=APIRequestFactory()):
     text_report_request_data = {}
     text_report_required_keys = [
@@ -104,7 +106,7 @@ def numeric_report_hanlder(report_detail, report_id, factory=APIRequestFactory()
 
     numeric_report_request_data = {}
     numeric_report_required_keys = [
-        'ObxIdentifierID', 'ObxIdentifierText', 'ObxValue', 'ObxRange']
+        'ObxIdentifierID', 'ObxIdentifierText', 'ObxValue', 'ObxRange', 'ObxUnit']
 
     if report_detail and type(report_detail) == dict and \
             set(numeric_report_required_keys).issubset(set(report_detail.keys())):
@@ -113,7 +115,9 @@ def numeric_report_hanlder(report_detail, report_id, factory=APIRequestFactory()
         numeric_report_request_data['name'] = report_detail['ObxIdentifierText']
         numeric_report_request_data['observation_value'] = report_detail['ObxValue']
         numeric_report_request_data['observation_range'] = report_detail['ObxRange']
+        if report_detail['ObxUnit']:
+            numeric_report_request_data['observation_unit'] = base64.b64decode(
+                report_detail['ObxUnit']).decode('utf-8')
         numeric_report_request_data['report'] = report_id
-
         return factory.post(
             '', numeric_report_request_data, format='json')
