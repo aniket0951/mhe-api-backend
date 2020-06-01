@@ -43,12 +43,12 @@ def manipal_admin_object(request):
 def get_appointment(patient_id):
     patient = Patient.objects.filter(id=patient_id).first()
     patient_appointment = Appointment.objects.filter(
-        appointment_date__gte=datetime.now().date(), status=1).filter(
+                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
             (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
     family_members = patient.patient_family_member_info.filter(is_visible=True)
     for member in family_members:
         family_appointment = Appointment.objects.filter(
-            appointment_date__gte=datetime.now().date(), status=1).filter(
+                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
                 Q(family_member_id=member.id) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
         patient_appointment = patient_appointment.union(family_appointment)
     return patient_appointment.order_by('appointment_date', 'appointment_slot')
