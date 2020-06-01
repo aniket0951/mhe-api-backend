@@ -81,6 +81,14 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
+        
+        try:
+            if instance.image:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image.url)
+        except Exception as error:
+            response_object['image'] = None
+
         return response_object
 
 
@@ -120,6 +128,14 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
+
+        try:
+            if instance.image:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image.url)
+        except Exception as error:
+            response_object['image'] = None
+
         return response_object
 
 
@@ -183,4 +199,12 @@ class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
+        
+        try:
+            if instance.image:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image.url)
+        except Exception as error:
+            response_object['image'] = None
+
         return response_object
