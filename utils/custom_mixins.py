@@ -15,7 +15,8 @@ class CreateModelMixin:
     """
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer = self.get_serializer(
+            data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -47,7 +48,7 @@ class ListModelMixin:
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            pagination_data = self.get_paginated_response(serializer.data)
+            pagination_data = self.get_paginated_response(None)
         else:
             serializer = self.get_serializer(queryset, many=True)
 
@@ -72,7 +73,6 @@ class RetrieveModelMixin:
             "message": self.retrieve_success_message
         }
         return Response(data, status=status.HTTP_200_OK)
-
 
 
 class UpdateModelMixin:

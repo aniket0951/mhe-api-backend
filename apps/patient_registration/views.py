@@ -6,32 +6,33 @@ from datetime import datetime
 import requests
 from django.core import serializers
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,
                                        PatientSerializer,
                                        PatientSpecificSerializer)
-from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters, status
-from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 
 from .exceptions import FieldMissingValidationException
-from .models import (City, Country, Gender, IDProof, MaritalStatus,
+from .models import (City, Country, Gender, IDProof, Language, MaritalStatus,
                      Nationality, Province, Region, Relation, Religion,
                      Speciality, Title, Zipcode)
 from .serializers import (CitySerializer, CountrySerializer, GenderSerializer,
-                          IDProofSerializer, MaritalStatusSerializer,
-                          NationalitySerializer, ProvinceSerializer,
-                          RegionSerializer, RelationSerializer,
-                          ReligionSerializer, SpecialitySerializer,
-                          TitleSerializer, ZipcodeSerializer)
+                          IDProofSerializer, LanguageSerializer,
+                          MaritalStatusSerializer, NationalitySerializer,
+                          ProvinceSerializer, RegionSerializer,
+                          RelationSerializer, ReligionSerializer,
+                          SpecialitySerializer, TitleSerializer,
+                          ZipcodeSerializer)
 
 
 class RegistrationAPIView(ListAPIView):
@@ -56,6 +57,23 @@ class RegistrationAPIView(ListAPIView):
         registration_details['title'] = TitleSerializer(
             Title.objects.all(), many=True).data
         return Response(registration_details, status=status.HTTP_200_OK)
+
+class LanguageViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser]
+    model = Language
+    queryset = Language.objects.all()
+    serializer_class = LanguageSerializer
+    list_success_message = 'Languages list returned successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['description', ]
+    ordering_fields = ('description',)
+
+    def get_queryset(self):
+        return super().get_queryset().filter(from_date__lte=datetime.today().date()).filter(
+            Q(to_date__isnull=True) | Q(to_date__gte=datetime.today().date()))
+
 
 
 class CountryViewSet(custom_viewsets.ModelViewSet):
@@ -139,7 +157,8 @@ class UHIDRegistrationView(ProxyView):
     permission_classes = [IsPatientUser]
 
     def get_request_data(self, request):
-        request.data["dob"] = "".join(request.data["dob"].split("/"))
+        d, m, y = request.data["dob"].split("/")
+        request.data["dob"] = m + d + y
         uhid_registration = serializable_CreateUHID(request.data)
         request_data = custom_serializer().serialize(uhid_registration, 'XML')
         return request_data
