@@ -342,7 +342,7 @@ class PaymentResponse(APIView):
                 appointment_serializer.is_valid(raise_exception=True)
                 appointment_serializer.save()
         else:
-            payment_instance.status = "failed"
+            payment_instance.status = "failure"
             payment_instance.save()
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
