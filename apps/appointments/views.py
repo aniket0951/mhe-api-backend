@@ -68,7 +68,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     filter_fields = ('status',)
     ordering = ('appointment_date', '-appointment_slot', 'status')
-    ordering_fields = ('appointment_date',)
+    ordering_fields = ('appointment_date','appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
@@ -278,6 +278,15 @@ class CancelMyAppointment(ProxyView):
                 param["app_id"] = instance.appointment_identifier
                 param["cancel_remark"] = instance.reason.reason
                 param["location_code"] = instance.hospital.code
+                if instance.payment_appointment.exists():
+                    payment_instance = instance.payment_appointment.get()
+                    if payment_instance.payment_refund.exists():
+                        refund_instance = payment_instance.payment_refund.get()
+                        param["refund_status"] = "Y"
+                        param["refund_trans_id"] = refund_instance.transaction_id
+                        param["refund_amount"] = str((int(refund_instance.amount)))
+                        param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
+                        param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
                 success_status = True
@@ -525,12 +534,14 @@ class CancelAndRefundView(ProxyView):
     def get_request_data(self, request):
         cancel_update = serializable_UpdateCancelAndRefund(request.data)
         request_data = custom_serializer().serialize(cancel_update, 'XML')
+        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        print(response.content)
         response_message = "Please try again"
         response_data = {}
         response_success = False
