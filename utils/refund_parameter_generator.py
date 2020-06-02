@@ -1,19 +1,22 @@
 import base64
+import datetime
 import hashlib
 import random
 import time
+from datetime import datetime
 
 from django.conf import settings
 
+from apps.appointments.models import Appointment
 from apps.payments.models import PaymentHospitalKey
 from rest_framework.serializers import ValidationError
-from apps.appointments.models import Appointment
 
 
 def get_refund_param(data=None):
     param = {}
     appointment_identifier = data["appointment_identifier"]
-    appointment_instance = Appointment.objects.filter(appointment_identifier = appointment_identifier).first()
+    appointment_instance = Appointment.objects.filter(
+        appointment_identifier=appointment_identifier).first()
     if not appointment_instance:
         raise ValidationError("Appointment does not Exist")
     location_code = appointment_instance.hospital.code
@@ -31,12 +34,26 @@ def get_refund_param(data=None):
     patient = appointment_instance.patient
     if appointment_instance.family_member:
         patient = appointment_instance.family_member
-    if not appointment_instance.payment_appointment.exists():
+    if not appointment_instance.payment_appointment.exists() or appointment_instance.appointment_date < datetime.now().date():
         return
     param["username"] = patient.first_name.replace(" ", "")
     param["patient_name"] = patient.first_name.replace(" ", "")
     param["account_number"] = patient.uhid_number
-    param["amount"] = appointment_instance.refundable_amount
+    if appointment_instance.appointment_date >= datetime.now().date():
+        param["amount"] = appointment_instance.consultation_amount
+        if appointment_instance.appointment_date == datetime.now().date():
+            date_time_slot = datetime.combine(
+                datetime.now(), appointment_instance.appointment_slot)
+            date_time_now = datetime.combine(
+                datetime.now(), datetime.now().time())
+            time_delta = (
+                date_time_slot - date_time_now).total_seconds()/3600
+            if time_delta >= 2 and time_delta <= 4:
+                param["amount"] = appointment_instance.consultation_amount - 100
+
+            if time_delta < 2:
+                param["amount"] = 0.0
+
     param["email"] = patient.email
     param["transaction_id"] = appointment_instance.payment_appointment.get().processing_id
     param["check_sum_hash"] = get_checksum(param, secret_key)
@@ -55,8 +72,8 @@ def get_processing_id(*args):
 def get_checksum(param, secret_key):
     hash_string = param["processing_id"] + '|' + param["mid"] + '|' + \
         param["auth_user"] + '|' + param["auth_key"] + '|' + param["username"] + '|' + \
-            param["paymode"] + '|' + param["patient_name"] + '|' + param["account_number"] +   '|' + \
-                str(param["amount"]) + '|' + param["transaction_id"] + '|' + secret_key
+        param["paymode"] + '|' + param["patient_name"] + '|' + param["account_number"] + '|' + \
+        str(param["amount"]) + '|' + param["transaction_id"] + '|' + secret_key
 
     sha_signature = hashlib.sha256(hash_string.encode()).hexdigest()
     checksum = base64.b64encode(sha_signature.encode('ascii'))
