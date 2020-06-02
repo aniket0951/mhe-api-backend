@@ -83,9 +83,9 @@ class Appointment(models.Model):
                         self.refundable_amount = self.consultation_amount
                     return True
                 if self.appointment_date == datetime.now().date():
-                    if not self.payment_status:
-                        return True
                     if self.appointment_slot > datetime.now().time():
+                        if not self.payment_status:
+                            return True
                         dateTimeA = datetime.combine(
                             datetime.now(), self.appointment_slot)
                         dateTimeB = datetime.combine(

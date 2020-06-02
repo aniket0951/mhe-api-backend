@@ -423,7 +423,7 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['payment_id__payment_done_for_patient__first_name', 'payment_id__payment_done_for_family_member__first_name',
                      'payment_id__uhid_number', 'payment_id__payment_done_for_patient__mobile',
                      'payment_id__payment_done_for_family_member__mobile', 'payment_id__location__description',
-                     'payment_id__health_package__code', 'payment_id__health_package__name']
+                     'health_package__code','health_package__name']
     filter_backends = (filters.SearchFilter,
                        filters.OrderingFilter, DjangoFilterBackend)
     queryset = HealthPackageAppointment.objects.all()

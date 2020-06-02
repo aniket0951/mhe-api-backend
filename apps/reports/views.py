@@ -91,7 +91,7 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             elif filter_by == "date_range":
                 date_from = self.request.query_params.get("date_from", None)
                 date_to = self.request.query_params.get("date_to", None)
-                return qs.filter(uhid_number=uhid, time__date__range= [date_from, date_to])
+                return qs.filter(time__date__range= [date_from, date_to])
             else:
                 return qs.filter(time__date=filter_by)
 

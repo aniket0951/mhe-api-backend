@@ -1,17 +1,19 @@
 import json
 
 import requests
+from django.conf import settings
 from django.core.management import BaseCommand
+
 from apps.doctors.models import Doctor
 
-from manipal_api.settings import PATIENT_PROFILE_SYNC_API
+
 class Command(BaseCommand):
     help = "Update Doctors Profile Information"
 
     def handle(self, *args, **options):
         try:
             response_data = requests.request(
-                'GET', PATIENT_PROFILE_SYNC_API).text
+                'GET', settings.PATIENT_PROFILE_SYNC_API).text
             response_data = json.loads(response_data)
             for each_doctor_record in response_data:
                 if not each_doctor_record['DoctorCode']:

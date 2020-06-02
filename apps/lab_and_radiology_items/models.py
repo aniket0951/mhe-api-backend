@@ -145,6 +145,10 @@ class PatientServiceAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
+    
+    other_reason = models.TextField(blank=True,
+                                    null=True,
+                                    max_length=500)
 
     address = JSONField(null=True, blank=True)
 
@@ -235,6 +239,10 @@ class HomeCollectionAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
+    
+    other_reason = models.TextField(blank=True,
+                                    null=True,
+                                    max_length=500)
 
     address = JSONField(null=True, blank=True)
 

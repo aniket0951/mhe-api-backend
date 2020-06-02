@@ -79,6 +79,10 @@ class NumericReportDetails(MyBaseModel):
                                          blank=True,
                                          null=True)
 
+    observation_unit = models.CharField(max_length=100,
+                                        blank=True,
+                                        null=True)
+
     report = models.ForeignKey(
         Report,
         on_delete=models.PROTECT,

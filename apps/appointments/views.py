@@ -237,13 +237,14 @@ class CancelMyAppointment(ProxyView):
             appointment_identifier=appointment_id).first()
         if not instance:
             raise AppointmentDoesNotExistsValidationException
-        instance.other_reason = data.pop("other", None)
+        other_reason = data.pop("other", None)
         request.data["location_code"] = instance.hospital.code
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
         data["reason_id"] = reason_id
         data["status"] = status
+        data["other_reason"] = other_reason
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -268,6 +269,7 @@ class CancelMyAppointment(ProxyView):
                 if self.request.data.get("status"):
                     instance.status = self.request.data.get("status")
                 instance.reason_id = self.request.data.get("reason_id")
+                instance.other_reason = self.request.data.get("other_reason")
                 instance.save()
                 refund_param = cancel_and_refund_parameters(
                     {"appointment_identifier": instance.appointment_identifier})
@@ -281,7 +283,6 @@ class CancelMyAppointment(ProxyView):
                 success_status = True
                 return self.custom_success_response(message=response_message,
                                                     success=success_status, data=None)
-        instance.other_reason = None
         raise ValidationError(
             "Could not process the request. PLease try again")
 
@@ -475,11 +476,12 @@ class CancelHealthPackageAppointment(ProxyView):
         if not instance:
             raise AppointmentDoesNotExistsValidationException
         request.data["location_code"] = instance.hospital.code
-        instance.other_reason = data.pop("other", None)
+        other_reason = data.pop("other", None)
         cancel_appointment = serializable_CancelAppointmentRequest(
             **request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
         data["reason_id"] = reason_id
+        data["other_reason"] = other_reason
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -501,6 +503,7 @@ class CancelHealthPackageAppointment(ProxyView):
                     raise AppointmentDoesNotExistsValidationException
                 instance.appointment_status = "Cancelled"
                 instance.reason_id = self.request.data.get("reason_id")
+                instance.other_reason = self.request.data.get("other_reason")
                 instance.save()
                 success_status = True
                 param = {}
@@ -511,7 +514,6 @@ class CancelHealthPackageAppointment(ProxyView):
                 response = CancelAndRefundView.as_view()(request_param)
             return self.custom_success_response(message=response_message,
                                                 success=success_status, data=None)
-        instance.other_reason = None
         raise ValidationError(
             "Could not process your request. Please try again")
 
@@ -640,9 +642,11 @@ class DoctorRescheduleAppointmentView(ProxyView):
             appointment_identifier=self.request.data["app_id"]).first()
         if not instance:
             raise ValidationError("Appointment doesn't Exist")
+        other_reason = request.data.pop("other")
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
         request.data["reason_id"] = reason_id
+        request.data["other_reason"]= other_reason
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -697,6 +701,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             payment_instance.save()
                         instance.status = 5
                         instance.reason_id = self.request.data.get("reason_id")
+                        instance.other_reason = self.request.data.get("other_reason")
                         instance.save()
                         response_success = True
                         response_message = "Appointment has been Rescheduled"

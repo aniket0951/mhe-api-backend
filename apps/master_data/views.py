@@ -180,6 +180,9 @@ class DepartmentsView(ProxyView):
                 if key in ['DateFrom', 'DateTo'] and each_department[key]:
                     each_department[key] = datetime.strptime(
                         each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+                
+                if key == "DeptName" and each_department[key]:
+                    each_department[key] = each_department[key].title()
 
                 if key == "name" and each_department[key]:
                     each_department[key] = each_department[key].title()
@@ -271,6 +274,9 @@ class DoctorsView(ProxyView):
                 if key in ['DateFrom', 'DateTo'] and each_doctor[key]:
                     each_doctor[key] = datetime.strptime(
                         each_doctor[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+
+                if key == "DocName" and each_doctor[key]:
+                    each_doctor[key] = each_doctor[key].title()
 
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
 
@@ -364,6 +370,9 @@ class HealthPackagesView(ProxyView):
                 if key in ['DateFrom', 'DateTo', 'DiscDateFrom', 'DiscDateTo'] and each_health_package[key]:
                     each_health_package[key] = datetime.strptime(
                         each_health_package[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+
+                if key == 'PackageName' and each_health_package[key]:
+                    each_health_package[key] = each_health_package[key].title()
 
                 health_package_details[health_packages_sorted_keys[index]
                                        ] = each_health_package[key]
@@ -485,6 +494,9 @@ class LabRadiologyItemsView(ProxyView):
                 if key in ['DateFrom', 'DateTo'] and each_lab_radiology_item[key]:
                     each_lab_radiology_item[key] = datetime.strptime(
                         each_lab_radiology_item[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+
+                if key == 'ItemDesc' and each_lab_radiology_item[key]:
+                    each_lab_radiology_item[key] = each_lab_radiology_item[key].title()
 
                 hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
                                                     ] = each_lab_radiology_item[key]
