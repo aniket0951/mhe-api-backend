@@ -230,6 +230,7 @@ class PaymentResponse(APIView):
         status_code = response_token_json["status_code"]
         payment_response = response_token_json["payment_response"]
         processing_id = response_token_json["processing_id"]
+        payment_account = response_token_json["accounts"]
         try:
             payment_instance = Payment.objects.get(
                 processing_id=processing_id)
@@ -238,7 +239,6 @@ class PaymentResponse(APIView):
         uhid = "-1"
         if status_code == 1200:
             payment = {}
-            payment_account = response_token_json["accounts"]
             payment["uhid_number"] = payment_account["account_number"]
 
             if payment_instance.appointment or payment_instance.payment_for_health_package:
@@ -343,6 +343,7 @@ class PaymentResponse(APIView):
                 appointment_serializer.save()
         else:
             payment_instance.status = "failure"
+            payment_instance.uhid_number = payment_account["account_number"] 
             payment_instance.save()
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
