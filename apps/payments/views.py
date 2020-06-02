@@ -229,14 +229,14 @@ class PaymentResponse(APIView):
         response_token_json = json.loads(response_token)
         status_code = response_token_json["status_code"]
         payment_response = response_token_json["payment_response"]
+        processing_id = response_token_json["processing_id"]
+        try:
+            payment_instance = Payment.objects.get(
+                processing_id=processing_id)
+        except Exception:
+            raise ProcessingIdDoesNotExistsValidationException
         uhid = "-1"
         if status_code == 1200:
-            processing_id = response_token_json["processing_id"]
-            try:
-                payment_instance = Payment.objects.get(
-                    processing_id=processing_id)
-            except Exception:
-                raise ProcessingIdDoesNotExistsValidationException
             payment = {}
             payment_account = response_token_json["accounts"]
             payment["uhid_number"] = payment_account["account_number"]
@@ -341,7 +341,9 @@ class PaymentResponse(APIView):
                     appointment, data=update_data, partial=True)
                 appointment_serializer.is_valid(raise_exception=True)
                 appointment_serializer.save()
-
+        else:
+            payment_instance.status = "failed"
+            payment_instance.save()
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
