@@ -81,6 +81,7 @@ class Appointment(models.Model):
                 if self.appointment_date > datetime.now().date():
                     if self.payment_status == "success":
                         self.refundable_amount = self.consultation_amount
+                        self.save()
                     return True
                 if self.appointment_date == datetime.now().date():
                     if self.appointment_slot > datetime.now().time():
@@ -96,7 +97,9 @@ class Appointment(models.Model):
                             self.refundable_amount = self.consultation_amount
                             if time_delta <= 4:
                                 self.refundable_amount = self.consultation_amount - 100.0
+                            self.save()
                             return True
+        self.save()
         return False
 
 
