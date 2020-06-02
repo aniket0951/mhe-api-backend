@@ -33,8 +33,8 @@ def get_refund_param(data=None):
         patient = appointment_instance.family_member
     if not appointment_instance.payment_appointment.exists():
         return
-    param["username"] = patient.first_name
-    param["patient_name"] = patient.first_name
+    param["username"] = patient.first_name.replace(" ", "")
+    param["patient_name"] = patient.first_name.replace(" ", "")
     param["account_number"] = patient.uhid_number
     param["amount"] = appointment_instance.refundable_amount
     param["email"] = patient.email

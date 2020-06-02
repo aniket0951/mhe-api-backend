@@ -534,14 +534,12 @@ class CancelAndRefundView(ProxyView):
     def get_request_data(self, request):
         cancel_update = serializable_UpdateCancelAndRefund(request.data)
         request_data = custom_serializer().serialize(cancel_update, 'XML')
-        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        print(response.content)
         response_message = "Please try again"
         response_data = {}
         response_success = False
