@@ -10,7 +10,7 @@ class CustomDBRouter:
         Relations between objects are allowed if both objects are
         in the primary/replica pool.
         """
-        db_list = ('default', 'read_db',)
+        db_list = ('default', 'read_db', 'default')
         if obj1._state.db in db_list and obj2._state.db in db_list:
             return True
         return None
