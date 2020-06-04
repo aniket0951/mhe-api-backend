@@ -124,10 +124,10 @@ app.conf.beat_schedule = {
     },
     "health_package_next_day_appointment_reminder": {
         "task": "tasks.health_package_next_day_appointment_reminder",
-        "schedule": crontab(minute="0", hour="6")
+        "schedule": crontab(minute="0", hour="18")
     },
     "appointment_next_day_reminder_scheduler": {
         "task": "tasks.appointment_next_day_reminder_scheduler",
-        "schedule": crontab(minute="0", hour="6")
+        "schedule": crontab(minute="0", hour="18")
     }
 }
