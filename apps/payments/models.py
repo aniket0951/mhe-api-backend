@@ -81,6 +81,40 @@ class Payment(MyBaseModel):
                                                )
 
 
+class PaymentRefund(MyBaseModel):
+    payment = models.ForeignKey(Payment,
+                                on_delete=models.PROTECT,
+                                blank=True,
+                                null=True, related_name="payment_refund")
+
+    uhid_number = models.CharField(max_length=20,
+                                   blank=True,
+                                   null=True)
+
+    processing_id = models.CharField(max_length=50,
+                                     null=False,
+                                     blank=False,
+                                     )
+    transaction_id = models.CharField(max_length=50,
+                                      null=True,
+                                      blank=True,
+                                      )
+    status = models.CharField(max_length=10,
+                              default="Pending")
+
+    amount = models.FloatField(default=0,
+                               null=True)
+
+    receipt_number = models.CharField(max_length=50,
+                                      null=True,
+                                      blank=True,
+                                      )
+    request_id = models.CharField(max_length=50,
+                                  null=True,
+                                  blank=True,
+                                  )
+
+
 class PaymentHospitalKey(MyBaseModel):
 
     hospital = models.ForeignKey(Hospital,

@@ -47,10 +47,11 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember)
 from utils.custom_sms import send_sms
 from utils.payment_parameter_generator import get_payment_param
+from utils.refund_parameter_generator import get_refund_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
-from .models import Payment
-from .serializers import PaymentSerializer
+from .models import Payment, PaymentRefund
+from .serializers import PaymentSerializer, PaymentRefundSerializer
 
 
 class AppointmentPayment(APIView):
@@ -228,21 +229,23 @@ class PaymentResponse(APIView):
         response_token_json = json.loads(response_token)
         status_code = response_token_json["status_code"]
         payment_response = response_token_json["payment_response"]
+        processing_id = response_token_json["processing_id"]
+        payment_account = response_token_json["accounts"]
+        try:
+            payment_instance = Payment.objects.get(
+                processing_id=processing_id)
+        except Exception:
+            raise ProcessingIdDoesNotExistsValidationException
         uhid = "-1"
         if status_code == 1200:
-            processing_id = response_token_json["processing_id"]
-            try:
-                payment_instance = Payment.objects.get(processing_id=processing_id)
-            except Exception:
-                raise ProcessingIdDoesNotExistsValidationException
             payment = {}
-            payment_account = response_token_json["accounts"]
             payment["uhid_number"] = payment_account["account_number"]
 
             if payment_instance.appointment or payment_instance.payment_for_health_package:
                 payment_paydetail = payment_response["payDetailAPIResponse"]
                 if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
+                    bill_detail = json.loads(
+                        payment_paydetail["BillDetail"])[0]
                     new_appointment_id = bill_detail["AppointmentId"]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
 
@@ -261,7 +264,8 @@ class PaymentResponse(APIView):
             if payment_instance.payment_for_ip_deposit:
                 payment_paydetail = payment_response["onlinePatientDeposit"]
                 if payment_paydetail["RecieptNumber"]:
-                    bill_detail = json.loads(payment_paydetail["RecieptNumber"])[0]
+                    bill_detail = json.loads(
+                        payment_paydetail["RecieptNumber"])[0]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
 
             payment["status"] = payment_response["status"]
@@ -280,7 +284,8 @@ class PaymentResponse(APIView):
                 uhid = payment["uhid_number"]
             if (payment_instance.payment_for_uhid_creation):
                 if payment_instance.appointment:
-                    appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
+                    appointment = Appointment.objects.filter(
+                        id=payment_instance.appointment.id).first()
                     appointment.status = 6
                     appointment.save()
                 if payment_instance.payment_done_for_patient:
@@ -336,7 +341,10 @@ class PaymentResponse(APIView):
                     appointment, data=update_data, partial=True)
                 appointment_serializer.is_valid(raise_exception=True)
                 appointment_serializer.save()
-
+        else:
+            payment_instance.status = "failure"
+            payment_instance.uhid_number = payment_account["account_number"] 
+            payment_instance.save()
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]
@@ -408,7 +416,7 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             elif filter_by == "date_range":
                 date_from = self.request.query_params.get("date_from", None)
                 date_to = self.request.query_params.get("date_to", None)
-                return super().get_queryset().filter(uhid_number=uhid, created_at__date__range= [date_from, date_to])
+                return super().get_queryset().filter(uhid_number=uhid, created_at__date__range=[date_from, date_to])
             else:
                 return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
         return super().get_queryset().filter(uhid_number=uhid)
@@ -437,7 +445,8 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             if date_from and date_to:
-                qs = qs.filter(payment_id__status="success", appointment_date__date__range= [date_from, date_to])
+                qs = qs.filter(payment_id__status="success",
+                               appointment_date__date__range=[date_from, date_to])
             return qs.filter(payment_id__status="success")
         if is_booked:
             return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
@@ -529,3 +538,36 @@ class EpisodeItemView(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
+
+
+class RefundView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        appointment_identifier = request.data.get("appointment_identifier", None)
+        appointment_instance = Appointment.objects.filter(appointment_identifier = appointment_identifier).first()
+        if appointment_instance.payment_appointment.exists():
+            param = get_refund_param(request.data)
+            url = settings.REFUND_URL
+            response = requests.post(url, data=param)
+            data = json.loads(response.text)
+            if data["status_code"] == 1200:
+                payment_instance = appointment_instance.payment_appointment.get()
+                refund_param = dict()
+                refund_param["payment"] = payment_instance.id 
+                refund_param["uhid_number"] = data["accounts"]["account_number"]
+                refund_param["processing_id"] = data["processing_id"]
+                refund_param["transaction_id"] = data["transaction_id"]
+                if data["status_message"] == "Request processed successfully":
+                    refund_param["status"] = "success"
+                refund_param["amount"] = data["accounts"]["amount"]
+                refund_param["receipt_number"] = data["payment_response"]["mihpayid"]
+                refund_param["request_id"] = data["payment_response"]["request_id"]
+                refund_instance = PaymentRefundSerializer(data = refund_param)
+                refund_instance.is_valid(raise_exception=True)
+                refund_instance.save()
+                payment_instance.status = "Refunded"
+                appointment_instance.payment_status = "Refunded"
+                appointment_instance.save()
+                payment_instance.save()
+        return Response(status=status.HTTP_200_OK)
