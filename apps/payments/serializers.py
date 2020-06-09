@@ -9,7 +9,7 @@ from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import Payment
+from .models import Payment,PaymentRefund
 
 
 
@@ -39,4 +39,27 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
         if instance.location:
             response_object['location'] = HospitalSerializer(instance.location).data
 
+        response_object["refund"] = None
+
+        if instance.payment_refund.exists():
+            response_object["refund"] = PaymentSpecificRefundSerializer(instance.payment_refund.get()).data
+
         return response_object
+
+class PaymentRefundSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = PaymentRefund
+        exclude = ('updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        if instance.payment:
+            response_object['payment'] = PaymentSerializer(instance.payment).data
+        
+        return response_object
+
+class PaymentSpecificRefundSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = PaymentRefund
+        exclude = ('updated_at', 'payment', 'created_at', 'uhid_number')

@@ -27,7 +27,7 @@ def fetch_uhid_user_details(request):
         if key in ['Age', 'DOB', 'HospNo', 'Status']:
             continue
         if not response.data['data'][key]:
-            uhid_user_info[key] = None
+            response.data['data'][key] = None
         if key == 'MobileNo' and len(response.data['data'][key]) == 10:
             response.data['data'][key] = '+91' + response.data['data'][key]
 
