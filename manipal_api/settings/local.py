@@ -2,10 +2,11 @@ import ast
 import datetime
 import os
 
-import boto3
 import environ
-from boto3 import session as boto3_session
 from django.utils.log import DEFAULT_LOGGING
+
+import boto3
+from boto3 import session as boto3_session
 
 root = environ.Path(__file__) - 2
 # set default values and casting
@@ -92,8 +93,8 @@ CUSTOM_APPS = [
     'apps.cart_items',
     'apps.reports',
     'apps.dashboard',
+    'apps.video_conferences',
     'apps.notifications.apps.NotificationsConfig',
-
 
 ]
 
@@ -351,7 +352,7 @@ EMAIL_USE_TLS = True
 
 # Celery settings
 SQS_ACCESS_KEY_ID = env('SQS_ACCESS_KEY_ID')
-SQS_SECRET_ACCESS_KEY =  env('SQS_SECRET_ACCESS_KEY')
+SQS_SECRET_ACCESS_KEY = env('SQS_SECRET_ACCESS_KEY')
 CELERY_BROKER_URL = "sqs://%s:%s@" % (SQS_ACCESS_KEY_ID, SQS_SECRET_ACCESS_KEY)
 CELERY_RESULT_BACKEND = None
 CELERY_TASK_DEFAULT_QUEUE = env('CELERY_TASK_DEFAULT_QUEUE')
@@ -359,6 +360,11 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
     'region': 'ap-south-1',
 }
 CELERY_TIMEZONE = 'Asia/Kolkata'
+
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
+TWILIO_ACCOUNT_AUTH_KEY = env('TWILIO_ACCOUNT_AUTH_KEY')
+TWILIO_API_KEY_SID = env('TWILIO_API_KEY_SID')
+TWILIO_API_KEY_SECRET = env('TWILIO_API_KEY_SECRET')
 
 
 # Logger configuration

@@ -92,6 +92,7 @@ CUSTOM_APPS = [
     'apps.cart_items',
     'apps.reports',
     'apps.dashboard',
+    'apps.video_conferences',
     'apps.notifications.apps.NotificationsConfig',
 
 
@@ -356,6 +357,11 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
     'region': 'ap-south-1',
 }
 CELERY_TIMEZONE = 'Asia/Kolkata'
+
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
+TWILIO_ACCOUNT_AUTH_KEY = env('TWILIO_ACCOUNT_AUTH_KEY')
+TWILIO_API_KEY_SID = env('TWILIO_API_KEY_SID')
+TWILIO_API_KEY_SECRET = env('TWILIO_API_KEY_SECRET')
 
 
 # Logger configuration
