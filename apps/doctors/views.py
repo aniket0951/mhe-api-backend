@@ -108,12 +108,12 @@ class DoctorSlotAvailability(ProxyView):
         for slot in slot_list:
             time_format = ""
             appointment_type = "HV"
-            if "VC" in slot['startTime']:
-                time_format = '%d %b, %Y %I:%M:%S %p(VC)'
-                appointment_type = "VC"
-            elif "HVVC" in slot['startTime']:
+            if "HVVC" in slot['startTime']:
                 time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
                 appointment_type = "HVVC"
+            elif "VC" in slot['startTime']:
+                time_format = '%d %b, %Y %I:%M:%S %p(VC)'
+                appointment_type = "VC"
             elif "PR" in slot['startTime']:
                 time_format = '%d %b, %Y %I:%M:%S %p(PR)'
                 appointment_type = "PR"
