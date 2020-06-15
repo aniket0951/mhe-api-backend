@@ -56,7 +56,7 @@ class AccessTokenGenerationView(APIView):
         identity = request.data.get("identity")
         token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
                             settings.TWILIO_API_KEY_SECRET, identity=identity)
-        video_grant = VideoGrant(room=room)
+        video_grant = VideoGrant(room=room_name)
         token.add_grant(video_grant)
         return Response(data={"token": token.to_jwt()}, status=status.HTTP_200_OK)
 
