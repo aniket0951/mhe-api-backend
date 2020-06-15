@@ -28,12 +28,13 @@ class RoomCreationView(APIView):
         appointment_id = request.data.get("appointment_id")
         appointment = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
+        room_name = "".join(appointment_id.split("||"))
         if not appointment:
             raise ValidationError("Appointment does not Exist")
         room = client.video.rooms.create(
             record_participants_on_connect=True,
             type='group',
-            unique_name=appointment_id
+            unique_name=room_name
         )
         data = dict()
         data["appointment"] = appointment.id
@@ -51,6 +52,7 @@ class AccessTokenGenerationView(APIView):
 
     def post(self, request, format=None):
         room = request.data.get("room")
+        room_name = "".join(room.split("||"))
         identity = request.data.get("identity")
         token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
                             settings.TWILIO_API_KEY_SECRET, identity=identity)
