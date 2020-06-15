@@ -66,6 +66,7 @@ class CloseRoomView(APIView):
 
     def post(self, request, format=None):
         room_name = request.data.get("room_name", None)
+        room_name = "".join(room_name.split("||"))
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:
