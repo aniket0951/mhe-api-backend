@@ -47,7 +47,7 @@ from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser,
                                       IsPatientUser, IsSelfUserOrFamilyMember,
-                                      SelfUserAccess)
+                                      SelfUserAccess, IsDoctor)
 
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
@@ -722,3 +722,20 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         return self.custom_success_response(message=response_message,
                                                             success=response_success, data=response_data)
         raise ValidationError(response_message)
+
+class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
+    queryset = Appointment.objects.all()
+    permission_classes = [AllowAny,]
+    serializer_class = AppointmentSerializer
+    create_success_message = None
+    list_success_message = 'Appointment list returned successfully!'
+    retrieve_success_message = 'Appointment information returned successfully!'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        doctor_id = self.request.data.get("doctor_id")
+        doctor = Doctor.objects.filter(id = doctor_id).first()
+        if not doctor:
+            raise ValidationError("Doctor does not Exist")
+        return qs.filter(doctor_id = doctor.id, appointment_date__gte = datetime.now().date(), status = "1", appointment_mode = "VC")
+        

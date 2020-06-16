@@ -6,13 +6,14 @@ from rest_framework.routers import DefaultRouter
 from .views import (AppointmentsAPIView, CancelAndRefundView,
                     CancelHealthPackageAppointment, CancellationReasonlistView,
                     CancelMyAppointment, CreateMyAppointment,
-                    DoctorRescheduleAppointmentView,
+                    DoctorRescheduleAppointmentView, DoctorsAppointmentAPIView,
                     HealthPackageAppointmentView, OfflineAppointment,
                     RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
 
 router = DefaultRouter(trailing_slash=False)
 
 router.register('all_appointments', AppointmentsAPIView)
+router.register('all_doctors_appointments', DoctorsAppointmentAPIView)
 router.register('upcoming_appointments', UpcomingAppointmentsAPIView)
 router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 
