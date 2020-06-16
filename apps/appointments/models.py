@@ -74,6 +74,9 @@ class Appointment(models.Model):
                                           null=True)
     booked_via_app = models.BooleanField(default=True)
 
+    appointment_mode = models.CharField(max_length=10,
+                                      default="HV")
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
