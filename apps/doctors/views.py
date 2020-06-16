@@ -123,13 +123,13 @@ class DoctorSlotAvailability(ProxyView):
                 slot['startTime'], time_format).time()
             if time.hour < 12:
                 morning_slot.append({"slot": time.strftime(
-                    "%H:%M:%S %p"), "type": appointment_type})
+                    "%I:%M:%S %p"), "type": appointment_type})
             elif (time.hour >= 12) and (time.hour < 17):
                 afternoon_slot.append({"slot": time.strftime(
-                    "%H:%M:%S %p"), "type": appointment_type})
+                    "%I:%M:%S %p"), "type": appointment_type})
             else:
                 evening_slot.append({"slot": time.strftime(
-                    "%H:%M:%S %p"), "type": appointment_type})
+                    "%I:%M:%S %p"), "type": appointment_type})
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
