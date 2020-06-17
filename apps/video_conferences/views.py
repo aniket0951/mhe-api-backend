@@ -17,10 +17,13 @@ from utils import custom_viewsets
 
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
+from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser,
+                                      IsPatientUser, IsSelfUserOrFamilyMember,
+                                      SelfUserAccess, IsDoctor)
 
 
 class RoomCreationView(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (IsDoctor,)
 
     def post(self, request, format=None):
         client = Client(settings.TWILIO_ACCOUNT_SID,

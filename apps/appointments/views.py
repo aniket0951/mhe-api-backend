@@ -63,6 +63,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                      'patient__mobile', 'patient__email']
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter)
+
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
@@ -725,15 +726,17 @@ class DoctorRescheduleAppointmentView(ProxyView):
 
 class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
-    permission_classes = [AllowAny,]
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter)
+    permission_classes = [IsDoctor,]
     serializer_class = AppointmentSerializer
-    create_success_message = None
+    ordering = ('appointment_date', '-appointment_slot')
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
 
     def get_queryset(self):
         qs = super().get_queryset()
-        doctor_id = self.request.data.get("doctor_id")
+        doctor_id = self.request.user.id
         doctor = Doctor.objects.filter(id = doctor_id).first()
         if not doctor:
             raise ValidationError("Doctor does not Exist")

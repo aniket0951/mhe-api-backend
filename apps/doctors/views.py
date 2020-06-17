@@ -221,6 +221,7 @@ def sign_up(request):
     if not doctor:
         raise ValidationError("Doctor does not Exist")
     doctor.set_password(password)
+    doctor.is_active = True
     doctor.save()
     data = {
         "message":  "Sign up successful!"
