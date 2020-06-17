@@ -17,6 +17,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.serializers import ValidationError
+from django.contrib.auth.hashers import check_password
+from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+from rest_framework import status
+from django.conf import settings
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -202,3 +207,51 @@ class NextSlotAvailable(ProxyView):
             response_data["next_slot"] = next_date
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def sign_up(request):
+    code = request.data.get('user_name')
+    password = request.data.get('password')  
+    if not (code and password):
+        raise ValidationError("Username or Password is Missing")
+
+    doctor = Doctor.objects.filter(code=code).first()
+    if not doctor:
+        raise ValidationError("Doctor does not Exist")
+    doctor.set_password(password)
+    doctor.save()
+    data = {
+        "message":  "Sign up successful!"
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login(request):
+    code = request.data.get('user_name')
+    password = request.data.get('password')  
+    if not (code and password):
+        raise ValidationError("Username or Password is Missing")
+
+    doctor = Doctor.objects.filter(code=code).first()
+    if not doctor:
+        raise ValidationError("Doctor does not Exist")
+    hash_password = doctor.password
+    match_password = check_password(password, hash_password)
+    if not match_password:
+        raise ValidationError("Password is not correct")
+    payload = jwt_payload_handler(doctor)
+    payload["username"] = doctor.code
+    token = jwt_encode_handler(payload)
+    expiration = datetime.utcnow(
+    ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+    expiration_epoch = expiration.timestamp()
+    serializer = DoctorSerializer(doctor)
+    data = {
+        "message":  "Login successful!",
+        "token": token,
+        "token_expiration": expiration_epoch
+    }
+    return Response(data, status=status.HTTP_200_OK)
