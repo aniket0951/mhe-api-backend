@@ -24,7 +24,7 @@ def send_push_notification(self, **kwargs):
     notification_instance = mobile_notification_serializer.save()
     if (hasattr(notification_instance.recipient, 'device') and notification_instance.recipient.device.token):
         result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-            "title": notification_instance.title, "message": notification_instance.message}, low_priority=False)
+            "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_instance.notification_type, "appointment_id": notification_instance.appointment_id}, low_priority=False)
 
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
@@ -36,6 +36,8 @@ def appointment_next_day_reminder_scheduler():
         notification_data["title"] = "Reminder: Doctor Appointment"
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, tomorrow at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address,appointment_instance.appointment_slot)
         notification_data["message"] = user_message
+        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+        notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
                 id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
@@ -58,6 +60,8 @@ def health_package_next_day_appointment_reminder():
         notification_data["title"] = "Reminder: Health Package Appointment Reminder"
         notification_data["message"] = "Reminder: You have a Health Check appointment appointment at {0}, tomorrow at {1}. For assistance, call Appointment Helpline 1800 102 5555.".format(
             appointment_instance.hospital.address, appointment_instance.appointment_date.time())
+        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+        notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
                 id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
@@ -80,6 +84,8 @@ def health_package_appointment_reminder():
         notification_data["title"] = "Reminder: Health Package Appointment Reminder"
         notification_data["message"] = "Reminder: You have a Health Check appointment appointment at {0}, today at {1}. For assistance, call Appointment Helpline 1800 102 5555.".format(
             appointment_instance.hospital.address, appointment_instance.appointment_date.time())
+        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+        notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
                 id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
@@ -100,6 +106,8 @@ def appointment_reminder_scheduler():
         notification_data["title"] = "Reminder: Doctor Appointment"
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address,appointment_instance.appointment_slot)
         notification_data["message"] = user_message
+        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+        notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
                 id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
