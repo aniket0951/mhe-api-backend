@@ -14,6 +14,7 @@ from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VideoGrant
 from twilio.rest import Client
 from utils import custom_viewsets
+from apps.notifications.tasks import send_push_notification
 
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
@@ -47,6 +48,20 @@ class RoomCreationView(APIView):
         video_instance = VideoConferenceSerializer(data=data)
         video_instance.is_valid(raise_exception=True)
         video_instance.save()
+        notification_data = {}
+        notification_data["title"] = "Doctor is available for Video consultancy"
+        user_message = "Reminder: You have an appointment with {0}, {1}, {2}, now at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address,appointment_instance.appointment_slot)
+        notification_data["message"] = user_message
+        if appointment.family_member:
+            member = FamilyMember.objects.filter(
+                id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
+            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+                patient_member = Patient.objects.filter(
+                    uhid_number=member.uhid_number).first()
+                notification_data["recipient"] = patient_member.id
+                send_push_notification.delay(notification_data=notification_data)
+        notification_data["recipient"] = appointment.patient.id
+        send_push_notification.delay(notification_data=notification_data)
         return Response(data=data, status=status.HTTP_200_OK)
 
 
