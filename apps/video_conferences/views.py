@@ -62,6 +62,8 @@ class RoomCreationView(APIView):
                 send_push_notification.delay(notification_data=notification_data)
         notification_data["recipient"] = appointment.patient.id
         send_push_notification.delay(notification_data=notification_data)
+        appointment.enable_join_button = True
+        appointment.save()
         return Response(data=data, status=status.HTTP_200_OK)
 
 
