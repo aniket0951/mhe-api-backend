@@ -50,7 +50,7 @@ class RoomCreationView(APIView):
         video_instance.save()
         notification_data = {}
         notification_data["title"] = "Doctor is available for Video consultancy"
-        user_message = "Reminder: You have an appointment with {0}, {1}, {2}, now at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address,appointment_instance.appointment_slot)
+        user_message = "Plese Join the meeting. Doctor is ready for consultation"
         notification_data["message"] = user_message
         if appointment.family_member:
             member = FamilyMember.objects.filter(
