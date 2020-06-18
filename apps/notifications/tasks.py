@@ -24,7 +24,7 @@ def send_push_notification(self, **kwargs):
     notification_instance = mobile_notification_serializer.save()
     if (hasattr(notification_instance.recipient, 'device') and notification_instance.recipient.device.token):
         result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-            "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_instance.notification_type, "appointment_id": notification_instance.appointment_id}, low_priority=False)
+            "title": notification_instance.title, "message": notification_instance.message, "notification_type":notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
 
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
