@@ -251,6 +251,7 @@ def login(request):
     expiration_epoch = expiration.timestamp()
     serializer = DoctorSerializer(doctor)
     data = {
+        "data" : serializer.data,
         "message":  "Login successful!",
         "token": token,
         "token_expiration": expiration_epoch

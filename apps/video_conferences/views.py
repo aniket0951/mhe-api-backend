@@ -23,7 +23,7 @@ from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser,
 
 
 class RoomCreationView(APIView):
-    permission_classes = (IsDoctor,)
+    permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
         client = Client(settings.TWILIO_ACCOUNT_SID,

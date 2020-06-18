@@ -728,7 +728,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter)
-    permission_classes = [IsDoctor,]
+    permission_classes = [AllowAny,]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', '-appointment_slot')
     list_success_message = 'Appointment list returned successfully!'
