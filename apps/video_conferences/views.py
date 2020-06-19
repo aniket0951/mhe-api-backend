@@ -65,6 +65,7 @@ class RoomCreationView(APIView):
         notification_data["recipient"] = appointment.patient.id
         send_push_notification.delay(notification_data=notification_data)
         appointment.enable_join_button = True
+        appointment.vc_appointment_status = 2
         appointment.save()
         return Response(data=data, status=status.HTTP_200_OK)
 
@@ -76,10 +77,14 @@ class AccessTokenGenerationView(APIView):
         room = request.data.get("room")
         room_name = "".join(room.split("||"))
         identity = request.data.get("identity")
+        appointment = Appointment.objects.filter(
+            appointment_identifier=room).first()
         token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
                             settings.TWILIO_API_KEY_SECRET, identity=identity)
         video_grant = VideoGrant(room=room_name)
         token.add_grant(video_grant)
+        appointment.vc_appointment_status = 3
+        appointment.save()
         return Response(data={"token": token.to_jwt()}, status=status.HTTP_200_OK)
 
 
@@ -88,6 +93,11 @@ class CloseRoomView(APIView):
 
     def post(self, request, format=None):
         room_name = request.data.get("room_name", None)
+        appointment = Appointment.objects.filter(
+            appointment_identifier=room_name).first()
+        if appointment:
+            appointment.vc_appointment_status = 4
+            appointment.save()
         room_name = "".join(room_name.split("||"))
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()

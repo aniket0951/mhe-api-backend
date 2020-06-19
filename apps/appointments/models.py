@@ -79,6 +79,8 @@ class Appointment(models.Model):
 
     enable_join_button = models.BooleanField(default=False)
 
+    vc_appointment_status = models.IntegerField(default = "1")
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
