@@ -735,6 +735,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny,]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
+    filter_fields = ('appointment_date',)
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
 
