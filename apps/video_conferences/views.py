@@ -97,6 +97,7 @@ class CloseRoomView(APIView):
             appointment_identifier=room_name).first()
         if appointment:
             appointment.vc_appointment_status = 4
+            appointment.enable_join_button = False
             appointment.save()
         room_name = "".join(room_name.split("||"))
         room_instance = VideoConference.objects.filter(
