@@ -55,7 +55,9 @@ def get_refund_param(data=None):
                 param["amount"] = 0.0
 
     param["email"] = patient.email
-    param["transaction_id"] = appointment_instance.payment_appointment.get().processing_id
+    instance = appointment_instance.payment_appointment.filter(status="success").first()
+    if instance:
+        param["transaction_id"] = instance.processing_id
     param["check_sum_hash"] = get_checksum(param, secret_key)
     return param
 

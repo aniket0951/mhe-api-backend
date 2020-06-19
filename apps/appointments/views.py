@@ -284,14 +284,16 @@ class CancelMyAppointment(ProxyView):
                 param["cancel_remark"] = instance.reason.reason
                 param["location_code"] = instance.hospital.code
                 if instance.payment_appointment.exists():
-                    payment_instance = instance.payment_appointment.get()
-                    if payment_instance.payment_refund.exists():
-                        refund_instance = payment_instance.payment_refund.get()
-                        param["refund_status"] = "Y"
-                        param["refund_trans_id"] = refund_instance.transaction_id
-                        param["refund_amount"] = str((int(refund_instance.amount)))
-                        param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
-                        param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
+                    payment_instance = instance.payment_appointment.filter(status="success").first()
+                    if payment_instance:
+                        if payment_instance.payment_refund.exists():
+                            refund_instance = payment_instance.payment_refund.filter(status="success").first()
+                            if refund_instance:
+                                param["refund_status"] = "Y"
+                                param["refund_trans_id"] = refund_instance.transaction_id
+                                param["refund_amount"] = str((int(refund_instance.amount)))
+                                param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
+                                param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
                 success_status = True
@@ -632,9 +634,10 @@ class ReBookDoctorAppointment(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment = appointment.save()
                 if instance.payment_appointment.exists():
-                    payment_instance = instance.payment_appointment.get()
-                    payment_instance.appointment = appointment
-                    payment_instance.save()
+                    payment_instance = instance.payment_appointment.filter(status="success").first()
+                    if payment_instance:
+                        payment_instance.appointment = appointment
+                        payment_instance.save()
                 response_success = True
                 response_message = "Appointment has been Rebooked"
                 response_data["appointment_identifier"] = appointment_identifier
@@ -710,9 +713,10 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         appointment.is_valid(raise_exception=True)
                         appointment = appointment.save()
                         if instance.payment_appointment.exists():
-                            payment_instance = instance.payment_appointment.get()
-                            payment_instance.appointment = appointment
-                            payment_instance.save()
+                            payment_instance = instance.payment_appointment.filter(status="success").first()
+                            if payment_instance:
+                                payment_instance.appointment = appointment
+                                payment_instance.save()
                         instance.status = 5
                         instance.reason_id = self.request.data.get("reason_id")
                         instance.other_reason = self.request.data.get("other_reason")
