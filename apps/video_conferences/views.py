@@ -108,5 +108,7 @@ class CloseRoomView(APIView):
         room_sid = room_instance.room_sid
         client = Client(settings.TWILIO_ACCOUNT_SID,
                         settings.TWILIO_ACCOUNT_AUTH_KEY)
-        room = client.video.rooms(room_sid).update(status="completed")
+        room_status = client.video.rooms(room_sid).fetch().status
+        if room_status == "in-progress":
+            room = client.video.rooms(room_sid).update(status="completed")
         return Response(status=status.HTTP_200_OK)
