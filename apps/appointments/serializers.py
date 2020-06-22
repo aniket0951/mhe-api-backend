@@ -16,8 +16,9 @@ from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
+from utils.utils import generate_pre_signed_url
 
-from .models import Appointment, CancellationReason, HealthPackageAppointment
+from .models import Appointment, CancellationReason, HealthPackageAppointment, AppointmentDocuments
 
 
 class CancellationReasonSerializer(DynamicFieldsModelSerializer):
@@ -111,3 +112,28 @@ class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
                 instance.family_member).data
 
         return response_object
+
+
+class AppointmentDocumentsSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = AppointmentDocuments
+        fields = '__all__'
+        extra_kwargs = {
+            'name': {"error_messages": {"required": "Name is mandatory to upload your document."}},
+        }
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.document:
+                response_object['document'] = generate_pre_signed_url(
+                    instance.document.url)
+        except Exception as error:
+            response_object['document'] = None
+
+        return response_object
+
+
+

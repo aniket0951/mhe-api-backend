@@ -1,14 +1,25 @@
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.contrib.postgres.fields import JSONField
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage
 from apps.master_data.models import Department, Hospital
+from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient
+from utils.custom_storage import FileStorage
+from utils.validators import validate_file_authenticity, validate_file_size
 
 from .tasks import set_status_as_completed
+
+
+def generate_personal_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "appointment/{0}/documents/{1}".format(self.id, obj_name)
 
 
 class CancellationReason(models.Model):
@@ -75,11 +86,11 @@ class Appointment(models.Model):
     booked_via_app = models.BooleanField(default=True)
 
     appointment_mode = models.CharField(max_length=10,
-                                      default="HV")
+                                        default="HV")
 
     enable_join_button = models.BooleanField(default=False)
 
-    vc_appointment_status = models.IntegerField(default = "1")
+    vc_appointment_status = models.IntegerField(default="1")
 
     @property
     def is_cancellable(self):
@@ -156,3 +167,38 @@ class HealthPackageAppointment(models.Model):
             if ((self.appointment_date > datetime.now()) and (self.appointment_status != "Cancelled")):
                 return True
         return False
+
+
+class AppointmentDocuments(MyBaseModel):
+
+    name = models.CharField(max_length=500,
+                            blank=False,
+                            null=False)
+
+    description = models.TextField(blank=True,
+                                   null=True)
+
+    document = models.FileField(upload_to=generate_personal_file_path,
+                                storage=FileStorage(),
+                                validators=[FileExtensionValidator(
+                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                blank=False,
+                                null=False)
+
+    appointment_info = models.ForeignKey(Appointment,
+                                         on_delete=models.PROTECT,
+                                         null=False,
+                                         blank=False,
+                                         related_name='appointment_documents')
+
+    @property
+    def representation(self):
+        return 'Appointment: {}, Document: {}'.format(self.appointment_info.appointment_identifier, self.name)
+
+    class Meta:
+        verbose_name = "Appointment Document"
+        verbose_name_plural = "Appointment Documents"
+
+    def __str__(self):
+        return self.representation

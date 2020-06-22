@@ -3,6 +3,8 @@ import json
 import xml.etree.ElementTree as ET
 
 import requests
+from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.core import serializers
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -10,18 +12,6 @@ from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.timezone import datetime
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.serializers import ValidationError
-from django.contrib.auth.hashers import check_password
-from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
-from rest_framework import status
-from django.conf import settings
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -30,14 +20,24 @@ from apps.doctors.serializers import (DepartmentSerializer,
                                       DoctorSerializer, HospitalSerializer)
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.models import Department, Hospital, Specialisation
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
     DoctorSchedule as serializable_DoctorSchedule
+from proxy.custom_serializables import DoctotLogin as serializable_DoctotLogin
 from proxy.custom_serializables import \
     NextAvailableSlot as serializable_NextAvailableSlot
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters, generics, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 from utils.exceptions import InvalidRequest
@@ -217,51 +217,53 @@ class NextSlotAvailable(ProxyView):
                                             success=response_success, data=response_data)
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def sign_up(request):
-    code = request.data.get('user_name')
-    password = request.data.get('password')  
-    if not (code and password):
-        raise ValidationError("Username or Password is Missing")
+class DoctorloginView(ProxyView):
+    source = 'uservalidation'
+    permission_classes = [AllowAny]
 
-    doctor = Doctor.objects.filter(code=code).first()
-    if not doctor:
-        raise ValidationError("Doctor does not Exist")
-    doctor.set_password(password)
-    doctor.is_active = True
-    doctor.save()
-    data = {
-        "message":  "Sign up successful!"
-    }
-    return Response(data, status=status.HTTP_200_OK)
+    def get_request_data(self, request):
+        appointment_identifier = request.data.pop("appointment_identifier",None)
+        schedule = serializable_DoctotLogin(**request.data)
+        request_data = custom_serializer().serialize(schedule, 'XML')
+        request.data["appointment_identifier"] = appointment_identifier
+        return request_data
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login(request):
-    code = request.data.get('user_name')
-    password = request.data.get('password')  
-    if not (code and password):
-        raise ValidationError("Username or Password is Missing")
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
 
-    doctor = Doctor.objects.filter(code=code).first()
-    if not doctor:
-        raise ValidationError("Doctor does not Exist")
-    hash_password = doctor.password
-    match_password = check_password(password, hash_password)
-    if not match_password:
-        raise ValidationError("Password is not correct")
-    payload = jwt_payload_handler(doctor)
-    payload["username"] = doctor.code
-    token = jwt_encode_handler(payload)
-    expiration = datetime.utcnow(
-    ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
-    expiration_epoch = expiration.timestamp()
-    serializer = DoctorSerializer(doctor)
-    data = {
-        "data" : serializer.data,
-        "message":  "Login successful!",
-        "token": token,
-        "token_expiration": expiration_epoch
-    }
-    return Response(data, status=status.HTTP_200_OK)
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        data = dict()
+        message = "login is unsuccessful. Please try again"
+        success = False
+        if status == "1":
+            login_response = root.find("loginresp").text
+            login_response = ast.literal_eval(login_response)
+            if login_response:
+                login_response_json = login_response[0]
+                login_status = login_response_json["Status"]
+                if login_status == "Success":
+                    doctor_code = login_response_json["CTPCP_Code"]
+                    location_code = login_response_json["Hosp"]
+                    doctor = Doctor.objects.filter(code=doctor_code, hospital__code = location_code).first()
+                    payload = jwt_payload_handler(doctor)
+                    payload["username"] = doctor.code
+                    token = jwt_encode_handler(payload)
+                    expiration = datetime.utcnow(
+                    ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+                    expiration_epoch = expiration.timestamp()
+                    serializer = DoctorSerializer(doctor)
+                    data = {
+                        "data" : serializer.data,
+                        "message":  "Login successful!",
+                        "token": token,
+                        "token_expiration": expiration_epoch
+                    }
+                    if self.request.data.get("appointment_identifier"):
+                        data["appointment_identifier"] = self.request.data.get("appointment_identifier")
+                    message = "login is successful"
+                    success = True
+
+        return self.custom_success_response(message=message,
+                                            success=success, data=data)

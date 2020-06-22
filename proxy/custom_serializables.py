@@ -298,3 +298,18 @@ class RescheduleAppointment:
         serializer.add_property('AppId', self.app_id)
         serializer.add_property('newdate', self.new_date)
         serializer.add_property('locationCode', self.location_code)
+
+
+class DoctotLogin:
+    def __init__(self, user_id=None, pwd=None, location_code=None):
+        self.user_id = user_id
+        self.pwd = pwd
+        self.location_code = location_code
+        self.checksum = None
+
+    def serialize(self, serializer):
+        serializer.start_object('loginParam')
+        serializer.add_property('userid', self.user_id)
+        serializer.add_property('pwd', self.pwd)
+        serializer.add_property('checksum', self.checksum)
+        serializer.add_property('locationCode', self.location_code)
