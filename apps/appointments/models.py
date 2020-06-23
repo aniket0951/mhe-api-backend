@@ -214,3 +214,24 @@ class AppointmentDocuments(MyBaseModel):
 
     def __str__(self):
         return self.representation
+
+
+class AppointmentVital(MyBaseModel):
+
+    blood_pressure = models.CharField(max_length=15,
+                                      blank=True,
+                                      null=True)
+
+    body_temperature = models.CharField(max_length=15,
+                                        blank=True,
+                                        null=True)
+
+    appointment_info = models.ForeignKey(Appointment,
+                                         on_delete=models.PROTECT,
+                                         null=False,
+                                         blank=False,
+                                         related_name='appointment_vitals')
+
+    class Meta:
+        verbose_name = "Appointment Vital"
+        verbose_name_plural = "Appointment Vitals"

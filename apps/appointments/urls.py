@@ -9,7 +9,7 @@ from .views import (AppointmentDocumentsViewSet, AppointmentsAPIView,
                     CreateMyAppointment, DoctorRescheduleAppointmentView,
                     DoctorsAppointmentAPIView, HealthPackageAppointmentView,
                     OfflineAppointment, RecentlyVisitedDoctorlistView,
-                    UpcomingAppointmentsAPIView)
+                    UpcomingAppointmentsAPIView, AppointmentVitalViewSet)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -17,6 +17,7 @@ router.register('all_appointments', AppointmentsAPIView)
 router.register('all_doctors_appointments', DoctorsAppointmentAPIView)
 router.register('upload_documents', AppointmentDocumentsViewSet)
 router.register('upcoming_appointments', UpcomingAppointmentsAPIView)
+router.register('vitals', AppointmentVitalViewSet)
 router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 
 

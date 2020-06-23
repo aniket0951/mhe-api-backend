@@ -51,10 +51,11 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
-from .models import (Appointment, AppointmentDocuments, CancellationReason,
-                     HealthPackageAppointment)
+from .models import (Appointment, AppointmentDocuments, AppointmentVital,
+                     CancellationReason, HealthPackageAppointment)
 from .serializers import (AppointmentDocumentsSerializer,
-                          AppointmentSerializer, CancellationReasonSerializer,
+                          AppointmentSerializer, AppointmentVitalSerializer,
+                          CancellationReasonSerializer,
                           HealthPackageAppointmentSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
 
@@ -809,5 +810,46 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_serializer = self.serializer_class(data=document_param)
             document_serializer.is_valid(raise_exception=True)
             document_serializer.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = AppointmentVital
+    queryset = AppointmentVital.objects.all().order_by('-created_at')
+    serializer_class = AppointmentVitalSerializer
+    create_success_message = "Vitals are uploaded successfully."
+    list_success_message = 'Vitals are returned successfully!'
+    retrieve_success_message = 'Vitals are information returned successfully!'
+    update_success_message = 'Vitals are information is updated successfuly!'
+    delete_success_message = 'Vitals are document is deleted successfuly!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_permissions(self):
+        if self.action in ['list', 'create', ]:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve', 'destroy']:
+            permission_classes = [IsPatientUser, IsSelfDocument]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=request.data.pop("appointment_identifier")).first()
+        if not appointment_instance:
+            raise ValidationError("Appointment doesn't Exist")
+        request.data["appointment_info"] = appointment_instance.id
+        vital_serializer = self.serializer_class(data=request.data)
+        vital_serializer.is_valid(raise_exception=True)
+        vital_serializer.save()
 
         return Response(status=status.HTTP_200_OK)
