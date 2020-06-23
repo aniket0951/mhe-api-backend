@@ -185,9 +185,6 @@ class AppointmentDocuments(MyBaseModel):
                             blank=False,
                             null=False)
 
-    description = models.TextField(blank=True,
-                                   null=True)
-
     document = models.FileField(upload_to=generate_personal_file_path,
                                 storage=FileStorage(),
                                 validators=[FileExtensionValidator(
