@@ -45,15 +45,17 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from utils import custom_viewsets
-from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser,
-                                      IsPatientUser, IsSelfUserOrFamilyMember,
-                                      SelfUserAccess, IsDoctor)
+from utils.custom_permissions import (InternalAPICall, IsDoctor,
+                                      IsManipalAdminUser, IsPatientUser,
+                                      IsSelfUserOrFamilyMember, SelfUserAccess)
 
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
-from .models import Appointment, CancellationReason, HealthPackageAppointment, AppointmentDocuments
-from .serializers import (AppointmentSerializer, CancellationReasonSerializer,
-                          HealthPackageAppointmentSerializer,AppointmentDocumentsSerializer)
+from .models import (Appointment, AppointmentDocuments, CancellationReason,
+                     HealthPackageAppointment)
+from .serializers import (AppointmentDocumentsSerializer,
+                          AppointmentSerializer, CancellationReasonSerializer,
+                          HealthPackageAppointmentSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
 
 
@@ -69,7 +71,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     filter_fields = ('status',)
     ordering = ('appointment_date', '-appointment_slot', 'status')
-    ordering_fields = ('appointment_date','appointment_slot', 'status')
+    ordering_fields = ('appointment_date', 'appointment_slot', 'status')
     create_success_message = None
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
@@ -217,7 +219,8 @@ class CreateMyAppointment(ProxyView):
                     new_appointment["uhid"] = family_member.uhid_number
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
-                new_appointment["appointment_mode"] = data.get("appointment_mode", None)
+                new_appointment["appointment_mode"] = data.get(
+                    "appointment_mode", None)
                 appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
@@ -284,16 +287,21 @@ class CancelMyAppointment(ProxyView):
                 param["cancel_remark"] = instance.reason.reason
                 param["location_code"] = instance.hospital.code
                 if instance.payment_appointment.exists():
-                    payment_instance = instance.payment_appointment.filter(status="success").first()
+                    payment_instance = instance.payment_appointment.filter(
+                        status="success").first()
                     if payment_instance:
                         if payment_instance.payment_refund.exists():
-                            refund_instance = payment_instance.payment_refund.filter(status="success").first()
+                            refund_instance = payment_instance.payment_refund.filter(
+                                status="success").first()
                             if refund_instance:
                                 param["refund_status"] = "Y"
                                 param["refund_trans_id"] = refund_instance.transaction_id
-                                param["refund_amount"] = str((int(refund_instance.amount)))
-                                param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
-                                param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
+                                param["refund_amount"] = str(
+                                    (int(refund_instance.amount)))
+                                param["refund_time"] = refund_instance.created_at.time().strftime(
+                                    "%H:%M")
+                                param["refund_date"] = refund_instance.created_at.date().strftime(
+                                    "%d/%m/%Y")
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
                 success_status = True
@@ -634,7 +642,8 @@ class ReBookDoctorAppointment(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment = appointment.save()
                 if instance.payment_appointment.exists():
-                    payment_instance = instance.payment_appointment.filter(status="success").first()
+                    payment_instance = instance.payment_appointment.filter(
+                        status="success").first()
                     if payment_instance:
                         payment_instance.appointment = appointment
                         payment_instance.save()
@@ -663,7 +672,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
         request.data["reason_id"] = reason_id
-        request.data["other_reason"]= other_reason
+        request.data["other_reason"] = other_reason
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -713,13 +722,15 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         appointment.is_valid(raise_exception=True)
                         appointment = appointment.save()
                         if instance.payment_appointment.exists():
-                            payment_instance = instance.payment_appointment.filter(status="success").first()
+                            payment_instance = instance.payment_appointment.filter(
+                                status="success").first()
                             if payment_instance:
                                 payment_instance.appointment = appointment
                                 payment_instance.save()
                         instance.status = 5
                         instance.reason_id = self.request.data.get("reason_id")
-                        instance.other_reason = self.request.data.get("other_reason")
+                        instance.other_reason = self.request.data.get(
+                            "other_reason")
                         instance.save()
                         response_success = True
                         response_message = "Appointment has been Rescheduled"
@@ -728,11 +739,12 @@ class DoctorRescheduleAppointmentView(ProxyView):
                                                             success=response_success, data=response_data)
         raise ValidationError(response_message)
 
+
 class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter)
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny, ]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
     filter_fields = ('appointment_date', 'appointment_identifier')
@@ -742,13 +754,14 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         doctor_id = self.request.user.id
-        doctor = Doctor.objects.filter(id = doctor_id).first()
+        doctor = Doctor.objects.filter(id=doctor_id).first()
         if not doctor:
             raise ValidationError("Doctor does not Exist")
-        return qs.filter(doctor_id = doctor.id, appointment_date__gte = datetime.now().date(), status = "1", appointment_mode = "VC", payment_status = "success")
+        return qs.filter(doctor_id=doctor.id, appointment_date__gte=datetime.now().date(), status="1", appointment_mode="VC", payment_status="success")
+
 
 class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny, ]
     model = AppointmentDocuments
     queryset = AppointmentDocuments.objects.all().order_by('-created_at')
     serializer_class = AppointmentDocumentsSerializer
@@ -778,7 +791,8 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
 
     def create(self, request):
         document_param = dict()
-        appointment_instance = Appointment.objects.filter(appointment_identifier=request.data.get("appointment_identifier")).first()
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError("Appointment doesn't Exist")
         name_list = request.data.get("name")
@@ -789,11 +803,8 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
         document_param["name"] = request.data.get("name")
         document_param["description"] = request.data.get("description")
         document_param["document"] = request.data.get("document")
-        document_serializer = self.serializer_class(data = document_param)
+        document_serializer = self.serializer_class(data=document_param)
         document_serializer.is_valid(raise_exception=True)
         document_serializer.save()
 
         return Response({"message": "This is working"})
-
-    
-        

@@ -3,12 +3,13 @@ from django.urls import include, path
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
-from .views import (AppointmentsAPIView, CancelAndRefundView,
-                    CancelHealthPackageAppointment, CancellationReasonlistView,
-                    CancelMyAppointment, CreateMyAppointment,
-                    DoctorRescheduleAppointmentView, DoctorsAppointmentAPIView,
-                    HealthPackageAppointmentView, OfflineAppointment,
-                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView, AppointmentDocumentsViewSet)
+from .views import (AppointmentDocumentsViewSet, AppointmentsAPIView,
+                    CancelAndRefundView, CancelHealthPackageAppointment,
+                    CancellationReasonlistView, CancelMyAppointment,
+                    CreateMyAppointment, DoctorRescheduleAppointmentView,
+                    DoctorsAppointmentAPIView, HealthPackageAppointmentView,
+                    OfflineAppointment, RecentlyVisitedDoctorlistView,
+                    UpcomingAppointmentsAPIView)
 
 router = DefaultRouter(trailing_slash=False)
 
