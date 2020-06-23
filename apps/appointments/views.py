@@ -791,20 +791,25 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
 
     def create(self, request):
         document_param = dict()
+        if not (request.data.get("description") and request.data.get("document_type") and request.data.get("document_type")):
+            raise ValidationError("Parameter is missing")
         appointment_instance = Appointment.objects.filter(
             appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError("Appointment doesn't Exist")
-        name_list = request.data.get("name")
-        description_list = request.data.get("description")
-        files = request.FILES
+        name_list = request.data.get("name").split(",")
+        description_list = request.data.get("description").split(",")
+        document_type_list = request.data.get("document_type").split(",")
+        if not (name_list and description_list and document_type_list) or not (len(name_list) == len(description_list) == len(document_type_list)):
+            raise ValidationError("Document parameter is missing")
+        for i, f in enumerate(request.FILES.getlist('document')):
+            document_param["appointment_info"] = appointment_instance.id
+            document_param["name"] = name_list[i]
+            document_param["description"] = description_list[i]
+            document_param["document"] = f
+            document_param["document_type"] = document_type_list[i]
+            document_serializer = self.serializer_class(data=document_param)
+            document_serializer.is_valid(raise_exception=True)
+            document_serializer.save()
 
-        document_param["appointment_info"] = appointment_instance.id
-        document_param["name"] = request.data.get("name")
-        document_param["description"] = request.data.get("description")
-        document_param["document"] = request.data.get("document")
-        document_serializer = self.serializer_class(data=document_param)
-        document_serializer.is_valid(raise_exception=True)
-        document_serializer.save()
-
-        return Response({"message": "This is working"})
+        return Response(status=status.HTTP_200_OK)

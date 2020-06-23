@@ -1,6 +1,6 @@
 import ast
-import json
 import base64
+import json
 import xml.etree.ElementTree as ET
 
 import requests
@@ -223,7 +223,8 @@ class DoctorloginView(ProxyView):
     permission_classes = [AllowAny]
 
     def get_request_data(self, request):
-        appointment_identifier = request.data.pop("appointment_identifier",None)
+        appointment_identifier = request.data.pop(
+            "appointment_identifier", None)
         schedule = serializable_DoctotLogin(**request.data)
         request_data = custom_serializer().serialize(schedule, 'XML')
         request.data["appointment_identifier"] = appointment_identifier
@@ -234,7 +235,6 @@ class DoctorloginView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response.content)
-        print(response.content)
         status = root.find("Status").text
         data = dict()
         message = "login is unsuccessful. Please try again"
@@ -248,7 +248,8 @@ class DoctorloginView(ProxyView):
                 if login_status == "Success":
                     doctor_code = login_response_json["CTPCP_Code"]
                     location_code = login_response_json["Hosp"]
-                    doctor = Doctor.objects.filter(code=doctor_code, hospital__code = location_code).first()
+                    doctor = Doctor.objects.filter(
+                        code=doctor_code, hospital__code=location_code).first()
                     payload = jwt_payload_handler(doctor)
                     payload["username"] = doctor.code
                     token = jwt_encode_handler(payload)
@@ -259,19 +260,21 @@ class DoctorloginView(ProxyView):
                     message = "login is successful"
                     success = True
                     data = {
-                        "data" : serializer.data,
+                        "data": serializer.data,
                         "message":  "Login successful!",
                         "token": token,
                         "token_expiration": expiration_epoch
                     }
                     if self.request.data.get("appointment_identifier"):
                         redirect_data = dict()
-                        redirect_data["appointment_identifier"] = self.request.data.get("appointment_identifier")
+                        redirect_data["appointment_identifier"] = self.request.data.get(
+                            "appointment_identifier")
                         redirect_data["token"] = token
-                        redirect_data_string = json.dumps(redirect_data) 
-                        encoded_string = base64.b64encode(redirect_data_string.encode("utf-8"))
+                        redirect_data_string = json.dumps(redirect_data)
+                        encoded_string = base64.b64encode(
+                            redirect_data_string.encode("utf-8"))
                         return self.custom_success_response(message=message,
-                                            success=success, data=encoded_string)
+                                                            success=success, data=encoded_string)
 
         return self.custom_success_response(message=message,
                                             success=success, data=data)

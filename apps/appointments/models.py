@@ -173,6 +173,13 @@ class HealthPackageAppointment(models.Model):
 
 
 class AppointmentDocuments(MyBaseModel):
+    DOCUMENT_TYPE_CHOICES = (
+        ('Prescription', 'Prescription'),
+        ('Lab', 'Lab'),
+        ('Radiology', 'Radiology'),
+
+
+    )
 
     name = models.CharField(max_length=500,
                             blank=False,
@@ -188,6 +195,11 @@ class AppointmentDocuments(MyBaseModel):
                                             validate_file_authenticity],
                                 blank=False,
                                 null=False)
+
+    document_type = models.CharField(choices=DOCUMENT_TYPE_CHOICES,
+                                     default='Prescription',
+                                     max_length=15
+                                     )
 
     appointment_info = models.ForeignKey(Appointment,
                                          on_delete=models.PROTECT,
