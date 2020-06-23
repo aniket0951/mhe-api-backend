@@ -810,7 +810,13 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_serializer = self.serializer_class(data=document_param)
             document_serializer.is_valid(raise_exception=True)
             document_serializer.save()
-
+        vital_param = dict()
+        vital_param["blood_pressure"] = request.data.get("blood_pressure", None)
+        vital_param["body_temperature"] = request.data.get("body_temperature", None)
+        vital_param["appointment_info"] = appointment_instance.id
+        vital_serializer = AppointmentVitalSerializer(data=vital_param)
+        vital_serializer.is_valid(raise_exception=True)
+        vital_serializer.save()
         return Response(status=status.HTTP_200_OK)
 
 
