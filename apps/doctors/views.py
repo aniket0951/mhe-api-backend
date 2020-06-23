@@ -1,5 +1,6 @@
 import ast
 import json
+import base64
 import xml.etree.ElementTree as ET
 
 import requests
@@ -233,6 +234,7 @@ class DoctorloginView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response.content)
+        print(response.content)
         status = root.find("Status").text
         data = dict()
         message = "login is unsuccessful. Please try again"
@@ -254,6 +256,8 @@ class DoctorloginView(ProxyView):
                     ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
                     expiration_epoch = expiration.timestamp()
                     serializer = DoctorSerializer(doctor)
+                    message = "login is successful"
+                    success = True
                     data = {
                         "data" : serializer.data,
                         "message":  "Login successful!",
@@ -261,9 +265,13 @@ class DoctorloginView(ProxyView):
                         "token_expiration": expiration_epoch
                     }
                     if self.request.data.get("appointment_identifier"):
-                        data["appointment_identifier"] = self.request.data.get("appointment_identifier")
-                    message = "login is successful"
-                    success = True
+                        redirect_data = dict()
+                        redirect_data["appointment_identifier"] = self.request.data.get("appointment_identifier")
+                        redirect_data["token"] = token
+                        redirect_data_string = json.dumps(redirect_data) 
+                        encoded_string = base64.b64encode(redirect_data_string.encode("utf-8"))
+                        return self.custom_success_response(message=message,
+                                            success=success, data=encoded_string)
 
         return self.custom_success_response(message=message,
                                             success=success, data=data)
