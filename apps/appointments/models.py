@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -91,6 +92,8 @@ class Appointment(models.Model):
     enable_join_button = models.BooleanField(default=False)
 
     vc_appointment_status = models.IntegerField(default="1")
+
+    patient_ready = models.BooleanField(default=False)
 
     @property
     def is_cancellable(self):

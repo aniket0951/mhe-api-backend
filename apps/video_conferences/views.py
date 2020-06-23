@@ -3,6 +3,7 @@ from django.conf import settings
 
 import rest_framework
 from apps.appointments.models import Appointment
+from apps.notifications.tasks import send_push_notification
 from apps.patients.models import FamilyMember, Patient
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
@@ -14,13 +15,12 @@ from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VideoGrant
 from twilio.rest import Client
 from utils import custom_viewsets
-from apps.notifications.tasks import send_push_notification
+from utils.custom_permissions import (InternalAPICall, IsDoctor,
+                                      IsManipalAdminUser, IsPatientUser,
+                                      IsSelfUserOrFamilyMember, SelfUserAccess)
 
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
-from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser,
-                                      IsPatientUser, IsSelfUserOrFamilyMember,
-                                      SelfUserAccess, IsDoctor)
 
 
 class RoomCreationView(APIView):
@@ -61,7 +61,8 @@ class RoomCreationView(APIView):
                 patient_member = Patient.objects.filter(
                     uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
-                send_push_notification.delay(notification_data=notification_data)
+                send_push_notification.delay(
+                    notification_data=notification_data)
         notification_data["recipient"] = appointment.patient.id
         send_push_notification.delay(notification_data=notification_data)
         data["vc_appointment_status"] = 2
@@ -85,6 +86,8 @@ class AccessTokenGenerationView(APIView):
         video_grant = VideoGrant(room=room_name)
         token.add_grant(video_grant)
         appointment.vc_appointment_status = 3
+        if Patient.objects.filter(id=request.user.id).exists():
+            appointment.patient_ready = True
         appointment.save()
         return Response(data={"token": token.to_jwt()}, status=status.HTTP_200_OK)
 
@@ -97,8 +100,7 @@ class CloseRoomView(APIView):
         appointment = Appointment.objects.filter(
             appointment_identifier=room_name).first()
         if appointment:
-            appointment.vc_appointment_status = 4
-            appointment.enable_join_button = False
+            appointment.vc_appointment_status, appointment.enable_join_button, appointment.patient_ready = 4, False, False
             appointment.save()
         room_name = "".join(room_name.split("||"))
         room_instance = VideoConference.objects.filter(
