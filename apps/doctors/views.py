@@ -111,6 +111,7 @@ class DoctorSlotAvailability(ProxyView):
         status = root.find("Status").text
         hv_price, vc_price, pr_price = 0, 0, 0
         morning_slot, afternoon_slot, evening_slot, slot_list = [], [], [], []
+        response = {}
         if status == "SUCCESS":
             hv_price, *vc_pr_price = price.split("-")
             if vc_pr_price:
@@ -119,7 +120,6 @@ class DoctorSlotAvailability(ProxyView):
                     pr_price, *rem = pr_price
             if slots:
                 slot_list = ast.literal_eval(slots)
-            response = {}
             for slot in slot_list:
                 time_format = ""
                 appointment_type = "HV"
