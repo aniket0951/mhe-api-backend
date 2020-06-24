@@ -15,6 +15,7 @@ from django.shortcuts import render
 from django.utils.timezone import datetime
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
+from django.http import HttpResponse, HttpResponseRedirect
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DepartmentSerializer,
                                       DepartmentSpecificSerializer,
@@ -273,8 +274,7 @@ class DoctorloginView(ProxyView):
                         redirect_data_string = json.dumps(redirect_data)
                         encoded_string = base64.b64encode(
                             redirect_data_string.encode("utf-8"))
-                        return self.custom_success_response(message=message,
-                                                            success=success, data=encoded_string)
+                        return HttpResponseRedirect("http://patientappdev.manipalhospitals.com:4000/" + encoded_string)
 
         return self.custom_success_response(message=message,
                                             success=success, data=data)
