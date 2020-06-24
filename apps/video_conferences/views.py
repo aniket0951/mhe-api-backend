@@ -85,9 +85,10 @@ class AccessTokenGenerationView(APIView):
                             settings.TWILIO_API_KEY_SECRET, identity=identity)
         video_grant = VideoGrant(room=room_name)
         token.add_grant(video_grant)
-        appointment.vc_appointment_status = 3
         if Patient.objects.filter(id=request.user.id).exists():
             appointment.patient_ready = True
+        if Doctor.objects.filter(id=request.user.id).exists():
+            appointment.vc_appointment_status = 3
         appointment.save()
         return Response(data={"token": token.to_jwt()}, status=status.HTTP_200_OK)
 

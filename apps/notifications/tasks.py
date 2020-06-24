@@ -4,6 +4,7 @@ from celery.schedules import crontab
 from django.conf import settings
 from fcm_django.models import FCMDevice
 from pyfcm import FCMNotification
+from django.core.management import call_command
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
@@ -119,6 +120,16 @@ def appointment_reminder_scheduler():
         notification_data["recipient"] = appointment_instance.patient.id
         send_push_notification.delay(notification_data=notification_data)
 
+
+@app.task(name="tasks.daily_update")
+def daily_update_scheduler():
+    try:
+        print ("in celery module")
+        call_command("apps/master_data/fixtures/hospitals.json", verbosity=0)
+        return "success"
+    except:
+        print(e)
+
   
 
 app.conf.beat_schedule = {
@@ -137,5 +148,9 @@ app.conf.beat_schedule = {
     "appointment_next_day_reminder_scheduler": {
         "task": "tasks.appointment_next_day_reminder_scheduler",
         "schedule": crontab(minute="0", hour="18")
+    },
+    "tasks.daily_update_scheduler": {
+        "task": "tasks.daily_update",
+        "schedule": crontab(minute="0", hour="0")
     }
 }
