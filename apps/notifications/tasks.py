@@ -123,12 +123,12 @@ def appointment_reminder_scheduler():
 
 @app.task(name="tasks.daily_update")
 def daily_update_scheduler():
-    try:
-        print ("in celery module")
-        call_command("apps/master_data/fixtures/hospitals.json", verbosity=0)
-        return "success"
-    except:
-        print(e)
+    call_command("create_or_update_departments", verbosity=0)
+    call_command("create_or_update_doctors", verbosity=0)
+    call_command("create_or_update_health_packages", verbosity=0)
+    call_command("create_or_update_lab_and_radiology_items", verbosity=0)
+    call_command("update_doctors_profile", verbosity=0)
+
 
   
 
@@ -149,7 +149,7 @@ app.conf.beat_schedule = {
         "task": "tasks.appointment_next_day_reminder_scheduler",
         "schedule": crontab(minute="0", hour="18")
     },
-    "tasks.daily_update_scheduler": {
+    "daily_update_scheduler": {
         "task": "tasks.daily_update",
         "schedule": crontab(minute="0", hour="0")
     }
