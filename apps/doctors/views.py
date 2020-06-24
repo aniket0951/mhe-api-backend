@@ -276,7 +276,26 @@ class DoctorloginView(ProxyView):
                         redirect_data_string = json.dumps(redirect_data)
                         encoded_string = base64.b64encode(
                             redirect_data_string.encode("utf-8"))
-                        return HttpResponseRedirect("http://patientappdev.manipalhospitals.com:4000/" + encoded_string)
+                        return self.custom_success_response(message="Redirect",
+                                            success=success, data=encoded_string)
 
         return self.custom_success_response(message=message,
                                             success=success, data=data)
+
+    def create_response(self, response):
+        if self.return_raw or self.proxy_settings['RETURN_RAW']:
+            return HttpResponse(response.text, status=response.status_code,
+                                content_type=response.headers.get('content-type'))
+        status = response.status_code
+        if status >= 400:
+            body = {
+                'code': status,
+                'success': False,
+                'error': response.reason,
+            }
+        else:
+            body = self.parse_proxy_response(response)
+            if body.get("message") and body["message"] == "Redirect":
+                param = str(body["data"])[2:-1]
+                return HttpResponseRedirect("http://patientappdev.manipalhospitals.com:4000/vc/video-call/" + param)
+        return Response(body, status)
