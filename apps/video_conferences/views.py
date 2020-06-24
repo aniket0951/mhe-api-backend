@@ -3,6 +3,7 @@ from django.conf import settings
 
 import rest_framework
 from apps.appointments.models import Appointment
+from apps.doctors.models import FamilyMember, Patient
 from apps.notifications.tasks import send_push_notification
 from apps.patients.models import FamilyMember, Patient
 from rest_framework import filters, generics, status, viewsets
