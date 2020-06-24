@@ -817,7 +817,7 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
         vital_serializer = AppointmentVitalSerializer(data=vital_param)
         vital_serializer.is_valid(raise_exception=True)
         vital_serializer.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response(data = {"message": "File Upload Sucessful"},status=status.HTTP_200_OK)
 
 
 class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
