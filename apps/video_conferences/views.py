@@ -1,5 +1,6 @@
 import requests
 from django.conf import settings
+from django.db.models import Q
 
 import rest_framework
 from apps.appointments.models import Appointment
@@ -33,6 +34,12 @@ class RoomCreationView(APIView):
         appointment_id = request.data.get("appointment_id")
         appointment = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
+        doctor = appointment.doctor
+        doctor_appointments = Appointment.objects.filter(Q(doctor=doctor.id) & Q(appointment_mode="VC") & Q(
+            payment_status="success") & Q(status=1) & (Q(vc_appointment_status=2) | Q(vc_appointment_status=3)))
+        if doctor_appointments:
+            raise ValidationError(
+                "Please complete your previous appointment by clicking on done button")
         room_name = "".join(appointment_id.split("||"))
         if not appointment:
             raise ValidationError("Appointment does not Exist")
