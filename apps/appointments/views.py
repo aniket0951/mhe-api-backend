@@ -754,11 +754,12 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     retrieve_success_message = 'Appointment information returned successfully!'
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = self.get_queryset()
         doctor_id = self.request.user.id
         doctor = Doctor.objects.filter(id=doctor_id).first()
         if not doctor:
             raise ValidationError("Doctor does not Exist")
+        if 
         return qs.filter(
             doctor_id=doctor.id, appointment_date__gte=datetime.now().date(), status="1", appointment_mode="VC", payment_status="success").exclude(
                 vc_appointment_status=4)
