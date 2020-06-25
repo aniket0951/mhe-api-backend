@@ -760,7 +760,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if not doctor:
             raise ValidationError("Doctor does not Exist")
         return qs.filter(
-            doctor_id=doctor.id, appointment_date__gte=datetime.now().date(), status="1", appointment_mode="VC", payment_status="success").exclude(
+            doctor_id=doctor.id, status="1", appointment_mode="VC", payment_status="success").exclude(
                 vc_appointment_status=4)
 
 
