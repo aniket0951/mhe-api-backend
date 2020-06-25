@@ -297,5 +297,5 @@ class DoctorloginView(ProxyView):
             body = self.parse_proxy_response(response)
             if body.get("message") and body["message"] == "Redirect":
                 param = str(body["data"])[2:-1]
-                return HttpResponseRedirect("http://patientappdev.manipalhospitals.com:4000/vc/video-call/" + param)
+                return HttpResponseRedirect("https://patientappdev.manipalhospitals.com:4000/vc/video-call/" + param)
         return Response(body, status)
