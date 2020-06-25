@@ -748,7 +748,8 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny, ]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
-    filter_fields = ('appointment_date', 'appointment_identifier')
+    filter_fields = ('appointment_date',
+                     'appointment_identifier', 'vc_appointment_status',)
     list_success_message = 'Appointment list returned successfully!'
     retrieve_success_message = 'Appointment information returned successfully!'
 
@@ -758,7 +759,9 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         doctor = Doctor.objects.filter(id=doctor_id).first()
         if not doctor:
             raise ValidationError("Doctor does not Exist")
-        return qs.filter(doctor_id=doctor.id, appointment_date__gte=datetime.now().date(), status="1", appointment_mode="VC", payment_status="success")
+        return qs.filter(
+            doctor_id=doctor.id, appointment_date__gte=datetime.now().date(), status="1", appointment_mode="VC", payment_status="success").exclude(
+                vc_appointment_status=4)
 
 
 class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
@@ -811,13 +814,15 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_serializer.is_valid(raise_exception=True)
             document_serializer.save()
         vital_param = dict()
-        vital_param["blood_pressure"] = request.data.get("blood_pressure", None)
-        vital_param["body_temperature"] = request.data.get("body_temperature", None)
+        vital_param["blood_pressure"] = request.data.get(
+            "blood_pressure", None)
+        vital_param["body_temperature"] = request.data.get(
+            "body_temperature", None)
         vital_param["appointment_info"] = appointment_instance.id
         vital_serializer = AppointmentVitalSerializer(data=vital_param)
         vital_serializer.is_valid(raise_exception=True)
         vital_serializer.save()
-        return Response(data = {"message": "File Upload Sucessful"},status=status.HTTP_200_OK)
+        return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
 
 
 class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
