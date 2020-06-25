@@ -754,7 +754,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     retrieve_success_message = 'Appointment information returned successfully!'
 
     def get_queryset(self):
-        qs = self.get_queryset()
+        qs = super().get_queryset()
         doctor_id = self.request.user.id
         doctor = Doctor.objects.filter(id=doctor_id).first()
         if not doctor:
