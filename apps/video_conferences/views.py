@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from twilio.jwt.access_token import AccessToken
-from twilio.jwt.access_token.grants import VideoGrant
+from twilio.jwt.access_token.grants import ChatGrant, VideoGrant
 from twilio.rest import Client
 from utils import custom_viewsets
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
@@ -82,6 +82,10 @@ class AccessTokenGenerationView(APIView):
         identity = request.data.get("identity")
         appointment = Appointment.objects.filter(
             appointment_identifier=room).first()
+        if not appointment:
+            raise ValidationError("Invalid room name")
+        if appointment.vc_appointment_status == 4:
+            raise ValidationError("Meeting Room is closed")
         token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
                             settings.TWILIO_API_KEY_SECRET, identity=identity)
         video_grant = VideoGrant(room=room_name)
