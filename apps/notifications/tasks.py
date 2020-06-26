@@ -27,6 +27,14 @@ def send_push_notification(self, **kwargs):
         result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
             "title": notification_instance.title, "message": notification_instance.message, "notification_type":notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
 
+@app.task(bind=True, name="silent_push_notification")
+def send_silent_push_notification(self, **kwargs):
+    fcm = FCMNotification(api_key=settings.FCM_API_KEY)
+    notification_data = kwargs["notification_data"]
+    if notification_data.get("patient"):
+        patient_instance = Patient.objects.filter(id=notification_data.get("patient")["id"]).first()
+        if patient_instance and patient_instance.device and patient_instance.device.token:
+            result = fcm.notify_single_device(registration_id=patient_instance.device.token,data_message ={ "notification_type":"SILENT_NOTIFICATION", "appointment_id": notification_data["appointment_id"]}, low_priority=False)
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
 def appointment_next_day_reminder_scheduler():

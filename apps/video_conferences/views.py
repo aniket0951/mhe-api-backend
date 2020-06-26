@@ -8,6 +8,8 @@ from apps.appointments.serializers import AppointmentSerializer
 from apps.doctors.models import Doctor
 from apps.notifications.tasks import send_push_notification
 from apps.patients.models import FamilyMember, Patient
+from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from apps.notifications.tasks import send_silent_push_notification
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -131,4 +133,9 @@ class CloseRoomView(APIView):
         room_status = client.video.rooms(room_sid).fetch().status
         if room_status == "in-progress":
             room = client.video.rooms(room_sid).update(status="completed")
+        notification_data = {
+            "patient": PatientSerializer(appointment.patient).data,
+            "appointment_id": appointment.appointment_identifier
+        }
+        send_silent_push_notification.delay(notification_data=notification_data)
         return Response(status=status.HTTP_200_OK)
