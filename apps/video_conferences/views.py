@@ -4,6 +4,7 @@ from django.db.models import Q
 
 import rest_framework
 from apps.appointments.models import Appointment
+from apps.appointments.serializers import AppointmentSerializer
 from apps.doctors.models import Doctor
 from apps.notifications.tasks import send_push_notification
 from apps.patients.models import FamilyMember, Patient
@@ -38,8 +39,12 @@ class RoomCreationView(APIView):
         doctor_appointments = Appointment.objects.filter(Q(doctor=doctor.id) & Q(appointment_mode="VC") & Q(
             payment_status="success") & Q(status=1) & (Q(vc_appointment_status=2) | Q(vc_appointment_status=3)))
         if doctor_appointments:
-            raise ValidationError(
-                "Please complete your previous appointment by clicking on done button")
+            serializer = AppointmentSerializer(doctor_appointments, many=True)
+            data = {
+                "appointment": serializer.data,
+                "message": "Please complete the initiated meeting Before starting new one" 
+            }
+            return Response(data=data, status=status.HTTP_417_EXPECTATION_FAILED)
         room_name = "".join(appointment_id.split("||"))
         if not appointment:
             raise ValidationError("Appointment does not Exist")
