@@ -6,10 +6,10 @@ import rest_framework
 from apps.appointments.models import Appointment
 from apps.appointments.serializers import AppointmentSerializer
 from apps.doctors.models import Doctor
-from apps.notifications.tasks import send_push_notification
+from apps.notifications.tasks import (send_push_notification,
+                                      send_silent_push_notification)
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
-from apps.notifications.tasks import send_silent_push_notification
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -44,7 +44,7 @@ class RoomCreationView(APIView):
             serializer = AppointmentSerializer(doctor_appointments, many=True)
             data = {
                 "appointment": serializer.data,
-                "message": "Please complete the initiated meeting Before starting new one" 
+                "message": "Please complete the initiated meeting Before starting new one"
             }
             return Response(data=data, status=status.HTTP_417_EXPECTATION_FAILED)
         room_name = "".join(appointment_id.split("||"))
@@ -137,5 +137,6 @@ class CloseRoomView(APIView):
             "patient": PatientSerializer(appointment.patient).data,
             "appointment_id": appointment.appointment_identifier
         }
-        send_silent_push_notification.delay(notification_data=notification_data)
+        send_silent_push_notification.delay(
+            notification_data=notification_data)
         return Response(status=status.HTTP_200_OK)
