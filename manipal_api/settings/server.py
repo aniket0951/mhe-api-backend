@@ -2,10 +2,11 @@ import ast
 import datetime
 import os
 
-import boto3
 import environ
-from boto3 import session as boto3_session
 from django.utils.log import DEFAULT_LOGGING
+
+import boto3
+from boto3 import session as boto3_session
 
 root = environ.Path(__file__) - 2
 # set default values and casting
@@ -362,6 +363,8 @@ TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
 TWILIO_ACCOUNT_AUTH_KEY = env('TWILIO_ACCOUNT_AUTH_KEY')
 TWILIO_API_KEY_SID = env('TWILIO_API_KEY_SID')
 TWILIO_API_KEY_SECRET = env('TWILIO_API_KEY_SECRET')
+TWILIO_CHAT_SERVICE_ID = env('TWILIO_CHAT_SERVICE_ID')
+TWILIO_SYNC_SERVICE_ID = env('TWILIO_CHAT_SERVICE_ID')
 
 
 # Logger configuration

@@ -24,6 +24,11 @@ class VideoConference(MyBaseModel):
                                 null=False,
                                 verbose_name='Room SID')
 
+    channel_sid = models.CharField(max_length=200,
+                                   blank=False,
+                                   null=False,
+                                   verbose_name='Channel SID')
+
     started_at = models.DateTimeField(blank=True, null=True)
 
     completed_at = models.DateTimeField(blank=True, null=True)

@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from twilio.jwt.access_token import AccessToken
-from twilio.jwt.access_token.grants import ChatGrant, VideoGrant
+from twilio.jwt.access_token.grants import ChatGrant, SyncGrant, VideoGrant
 from twilio.rest import Client
 from utils import custom_viewsets
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
@@ -55,10 +55,13 @@ class RoomCreationView(APIView):
             type='group',
             unique_name=room_name
         )
+        channel = client.chat.services(
+            settings.TWILIO_CHAT_SERVICE_ID).channels.create(unique_name=room_name)
         data = dict()
         data["appointment"] = appointment.id
         data["room_name"] = room.unique_name
         data["room_sid"] = room.sid
+        data["channel_sid"] = channel.sid
         data["recording_link"] = room.links["recordings"]
         video_instance = VideoConferenceSerializer(data=data)
         video_instance.is_valid(raise_exception=True)
@@ -102,6 +105,10 @@ class AccessTokenGenerationView(APIView):
             raise ValidationError("Meeting Room is closed")
         token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
                             settings.TWILIO_API_KEY_SECRET, identity=identity)
+        sync_grant = SyncGrant(service_sid=settings.TWILIO_SYNC_SERVICE_ID)
+        chat_grant = ChatGrant(service_sid=settings.TWILIO_CHAT_SERVICE_ID)
+        token.add_grant(sync_grant)
+        token.add_grant(chat_grant)
         video_grant = VideoGrant(room=room_name)
         token.add_grant(video_grant)
         if Patient.objects.filter(id=request.user.id).exists():
