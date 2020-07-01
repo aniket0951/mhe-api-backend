@@ -306,7 +306,7 @@ class PaymentResponse(APIView):
                 appointment = Appointment.objects.filter(
                     id=payment_instance.appointment.id).first()
                 update_data = {"payment_status": payment_response["status"]}
-                update_data["consultation_amount"] = appointment.doctor.consultation_charges
+                update_data["consultation_amount"] = payment_instance.amount
                 if payment_instance.payment_for_uhid_creation:
                     update_data["appointment_identifier"] = new_appointment_id
                     update_data["status"] = 1
