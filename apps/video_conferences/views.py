@@ -116,7 +116,7 @@ class AccessTokenGenerationView(APIView):
         if not room_instance:
             raise ValidationError("Room does not Exist")
         channel_sid = room_instance.channel_sid
-        member = client.chat.services().channels(channel_sid).members.create(identity=identity)
+        member = client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).members.create(identity=identity)
         if Patient.objects.filter(id=request.user.id).exists():
             appointment.patient_ready = True
         if Doctor.objects.filter(id=request.user.id).exists():
