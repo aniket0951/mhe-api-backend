@@ -105,9 +105,7 @@ class AccessTokenGenerationView(APIView):
             raise ValidationError("Meeting Room is closed")
         token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
                             settings.TWILIO_API_KEY_SECRET, identity=identity)
-        sync_grant = SyncGrant(service_sid=settings.TWILIO_SYNC_SERVICE_ID)
         chat_grant = ChatGrant(service_sid=settings.TWILIO_CHAT_SERVICE_ID)
-        token.add_grant(sync_grant)
         token.add_grant(chat_grant)
         video_grant = VideoGrant(room=room_name)
         token.add_grant(video_grant)
