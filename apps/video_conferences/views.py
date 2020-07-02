@@ -147,3 +147,21 @@ class CloseRoomView(APIView):
         send_silent_push_notification.delay(
             notification_data=notification_data)
         return Response(status=status.HTTP_200_OK)
+
+
+class ChatAccessTokenGenerationView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        room = request.data.get("room")
+        room_name = "".join(room.split("||"))
+        identity = request.data.get("identity")
+        appointment = Appointment.objects.filter(
+            appointment_identifier=room).first()
+        if not appointment:
+            raise ValidationError("Invalid room name")
+        token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
+                            settings.TWILIO_API_KEY_SECRET, identity=identity)
+        chat_grant = ChatGrant(service_sid=settings.TWILIO_CHAT_SERVICE_ID)
+        token.add_grant(chat_grant)
+        return Response(data={"token": token.to_jwt()}, status=status.HTTP_200_OK)
