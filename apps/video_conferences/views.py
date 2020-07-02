@@ -94,6 +94,8 @@ class AccessTokenGenerationView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
+        client = Client(settings.TWILIO_ACCOUNT_SID,
+                        settings.TWILIO_ACCOUNT_AUTH_KEY)
         room = request.data.get("room")
         room_name = "".join(room.split("||"))
         identity = request.data.get("identity")
@@ -109,6 +111,12 @@ class AccessTokenGenerationView(APIView):
         token.add_grant(chat_grant)
         video_grant = VideoGrant(room=room_name)
         token.add_grant(video_grant)
+        room_instance = VideoConference.objects.filter(
+            room_name=room_name).first()
+        if not room_instance:
+            raise ValidationError("Room does not Exist")
+        channel_sid = room_instance.channel_sid
+        member = client.chat.services().channels(channel_sid).members.create(identity=identity)
         if Patient.objects.filter(id=request.user.id).exists():
             appointment.patient_ready = True
         if Doctor.objects.filter(id=request.user.id).exists():
