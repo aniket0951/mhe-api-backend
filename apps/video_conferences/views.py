@@ -27,13 +27,13 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
 
+client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_AUTH_KEY)
+
 
 class RoomCreationView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
-        client = Client(settings.TWILIO_ACCOUNT_SID,
-                        settings.TWILIO_ACCOUNT_AUTH_KEY)
         appointment_id = request.data.get("appointment_id")
         appointment = Appointment.objects.filter(
             appointment_identifier=appointment_id).first()
@@ -94,8 +94,6 @@ class AccessTokenGenerationView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
-        client = Client(settings.TWILIO_ACCOUNT_SID,
-                        settings.TWILIO_ACCOUNT_AUTH_KEY)
         room = request.data.get("room")
         room_name = "".join(room.split("||"))
         identity = request.data.get("identity")
@@ -116,9 +114,9 @@ class AccessTokenGenerationView(APIView):
         if not room_instance:
             raise ValidationError("Room does not Exist")
         channel_sid = room_instance.channel_sid
-        members = client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).members
         try:
-            member = client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).members.create(identity=identity)
+            member = client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(
+                channel_sid).members.create(identity=identity)
         except:
             pass
         if Patient.objects.filter(id=request.user.id).exists():
@@ -145,8 +143,6 @@ class CloseRoomView(APIView):
         if not room_instance:
             raise ValidationError("Room does not Exist")
         room_sid = room_instance.room_sid
-        client = Client(settings.TWILIO_ACCOUNT_SID,
-                        settings.TWILIO_ACCOUNT_AUTH_KEY)
         room_status = client.video.rooms(room_sid).fetch().status
         if room_status == "in-progress":
             room = client.video.rooms(room_sid).update(status="completed")
@@ -157,21 +153,3 @@ class CloseRoomView(APIView):
         send_silent_push_notification.delay(
             notification_data=notification_data)
         return Response(status=status.HTTP_200_OK)
-
-
-class ChatAccessTokenGenerationView(APIView):
-    permission_classes = (AllowAny,)
-
-    def post(self, request, format=None):
-        room = request.data.get("room")
-        room_name = "".join(room.split("||"))
-        identity = request.data.get("identity")
-        appointment = Appointment.objects.filter(
-            appointment_identifier=room).first()
-        if not appointment:
-            raise ValidationError("Invalid room name")
-        token = AccessToken(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_API_KEY_SID,
-                            settings.TWILIO_API_KEY_SECRET, identity=identity)
-        chat_grant = ChatGrant(service_sid=settings.TWILIO_CHAT_SERVICE_ID)
-        token.add_grant(chat_grant)
-        return Response(data={"token": token.to_jwt()}, status=status.HTTP_200_OK)
