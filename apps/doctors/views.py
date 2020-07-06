@@ -277,9 +277,9 @@ class DoctorloginView(ProxyView):
                         encoded_string = base64.b64encode(
                             redirect_data_string.encode("utf-8"))
                         param = str(encoded_string)[2:-1]
-                        result = webbrowser.open(settings.VC_URL_REDIRECTION + param)
-                        return self.custom_success_response(message="Redirect",
-                                            success=success, data=encoded_string)
+                        result = settings.VC_URL_REDIRECTION + param
+                        return self.custom_success_response(message="login done",
+                                            success=success, data={"url": result})
 
         return self.custom_success_response(message=message,
                                             success=success, data=data)
