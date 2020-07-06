@@ -9,6 +9,7 @@ from rest_framework.authentication import (
 )
 from apps.patients.models import Patient
 from apps.manipal_admin.models import ManipalAdmin
+from apps.doctors.models import Doctor
 from rest_framework_jwt.settings import api_settings
 
 
@@ -58,8 +59,12 @@ class BaseJSONWebTokenAuthentication(BaseAuthentication):
 
         try:
             user_info = Patient.objects.filter(mobile=username).first()
+
             if not user_info:
-                user_info = ManipalAdmin.objects.get(mobile=username)
+                user_info = Doctor.objects.filter(code=username).first()
+                if not user_info:
+                    user_info = ManipalAdmin.objects.get(mobile=username)
+                
 
             if not user_info:
                 msg = _('Invalid signature.')

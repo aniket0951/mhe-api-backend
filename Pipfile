@@ -36,6 +36,8 @@ gdal = "*"
 fcm-django = "*"
 celery = {extras = ["sqs"],version = "*"}
 django-ses = "*"
+twilio = "*"
+webbrowser = "*"
 
 [requires]
 python_version = "3.8"

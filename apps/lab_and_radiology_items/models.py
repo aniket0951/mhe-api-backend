@@ -2,9 +2,9 @@ import os
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.core.validators import FileExtensionValidator
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 
 from apps.appointments.models import CancellationReason
 from apps.master_data.models import (BillingGroup, BillingSubGroup,
@@ -145,7 +145,7 @@ class PatientServiceAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
-    
+
     other_reason = models.TextField(blank=True,
                                     null=True,
                                     max_length=500)
@@ -239,7 +239,7 @@ class HomeCollectionAppointment(MyBaseModel):
     reason = models.ForeignKey(CancellationReason,
                                on_delete=models.PROTECT,
                                null=True, blank=True)
-    
+
     other_reason = models.TextField(blank=True,
                                     null=True,
                                     max_length=500)

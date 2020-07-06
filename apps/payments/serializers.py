@@ -42,7 +42,9 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
         response_object["refund"] = None
 
         if instance.payment_refund.exists():
-            response_object["refund"] = PaymentSpecificRefundSerializer(instance.payment_refund.get()).data
+            payment_instance = instance.payment_refund.filter(status="success").first()
+            if payment_instance:
+                response_object["refund"] = PaymentSpecificRefundSerializer(payment_instance).data
 
         return response_object
 
