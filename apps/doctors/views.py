@@ -1,8 +1,11 @@
 import ast
+import base64
 import json
 import xml.etree.ElementTree as ET
-
+import webbrowser
 import requests
+from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.core import serializers
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -10,29 +13,33 @@ from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.timezone import datetime
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
+from django.http import HttpResponse, HttpResponseRedirect
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DepartmentSerializer,
                                       DepartmentSpecificSerializer,
                                       DoctorSerializer, HospitalSerializer)
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.models import Department, Hospital, Specialisation
+from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
     DoctorSchedule as serializable_DoctorSchedule
+from proxy.custom_serializables import DoctotLogin as serializable_DoctotLogin
 from proxy.custom_serializables import \
     NextAvailableSlot as serializable_NextAvailableSlot
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters, generics, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 from utils.exceptions import InvalidRequest
@@ -42,7 +49,7 @@ from utils.utils import manipal_admin_object
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
     search_fields = [
-        'name', 'hospital_departments__department__name', 'hospital__code', 'code', 'id', 'hospital_departments__department__code','hospital_departments__department__id']
+        'name', 'hospital_departments__department__name', 'hospital__code', 'code', 'id', 'hospital_departments__department__code', 'hospital_departments__department__id']
     filter_backends = (filters.SearchFilter,
                        filters.OrderingFilter, DjangoFilterBackend)
     queryset = Doctor.objects.all()
@@ -101,26 +108,49 @@ class DoctorSlotAvailability(ProxyView):
         root = ET.fromstring(response.content)
         slots = root.find("timeSlots").text
         price = root.find("price").text
-        morning_slot = []
-        afternoon_slot = []
-        evening_slot = []
-        slot_list = []
-        if slots:
-            slot_list = ast.literal_eval(slots)
+        status = root.find("Status").text
+        hv_price, vc_price, pr_price = 0, 0, 0
+        morning_slot, afternoon_slot, evening_slot, slot_list = [], [], [], []
         response = {}
-        for slot in slot_list:
-            time = datetime.strptime(
-                slot['startTime'], '%d %b, %Y %I:%M:%S %p').time()
-            if time.hour < 12:
-                morning_slot.append(time.strftime("%H:%M:%S %p"))
-            elif (time.hour >= 12) and (time.hour < 17):
-                afternoon_slot.append(time.strftime("%I:%M:%S %p"))
-            else:
-                evening_slot.append(time.strftime("%I:%M:%S %p"))
+        if status == "SUCCESS":
+            hv_price, *vc_pr_price = price.split("-")
+            if vc_pr_price:
+                vc_price, *pr_price = vc_pr_price
+                if pr_price:
+                    pr_price, *rem = pr_price
+            if slots:
+                slot_list = ast.literal_eval(slots)
+            for slot in slot_list:
+                time_format = ""
+                appointment_type = "HV"
+                if "HVVC" in slot['startTime']:
+                    time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
+                    appointment_type = "HVVC"
+                elif "VC" in slot['startTime']:
+                    time_format = '%d %b, %Y %I:%M:%S %p(VC)'
+                    appointment_type = "VC"
+                elif "PR" in slot['startTime']:
+                    time_format = '%d %b, %Y %I:%M:%S %p(PR)'
+                    appointment_type = "PR"
+                else:
+                    time_format = '%d %b, %Y %I:%M:%S %p(HV)'
+                time = datetime.strptime(
+                    slot['startTime'], time_format).time()
+                if time.hour < 12:
+                    morning_slot.append({"slot": time.strftime(
+                        "%I:%M:%S %p"), "type": appointment_type})
+                elif (time.hour >= 12) and (time.hour < 17):
+                    afternoon_slot.append({"slot": time.strftime(
+                        "%I:%M:%S %p"), "type": appointment_type})
+                else:
+                    evening_slot.append({"slot": time.strftime(
+                        "%I:%M:%S %p"), "type": appointment_type})
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
-        response["price"] = price
+        response["hv_price"] = hv_price
+        response["vc_price"] = vc_price
+        response["prime_price"] = pr_price
         return self.custom_success_response(message='Available slots',
                                             success=True, data=response)
 
@@ -189,3 +219,67 @@ class NextSlotAvailable(ProxyView):
             response_data["next_slot"] = next_date
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
+
+
+class DoctorloginView(ProxyView):
+    source = 'uservalidation'
+    permission_classes = [AllowAny]
+
+    def get_request_data(self, request):
+        appointment_identifier = request.data.pop(
+            "appointment_identifier", None)
+        schedule = serializable_DoctotLogin(**request.data)
+        request_data = custom_serializer().serialize(schedule, 'XML')
+        request.data["appointment_identifier"] = appointment_identifier
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        data = dict()
+        message = "login is unsuccessful. Please try again"
+        success = False
+        if status == "1":
+            login_response = root.find("loginresp").text
+            login_response = ast.literal_eval(login_response)
+            if login_response:
+                login_response_json = login_response[0]
+                login_status = login_response_json["Status"]
+                if login_status == "Success":
+                    doctor_code = login_response_json["CTPCP_Code"]
+                    location_code = login_response_json["Hosp"]
+                    doctor = Doctor.objects.filter(
+                        code=doctor_code, hospital__code=location_code).first()
+                    payload = jwt_payload_handler(doctor)
+                    payload["username"] = doctor.code
+                    token = jwt_encode_handler(payload)
+                    expiration = datetime.utcnow(
+                    ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+                    expiration_epoch = expiration.timestamp()
+                    serializer = DoctorSerializer(doctor)
+                    message = "login is successful"
+                    success = True
+                    data = {
+                        "data": serializer.data,
+                        "message":  "Login successful!",
+                        "token": token,
+                        "token_expiration": expiration_epoch
+                    }
+                    if self.request.data.get("appointment_identifier"):
+                        redirect_data = dict()
+                        redirect_data["appointment_identifier"] = self.request.data.get(
+                            "appointment_identifier")
+                        redirect_data["token"] = token
+                        redirect_data_string = json.dumps(redirect_data)
+                        encoded_string = base64.b64encode(
+                            redirect_data_string.encode("utf-8"))
+                        param = str(encoded_string)[2:-1]
+                        result = webbrowser.open(settings.VC_URL_REDIRECTION + param)
+                        return self.custom_success_response(message="Redirect",
+                                            success=success, data=encoded_string)
+
+        return self.custom_success_response(message=message,
+                                            success=success, data=data)

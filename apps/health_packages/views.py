@@ -156,22 +156,35 @@ class HealthPackageSlotAvailability(ProxyView):
         root = ET.fromstring(response.content)
         slots = root.find("timeSlots").text
         price = root.find("price").text
-        morning_slot = []
-        afternoon_slot = []
-        evening_slot = []
-        slot_list = []
+        morning_slot, afternoon_slot, evening_slot, slot_list = [], [], [], []
         if slots:
             slot_list = ast.literal_eval(slots)
         response = {}
         for slot in slot_list:
-            time = datetime.strptime(
-                slot['startTime'], '%d %b, %Y %I:%M:%S %p').time()
-            if time.hour < 12:
-                morning_slot.append(time.strftime("%H:%M %p"))
-            elif (time.hour >= 12) and (time.hour < 17):
-                afternoon_slot.append(time.strftime("%I:%M %p"))
+            time_format = ""
+            appointment_type = "HV"
+            if "HVVC" in slot['startTime']:
+                time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
+                appointment_type = "HVVC"
+            elif "VC" in slot['startTime']:
+                time_format = '%d %b, %Y %I:%M:%S %p(VC)'
+                appointment_type = "VC"
+            elif "PR" in slot['startTime']:
+                time_format = '%d %b, %Y %I:%M:%S %p(PR)'
+                appointment_type = "PR"
             else:
-                evening_slot.append(time.strftime("%I:%M %p"))
+                time_format = '%d %b, %Y %I:%M:%S %p(HV)'
+            time = datetime.strptime(
+                slot['startTime'], time_format).time()
+            if time.hour < 12:
+                morning_slot.append({"slot": time.strftime(
+                    "%I:%M %p"), "type": appointment_type})
+            elif (time.hour >= 12) and (time.hour < 17):
+                afternoon_slot.append({"slot": time.strftime(
+                    "%I:%M %p"), "type": appointment_type})
+            else:
+                evening_slot.append({"slot": time.strftime(
+                    "%I:%M %p"), "type": appointment_type})
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
