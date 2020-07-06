@@ -137,3 +137,11 @@ class InternalAPICall(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return request.get_host() == 'testserver'
+
+class IsDoctor(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_object_permission(self, request, view, obj):
+        doctor_id = request.user.id
+        return Doctor.objects.filter(id = doctor_id).exists()

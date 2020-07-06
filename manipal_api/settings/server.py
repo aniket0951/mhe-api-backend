@@ -2,10 +2,11 @@ import ast
 import datetime
 import os
 
-import boto3
 import environ
-from boto3 import session as boto3_session
 from django.utils.log import DEFAULT_LOGGING
+
+import boto3
+from boto3 import session as boto3_session
 
 root = environ.Path(__file__) - 2
 # set default values and casting
@@ -92,6 +93,7 @@ CUSTOM_APPS = [
     'apps.cart_items',
     'apps.reports',
     'apps.dashboard',
+    'apps.video_conferences',
     'apps.notifications.apps.NotificationsConfig',
 
 
@@ -324,6 +326,8 @@ SALUCRO_MID = env('SALUCRO_MID')
 SALUCRO_SECRET_KEY = env('SALUCRO_SECRET_KEY')
 PATIENT_PROFILE_SYNC_API = env('PATIENT_PROFILE_SYNC_API')
 REDIRECT_URL = env('REDIRECT_URL')
+REFUND_URL = env('REFUND_URL')
+VC_URL_REDIRECTION = env('VC_URL_REDIRECTION')
 
 
 # Email settings
@@ -347,6 +351,13 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
     'region': 'ap-south-1',
 }
 CELERY_TIMEZONE = 'Asia/Kolkata'
+
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
+TWILIO_ACCOUNT_AUTH_KEY = env('TWILIO_ACCOUNT_AUTH_KEY')
+TWILIO_API_KEY_SID = env('TWILIO_API_KEY_SID')
+TWILIO_API_KEY_SECRET = env('TWILIO_API_KEY_SECRET')
+TWILIO_CHAT_SERVICE_ID = env('TWILIO_CHAT_SERVICE_ID')
+TWILIO_SYNC_SERVICE_ID = env('TWILIO_CHAT_SERVICE_ID')
 
 
 # Logger configuration

@@ -2,7 +2,6 @@ import json
 from datetime import datetime
 
 from django.db import transaction
-from rest_framework import serializers
 
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DoctorSerializer,
@@ -15,9 +14,12 @@ from apps.health_packages.serializers import (HealthPackageDetailSerializer,
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
+from utils.utils import generate_pre_signed_url
 
-from .models import Appointment, CancellationReason, HealthPackageAppointment
+from .models import (Appointment, AppointmentDocuments, AppointmentVital,
+                     CancellationReason, HealthPackageAppointment)
 
 
 class CancellationReasonSerializer(DynamicFieldsModelSerializer):
@@ -53,6 +55,14 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.reason:
             response_object["reason"] = CancellationReasonSerializer(
                 instance.reason).data
+        documents = AppointmentDocuments.objects.filter(
+            appointment_info=instance.id)
+        response_object["documents"] = AppointmentDocumentsSerializer(
+            documents, many=True, fields=('document', 'document_type', 'name')).data
+
+        vitals = AppointmentVital.objects.filter(appointment_info=instance.id)
+        response_object["vitals"] = AppointmentVitalSerializer(
+            vitals, many=True, fields=('blood_pressure', 'body_temperature')).data
 
         return response_object
 
@@ -111,3 +121,32 @@ class HealthPackageAppointmentDetailSerializer(DynamicFieldsModelSerializer):
                 instance.family_member).data
 
         return response_object
+
+
+class AppointmentDocumentsSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = AppointmentDocuments
+        fields = '__all__'
+        extra_kwargs = {
+            'name': {"error_messages": {"required": "Name is mandatory to upload your document."}},
+        }
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.document:
+                response_object['document'] = generate_pre_signed_url(
+                    instance.document.url)
+        except Exception as error:
+            response_object['document'] = None
+
+        return response_object
+
+
+class AppointmentVitalSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = AppointmentVital
+        fields = '__all__'

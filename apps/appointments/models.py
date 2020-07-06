@@ -1,14 +1,26 @@
+import os
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.contrib.postgres.fields import JSONField
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage
 from apps.master_data.models import Department, Hospital
+from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient
+from utils.custom_storage import FileStorage
+from utils.validators import validate_file_authenticity, validate_file_size
 
 from .tasks import set_status_as_completed
+
+
+def generate_personal_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "appointment/{0}/documents/{1}".format(self.id, obj_name)
 
 
 class CancellationReason(models.Model):
@@ -74,6 +86,15 @@ class Appointment(models.Model):
                                           null=True)
     booked_via_app = models.BooleanField(default=True)
 
+    appointment_mode = models.CharField(max_length=10,
+                                        default="HV")
+
+    enable_join_button = models.BooleanField(default=False)
+
+    vc_appointment_status = models.IntegerField(default="1")
+
+    patient_ready = models.BooleanField(default=False)
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
@@ -81,22 +102,25 @@ class Appointment(models.Model):
                 if self.appointment_date > datetime.now().date():
                     if self.payment_status == "success":
                         self.refundable_amount = self.consultation_amount
+                        self.save()
                     return True
                 if self.appointment_date == datetime.now().date():
                     if self.appointment_slot > datetime.now().time():
                         if not self.payment_status:
                             return True
-                        dateTimeA = datetime.combine(
+                        date_time_slot = datetime.combine(
                             datetime.now(), self.appointment_slot)
-                        dateTimeB = datetime.combine(
+                        date_time_now = datetime.combine(
                             datetime.now(), datetime.now().time())
                         time_delta = (
-                            dateTimeA - dateTimeB).total_seconds()/3600
+                            date_time_slot - date_time_now).total_seconds()/3600
                         if time_delta > 2:
                             self.refundable_amount = self.consultation_amount
                             if time_delta <= 4:
                                 self.refundable_amount = self.consultation_amount - 100.0
+                            self.save()
                             return True
+        self.save()
         return False
 
 
@@ -146,3 +170,68 @@ class HealthPackageAppointment(models.Model):
             if ((self.appointment_date > datetime.now()) and (self.appointment_status != "Cancelled")):
                 return True
         return False
+
+
+class AppointmentDocuments(MyBaseModel):
+    DOCUMENT_TYPE_CHOICES = (
+        ('Prescription', 'Prescription'),
+        ('Lab', 'Lab'),
+        ('Radiology', 'Radiology'),
+
+
+    )
+
+    name = models.CharField(max_length=500,
+                            blank=False,
+                            null=False)
+
+    document = models.FileField(upload_to=generate_personal_file_path,
+                                storage=FileStorage(),
+                                validators=[FileExtensionValidator(
+                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                blank=False,
+                                null=False)
+
+    document_type = models.CharField(choices=DOCUMENT_TYPE_CHOICES,
+                                     default='Prescription',
+                                     max_length=15
+                                     )
+
+    appointment_info = models.ForeignKey(Appointment,
+                                         on_delete=models.PROTECT,
+                                         null=False,
+                                         blank=False,
+                                         related_name='appointment_documents')
+
+    @property
+    def representation(self):
+        return 'Appointment: {}, Document: {}'.format(self.appointment_info.appointment_identifier, self.name)
+
+    class Meta:
+        verbose_name = "Appointment Document"
+        verbose_name_plural = "Appointment Documents"
+
+    def __str__(self):
+        return self.representation
+
+
+class AppointmentVital(MyBaseModel):
+
+    blood_pressure = models.CharField(max_length=15,
+                                      blank=True,
+                                      null=True)
+
+    body_temperature = models.CharField(max_length=15,
+                                        blank=True,
+                                        null=True)
+
+    appointment_info = models.ForeignKey(Appointment,
+                                         on_delete=models.PROTECT,
+                                         null=False,
+                                         blank=False,
+                                         related_name='appointment_vitals')
+
+    class Meta:
+        verbose_name = "Appointment Vital"
+        verbose_name_plural = "Appointment Vitals"
