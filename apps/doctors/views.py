@@ -278,8 +278,8 @@ class DoctorloginView(ProxyView):
                             redirect_data_string.encode("utf-8"))
                         param = str(encoded_string)[2:-1]
                         result = settings.VC_URL_REDIRECTION + param
-                        return self.custom_success_response(message="login done",
-                                            success=success, data={"url": result})
-
-        return self.custom_success_response(message=message,
+                        data = {}
+                        data["url"] = result
+                    return self.custom_success_response(message=message,
                                             success=success, data=data)
+        raise ValidationError("Login Failed")
