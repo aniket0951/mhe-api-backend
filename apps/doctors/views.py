@@ -1,8 +1,9 @@
 import ast
 import base64
 import json
-import xml.etree.ElementTree as ET
 import webbrowser
+import xml.etree.ElementTree as ET
+
 import requests
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
@@ -10,12 +11,11 @@ from django.core import serializers
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms.models import model_to_dict
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.utils.timezone import datetime
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
-from django.http import HttpResponse, HttpResponseRedirect
 from apps.doctors.models import Doctor
 from apps.doctors.serializers import (DepartmentSerializer,
                                       DepartmentSpecificSerializer,
@@ -28,6 +28,8 @@ from proxy.custom_serializables import \
 from proxy.custom_serializables import DoctotLogin as serializable_DoctotLogin
 from proxy.custom_serializables import \
     NextAvailableSlot as serializable_NextAvailableSlot
+from proxy.custom_serializables import \
+    RescheduleSlot as serializable_RescheduleSlot
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
@@ -281,5 +283,93 @@ class DoctorloginView(ProxyView):
                         data = {}
                         data["url"] = result
                     return self.custom_success_response(message=message,
-                                            success=success, data=data)
+                                                        success=success, data=data)
         raise ValidationError("Login Failed")
+
+
+class DoctorRescheduleSlot(ProxyView):
+    source = 'getSlotForAppntType'
+    permission_classes = [IsPatientUser]
+
+    def get_request_data(self, request):
+        slots = serializable_RescheduleSlot(**request.data)
+        request_data = custom_serializer().serialize(slots, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        slots = root.find("timeSlots").text
+        price = root.find("price").text
+        status = root.find("Status").text
+        morning_slot, afternoon_slot, evening_slot, slot_list = [], [], [], []
+        response = {}
+        if status == "SUCCESS":
+            if slots:
+                slot_list = ast.literal_eval(slots)
+            for slot in slot_list:
+                time_format = ""
+                appointment_type = "HV"
+                if "HVVC" in slot['startTime']:
+                    time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
+                    appointment_type = "HVVC"
+                elif "VC" in slot['startTime']:
+                    time_format = '%d %b, %Y %I:%M:%S %p(VC)'
+                    appointment_type = "VC"
+                elif "PR" in slot['startTime']:
+                    time_format = '%d %b, %Y %I:%M:%S %p(PR)'
+                    appointment_type = "PR"
+                else:
+                    time_format = '%d %b, %Y %I:%M:%S %p(HV)'
+                time = datetime.strptime(
+                    slot['startTime'], time_format).time()
+                if time.hour < 12:
+                    morning_slot.append({"slot": time.strftime(
+                        "%I:%M:%S %p"), "type": appointment_type})
+                elif (time.hour >= 12) and (time.hour < 17):
+                    afternoon_slot.append({"slot": time.strftime(
+                        "%I:%M:%S %p"), "type": appointment_type})
+                else:
+                    evening_slot.append({"slot": time.strftime(
+                        "%I:%M:%S %p"), "type": appointment_type})
+            response["price"] = price.split("-")[0]
+        response["morning_slot"] = morning_slot
+        response["afternoon_slot"] = afternoon_slot
+        response["evening_slot"] = evening_slot
+        return self.custom_success_response(message='Available slots',
+                                            success=True, data=response)
+
+
+class DoctorScheduleView(ProxyView):
+    source = 'weeklySchedule'
+    permission_classes = [IsPatientUser]
+
+    def get_request_data(self, request):
+        schedule = serializable_DoctorSchedule(**request.data)
+        request_data = custom_serializer().serialize(schedule, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        schedule_lists = root.find("ScheduleList").text
+        schedule_list = []
+        records = {}
+        if schedule_lists:
+            schedule_list = ast.literal_eval(schedule_lists)
+        for record in schedule_list:
+            hospital = record["Hosp"]
+            hospital_description = Hospital.objects.filter(
+                code=hospital).first().description
+            if hospital_description in records:
+                records[hospital_description].append(record)
+            else:
+                records[hospital_description] = []
+                records[hospital_description].append(record)
+
+        return self.custom_success_response(message='Available slots',
+                                            success=True, data=records)
