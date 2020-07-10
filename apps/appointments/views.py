@@ -718,6 +718,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             new_appointment["family_member"] = instance.family_member.id
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
+                        new_appointment["appointment_mode"] = self.request.data.get("app_type")
                         appointment = AppointmentSerializer(
                             data=new_appointment)
                         appointment.is_valid(raise_exception=True)

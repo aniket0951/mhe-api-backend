@@ -288,16 +288,18 @@ class UpdateRebookStatus:
 
 
 class RescheduleAppointment:
-    def __init__(self, app_id=None, location_code=None, new_date=None):
+    def __init__(self, app_id=None, location_code=None, new_date=None, app_type = None):
         self.app_id = app_id
         self.location_code = location_code
         self.new_date = new_date
+        self.app_type = app_type
 
     def serialize(self, serializer):
         serializer.start_object('ReScheduleAppParam')
         serializer.add_property('AppId', self.app_id)
         serializer.add_property('newdate', self.new_date)
         serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('AppType', self.app_type)
 
 
 class DoctotLogin:
@@ -313,3 +315,23 @@ class DoctotLogin:
         serializer.add_property('pwd', self.pwd)
         serializer.add_property('checksum', self.checksum)
         serializer.add_property('locationCode', self.location_code)
+
+
+class RescheduleSlot:
+    def __init__(self, doctor_code=None, location_code=None, schedule_date=None,
+                 appointment_type=None, speciality_code=None):
+        self.doctor_code = doctor_code
+        self.location_code = location_code
+        self.schedule_date = schedule_date
+        self.appointment_type = appointment_type
+        self.speciality_code = speciality_code
+        self.source = "patientapp"
+
+    def serialize(self, serializer):
+        serializer.start_object('SlotParam')
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('specialtyCode', self.speciality_code)
+        serializer.add_property('doctorCode', self.doctor_code)
+        serializer.add_property('scheduleDate', self.schedule_date)
+        serializer.add_property('source', self.source)
+        serializer.add_property('appointmentType', self.appointment_type)

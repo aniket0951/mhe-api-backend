@@ -155,6 +155,7 @@ class DepartmentsView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
+        print(response._content)
         item = root.find('SyncResponse')
 
         if item.text.startswith('Request Parameter'):
