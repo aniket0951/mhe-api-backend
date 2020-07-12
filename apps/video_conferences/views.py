@@ -1,5 +1,6 @@
 import base64
 import json
+import xml.etree.ElementTree as ET
 
 import requests
 from django.conf import settings
@@ -13,6 +14,10 @@ from apps.notifications.tasks import (send_push_notification,
                                       send_silent_push_notification)
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
+from proxy.custom_serializables import \
+    SendVcStatus as serializable_SendVcStatus
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -126,6 +131,12 @@ class AccessTokenGenerationView(APIView):
             pass
         if Patient.objects.filter(id=request.user.id).exists():
             appointment.patient_ready = True
+            param = dict()
+            param["app_id"] = appointment.appointment_identifier
+            param["location_code"] = appointment.hospital.code
+            param["set_status"] = "ARRIVED"
+            status_param = create_room_parameters(param)
+            response = SendStatus.as_view()(status_param)
         if Doctor.objects.filter(id=request.user.id).exists():
             appointment.vc_appointment_status = 3
         appointment.save()
@@ -155,6 +166,12 @@ class CloseRoomView(APIView):
             "patient": PatientSerializer(appointment.patient).data,
             "appointment_id": appointment.appointment_identifier
         }
+        param = dict()
+        param["app_id"] = appointment.appointment_identifier
+        param["location_code"] = appointment.hospital.code
+        param["set_status"] = "DEPARTED"
+        status_param = create_room_parameters(param)
+        response = SendStatus.as_view()(status_param)
         send_silent_push_notification.delay(
             notification_data=notification_data)
         return Response(status=status.HTTP_200_OK)
@@ -181,3 +198,27 @@ class InitiateTrackerAppointment(APIView):
             {"appointment_id": appointment_identifier})
         response = RoomCreationView.as_view()(param)
         return Response({"url": result}, status=status.HTTP_200_OK)
+
+
+class SendStatus(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'setVCStatus'
+
+    def get_request_data(self, request):
+        vc_status = serializable_SendVcStatus(**request.data)
+        request_data = custom_serializer().serialize(vc_status, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        message = "Not Updated"
+        status = "Failed"
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            status = root.find("Status").text
+            message = root.find("Message").text
+            if status == "1":
+                status = "success"
+        return self.custom_success_response(message=message, success=status)
