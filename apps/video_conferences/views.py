@@ -1,3 +1,6 @@
+import base64
+import json
+
 import requests
 from django.conf import settings
 from django.db.models import Q
@@ -16,6 +19,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
+from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import ChatGrant, SyncGrant, VideoGrant
 from twilio.rest import Client
@@ -26,6 +30,7 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
+from .utils import create_room_parameters
 
 client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_AUTH_KEY)
 
@@ -153,3 +158,26 @@ class CloseRoomView(APIView):
         send_silent_push_notification.delay(
             notification_data=notification_data)
         return Response(status=status.HTTP_200_OK)
+
+
+class InitiateTrackerAppointment(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        doctor_code = request.data.get("doctor_code")
+        doctor = Doctor.objects.filter(code=doctor_code).first()
+        payload = jwt_payload_handler(doctor)
+        payload["username"] = doctor.code
+        token = jwt_encode_handler(payload)
+        redirect_data = dict()
+        redirect_data["token"] = token
+        appointment_identifier = request.data.get("appointment_identifier")
+        redirect_data["appointment_identifier"] = appointment_identifier
+        redirect_data_string = json.dumps(redirect_data)
+        encoded_string = base64.b64encode(redirect_data_string.encode("utf-8"))
+        param = str(encoded_string)[2:-1]
+        result = settings.VC_URL_REDIRECTION + param
+        param = create_room_parameters(
+            {"appointment_id": appointment_identifier})
+        response = RoomCreationView.as_view()(param)
+        return Response({"url": result}, status=status.HTTP_200_OK)
