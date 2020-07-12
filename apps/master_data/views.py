@@ -1,6 +1,6 @@
 import json
 import xml.etree.ElementTree as ET
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
@@ -155,7 +155,6 @@ class DepartmentsView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        print(response._content)
         item = root.find('SyncResponse')
 
         if item.text.startswith('Request Parameter'):
@@ -181,12 +180,9 @@ class DepartmentsView(ProxyView):
                 if key in ['DateFrom', 'DateTo'] and each_department[key]:
                     each_department[key] = datetime.strptime(
                         each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
-                
-                if key == "DeptName" and each_department[key]:
-                    each_department[key] = each_department[key].title()
 
-                if key == "name" and each_department[key]:
-                    each_department[key] = each_department[key].title()
+                if key == "DeptName" and each_department[key]:
+                    each_department[key] = each_department[key]
 
                 department_details[department_sorted_keys[index]
                                    ] = each_department[key]
@@ -214,6 +210,11 @@ class DepartmentsView(ProxyView):
             department_details['hospital_department_created'] = hospital_department_created
 
             all_departments.append(department_details)
+
+            today_date = datetime.now().date()
+            previous_date = datetime.now() - timedelta(days=1)
+            HospitalDepartment.objects.filter(
+                updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=all_departments)
@@ -497,7 +498,8 @@ class LabRadiologyItemsView(ProxyView):
                         each_lab_radiology_item[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
                 if key == 'ItemDesc' and each_lab_radiology_item[key]:
-                    each_lab_radiology_item[key] = each_lab_radiology_item[key].title()
+                    each_lab_radiology_item[key] = each_lab_radiology_item[key].title(
+                    )
 
                 hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
                                                     ] = each_lab_radiology_item[key]

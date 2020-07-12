@@ -42,6 +42,7 @@
             "code": "MMH",
             "description": " Manipal Hospital Jayanagar, Bengaluru",
             "email": "www.manipalhospitals.com",
+            "address":"45/1, 45th Cross Rd, Kottapalya, Jayanagara 9th Block, Jayanagar, Bengaluru, Karnataka 560069",
             "is_health_package_online_purchase_supported": "True",
             "health_package_doctor_code":"",
             "health_package_department_code":"",
@@ -74,6 +75,7 @@
             "code": "MHD",
             "description": "Manipal Hospital Dwarka, Delhi",
             "email": "www.manipalhospitals.com",
+            "address": "Palam Vihar, Sector 6 Dwarka, Dwarka, New Delhi, Delhi 110075",
             "is_health_package_online_purchase_supported": "True",
             "health_package_doctor_code":"MHDHC",
             "health_package_department_code":"MHDHSVS",
@@ -124,7 +126,7 @@
             "description": "Manipal Hospital Goa",
             "email": "www.manipalhospitals.com",
             "mobile": "083-26632500",
-            "address": "(A Unit of Manipal Health Enterprises Pvt. Ltd), Dr E Borges Road, Dona Paula Panaji - 403004",
+            "address": "Dr E Borges Road, Dona Paula Panaji - 403004",
             "is_health_package_online_purchase_supported": "True",
             "health_package_doctor_code":"MHGHC",
             "health_package_department_code":"MHGDHC",
@@ -141,7 +143,7 @@
             "description": "Manipal Hospital Salem",
             "email": "www.manipalhospitals.com",
             "mobile": "0427-2346600",
-            "address": "(A Unit of Manipal Health Enterprises Pvt. Ltd.)  Dalmia Board, Salem-Bengaluru Highway, Salem 636012",
+            "address": "Dalmia Board, Salem-Bengaluru Highway, Salem 636012",
             "is_health_package_online_purchase_supported": "True",
             "health_package_doctor_code":"MHSHC",
             "health_package_department_code":"MHSDHC",
@@ -164,6 +166,23 @@
             "health_package_department_code":"KMCHC",
             "is_home_collection_supported":"True",
             "location":"0101000020E6100000984C158C4AB65240CAC342AD69BE2940"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8212",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MCB",
+            "description": "Manipal Clinics Brookefield",
+            "email": "www.manipalhospitals.com",
+            "mobile": "+918041242122",
+            "address": "189, Radhakrishna Enclave Ground Floor, A Block, AECS Layout, behind CMRIT College, Kundalahalli, Bengaluru, Karnataka 560037",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHWHC",
+            "health_package_department_code":"MHWHSVC",
+            "is_home_collection_supported":"True",
+            "location": ""
         }
     }
 
