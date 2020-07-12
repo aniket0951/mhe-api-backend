@@ -445,18 +445,25 @@ class OfflineAppointment(APIView):
         datetime_object = datetime.strptime(
             data["appointmentDatetime"], '%Y%m%d%H%M%S')
         time = datetime_object.time()
+        appointment_identifier = data["appointmentIdentifier"].replace("*","|")
         appointment_data["patient"] = patient
-        appointment_data["family_member"] = family_member
+        if family_member:
+            appointment_data["patient"] = family_member.patient_info.id
+            appointment_data["family_member"] = family_member.id
         appointment_data["appointment_date"] = datetime_object.date()
         appointment_data["appointment_slot"] = time.strftime("%H:%M:%S %p")
         appointment_data["hospital"] = hospital.id
-        appointment_data["appointment_identifier"] = data["appointmentIdentifier"]
+        appointment_data["appointment_identifier"] = appointment_identifier
         appointment_data["doctor"] = doctor.id
         appointment_data["uhid"] = uhid
         appointment_data["status"] = 1
         if data["status"] == "Cancelled":
             appointment_data["status"] = 2
-        appointment_serializer = AppointmentSerializer(data=appointment_data)
+        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+        if appointment_instance:
+            appointment_serializer = AppointmentSerializer(appointment_instance, data=appointment_data, partial=True)
+        else:
+            appointment_serializer = AppointmentSerializer(data=appointment_data)
         appointment_serializer.is_valid(raise_exception=True)
         appointment_serializer.save()
         return Response(data=appointment_serializer.data, status=status.HTTP_200_OK)
