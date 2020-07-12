@@ -445,7 +445,8 @@ class OfflineAppointment(APIView):
         datetime_object = datetime.strptime(
             data["appointmentDatetime"], '%Y%m%d%H%M%S')
         time = datetime_object.time()
-        appointment_identifier = data["appointmentIdentifier"].replace("*","|")
+        appointment_identifier = data["appointmentIdentifier"].replace(
+            "*", "|")
         appointment_data["patient"] = patient
         if family_member:
             appointment_data["patient"] = family_member.patient_info.id
@@ -459,11 +460,14 @@ class OfflineAppointment(APIView):
         appointment_data["status"] = 1
         if data["status"] == "Cancelled":
             appointment_data["status"] = 2
-        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=appointment_identifier).first()
         if appointment_instance:
-            appointment_serializer = AppointmentSerializer(appointment_instance, data=appointment_data, partial=True)
+            appointment_serializer = AppointmentSerializer(
+                appointment_instance, data=appointment_data, partial=True)
         else:
-            appointment_serializer = AppointmentSerializer(data=appointment_data)
+            appointment_serializer = AppointmentSerializer(
+                data=appointment_data)
         appointment_serializer.is_valid(raise_exception=True)
         appointment_serializer.save()
         return Response(data=appointment_serializer.data, status=status.HTTP_200_OK)
@@ -725,7 +729,8 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             new_appointment["family_member"] = instance.family_member.id
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
-                        new_appointment["appointment_mode"] = self.request.data.get("app_type")
+                        new_appointment["appointment_mode"] = self.request.data.get(
+                            "app_type")
                         appointment = AppointmentSerializer(
                             data=new_appointment)
                         appointment.is_valid(raise_exception=True)
@@ -829,6 +834,8 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             "blood_pressure", None)
         vital_param["body_temperature"] = request.data.get(
             "body_temperature", None)
+        vital_param["weight"] = request.data.get("weight", None)
+        vital_param["height"] = request.data.get("height", None)
         vital_param["appointment_info"] = appointment_instance.id
         vital_serializer = AppointmentVitalSerializer(data=vital_param)
         vital_serializer.is_valid(raise_exception=True)

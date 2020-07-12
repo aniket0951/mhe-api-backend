@@ -229,6 +229,14 @@ class AppointmentVital(MyBaseModel):
                                         blank=True,
                                         null=True)
 
+    height = models.CharField(max_length=15,
+                              blank=True,
+                              null=True)
+
+    weight = models.CharField(max_length=15,
+                              blank=True,
+                              null=True)
+
     appointment_info = models.ForeignKey(Appointment,
                                          on_delete=models.PROTECT,
                                          null=False,
