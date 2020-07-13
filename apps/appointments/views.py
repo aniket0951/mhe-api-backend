@@ -837,7 +837,11 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
         vital_param["weight"] = request.data.get("weight", None)
         vital_param["height"] = request.data.get("height", None)
         vital_param["appointment_info"] = appointment_instance.id
-        vital_serializer = AppointmentVitalSerializer(data=vital_param)
+        appointment_vital_instance = AppointmentVital.object.filter(appointment_info_id = appointment_instance.id)
+        if appointment_vital_instance:
+            vital_serializer = AppointmentVitalSerializer(appointment_vital_instance, data=vital_param, partial=True)
+        else:
+            vital_serializer = AppointmentVitalSerializer(data=vital_param)
         vital_serializer.is_valid(raise_exception=True)
         vital_serializer.save()
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
