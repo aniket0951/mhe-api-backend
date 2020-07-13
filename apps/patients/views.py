@@ -945,16 +945,13 @@ class SendSms(APIView):
         mobile = request.data.get("mobile")
         message = request.data.get("message")
         if not (encoded_string and mobile and message):
-            raise ValidationError("Paramter is missing")
+            raise ValidationError("Invalid Parameter")
         secret_key = settings.SECRET_KEY
         checksum_string = mobile + secret_key + message
         encoded_string_generated = base64.b64encode(hashlib.sha256(
             checksum_string.encode()).hexdigest().encode()).decode()
         if not (encoded_string == encoded_string_generated):
-            raise ValidationError("Checksum is not correct")
-        print((mobile and message))
-        if not (mobile and message):
-            raise ValidationError("Message or Contact Number is Missing")
+            raise ValidationError("Invalid Parameter")
         is_message_sent = send_sms(
             mobile_number=str(mobile), message=str(message))
         return Response({"is_message_sent": is_message_sent})
