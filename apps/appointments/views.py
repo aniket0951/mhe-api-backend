@@ -836,7 +836,7 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
         vital_param["weight"] = request.data.get("weight", None)
         vital_param["height"] = request.data.get("height", None)
         vital_param["appointment_info"] = appointment_instance.id
-        appointment_vital_instance = AppointmentVital.objects.filter(appointment_info_id = appointment_instance.id)
+        appointment_vital_instance = AppointmentVital.objects.filter(appointment_info_id = appointment_instance.id).first()
         if appointment_vital_instance:
             vital_serializer = AppointmentVitalSerializer(appointment_vital_instance, data=vital_param, partial=True)
         else:
@@ -860,6 +860,7 @@ class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, )
 
     def get_permissions(self):
+        import pdb; pdb.set_trace()
         if self.action in ['list', 'create', ]:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
