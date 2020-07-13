@@ -61,7 +61,6 @@ class RoomCreationView(APIView):
         if not appointment:
             raise ValidationError("Appointment does not Exist")
         try:
-            
             room = client.video.rooms.create(
                 record_participants_on_connect=True, type='group', unique_name=room_name)
             channel = client.chat.services(
@@ -183,13 +182,22 @@ class InitiateTrackerAppointment(APIView):
 
     def post(self, request, format=None):
         doctor_code = request.data.get("doctor_code")
+        appointment_identifier = request.data.get("appointment_identifier")
+        encoded_string = request.data.get("checksum")
+        if not (encoded_string and doctor_code and appointment_identifier):
+            raise ValidationError("Invalid Parameter")
+        secret_key = settings.SMS_SECRET_KEY
+        checksum_string = appointment_identifier + secret_key + doctor_code
+        encoded_string_generated = base64.b64encode(hashlib.sha256(
+            checksum_string.encode()).hexdigest().encode()).decode()
+        if not (encoded_string == encoded_string_generated):
+            raise ValidationError("Invalid Parameter")
         doctor = Doctor.objects.filter(code=doctor_code).first()
         payload = jwt_payload_handler(doctor)
         payload["username"] = doctor.code
         token = jwt_encode_handler(payload)
         redirect_data = dict()
         redirect_data["token"] = token
-        appointment_identifier = request.data.get("appointment_identifier")
         redirect_data["appointment_identifier"] = appointment_identifier
         redirect_data_string = json.dumps(redirect_data)
         encoded_string = base64.b64encode(redirect_data_string.encode("utf-8"))

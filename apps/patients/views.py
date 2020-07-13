@@ -946,7 +946,7 @@ class SendSms(APIView):
         message = request.data.get("message")
         if not (encoded_string and mobile and message):
             raise ValidationError("Invalid Parameter")
-        secret_key = settings.SECRET_KEY
+        secret_key = settings.SMS_SECRET_KEY
         checksum_string = mobile + secret_key + message
         encoded_string_generated = base64.b64encode(hashlib.sha256(
             checksum_string.encode()).hexdigest().encode()).decode()
