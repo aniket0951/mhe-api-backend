@@ -1,5 +1,6 @@
 import base64
 import json
+import hashlib
 import xml.etree.ElementTree as ET
 
 import requests
