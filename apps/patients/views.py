@@ -1,3 +1,5 @@
+import base64
+import hashlib
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -939,8 +941,17 @@ class SendSms(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
+        encoded_string = request.data.get("checksum")
         mobile = request.data.get("mobile")
         message = request.data.get("message")
+        if not (encoded_string and mobile and message):
+            raise ValidationError("Paramter is missing")
+        secret_key = settings.SECRET_KEY
+        checksum_string = mobile + secret_key + message
+        encoded_string_generated = base64.b64encode(hashlib.sha256(
+            checksum_string.encode()).hexdigest().encode()).decode()
+        if not (encoded_string == encoded_string_generated):
+            raise ValidationError("Checksum is not correct")
         print((mobile and message))
         if not (mobile and message):
             raise ValidationError("Message or Contact Number is Missing")
