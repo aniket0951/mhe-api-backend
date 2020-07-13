@@ -811,16 +811,15 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
 
     def create(self, request):
         document_param = dict()
-        if not (request.data.get("name") and request.data.get("document_type")):
-            raise ValidationError("Parameter is missing")
         appointment_instance = Appointment.objects.filter(
             appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError("Appointment doesn't Exist")
-        name_list = request.data.get("name").split(",")
-        document_type_list = request.data.get("document_type").split(",")
-        if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
-            raise ValidationError("Document parameter is missing")
+        if not (request.data.get("name") and request.data.get("document_type")):
+            name_list = request.data.get("name").split(",")
+            document_type_list = request.data.get("document_type").split(",")
+            if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
+                raise ValidationError("Document parameter is missing")
         for i, f in enumerate(request.FILES.getlist('document')):
             document_param["appointment_info"] = appointment_instance.id
             document_param["name"] = name_list[i]
