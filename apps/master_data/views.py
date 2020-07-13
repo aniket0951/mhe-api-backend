@@ -235,7 +235,6 @@ class DoctorsView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        print(response.content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
             raise DoctorHospitalCodeMissingValidationException
