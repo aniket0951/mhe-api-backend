@@ -61,6 +61,7 @@ class RoomCreationView(APIView):
         if not appointment:
             raise ValidationError("Appointment does not Exist")
         try:
+            
             room = client.video.rooms.create(
                 record_participants_on_connect=True, type='group', unique_name=room_name)
             channel = client.chat.services(
