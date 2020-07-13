@@ -235,6 +235,7 @@ class DoctorsView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
+        print(response.content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
             raise DoctorHospitalCodeMissingValidationException
@@ -249,21 +250,24 @@ class DoctorsView(ProxyView):
             raise InvalidHospitalCodeValidationException
 
         all_doctors = list()
-        doctor_sorted_keys = ['consultation_charges',
-                              'start_date',
-                              'end_date',
-                              'department_code',
-                              'department_name',
-                              'code',
-                              'educational_degrees',
-                              'name',
-                              'notes',
-                              'profile',
-                              'qualification',
-                              'hospital_code',
-                              'specialisation_code',
-                              'specialisation_description',
-                              ]
+        doctor_sorted_keys = [
+            'start_date',
+            'end_date',
+            'department_code',
+            'department_name',
+            'code',
+            'educational_degrees',
+            'name',
+            'notes',
+            'profile',
+            'qualification',
+            'hospital_code',
+            'hv_consultation_charges',
+            'pr_consultation_charges',
+            'specialisation_code',
+            'specialisation_description',
+            'vc_consultation_charges',
+        ]
         for each_doctor in response_content:
             doctor_details = dict()
             for index, key in enumerate(sorted(each_doctor.keys())):
@@ -281,7 +285,6 @@ class DoctorsView(ProxyView):
                     each_doctor[key] = each_doctor[key].title()
 
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
-
             doctor_kwargs = dict()
             hospital_department_obj = None
             specialisation_obj = None

@@ -867,7 +867,6 @@ class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, )
 
     def get_permissions(self):
-        import pdb; pdb.set_trace()
         if self.action in ['list', 'create', ]:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
