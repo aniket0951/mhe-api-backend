@@ -836,7 +836,7 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
         vital_param["weight"] = request.data.get("weight", None)
         vital_param["height"] = request.data.get("height", None)
         vital_param["appointment_info"] = appointment_instance.id
-        appointment_vital_instance = AppointmentVital.object.filter(appointment_info_id = appointment_instance.id)
+        appointment_vital_instance = AppointmentVital.objects.filter(appointment_info_id = appointment_instance.id)
         if appointment_vital_instance:
             vital_serializer = AppointmentVitalSerializer(appointment_vital_instance, data=vital_param, partial=True)
         else:
