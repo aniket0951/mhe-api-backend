@@ -60,13 +60,13 @@ class RoomCreationView(APIView):
         room_name = "".join(appointment_id.split("||"))
         if not appointment:
             raise ValidationError("Appointment does not Exist")
-        room = client.video.rooms.create(
-            record_participants_on_connect=True,
-            type='group',
-            unique_name=room_name
-        )
-        channel = client.chat.services(
-            settings.TWILIO_CHAT_SERVICE_ID).channels.create(unique_name=room_name)
+        try:
+            room = client.video.rooms.create(
+                record_participants_on_connect=True, type='group', unique_name=room_name)
+            channel = client.chat.services(
+                settings.TWILIO_CHAT_SERVICE_ID).channels.create(unique_name=room_name)
+        except Exception as e:
+            print(e)
         data = dict()
         data["appointment"] = appointment.id
         data["room_name"] = room.unique_name
