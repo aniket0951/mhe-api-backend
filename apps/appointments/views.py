@@ -427,20 +427,22 @@ class OfflineAppointment(APIView):
 
     def post(self, request, format=None):
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
-                         'locationCode', 'status']
+                         'locationCode', 'status', 'appointmentMode', 'payment_status', 'department']
         data = request.data
         appointment_data = dict()
         if not data and set(required_keys).issubset(set(data.keys())):
-            raise ValidationError("Appointment attribute is missing")
+            Response({"message": "Mandatory parameter is missing"}, status=status.HTTP_200_OK)
         uhid = data["UHID"]
+        deparmtment_code = data["department"]
         patient = Patient.objects.filter(uhid_number=uhid).first()
         family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
         doctor = Doctor.objects.filter(code=data["doctorCode"].upper()).first()
         hospital = Hospital.objects.filter(code=data["locationCode"]).first()
+        department = Department.objects.filter(code=deparmtment_code).first()
         if not (patient or family_member):
             return Response({"message": "User is not App user"}, status=status.HTTP_200_OK)
-        if not (doctor and hospital):
-            return Response({"message": "Hospital or doctor is not available"}, status=status.HTTP_200_OK)
+        if not (doctor and hospital and department):
+            return Response({"message": "Hospital/doctor/department is not available"}, status=status.HTTP_200_OK)
         appointment_data["booked_via_app"] = False
         datetime_object = datetime.strptime(
             data["appointmentDatetime"], '%Y%m%d%H%M%S')
@@ -456,10 +458,15 @@ class OfflineAppointment(APIView):
         appointment_data["hospital"] = hospital.id
         appointment_data["appointment_identifier"] = appointment_identifier
         appointment_data["doctor"] = doctor.id
+        appointment_data["department"] = department.id
         appointment_data["uhid"] = uhid
         appointment_data["status"] = 1
         if data["status"] == "Cancelled":
             appointment_data["status"] = 2
+        appointment_data["payment_status"] = None
+        if data["payment_status"] == "Paid":
+            appointment_data["payment_status"] = "success"
+        appointment_data["appointment_mode"] = data.get("appointmentMode")
         appointment_instance = Appointment.objects.filter(
             appointment_identifier=appointment_identifier).first()
         if appointment_instance:
