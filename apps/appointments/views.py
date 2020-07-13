@@ -815,7 +815,7 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError("Appointment doesn't Exist")
-        if not (request.data.get("name") and request.data.get("document_type")):
+        if (request.data.get("name") and request.data.get("document_type")):
             name_list = request.data.get("name").split(",")
             document_type_list = request.data.get("document_type").split(",")
             if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
