@@ -57,6 +57,8 @@ class BookMySlot:
         self.reason_for_visit = param.get("reason_for_visit", "CONSULT")
         self.fast_care_id = param.get("fast_care_id", "PatientApp")
         self.speciality_code = param.get("speciality_code", None)
+        self.slot_type = param.get("appointment_mode",None)
+        self.dob = param.get("dob",None)
 
     def serialize(self, serializer):
         serializer.start_object('IbookAppointmentParam')
@@ -74,6 +76,8 @@ class BookMySlot:
         serializer.add_property('reasonForVisitCode', self.reason_for_visit)
         serializer.add_property('fastCareID', self.fast_care_id)
         serializer.add_property('specialtyCode', self.speciality_code)
+        serializer.add_property('slottype', self.slot_type)
+        serializer.add_property('dateofbirth', self.dob)
 
 
 class SyncAPIRequest:
