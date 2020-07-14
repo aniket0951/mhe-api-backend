@@ -270,18 +270,6 @@ class DoctorloginView(ProxyView):
                         "token": token,
                         "token_expiration": expiration_epoch
                     }
-                    if self.request.data.get("appointment_identifier"):
-                        redirect_data = dict()
-                        redirect_data["appointment_identifier"] = self.request.data.get(
-                            "appointment_identifier")
-                        redirect_data["token"] = token
-                        redirect_data_string = json.dumps(redirect_data)
-                        encoded_string = base64.b64encode(
-                            redirect_data_string.encode("utf-8"))
-                        param = str(encoded_string)[2:-1]
-                        result = settings.VC_URL_REDIRECTION + param
-                        data = {}
-                        data["url"] = result
                     return self.custom_success_response(message=message,
                                                         success=success, data=data)
         raise ValidationError("Login Failed")

@@ -31,8 +31,14 @@ class Doctor(BaseUser):
                                              blank=True,
                                              related_name='doctor')
 
-    consultation_charges = models.IntegerField(default=0,
-                                               null=True)
+    hv_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
+
+    vc_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
+
+    pr_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
 
     qualification = models.CharField(max_length=800,
                                      null=True,

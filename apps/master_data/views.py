@@ -1,6 +1,6 @@
 import json
 import xml.etree.ElementTree as ET
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
@@ -155,7 +155,6 @@ class DepartmentsView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        print(response._content)
         item = root.find('SyncResponse')
 
         if item.text.startswith('Request Parameter'):
@@ -181,12 +180,9 @@ class DepartmentsView(ProxyView):
                 if key in ['DateFrom', 'DateTo'] and each_department[key]:
                     each_department[key] = datetime.strptime(
                         each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
-                
-                if key == "DeptName" and each_department[key]:
-                    each_department[key] = each_department[key].title()
 
-                if key == "name" and each_department[key]:
-                    each_department[key] = each_department[key].title()
+                if key == "DeptName" and each_department[key]:
+                    each_department[key] = each_department[key]
 
                 department_details[department_sorted_keys[index]
                                    ] = each_department[key]
@@ -214,6 +210,11 @@ class DepartmentsView(ProxyView):
             department_details['hospital_department_created'] = hospital_department_created
 
             all_departments.append(department_details)
+
+            today_date = datetime.now().date()
+            previous_date = datetime.now() - timedelta(days=1)
+            HospitalDepartment.objects.filter(
+                updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=all_departments)
@@ -248,21 +249,24 @@ class DoctorsView(ProxyView):
             raise InvalidHospitalCodeValidationException
 
         all_doctors = list()
-        doctor_sorted_keys = ['consultation_charges',
-                              'start_date',
-                              'end_date',
-                              'department_code',
-                              'department_name',
-                              'code',
-                              'educational_degrees',
-                              'name',
-                              'notes',
-                              'profile',
-                              'qualification',
-                              'hospital_code',
-                              'specialisation_code',
-                              'specialisation_description',
-                              ]
+        doctor_sorted_keys = [
+            'start_date',
+            'end_date',
+            'department_code',
+            'department_name',
+            'code',
+            'educational_degrees',
+            'name',
+            'notes',
+            'profile',
+            'qualification',
+            'hospital_code',
+            'hv_consultation_charges',
+            'pr_consultation_charges',
+            'specialisation_code',
+            'specialisation_description',
+            'vc_consultation_charges',
+        ]
         for each_doctor in response_content:
             doctor_details = dict()
             for index, key in enumerate(sorted(each_doctor.keys())):
@@ -280,7 +284,6 @@ class DoctorsView(ProxyView):
                     each_doctor[key] = each_doctor[key].title()
 
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
-
             doctor_kwargs = dict()
             hospital_department_obj = None
             specialisation_obj = None
@@ -497,7 +500,8 @@ class LabRadiologyItemsView(ProxyView):
                         each_lab_radiology_item[key], '%d/%m/%Y').strftime('%Y-%m-%d')
 
                 if key == 'ItemDesc' and each_lab_radiology_item[key]:
-                    each_lab_radiology_item[key] = each_lab_radiology_item[key].title()
+                    each_lab_radiology_item[key] = each_lab_radiology_item[key].title(
+                    )
 
                 hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
                                                     ] = each_lab_radiology_item[key]

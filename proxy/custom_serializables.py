@@ -288,7 +288,7 @@ class UpdateRebookStatus:
 
 
 class RescheduleAppointment:
-    def __init__(self, app_id=None, location_code=None, new_date=None, app_type = None):
+    def __init__(self, app_id=None, location_code=None, new_date=None, app_type=None):
         self.app_id = app_id
         self.location_code = location_code
         self.new_date = new_date
@@ -300,6 +300,19 @@ class RescheduleAppointment:
         serializer.add_property('newdate', self.new_date)
         serializer.add_property('locationCode', self.location_code)
         serializer.add_property('AppType', self.app_type)
+
+
+class SendVcStatus:
+    def __init__(self, app_id=None, location_code=None, set_status=None):
+        self.app_id = app_id
+        self.location_code = location_code
+        self.set_status = set_status
+
+    def serialize(self, serializer):
+        serializer.start_object('VCStatusSetParam')
+        serializer.add_property('AppointmentId', self.app_id)
+        serializer.add_property('SetStatus', self.set_status)
+        serializer.add_property('locationCode', self.location_code)
 
 
 class DoctotLogin:

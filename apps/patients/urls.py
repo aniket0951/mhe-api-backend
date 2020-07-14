@@ -1,7 +1,8 @@
 from django.urls import path
-from rest_framework.routers import DefaultRouter
 
-from apps.patients.views import FamilyMemberViewSet, PatientViewSet, PatientAddressViewSet
+from apps.patients.views import (FamilyMemberViewSet, PatientAddressViewSet,
+                                 PatientViewSet, SendSms)
+from rest_framework.routers import DefaultRouter
 
 app_name = 'patients'
 
@@ -14,5 +15,6 @@ router.register('', PatientViewSet)
 urlpatterns = [
     # path('change_password', UsersChangePasswordView.as_view(),
     #      name='thinkahoy_user_change_password'),
+    path('send_sms', SendSms.as_view()),
     *router.urls
 ]
