@@ -139,7 +139,6 @@ class CreateMyAppointment(ProxyView):
         patient_id = request.user.id
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
-        appointment_mode = request.data.pop("appointment_mode", None)
         patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(
             id=family_member_id).first()
@@ -179,8 +178,6 @@ class CreateMyAppointment(ProxyView):
         request.data["doctor"] = doctor
         request.data["department"] = department
         request.data["consultation_amount"] = amount
-        if appointment_mode:
-            request.data["appointment_mode"] = appointment_mode
         return request_data
 
     def post(self, request, *args, **kwargs):
