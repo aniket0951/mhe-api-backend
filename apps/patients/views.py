@@ -1,3 +1,5 @@
+import base64
+import hashlib
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -6,6 +8,8 @@ from django.contrib.auth.models import update_last_login
 from django.contrib.gis.geos import Point
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
+
+from apps.master_data.views import ValidateUHIDView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -14,9 +18,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
-
-from apps.master_data.views import ValidateUHIDView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -308,9 +311,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.email_verified = True
         authenticated_patient.save()
 
-        authenticated_patient.patient_family_member_info.filter(is_visible=True, 
-        email=authenticated_patient.email).update(email_verified=True)
-        
+        authenticated_patient.patient_family_member_info.filter(is_visible=True,
+                                                                email=authenticated_patient.email).update(email_verified=True)
+
         data = {
             "data": self.get_serializer(authenticated_patient).data,
             "message": "You email is verified successfully!"
@@ -605,13 +608,13 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         if 'email' in serializer.validated_data and \
                 not family_member_object.email == serializer.validated_data['email']:
 
-                is_email_to_be_verified = True
+            is_email_to_be_verified = True
 
-                if serializer.validated_data['email'] == request_patient.email and request_patient.email_verified:
-                    is_email_to_be_verified = False
+            if serializer.validated_data['email'] == request_patient.email and request_patient.email_verified:
+                is_email_to_be_verified = False
 
-                family_member_object = serializer.save(
-                    email_verified=not is_email_to_be_verified)
+            family_member_object = serializer.save(
+                email_verified=not is_email_to_be_verified)
         else:
             family_member_object = serializer.save()
 
@@ -932,3 +935,23 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
             return
 
         serializer.save()
+
+
+class SendSms(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        encoded_string = request.data.get("checksum")
+        mobile = request.data.get("mobile")
+        message = request.data.get("message")
+        if not (encoded_string and mobile and message):
+            raise ValidationError("Invalid Parameter")
+        secret_key = settings.SMS_SECRET_KEY
+        checksum_string = mobile + secret_key + message
+        encoded_string_generated = base64.b64encode(hashlib.sha256(
+            checksum_string.encode()).hexdigest().encode()).decode()
+        if not (encoded_string == encoded_string_generated):
+            raise ValidationError("Invalid Parameter")
+        is_message_sent = send_sms(
+            mobile_number=str(mobile), message=str(message))
+        return Response({"is_message_sent": is_message_sent})

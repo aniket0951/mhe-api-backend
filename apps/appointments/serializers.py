@@ -62,7 +62,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
 
         vitals = AppointmentVital.objects.filter(appointment_info=instance.id)
         response_object["vitals"] = AppointmentVitalSerializer(
-            vitals, many=True, fields=('blood_pressure', 'body_temperature')).data
+            vitals, many=True, fields=('blood_pressure', 'body_temperature', 'height', 'weight')).data
 
         return response_object
 

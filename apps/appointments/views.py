@@ -427,36 +427,54 @@ class OfflineAppointment(APIView):
 
     def post(self, request, format=None):
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
-                         'locationCode', 'status']
+                         'locationCode', 'status', 'appointmentMode', 'payment_status', 'department']
         data = request.data
         appointment_data = dict()
         if not data and set(required_keys).issubset(set(data.keys())):
-            raise ValidationError("Appointment attribute is missing")
+            Response({"message": "Mandatory parameter is missing"}, status=status.HTTP_200_OK)
         uhid = data["UHID"]
+        deparmtment_code = data["department"]
         patient = Patient.objects.filter(uhid_number=uhid).first()
         family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
         doctor = Doctor.objects.filter(code=data["doctorCode"].upper()).first()
         hospital = Hospital.objects.filter(code=data["locationCode"]).first()
+        department = Department.objects.filter(code=deparmtment_code).first()
         if not (patient or family_member):
             return Response({"message": "User is not App user"}, status=status.HTTP_200_OK)
-        if not (doctor and hospital):
-            return Response({"message": "Hospital or doctor is not available"}, status=status.HTTP_200_OK)
+        if not (doctor and hospital and department):
+            return Response({"message": "Hospital/doctor/department is not available"}, status=status.HTTP_200_OK)
         appointment_data["booked_via_app"] = False
         datetime_object = datetime.strptime(
             data["appointmentDatetime"], '%Y%m%d%H%M%S')
         time = datetime_object.time()
+        appointment_identifier = data["appointmentIdentifier"].replace(
+            "*", "|")
         appointment_data["patient"] = patient
-        appointment_data["family_member"] = family_member
+        if family_member:
+            appointment_data["patient"] = family_member.patient_info.id
+            appointment_data["family_member"] = family_member.id
         appointment_data["appointment_date"] = datetime_object.date()
         appointment_data["appointment_slot"] = time.strftime("%H:%M:%S %p")
         appointment_data["hospital"] = hospital.id
-        appointment_data["appointment_identifier"] = data["appointmentIdentifier"]
+        appointment_data["appointment_identifier"] = appointment_identifier
         appointment_data["doctor"] = doctor.id
+        appointment_data["department"] = department.id
         appointment_data["uhid"] = uhid
         appointment_data["status"] = 1
         if data["status"] == "Cancelled":
             appointment_data["status"] = 2
-        appointment_serializer = AppointmentSerializer(data=appointment_data)
+        appointment_data["payment_status"] = None
+        if data["payment_status"] == "Paid":
+            appointment_data["payment_status"] = "success"
+        appointment_data["appointment_mode"] = data.get("appointmentMode")
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=appointment_identifier).first()
+        if appointment_instance:
+            appointment_serializer = AppointmentSerializer(
+                appointment_instance, data=appointment_data, partial=True)
+        else:
+            appointment_serializer = AppointmentSerializer(
+                data=appointment_data)
         appointment_serializer.is_valid(raise_exception=True)
         appointment_serializer.save()
         return Response(data=appointment_serializer.data, status=status.HTTP_200_OK)
@@ -718,6 +736,8 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             new_appointment["family_member"] = instance.family_member.id
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
+                        new_appointment["appointment_mode"] = self.request.data.get(
+                            "app_type")
                         appointment = AppointmentSerializer(
                             data=new_appointment)
                         appointment.is_valid(raise_exception=True)
@@ -798,16 +818,15 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
 
     def create(self, request):
         document_param = dict()
-        if not (request.data.get("name") and request.data.get("document_type")):
-            raise ValidationError("Parameter is missing")
         appointment_instance = Appointment.objects.filter(
             appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError("Appointment doesn't Exist")
-        name_list = request.data.get("name").split(",")
-        document_type_list = request.data.get("document_type").split(",")
-        if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
-            raise ValidationError("Document parameter is missing")
+        if (request.data.get("name") and request.data.get("document_type")):
+            name_list = request.data.get("name").split(",")
+            document_type_list = request.data.get("document_type").split(",")
+            if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
+                raise ValidationError("Document parameter is missing")
         for i, f in enumerate(request.FILES.getlist('document')):
             document_param["appointment_info"] = appointment_instance.id
             document_param["name"] = name_list[i]
@@ -821,8 +840,14 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             "blood_pressure", None)
         vital_param["body_temperature"] = request.data.get(
             "body_temperature", None)
+        vital_param["weight"] = request.data.get("weight", None)
+        vital_param["height"] = request.data.get("height", None)
         vital_param["appointment_info"] = appointment_instance.id
-        vital_serializer = AppointmentVitalSerializer(data=vital_param)
+        appointment_vital_instance = AppointmentVital.objects.filter(appointment_info_id = appointment_instance.id).first()
+        if appointment_vital_instance:
+            vital_serializer = AppointmentVitalSerializer(appointment_vital_instance, data=vital_param, partial=True)
+        else:
+            vital_serializer = AppointmentVitalSerializer(data=vital_param)
         vital_serializer.is_valid(raise_exception=True)
         vital_serializer.save()
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)

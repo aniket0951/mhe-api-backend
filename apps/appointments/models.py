@@ -31,6 +31,7 @@ class CancellationReason(models.Model):
 
 
 class Appointment(models.Model):
+
     CONFIRMED = 1
     CANCELLED = 2
     WAITING = 3
@@ -45,6 +46,7 @@ class Appointment(models.Model):
         (RESCHEDULED, 'Rescheduled'),
         (REBOOKED, 'Rebooked'),
     )
+    created_at = models.DateTimeField(auto_now_add=True)
     appointment_date = models.DateField()
     appointment_slot = models.TimeField()
     appointment_identifier = models.CharField(max_length=20,
@@ -125,6 +127,7 @@ class Appointment(models.Model):
 
 
 class HealthPackageAppointment(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
 
     appointment_date = models.DateTimeField(blank=True, null=True)
 
@@ -225,6 +228,14 @@ class AppointmentVital(MyBaseModel):
     body_temperature = models.CharField(max_length=15,
                                         blank=True,
                                         null=True)
+
+    height = models.CharField(max_length=15,
+                              blank=True,
+                              null=True)
+
+    weight = models.CharField(max_length=15,
+                              blank=True,
+                              null=True)
 
     appointment_info = models.ForeignKey(Appointment,
                                          on_delete=models.PROTECT,
