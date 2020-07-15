@@ -2,6 +2,7 @@ import ast
 import base64
 import datetime
 import hashlib
+import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -59,7 +60,7 @@ from .serializers import (AppointmentDocumentsSerializer,
                           HealthPackageAppointmentSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
 
-
+logger = logging.getLogger('django')
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
                      'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
@@ -423,6 +424,7 @@ class OfflineAppointment(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
+        logger.info(request.data)
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
                          'locationCode', 'status', 'appointmentMode', 'payment_status', 'department']
         data = request.data
