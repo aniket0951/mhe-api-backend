@@ -131,13 +131,14 @@ class AccessTokenGenerationView(APIView):
         except:
             pass
         if Patient.objects.filter(id=request.user.id).exists():
+            if not appointment.patient_ready:
+                param = dict()
+                param["app_id"] = appointment.appointment_identifier
+                param["location_code"] = appointment.hospital.code
+                param["set_status"] = "ARRIVED"
+                status_param = create_room_parameters(param)
+                response = SendStatus.as_view()(status_param)
             appointment.patient_ready = True
-            param = dict()
-            param["app_id"] = appointment.appointment_identifier
-            param["location_code"] = appointment.hospital.code
-            param["set_status"] = "ARRIVED"
-            status_param = create_room_parameters(param)
-            response = SendStatus.as_view()(status_param)
         if Doctor.objects.filter(id=request.user.id).exists():
             appointment.vc_appointment_status = 3
         appointment.save()
