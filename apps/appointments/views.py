@@ -61,6 +61,8 @@ from .serializers import (AppointmentDocumentsSerializer,
 from .utils import cancel_and_refund_parameters, rebook_parameters
 
 logger = logging.getLogger('django')
+
+
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
                      'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
@@ -430,7 +432,8 @@ class OfflineAppointment(APIView):
         data = request.data
         appointment_data = dict()
         if not data and set(required_keys).issubset(set(data.keys())):
-            Response({"message": "Mandatory parameter is missing"}, status=status.HTTP_200_OK)
+            Response({"message": "Mandatory parameter is missing"},
+                     status=status.HTTP_200_OK)
         uhid = data["UHID"]
         deparmtment_code = data["department"]
         patient = Patient.objects.filter(uhid_number=uhid).first()
@@ -780,9 +783,9 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
             raise ValidationError("Doctor does not Exist")
         if self.request.query_params.get("vc_appointment_status", None):
             return qs.filter(
-                doctor_id=doctor.id, status="1", appointment_mode="VC", payment_status="success")
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")
         return qs.filter(
-            doctor_id=doctor.id, status="1", appointment_mode="VC", payment_status="success").exclude(
+            doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(
                 vc_appointment_status=4)
 
 
@@ -842,9 +845,11 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
         vital_param["weight"] = request.data.get("weight", None)
         vital_param["height"] = request.data.get("height", None)
         vital_param["appointment_info"] = appointment_instance.id
-        appointment_vital_instance = AppointmentVital.objects.filter(appointment_info_id = appointment_instance.id).first()
+        appointment_vital_instance = AppointmentVital.objects.filter(
+            appointment_info_id=appointment_instance.id).first()
         if appointment_vital_instance:
-            vital_serializer = AppointmentVitalSerializer(appointment_vital_instance, data=vital_param, partial=True)
+            vital_serializer = AppointmentVitalSerializer(
+                appointment_vital_instance, data=vital_param, partial=True)
         else:
             vital_serializer = AppointmentVitalSerializer(data=vital_param)
         vital_serializer.is_valid(raise_exception=True)
