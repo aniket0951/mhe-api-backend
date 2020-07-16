@@ -53,11 +53,13 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments, AppointmentVital,
-                     CancellationReason, HealthPackageAppointment)
+                     CancellationReason, HealthPackageAppointment,
+                     PrescriptionDocuments)
 from .serializers import (AppointmentDocumentsSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
                           CancellationReasonSerializer,
-                          HealthPackageAppointmentSerializer)
+                          HealthPackageAppointmentSerializer,
+                          PrescriptionDocumentsSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
 
 logger = logging.getLogger('django')
@@ -896,3 +898,50 @@ class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
         vital_serializer.save()
 
         return Response(status=status.HTTP_200_OK)
+
+
+class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = PrescriptionDocuments
+    queryset = PrescriptionDocuments.objects.all().order_by('-created_at')
+    serializer_class = PrescriptionDocumentsSerializer
+    create_success_message = "Prescription Document is uploaded successfully."
+    list_success_message = 'PrescriptionDocuments returned successfully!'
+    retrieve_success_message = 'Prescription Documents information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_permissions(self):
+        if self.action in ['list', 'create', ]:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve', 'destroy', 'update']:
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        document_param = dict()
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=request.data.get("appointment_identifier")).first()
+        if not appointment_instance:
+            raise ValidationError("Appointment doesn't Exist")
+        for i, f in enumerate(request.FILES.getlist('prescription')):
+            document_param["appointment_info"] = appointment_instance.id
+            document_param["prescription"] = f
+            document_param["name"] = f.name
+            document_serializer = self.serializer_class(data=document_param)
+            document_serializer.is_valid(raise_exception=True)
+            document_serializer.save()
+        return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+
+    def list(self, request):
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        prescription_instances = PrescriptionDocuments.objects.filter(
+            appointment_info__uhid=uhid)
+        serializer = self.get_serializer(prescription_instances, many=True)
+        return Response({"prescription": serializer.data})

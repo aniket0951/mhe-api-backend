@@ -19,7 +19,8 @@ from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
 from .models import (Appointment, AppointmentDocuments, AppointmentVital,
-                     CancellationReason, HealthPackageAppointment)
+                     CancellationReason, HealthPackageAppointment,
+                     PrescriptionDocuments)
 
 
 class CancellationReasonSerializer(DynamicFieldsModelSerializer):
@@ -150,3 +151,25 @@ class AppointmentVitalSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = AppointmentVital
         fields = '__all__'
+
+
+class PrescriptionDocumentsSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = PrescriptionDocuments
+        fields = '__all__'
+        extra_kwargs = {
+            'name': {"error_messages": {"required": "Name is mandatory to upload your document."}},
+        }
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.prescrition:
+                response_object['prescrition'] = generate_pre_signed_url(
+                    instance.prescrition.url)
+        except Exception as error:
+            response_object['prescrition'] = None
+
+        return response_object
