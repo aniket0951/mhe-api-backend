@@ -166,10 +166,10 @@ class PrescriptionDocumentsSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         try:
-            if instance.prescrition:
-                response_object['prescrition'] = generate_pre_signed_url(
-                    instance.prescrition.url)
+            if instance.prescription:
+                response_object['prescription'] = generate_pre_signed_url(
+                    instance.prescription.url)
         except Exception as error:
-            response_object['prescrition'] = None
+            response_object['prescription'] = None
 
         return response_object

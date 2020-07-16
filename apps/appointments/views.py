@@ -922,6 +922,13 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(appointment_info__uhid=uhid)
+
     def create(self, request):
         document_param = dict()
         appointment_instance = Appointment.objects.filter(
@@ -936,12 +943,3 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_serializer.is_valid(raise_exception=True)
             document_serializer.save()
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
-
-    def list(self, request):
-        uhid = self.request.query_params.get("uhid", None)
-        if not uhid:
-            raise ValidationError("Invalid Parameters")
-        prescription_instances = PrescriptionDocuments.objects.filter(
-            appointment_info__uhid=uhid)
-        serializer = self.get_serializer(prescription_instances, many=True)
-        return Response({"prescription": serializer.data})
