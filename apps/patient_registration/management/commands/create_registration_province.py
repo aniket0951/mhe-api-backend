@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 raise CommandError("`Province Master` sheet is missing!")
 
             saved_items, ignored_items = list(), list()
-            required_province_keys = ['PROV_Code', 'PROV_Desc', 'CTRG_Code', 'CTRG_Desc']
+            required_province_keys = ['PROV_Code', 'PROV_Desc', 'CTRG_Code']
 
             province_master_data = excel_object.parse(
                 'Provinince Master').to_dict('records')
@@ -45,12 +45,12 @@ class Command(BaseCommand):
 
                 each_province['code'] = each_province.pop('PROV_Code')
                 each_province['description'] = each_province.pop('PROV_Desc')
-                if not Region.objects.filter(description=each_province['CTRG_Desc']).exists():
+                if not Region.objects.filter(code=each_province['CTRG_Code']).exists():
                     each_province['row_number'] = row_number
                     each_province['reason'] = 'Region not found!'
                     ignored_items.append(each_province)
                 else:
-                    each_province['region'] = Region.objects.filter(description=each_province['CTRG_Desc']).first().id
+                    each_province['region'] = Region.objects.filter(code=each_province['CTRG_Code']).first().id
 
                 serializer = ProvinceSerializer(data=each_province)
 

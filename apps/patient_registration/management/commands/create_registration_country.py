@@ -27,7 +27,6 @@ class Command(BaseCommand):
 
             app_file = open(os.path.abspath(options['file']), 'rb')
             excel_object = pd.ExcelFile(app_file, engine='xlrd')
-
             if not 'Country Master' in excel_object.sheet_names:
                 raise CommandError("`Country Master` sheet is missing!")
 
