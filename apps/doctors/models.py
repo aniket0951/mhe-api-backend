@@ -25,11 +25,11 @@ class Doctor(BaseUser):
 
     hospital_departments = models.ManyToManyField(HospitalDepartment,
                                                   blank=True,
-                                                  related_name='doctor')
+                                                  related_name='doctor_hospital_department')
 
     specialisations = models.ManyToManyField(Specialisation,
                                              blank=True,
-                                             related_name='doctor')
+                                             related_name='doctor_specialisation')
 
     hv_consultation_charges = models.IntegerField(default=0,
                                                   null=True)
