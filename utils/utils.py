@@ -47,11 +47,11 @@ def get_appointment(patient_id):
         raise ValidationError("Patient does not Exist")
     member_uhid = patient.uhid_number
     patient_appointment = Appointment.objects.filter(
-        Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(patient_id=family_member))).exclue(vc_appointment_status="4")
+        Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(patient_id=family_member))).exclude(vc_appointment_status="4")
     family_members = patient.patient_family_member_info.filter(is_visible=True)
     for member in family_members:
         member_uhid = member.uhid_number
         family_appointment = Appointment.objects.filter(
-            Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=member.id))).exclue(vc_appointment_status="4")
+            Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=member.id))).exclude(vc_appointment_status="4")
         patient_appointment = patient_appointment.union(family_appointment)
     return patient_appointment.order_by('appointment_date', 'appointment_slot')
