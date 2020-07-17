@@ -108,7 +108,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(vc_appointment_status="4")
             return super().get_queryset().filter(
-                Q(appointment_date__lt=datetime.now().date()) & (Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member)))
+                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if not patient:
@@ -118,7 +118,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)))).exclude(vc_appointment_status="4")
             return super().get_queryset().filter(
-                Q(appointment_date__lt=datetime.now().date()) & (Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)) & Q(family_member__isnull=True)))
+                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)) & Q(family_member__isnull=True)))
 
 
 class CreateMyAppointment(ProxyView):
