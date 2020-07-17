@@ -72,7 +72,7 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
         return Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
             (Q(end_date__gte=date) | Q(end_date__isnull=True)) &
-            Q(start_date__lte=datetime.now().date())).distinct()
+            Q(start_date__lte=datetime.now().date()) & Q(is_online_appointment_enable=True)).distinct()
 
 
 class DoctorSlotAvailability(ProxyView):

@@ -261,6 +261,7 @@ class DoctorsView(ProxyView):
             'profile',
             'qualification',
             'hospital_code',
+            'is_online_appointment_enable',
             'hv_consultation_charges',
             'pr_consultation_charges',
             'specialisation_code',
@@ -269,6 +270,7 @@ class DoctorsView(ProxyView):
         ]
         for each_doctor in response_content:
             doctor_details = dict()
+            doctor_details["is_active"] = True
             for index, key in enumerate(sorted(each_doctor.keys())):
                 if key in ['DocProfile', 'DeptName', 'SpecDesc']:
                     continue
@@ -282,6 +284,11 @@ class DoctorsView(ProxyView):
 
                 if key == "DocName" and each_doctor[key]:
                     each_doctor[key] = each_doctor[key].title()
+
+                if key =="IsOnlineAppt" and each_doctor[key]:
+                    each_doctor[key] = True
+                    if each_doctor[key] == "No":
+                        each_doctor[key] = False
 
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
             doctor_kwargs = dict()
@@ -307,6 +314,10 @@ class DoctorsView(ProxyView):
             if specialisation_obj:
                 doctor.specialisations.add(specialisation_obj)
             all_doctors.append(doctor_details)
+            today_date = datetime.now().date()
+            previous_date = datetime.now() - timedelta(days=1)
+            Doctor.objects.filter(
+                updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=all_doctors)
