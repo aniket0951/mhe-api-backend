@@ -416,7 +416,7 @@ class OfflineAppointment(APIView):
     def post(self, request, format=None):
         logger.info(request.data)
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
-                         'locationCode', 'status', 'appointmentMode', 'payment_status', 'department']
+                         'locationCode', 'status', 'payment_status', 'department']
         data = request.data
         appointment_data = dict()
         if not data and set(required_keys).issubset(set(data.keys())):
@@ -468,7 +468,7 @@ class OfflineAppointment(APIView):
                 data=appointment_data)
         appointment_serializer.is_valid(raise_exception=True)
         appointment_serializer.save()
-        return Response(data=appointment_serializer.data, status=status.HTTP_200_OK)
+        return Response({"message":"Record Inserted"}, status=status.HTTP_200_OK)
 
 
 class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
