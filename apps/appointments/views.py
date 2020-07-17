@@ -921,7 +921,6 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError("Appointment doesn't Exist")
-        import pdb; pdb.set_trace()
         for i, f in enumerate(request.FILES.getlist('prescription')):
             document_param["appointment_info"] = appointment_instance.id
             document_param["prescription"] = f
