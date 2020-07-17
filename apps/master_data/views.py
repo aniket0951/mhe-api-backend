@@ -286,10 +286,10 @@ class DoctorsView(ProxyView):
                     each_doctor[key] = each_doctor[key].title()
 
                 if key =="IsOnlineAppt" and each_doctor[key]:
-                    each_doctor[key] = True
-                    if each_doctor[key] == "No":
+                    if each_doctor[key] =="Yes":
+                        each_doctor[key] = True
+                    else:
                         each_doctor[key] = False
-
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
             doctor_kwargs = dict()
             hospital_department_obj = None
