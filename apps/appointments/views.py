@@ -118,7 +118,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(patient_id=patient.id))).exclude(vc_appointment_status="4")
             return super().get_queryset().filter(
-                Q(appointment_date__lt=datetime.now().date()) & (Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(patient_id=patient.id)))
+                Q(appointment_date__lt=datetime.now().date()) & (Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)) & Q(family_member__isnull=True)))
 
 
 class CreateMyAppointment(ProxyView):
