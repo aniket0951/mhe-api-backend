@@ -419,11 +419,15 @@ class OfflineAppointment(APIView):
                          'locationCode', 'status', 'payment_status', 'department']
         data = request.data
         appointment_data = dict()
-        if not data and set(required_keys).issubset(set(data.keys())):
-            Response({"message": "Mandatory parameter is missing"},
-                     status=status.HTTP_200_OK)
+        if not (data and set(required_keys).issubset(set(data.keys()))):
+            return Response({"message": "Mandatory parameter is missing"},
+                            status=status.HTTP_200_OK)
         uhid = data["UHID"]
         deparmtment_code = data["department"]
+        if not (uhid and deparmtment_code and data["doctorCode"] and
+                data["locationCode"] and data["appointmentDatetime"] and data["appointmentIdentifier"]):
+            return Response({"message": "Mandatory parameter is missing"},
+                            status=status.HTTP_200_OK)
         patient = Patient.objects.filter(uhid_number=uhid).first()
         family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
         doctor = Doctor.objects.filter(code=data["doctorCode"].upper()).first()
@@ -434,17 +438,12 @@ class OfflineAppointment(APIView):
         if not (doctor and hospital and department):
             return Response({"message": "Hospital/doctor/department is not available"}, status=status.HTTP_200_OK)
         appointment_data["booked_via_app"] = False
-        datetime_object = datetime.strptime(
-            data["appointmentDatetime"], '%Y%m%d%H%M%S')
-        time = datetime_object.time()
         appointment_identifier = data["appointmentIdentifier"].replace(
             "*", "|")
         appointment_data["patient"] = patient
         if family_member:
             appointment_data["patient"] = family_member.patient_info.id
             appointment_data["family_member"] = family_member.id
-        appointment_data["appointment_date"] = datetime_object.date()
-        appointment_data["appointment_slot"] = time.strftime("%H:%M:%S %p")
         appointment_data["hospital"] = hospital.id
         appointment_data["appointment_identifier"] = appointment_identifier
         appointment_data["doctor"] = doctor.id
@@ -456,19 +455,29 @@ class OfflineAppointment(APIView):
         appointment_data["payment_status"] = None
         if data["payment_status"] == "Paid":
             appointment_data["payment_status"] = "success"
-        appointment_data["appointment_mode"] = data.get("appointmentMode")
+        if data.get("appointmentMode"):
+            appointment_data["appointment_mode"] = data.get("appointmentMode")
         appointment_data["episode_number"] = data.get("episodeNumber", None)
-        appointment_instance = Appointment.objects.filter(
-            appointment_identifier=appointment_identifier).first()
-        if appointment_instance:
-            appointment_serializer = AppointmentSerializer(
-                appointment_instance, data=appointment_data, partial=True)
-        else:
-            appointment_serializer = AppointmentSerializer(
-                data=appointment_data)
-        appointment_serializer.is_valid(raise_exception=True)
-        appointment_serializer.save()
-        return Response({"message":"Record Inserted"}, status=status.HTTP_200_OK)
+        try:
+            datetime_object = datetime.strptime(
+                data["appointmentDatetime"], '%Y%m%d%H%M%S')
+            appointment_data["appointment_date"] = datetime_object.date()
+            appointment_data["appointment_slot"] = datetime_object.time().strftime(
+                "%H:%M:%S %p")
+            appointment_instance = Appointment.objects.filter(
+                appointment_identifier=appointment_identifier).first()
+            if appointment_instance:
+                appointment_serializer = AppointmentSerializer(
+                    appointment_instance, data=appointment_data, partial=True)
+            else:
+                appointment_serializer = AppointmentSerializer(
+                    data=appointment_data)
+            message = "Record Inserted"
+            appointment_serializer.is_valid(raise_exception=True)
+            appointment_serializer.save()
+        except Exception as e:
+            message = "Field is Missing " + str(e)
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
