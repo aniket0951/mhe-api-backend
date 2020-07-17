@@ -7,6 +7,7 @@ from django.db.models import Q
 from apps.appointments.models import Appointment
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import Patient
+from rest_framework.serializers import ValidationError
 
 
 def generate_pre_signed_url(image_url):
@@ -42,13 +43,15 @@ def manipal_admin_object(request):
 
 def get_appointment(patient_id):
     patient = Patient.objects.filter(id=patient_id).first()
+    if not patient:
+        raise ValidationError("Patient does not Exist")
+    member_uhid = patient.uhid_number
     patient_appointment = Appointment.objects.filter(
-                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
-            (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
+        Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(patient_id=family_member))).exclue(vc_appointment_status="4")
     family_members = patient.patient_family_member_info.filter(is_visible=True)
     for member in family_members:
+        member_uhid = member.uhid_number
         family_appointment = Appointment.objects.filter(
-                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
-                Q(family_member_id=member.id) | (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number)) | (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
+            Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=member.id))).exclue(vc_appointment_status="4")
         patient_appointment = patient_appointment.union(family_appointment)
     return patient_appointment.order_by('appointment_date', 'appointment_slot')

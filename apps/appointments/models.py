@@ -103,6 +103,12 @@ class Appointment(models.Model):
 
     patient_ready = models.BooleanField(default=False)
 
+    episode_number = models.CharField(max_length=30,
+                                      blank=True,
+                                      null=True)
+
+    episode_date_time = models.DateTimeField(auto_now=True)
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
@@ -272,7 +278,28 @@ class PrescriptionDocuments(MyBaseModel):
                                          on_delete=models.PROTECT,
                                          null=False,
                                          blank=False,
-                                         related_name='appointment_presciptions')
+                                         related_name='appointment_presciptions',
+                                         )
+    appointment_identifier = models.CharField(max_length=50,
+                                              blank=True,
+                                              null=True)
+
+    episode_number = models.CharField(max_length=50,
+                                      blank=True,
+                                      null=True)
+
+    episode_date_time = models.DateTimeField(auto_now=True)
+
+    file_type = models.CharField(max_length=50,
+                                 default="Prescription")
+
+    hospital_code = models.CharField(max_length=10,
+                                     blank=True,
+                                     null=True)
+
+    department_code = models.CharField(max_length=10,
+                                       blank=True,
+                                       null=True)
 
     class Meta:
         verbose_name = "Appointment Prescription"
