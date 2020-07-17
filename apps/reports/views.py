@@ -1,6 +1,8 @@
 from datetime import date, datetime, timedelta
 
 from django.db.models import Q
+
+from apps.patients.models import FamilyMember
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.generics import CreateAPIView
@@ -8,8 +10,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
-
-from apps.patients.models import FamilyMember
 from utils import custom_viewsets
 from utils.custom_permissions import InternalAPICall, IsPatientUser
 from utils.utils import patient_user_object
@@ -50,7 +50,7 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
         family_member_id = self.request.query_params.get('user_id', None)
         filter_by = self.request.query_params.get("filter_by", None)
         request_patient_obj = patient_user_object(self.request)
-        
+
         qs = Report.objects.none()
 
         if family_member_id:
@@ -91,7 +91,7 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             elif filter_by == "date_range":
                 date_from = self.request.query_params.get("date_from", None)
                 date_to = self.request.query_params.get("date_to", None)
-                return qs.filter(time__date__range= [date_from, date_to])
+                return qs.filter(time__date__range=[date_from, date_to])
             else:
                 return qs.filter(time__date=filter_by)
 
@@ -140,9 +140,12 @@ class ReportsSyncAPIView(CreateAPIView):
 
         if not proxy_request:
             ValidationError("Something went wrong!")
-
-        report_response = ReportViewSet.as_view(
-            {'post': 'create'})(proxy_request)
+        try:
+            report_response = ReportViewSet.as_view(
+                {'post': 'create'})(proxy_request)
+        except:
+            return Response({"data": report_response.data, "consumed": False},
+                            status=status.HTTP_200_OK)
 
         if report_response.status_code == 201 and report_details and\
                 type(report_details) == list:
