@@ -90,6 +90,8 @@ class Doctor(BaseUser):
     end_date = models.DateField(blank=True,
                                 null=True)
 
+    is_online_appointment_enable = models.BooleanField(default=True)
+
     @property
     def representation(self):
         return 'Name: {} Code: {} Hospital: {}'.format(self.name, self.code, self.hospital.description)
