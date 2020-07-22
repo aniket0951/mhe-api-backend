@@ -151,7 +151,7 @@ def appointment_reminder_scheduler():
 @app.task(name="tasks.auto_appointment_cancellation")
 def auto_appointment_cancellation():
     now = datetime.now()
-    end_time = now - timedelta(minutes=17)
+    end_time = now - timedelta(minutes=13)
     start_time = now - timedelta(minutes=45)
     appointments = Appointment.objects.filter(
         created_at__date=now.date(), status="1", appointment_mode="VC", payment_status=None, booked_via_app=True).filter(created_at__time__gte=start_time, created_at__time__lte=end_time)
