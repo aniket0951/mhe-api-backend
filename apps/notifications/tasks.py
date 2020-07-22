@@ -211,7 +211,7 @@ app.conf.beat_schedule = {
     },
     "hourly_auto_cancellation_for_unpaid_vc_appointment": {
         "task": "tasks.auto_appointment_cancellation",
-        "schedule": crontab(minute="*/10", hour="*")
+        "schedule": crontab(minute="*/15", hour="*")
     },
     "vc_daily_auto_appointment_cancellation": {
         "task": "tasks.daily_auto_appointment_cancellation",
