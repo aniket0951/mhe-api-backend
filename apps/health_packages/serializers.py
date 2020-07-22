@@ -25,7 +25,7 @@ class HealthTestSerializer(DynamicFieldsModelSerializer):
 
 class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
     is_discount_applicable = serializers.SerializerMethodField()
-    final_price = serializers.ReadOnlyField()
+    final_price = serializers.SerializerMethodField()
 
     class Meta:
         model = HealthPackagePricing
@@ -36,6 +36,9 @@ class HealthPackagePricingSerializer(DynamicFieldsModelSerializer):
                 (not instance.discount_end_date or instance.discount_end_date > datetime.now().date()):
             return True
         return False
+
+    def get_final_price(self, instance):
+        return round((100 - instance.discount_percentage) * instance.price / 100)
 
 
 class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
