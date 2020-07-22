@@ -106,7 +106,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             member_uhid = member.uhid_number
             if is_upcoming:
                 return super().get_queryset().filter(
-                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(vc_appointment_status="4")
+                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
             return super().get_queryset().filter(
                 (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member)))
         else:
@@ -116,9 +117,16 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             member_uhid = patient.uhid_number
             if is_upcoming:
                 return super().get_queryset().filter(
-                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)))).exclude(vc_appointment_status="4")
+                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
+                    & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
+                                                                        & Q(family_member__isnull=True)))).exclude(
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
             return super().get_queryset().filter(
-                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)) & Q(family_member__isnull=True)))
+                (Q(appointment_date__lt=datetime.now().date())
+                 | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
+                & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
+                   | (Q(patient_id=patient.id)) &
+                   Q(family_member__isnull=True)))
 
 
 class CreateMyAppointment(ProxyView):
