@@ -93,6 +93,10 @@ class HealthPackagePricing(MyBaseModel):
     discount_end_date = models.DateField(null=True,
                                          blank=True
                                          )
+    
+    @property
+    def get_final_price(self):
+        return round((100 - self.discount_percentage) * self.price / 100)
 
     class Meta:
         verbose_name = "Health Package Pricing"
