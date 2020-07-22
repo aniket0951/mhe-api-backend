@@ -151,8 +151,8 @@ def appointment_reminder_scheduler():
 @app.task(name="tasks.auto_appointment_cancellation")
 def auto_appointment_cancellation():
     now = datetime.now()
-    end_time = now - timedelta(minutes=15)
-    start_time = now - timedelta(hours=1, minutes=15)
+    end_time = now - timedelta(minutes=17)
+    start_time = now - timedelta(minutes=45)
     appointments = Appointment.objects.filter(
         created_at__date=now.date(), status="1", appointment_mode="VC", payment_status=None, booked_via_app=True).filter(created_at__time__gte=start_time, created_at__time__lte=end_time)
     for appointment in appointments:
@@ -211,7 +211,7 @@ app.conf.beat_schedule = {
     },
     "hourly_auto_cancellation_for_unpaid_vc_appointment": {
         "task": "tasks.auto_appointment_cancellation",
-        "schedule": crontab(minute="15", hour="*")
+        "schedule": crontab(minute="*/10", hour="*")
     },
     "vc_daily_auto_appointment_cancellation": {
         "task": "tasks.daily_auto_appointment_cancellation",
