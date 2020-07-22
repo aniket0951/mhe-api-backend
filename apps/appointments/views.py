@@ -908,7 +908,7 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'create', ]:
-            permission_classes = [IsPatientUser, IsDoctor]
+            permission_classes = [IsPatientUser | IsDoctor]
             return [permission() for permission in permission_classes]
 
         if self.action in ['partial_update', 'retrieve', 'destroy', 'update']:
