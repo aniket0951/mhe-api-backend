@@ -85,7 +85,7 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
     filter_class = HealthPackageFilter
     search_fields = [
         'name', 'code', 'included_health_tests__description', 'included_health_tests__code']
-    ordering_fields = ('health_package_pricing__price', 'name')
+    ordering_fields = ('health_package_pricing__final_price', 'name')
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
