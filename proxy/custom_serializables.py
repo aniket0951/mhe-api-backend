@@ -233,11 +233,13 @@ class EpisodeItems:
 
 
 class NextAvailableSlot:
-    def __init__(self, doctor_code=None, location_code=None, schedule_date=None, department_code=None):
+    def __init__(self, doctor_code=None, location_code=None, schedule_date=None, 
+                department_code=None, app_type=None):
         self.doctor_code = doctor_code
         self.location_code = location_code
         self.schedule_date = schedule_date
         self.department_code = department_code
+        self.app_type = app_type
 
     def serialize(self, serializer):
         serializer.start_object('NextAvailableSlotDateParam')
@@ -245,6 +247,7 @@ class NextAvailableSlot:
         serializer.add_property('departmentCode', self.department_code)
         serializer.add_property('doctorCode', self.doctor_code)
         serializer.add_property('scheduleDate', self.schedule_date)
+        serializer.add_property('AppType', self.app_type)
 
 
 class UpdateCancelAndRefund:

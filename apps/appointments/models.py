@@ -137,6 +137,13 @@ class Appointment(models.Model):
         self.save()
         return False
 
+    @property
+    def is_payment_option_enabled(self):
+        if self.appointment_date:
+            if ((self.appointment_date < datetime.now().date()) or ((self.appointment_date == datetime.now().date()) and  (self.appointment_slot < datetime.now().time()))):
+                return False
+        return True
+
 
 class HealthPackageAppointment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
