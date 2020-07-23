@@ -269,7 +269,6 @@ class PaymentResponse(APIView):
                     bill_detail = json.loads(
                         payment_paydetail["RecieptNumber"])[0]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
-                    payment["episode_number"] = bill_detail["EpisodeNo"]
 
             if payment_instance.payment_for_op_billing:
                 payment_paydetail = payment_response["opPatientBilling"]
