@@ -13,21 +13,51 @@ from fcm_django.models import FCMDevice
 from manipal_api.celery import app
 from pyfcm import FCMNotification
 
+
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters
 
 
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
+    recipient = Patient.objects.get(id=kwargs.get("recipient_id"))
     notification_data = kwargs["notification_data"]
-    fcm = FCMNotification(api_key=settings.FCM_API_KEY)
     mobile_notification_serializer = MobileNotificationSerializer(
         data=notification_data)
     mobile_notification_serializer.is_valid(raise_exception=True)
     notification_instance = mobile_notification_serializer.save()
-    if (hasattr(notification_instance.recipient, 'device') and notification_instance.recipient.device.token):
-        result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
+    
+    if recipient.has_android_device():
+        fcm = FCMNotification(api_key=settings.FCM_API_KEY)   
+        if (hasattr(notification_instance.recipient, 'device') and notification_instance.recipient.device.token):
+            result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
             "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+     
+    elif recipient.has_ios_device():
+        apns = APNs(use_sandbox=settings.APNS_USE_SANDBOX, 
+                    cert_file=settings.APNS_CERT_PATH, 
+                    enhanced=True)
+        aps = {
+            "badge": recipient.unread_notifications_count(),
+            "alert": notification_instance.message,
+            "sound": "default"
+        }
+        data_payload = {
+            "notification_id": notification_instance.pk,
+        }
+        custom_payload = {
+            "aps": aps,
+            "payload": data_payload
+        }
+        payload = Payload(custom=custom_payload)
+        return apns.gateway_server.send_notification(notification_instance.recipient.device.token, 
+                                                     payload, 
+                                                     identifier=notification_instance.pk)           
+
+
+
+
+
 
 
 @app.task(bind=True, name="silent_push_notification")
