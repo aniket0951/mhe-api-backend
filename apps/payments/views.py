@@ -270,6 +270,14 @@ class PaymentResponse(APIView):
                         payment_paydetail["RecieptNumber"])[0]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
 
+            if payment_instance.payment_for_op_billing:
+                payment_paydetail = payment_response["opPatientBilling"]
+                if payment_paydetail["BillDetail"]:
+                    bill_detail = json.loads(
+                        payment_paydetail["BillDetail"])[0]
+                    payment["receipt_number"] = bill_detail["BillNo"]
+                    payment["episode_number"] = bill_detail["EpisodeNo"]
+
             payment["status"] = payment_response["status"]
             payment["payment_method"] = payment_response["card_type"] + \
                 "-" + payment_response["mode"]

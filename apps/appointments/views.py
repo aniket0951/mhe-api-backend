@@ -835,6 +835,7 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
                 raise ValidationError("Document parameter is missing")
         for i, f in enumerate(request.FILES.getlist('document')):
+            document_param = dict()
             document_param["appointment_info"] = appointment_instance.id
             document_param["name"] = name_list[i]
             document_param["document"] = f
