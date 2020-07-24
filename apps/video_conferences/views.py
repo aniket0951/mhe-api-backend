@@ -59,8 +59,11 @@ class RoomCreationView(APIView):
             }
             return Response(data=data, status=status.HTTP_417_EXPECTATION_FAILED)
         room_name = "".join(appointment_id.split("||"))
+        data = dict()
         if not appointment:
             raise ValidationError("Appointment does not Exist")
+        if VideoConference.objects.filter(room_name=room_name).exists():
+            return Response({"message":"Room Already Exists"}, status=status.HTTP_200_OK)
         try:
             room = client.video.rooms.create(
                 record_participants_on_connect=True, type='group', unique_name=room_name)
@@ -68,7 +71,6 @@ class RoomCreationView(APIView):
                 settings.TWILIO_CHAT_SERVICE_ID).channels.create(unique_name=room_name)
         except Exception as e:
             print(e)
-        data = dict()
         data["appointment"] = appointment.id
         data["room_name"] = room.unique_name
         data["room_sid"] = room.sid
@@ -208,7 +210,16 @@ class InitiateTrackerAppointment(APIView):
         param = create_room_parameters(
             {"appointment_id": appointment_identifier})
         response = RoomCreationView.as_view()(param)
-        return Response({"url": result}, status=status.HTTP_200_OK)
+        message = "Something went wrong"
+        if response.status_code == 200:
+            if response.data.get("room_name"):
+                message = "Room created"
+            elif response.data.get("message") == "Room Already Exists":
+                message = "Room Already Exists"
+            return Response({"message":message,"url": result}, status=status.HTTP_200_OK)
+        elif response.status_code == 417:
+            return Response({"Message":"Appointment still Unfinished","uhid": response.data["appointment"][0]["uhid"]}, status=status.HTTP_200_OK)
+        return Response({"Error": "Something Went Wrong"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SendStatus(ProxyView):
