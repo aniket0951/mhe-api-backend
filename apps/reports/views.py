@@ -16,9 +16,10 @@ from utils.utils import patient_user_object
 
 from .filters import ReportFilter
 from .models import (FreeTextReportDetails, NumericReportDetails, Report,
-                     StringReportDetails, TextReportDetails)
+                     ReportDocuments, StringReportDetails, TextReportDetails)
 from .serializers import (FreeTextReportDetailsSerializer,
-                          NumericReportDetailsSerializer, ReportSerializer,
+                          NumericReportDetailsSerializer,
+                          ReportDocumentsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
                           TextReportDetailsSerializer)
 from .utils import (free_text_report_hanlder, numeric_report_hanlder,
@@ -183,3 +184,35 @@ class ReportsSyncAPIView(CreateAPIView):
 
         return Response({"data": report_response.data, "consumed": False},
                         status=status.HTTP_200_OK)
+
+
+class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = ReportDocuments
+    queryset = ReportDocuments.objects.all().order_by('-created_at')
+    serializer_class = ReportDocumentsSerializer
+    create_success_message = "Report Document is uploaded successfully."
+    list_success_message = 'Report Documents returned successfully!'
+    retrieve_success_message = 'Report Documents information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(uhid=uhid)
+
+    def create(self, request):
+        document_param = dict()
+        for i, f in enumerate(request.FILES.getlist('reports')):
+            document_param["uhid"] = request.data.get("uhid")
+            document_param["name"] = f.name
+            document_param["report_document"] = f
+            document_param["hospital_code"] = appointment_instance.hospital.code
+            document_param["department_code"] = appointment_instance.department.code
+            document_param["episode_date_time"] = appointment_instance.episode_date_time
+            document_serializer = self.serializer_class(data=document_param)
+
+        return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)

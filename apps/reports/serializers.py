@@ -3,10 +3,10 @@ from apps.master_data.serializers import HospitalSerializer
 from apps.patients.models import FamilyMember
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
-from utils.utils import patient_user_object
+from utils.utils import patient_user_object, generate_pre_signed_url
 
 from .models import (FreeTextReportDetails, NumericReportDetails, Report,
-                     StringReportDetails, TextReportDetails)
+                     ReportDocuments, StringReportDetails, TextReportDetails)
 
 
 class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
@@ -95,3 +95,23 @@ class ReportSerializer(DynamicFieldsModelSerializer):
                         'first_name', 'last_name')).data
 
         return response_object
+
+
+class ReportDocumentsSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = ReportDocuments
+        fields = '__all__'
+        extra_kwargs = {
+            'name': {"error_messages": {"required": "Name is mandatory to upload your document."}},
+        }
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.report_document:
+                response_object['report_document'] = generate_pre_signed_url(
+                    instance.report_document.url)
+        except Exception as error:
+            response_object['report_document'] = None
