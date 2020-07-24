@@ -213,12 +213,13 @@ class InitiateTrackerAppointment(APIView):
         message = "Something went wrong"
         if response.status_code == 200:
             if response.data.get("room_name"):
-                message = "Room created"
+                message = "Room Created"
             elif response.data.get("message") == "Room Already Exists":
                 message = "Room Already Exists"
             return Response({"message":message,"url": result}, status=status.HTTP_200_OK)
         elif response.status_code == 417:
-            return Response({"Message":"Appointment still Unfinished","uhid": response.data["appointment"][0]["uhid"]}, status=status.HTTP_200_OK)
+            return Response({"Message":"Video Consultation is Open","uhid": response.data["appointment"][0]["uhid"], 
+                    "appointment_date":response.data["appointment"][0]["appointment_date"], "appointment_time":response.data["appointment"][0]["appointment_slot"]}, status=status.HTTP_200_OK)
         return Response({"Error": "Something Went Wrong"}, status=status.HTTP_404_NOT_FOUND)
 
 
