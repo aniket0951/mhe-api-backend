@@ -266,8 +266,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         random_mobile_change_password = get_random_string(
             length=4, allowed_chars='0123456789')
-        if patient_obj.mobile == "+919790761074":
-            random_mobile_change_password = "1234"
 
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
@@ -277,7 +275,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         patient_obj.save()
 
         mobile_number = str(patient_obj.new_mobile.raw_input)
-        print(random_mobile_change_password)
         message = "OTP to activate your new mobile number is {}, this OTP will expire in {} seconds.".format(
             random_mobile_change_password, settings.OTP_EXPIRATION_TIME)
 
@@ -376,6 +373,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
+
+        if patient_obj.mobile == "+919790761074":
+            random_mobile_change_password = "1234"
+            
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
