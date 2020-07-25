@@ -4,12 +4,13 @@ from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
 from .views import (AppointmentDocumentsViewSet, AppointmentsAPIView,
-                    CancelAndRefundView, CancelHealthPackageAppointment,
-                    CancellationReasonlistView, CancelMyAppointment,
-                    CreateMyAppointment, DoctorRescheduleAppointmentView,
-                    DoctorsAppointmentAPIView, HealthPackageAppointmentView,
-                    OfflineAppointment, RecentlyVisitedDoctorlistView,
-                    UpcomingAppointmentsAPIView, AppointmentVitalViewSet)
+                    AppointmentVitalViewSet, CancelAndRefundView,
+                    CancelHealthPackageAppointment, CancellationReasonlistView,
+                    CancelMyAppointment, CreateMyAppointment,
+                    DoctorRescheduleAppointmentView, DoctorsAppointmentAPIView,
+                    HealthPackageAppointmentView, OfflineAppointment,
+                    PrescriptionDocumentsViewSet,
+                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -18,6 +19,7 @@ router.register('all_doctors_appointments', DoctorsAppointmentAPIView)
 router.register('upload_documents', AppointmentDocumentsViewSet)
 router.register('upcoming_appointments', UpcomingAppointmentsAPIView)
 router.register('vitals', AppointmentVitalViewSet)
+router.register('prescription', PrescriptionDocumentsViewSet)
 router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 
 

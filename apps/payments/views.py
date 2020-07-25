@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+import logging
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
 from random import randint
@@ -51,9 +52,9 @@ from utils.refund_parameter_generator import get_refund_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment, PaymentRefund
-from .serializers import PaymentSerializer, PaymentRefundSerializer
+from .serializers import PaymentRefundSerializer, PaymentSerializer
 
-
+logger = logging.getLogger('django')
 class AppointmentPayment(APIView):
     def post(self, request, format=None):
         param = get_payment_param(request.data)
@@ -225,6 +226,7 @@ class PaymentResponse(APIView):
     parser_classes = [FormParser, MultiPartParser, JSONParser]
 
     def post(self, request, format=None):
+        logger.info(request.data)
         response_token = request.data["responseToken"]
         response_token_json = json.loads(response_token)
         status_code = response_token_json["status_code"]
@@ -267,6 +269,14 @@ class PaymentResponse(APIView):
                     bill_detail = json.loads(
                         payment_paydetail["RecieptNumber"])[0]
                     payment["receipt_number"] = bill_detail["ReceiptNo"]
+
+            if payment_instance.payment_for_op_billing:
+                payment_paydetail = payment_response["opPatientBilling"]
+                if payment_paydetail["BillDetail"]:
+                    bill_detail = json.loads(
+                        payment_paydetail["BillDetail"])[0]
+                    payment["receipt_number"] = bill_detail["BillNo"]
+                    payment["episode_number"] = bill_detail["EpisodeNo"]
 
             payment["status"] = payment_response["status"]
             payment["payment_method"] = payment_response["card_type"] + \
@@ -358,6 +368,7 @@ class PaymentReturn(APIView):
     parser_classes = [FormParser, MultiPartParser, JSONParser]
 
     def post(self, request, format=None):
+        logger.info(request.data)
         data = request.data
         response_token = data["responseToken"]
         response_token_json = json.loads(response_token)

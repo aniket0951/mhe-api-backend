@@ -32,7 +32,7 @@ class Command(BaseCommand):
                 raise CommandError("`City Master` sheet is missing!")
 
             saved_items, ignored_items = list(), list()
-            required_city_keys = ['CTCIT_Code', 'CTCIT_Desc', 'PROV_Code', 'PROV_Desc']
+            required_city_keys = ['CTCIT_Code', 'CTCIT_Desc', 'PROV_Code']
 
             city_master_data = excel_object.parse(
                 'City Master').to_dict('records')
@@ -45,12 +45,12 @@ class Command(BaseCommand):
 
                 each_city['code'] = each_city.pop('CTCIT_Code')
                 each_city['description'] = each_city.pop('CTCIT_Desc')
-                if not Province.objects.filter(description=each_city['PROV_Desc']).exists():
+                if not Province.objects.filter(code=each_city['PROV_Code']).exists():
                     each_city['row_number'] = row_number
                     each_city['reason'] = 'Province not found!'
                     ignored_items.append(each_city)
                 else:
-                    each_city['province'] = Province.objects.filter(description=each_city['PROV_Desc']).first().id
+                    each_city['province'] = Province.objects.filter(code=each_city['PROV_Code']).first().id
 
                 serializer = CitySerializer(data=each_city)
 

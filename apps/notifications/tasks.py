@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.management import call_command
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.appointments.views import CancelMyAppointment
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
 from apps.patients.models import FamilyMember, Patient
@@ -13,6 +14,7 @@ from manipal_api.celery import app
 from pyfcm import FCMNotification
 
 from .serializers import MobileNotificationSerializer
+from .utils import cancel_parameters
 
 
 @app.task(bind=True, name="push_notifications")
@@ -146,6 +148,37 @@ def appointment_reminder_scheduler():
         send_push_notification.delay(notification_data=notification_data)
 
 
+@app.task(name="tasks.auto_appointment_cancellation")
+def auto_appointment_cancellation():
+    now = datetime.now()
+    end_time = now - timedelta(minutes=13)
+    start_time = now - timedelta(minutes=45)
+    appointments = Appointment.objects.filter(
+        created_at__date=now.date(), status="1", appointment_mode="VC", payment_status=None, booked_via_app=True).filter(created_at__time__gte=start_time, created_at__time__lte=end_time)
+    for appointment in appointments:
+        param = dict()
+        param["appointment_identifier"] = appointment.appointment_identifier
+        param["reason_id"] = "1"
+        param["status"] = "2"
+        request_param = cancel_parameters(param)
+        response = CancelMyAppointment.as_view()(request_param)
+
+
+@app.task(name="tasks.daily_auto_appointment_cancellation")
+def daily_auto_appointment_cancellation():
+    now = datetime.now() - timedelta(days=1)
+    appointments = Appointment.objects.filter(
+        created_at__date=now.date(), status="1", appointment_mode="VC", payment_status=None, booked_via_app=True)
+
+    for appointment in appointments:
+        param = dict()
+        param["appointment_identifier"] = appointment.appointment_identifier
+        param["reason_id"] = "1"
+        param["status"] = "2"
+        request_param = cancel_parameters(param)
+        response = CancelMyAppointment.as_view()(request_param)
+
+
 @app.task(name="tasks.daily_update")
 def daily_update_scheduler():
     call_command("create_or_update_departments", verbosity=0)
@@ -175,5 +208,13 @@ app.conf.beat_schedule = {
     "daily_update_scheduler": {
         "task": "tasks.daily_update",
         "schedule": crontab(minute="0", hour="0")
+    },
+    "hourly_auto_cancellation_for_unpaid_vc_appointment": {
+        "task": "tasks.auto_appointment_cancellation",
+        "schedule": crontab(minute="*/15", hour="*")
+    },
+    "vc_daily_auto_appointment_cancellation": {
+        "task": "tasks.daily_auto_appointment_cancellation",
+        "schedule": crontab(minute="0", hour="3")
     }
 }

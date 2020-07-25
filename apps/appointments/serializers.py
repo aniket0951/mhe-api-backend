@@ -19,7 +19,8 @@ from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
 from .models import (Appointment, AppointmentDocuments, AppointmentVital,
-                     CancellationReason, HealthPackageAppointment)
+                     CancellationReason, HealthPackageAppointment,
+                     PrescriptionDocuments)
 
 
 class CancellationReasonSerializer(DynamicFieldsModelSerializer):
@@ -30,6 +31,7 @@ class CancellationReasonSerializer(DynamicFieldsModelSerializer):
 
 class AppointmentSerializer(DynamicFieldsModelSerializer):
     is_cancellable = serializers.ReadOnlyField()
+    is_payment_option_enabled = serializers.ReadOnlyField()
 
     class Meta:
         model = Appointment
@@ -62,7 +64,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
 
         vitals = AppointmentVital.objects.filter(appointment_info=instance.id)
         response_object["vitals"] = AppointmentVitalSerializer(
-            vitals, many=True, fields=('blood_pressure', 'body_temperature')).data
+            vitals, many=True, fields=('blood_pressure', 'body_temperature', 'height', 'weight')).data
 
         return response_object
 
@@ -150,3 +152,29 @@ class AppointmentVitalSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = AppointmentVital
         fields = '__all__'
+
+
+class PrescriptionDocumentsSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = PrescriptionDocuments
+        fields = '__all__'
+        extra_kwargs = {
+            'name': {"error_messages": {"required": "Name is mandatory to upload your document."}},
+        }
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.prescription:
+                response_object['prescription'] = generate_pre_signed_url(
+                    instance.prescription.url)
+        except Exception as error:
+            response_object['prescription'] = None
+
+        if instance.appointment_info:
+            response_object["appointment_info"] = AppointmentSerializer(
+                instance.appointment_info, fields=('doctor', 'department', 'appointment_identifier')).data
+
+        return response_object

@@ -23,6 +23,12 @@ def generate_personal_file_path(self, filename):
     return "appointment/{0}/documents/{1}".format(self.id, obj_name)
 
 
+def generate_prescription_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "appointment/{0}/prescriptions/{1}".format(self.id, obj_name)
+
+
 class CancellationReason(models.Model):
 
     reason = models.TextField(blank=False,
@@ -31,6 +37,7 @@ class CancellationReason(models.Model):
 
 
 class Appointment(models.Model):
+
     CONFIRMED = 1
     CANCELLED = 2
     WAITING = 3
@@ -45,6 +52,7 @@ class Appointment(models.Model):
         (RESCHEDULED, 'Rescheduled'),
         (REBOOKED, 'Rebooked'),
     )
+    created_at = models.DateTimeField(auto_now_add=True)
     appointment_date = models.DateField()
     appointment_slot = models.TimeField()
     appointment_identifier = models.CharField(max_length=20,
@@ -95,6 +103,12 @@ class Appointment(models.Model):
 
     patient_ready = models.BooleanField(default=False)
 
+    episode_number = models.CharField(max_length=30,
+                                      blank=True,
+                                      null=True)
+
+    episode_date_time = models.DateTimeField(auto_now=True)
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
@@ -123,8 +137,16 @@ class Appointment(models.Model):
         self.save()
         return False
 
+    @property
+    def is_payment_option_enabled(self):
+        if self.appointment_date:
+            if ((self.appointment_date < datetime.now().date()) or ((self.appointment_date == datetime.now().date()) and  (self.appointment_slot < datetime.now().time()))):
+                return False
+        return True
+
 
 class HealthPackageAppointment(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
 
     appointment_date = models.DateTimeField(blank=True, null=True)
 
@@ -226,6 +248,14 @@ class AppointmentVital(MyBaseModel):
                                         blank=True,
                                         null=True)
 
+    height = models.CharField(max_length=15,
+                              blank=True,
+                              null=True)
+
+    weight = models.CharField(max_length=15,
+                              blank=True,
+                              null=True)
+
     appointment_info = models.ForeignKey(Appointment,
                                          on_delete=models.PROTECT,
                                          null=False,
@@ -233,5 +263,51 @@ class AppointmentVital(MyBaseModel):
                                          related_name='appointment_vitals')
 
     class Meta:
-        verbose_name = "Appointment Vital"
-        verbose_name_plural = "Appointment Vitals"
+        verbose_name = "Appointment Document"
+        verbose_name_plural = "Appointment Documents"
+
+
+class PrescriptionDocuments(MyBaseModel):
+
+    name = models.CharField(max_length=500,
+                            blank=False,
+                            null=False)
+
+    prescription = models.FileField(upload_to=generate_prescription_file_path,
+                                    storage=FileStorage(),
+                                    validators=[FileExtensionValidator(
+                                        settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                        validate_file_authenticity],
+                                    blank=False,
+                                    null=False)
+
+    appointment_info = models.ForeignKey(Appointment,
+                                         on_delete=models.PROTECT,
+                                         null=False,
+                                         blank=False,
+                                         related_name='appointment_presciptions',
+                                         )
+    appointment_identifier = models.CharField(max_length=50,
+                                              blank=True,
+                                              null=True)
+
+    episode_number = models.CharField(max_length=50,
+                                      blank=True,
+                                      null=True)
+
+    episode_date_time = models.DateTimeField(auto_now=True)
+
+    file_type = models.CharField(max_length=50,
+                                 default="Prescription")
+
+    hospital_code = models.CharField(max_length=10,
+                                     blank=True,
+                                     null=True)
+
+    department_code = models.CharField(max_length=10,
+                                       blank=True,
+                                       null=True)
+
+    class Meta:
+        verbose_name = "Appointment Prescription"
+        verbose_name_plural = "Appointment Prescriptions"

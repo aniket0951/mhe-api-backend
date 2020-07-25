@@ -25,14 +25,20 @@ class Doctor(BaseUser):
 
     hospital_departments = models.ManyToManyField(HospitalDepartment,
                                                   blank=True,
-                                                  related_name='doctor')
+                                                  related_name='doctor_hospital_department')
 
     specialisations = models.ManyToManyField(Specialisation,
                                              blank=True,
-                                             related_name='doctor')
+                                             related_name='doctor_specialisation')
 
-    consultation_charges = models.IntegerField(default=0,
-                                               null=True)
+    hv_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
+
+    vc_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
+
+    pr_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
 
     qualification = models.CharField(max_length=800,
                                      null=True,
@@ -83,6 +89,8 @@ class Doctor(BaseUser):
 
     end_date = models.DateField(blank=True,
                                 null=True)
+
+    is_online_appointment_enable = models.BooleanField(default=True)
 
     @property
     def representation(self):

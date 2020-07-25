@@ -2,6 +2,7 @@ import ast
 import base64
 import datetime
 import hashlib
+import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -52,12 +53,16 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments, AppointmentVital,
-                     CancellationReason, HealthPackageAppointment)
+                     CancellationReason, HealthPackageAppointment,
+                     PrescriptionDocuments)
 from .serializers import (AppointmentDocumentsSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
                           CancellationReasonSerializer,
-                          HealthPackageAppointmentSerializer)
+                          HealthPackageAppointmentSerializer,
+                          PrescriptionDocumentsSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
+
+logger = logging.getLogger('django')
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -97,37 +102,31 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         elif (family_member is not None):
             member = FamilyMember.objects.filter(id=family_member).first()
             if not member:
-                raise PatientDoesNotExistsValidationException
+                raise ValidationError("Family Member does not Exist")
+            member_uhid = member.uhid_number
             if is_upcoming:
                 return super().get_queryset().filter(
-                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
-                        Q(family_member_id=family_member) |
-                        (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) |
-                        (Q(uhid__isnull=False) & Q(uhid=member.uhid_number)) |
-                        (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)))
+                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
             return super().get_queryset().filter(
-                (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=member.uhid_number)) |
-                Q(family_member_id=family_member) |
-                (Q(patient_id__uhid_number__isnull=False) & Q(patient_id__uhid_number=member.uhid_number) & Q(family_member__isnull=True)) |
-                (Q(uhid__isnull=False) & Q(uhid=member.uhid_number))).filter(
-                    (Q(appointment_date__lt=datetime.now().date()) |
-                     (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__lt=datetime.now().time())) |
-                     Q(status=2) | Q(status=5)))
+                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member)))
         else:
             patient = Patient.objects.filter(id=self.request.user.id).first()
+            if not patient:
+                raise ValidationError("Patient does not Exist")
+            member_uhid = patient.uhid_number
             if is_upcoming:
                 return super().get_queryset().filter(
-                    (Q(appointment_date__gt=datetime.now().date()) | (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__gt=datetime.now().time()))) & Q(status=1)).filter(
-                        (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) |
-                        (Q(patient_id=patient.id) & Q(family_member__isnull=True)) |
-                        (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
+                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
+                    & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
+                                                                        & Q(family_member__isnull=True)))).exclude(
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
             return super().get_queryset().filter(
-                (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) |
-                (Q(patient_id=patient.id) & Q(family_member__isnull=True)) |
-                (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number))).filter(
-                    (Q(appointment_date__lt=datetime.now().date()) |
-                     (Q(appointment_date=datetime.now().date()) & Q(appointment_slot__lt=datetime.now().time())) |
-                     Q(status=2) | Q(status=5)))
+                (Q(appointment_date__lt=datetime.now().date())
+                 | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
+                & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
+                   | (Q(patient_id=patient.id)) &
+                   Q(family_member__isnull=True)))
 
 
 class CreateMyAppointment(ProxyView):
@@ -139,7 +138,6 @@ class CreateMyAppointment(ProxyView):
         patient_id = request.user.id
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
-        appointment_mode = request.data.pop("appointment_mode", None)
         patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(
             id=family_member_id).first()
@@ -179,8 +177,6 @@ class CreateMyAppointment(ProxyView):
         request.data["doctor"] = doctor
         request.data["department"] = department
         request.data["consultation_amount"] = amount
-        if appointment_mode:
-            request.data["appointment_mode"] = appointment_mode
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -426,40 +422,70 @@ class OfflineAppointment(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
+        logger.info(request.data)
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
-                         'locationCode', 'status']
+                         'locationCode', 'status', 'payment_status', 'department']
         data = request.data
         appointment_data = dict()
-        if not data and set(required_keys).issubset(set(data.keys())):
-            raise ValidationError("Appointment attribute is missing")
+        if not (data and set(required_keys).issubset(set(data.keys()))):
+            return Response({"message": "Mandatory parameter is missing"},
+                            status=status.HTTP_200_OK)
         uhid = data["UHID"]
+        deparmtment_code = data["department"]
+        if not (uhid and deparmtment_code and data["doctorCode"] and
+                data["locationCode"] and data["appointmentDatetime"] and data["appointmentIdentifier"]):
+            return Response({"message": "Mandatory parameter is missing"},
+                            status=status.HTTP_200_OK)
         patient = Patient.objects.filter(uhid_number=uhid).first()
         family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
         doctor = Doctor.objects.filter(code=data["doctorCode"].upper()).first()
         hospital = Hospital.objects.filter(code=data["locationCode"]).first()
+        department = Department.objects.filter(code=deparmtment_code).first()
         if not (patient or family_member):
             return Response({"message": "User is not App user"}, status=status.HTTP_200_OK)
-        if not (doctor and hospital):
-            return Response({"message": "Hospital or doctor is not available"}, status=status.HTTP_200_OK)
+        if not (doctor and hospital and department):
+            return Response({"message": "Hospital/doctor/department is not available"}, status=status.HTTP_200_OK)
         appointment_data["booked_via_app"] = False
-        datetime_object = datetime.strptime(
-            data["appointmentDatetime"], '%Y%m%d%H%M%S')
-        time = datetime_object.time()
+        appointment_identifier = data["appointmentIdentifier"].replace(
+            "*", "|")
         appointment_data["patient"] = patient
-        appointment_data["family_member"] = family_member
-        appointment_data["appointment_date"] = datetime_object.date()
-        appointment_data["appointment_slot"] = time.strftime("%H:%M:%S %p")
+        if family_member:
+            appointment_data["patient"] = family_member.patient_info.id
+            appointment_data["family_member"] = family_member.id
         appointment_data["hospital"] = hospital.id
-        appointment_data["appointment_identifier"] = data["appointmentIdentifier"]
+        appointment_data["appointment_identifier"] = appointment_identifier
         appointment_data["doctor"] = doctor.id
+        appointment_data["department"] = department.id
         appointment_data["uhid"] = uhid
         appointment_data["status"] = 1
         if data["status"] == "Cancelled":
             appointment_data["status"] = 2
-        appointment_serializer = AppointmentSerializer(data=appointment_data)
-        appointment_serializer.is_valid(raise_exception=True)
-        appointment_serializer.save()
-        return Response(data=appointment_serializer.data, status=status.HTTP_200_OK)
+        appointment_data["payment_status"] = None
+        if data["payment_status"] == "Paid":
+            appointment_data["payment_status"] = "success"
+        if data.get("appointmentMode"):
+            appointment_data["appointment_mode"] = data.get("appointmentMode")
+        appointment_data["episode_number"] = data.get("episodeNumber", None)
+        try:
+            datetime_object = datetime.strptime(
+                data["appointmentDatetime"], '%Y%m%d%H%M%S')
+            appointment_data["appointment_date"] = datetime_object.date()
+            appointment_data["appointment_slot"] = datetime_object.time().strftime(
+                "%H:%M:%S %p")
+            appointment_instance = Appointment.objects.filter(
+                appointment_identifier=appointment_identifier).first()
+            if appointment_instance:
+                appointment_serializer = AppointmentSerializer(
+                    appointment_instance, data=appointment_data, partial=True)
+            else:
+                appointment_serializer = AppointmentSerializer(
+                    data=appointment_data)
+            message = "Record Inserted"
+            appointment_serializer.is_valid(raise_exception=True)
+            appointment_serializer.save()
+        except Exception as e:
+            message = "Field is Missing " + str(e)
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
@@ -718,6 +744,8 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             new_appointment["family_member"] = instance.family_member.id
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
+                        new_appointment["appointment_mode"] = self.request.data.get(
+                            "app_type")
                         appointment = AppointmentSerializer(
                             data=new_appointment)
                         appointment.is_valid(raise_exception=True)
@@ -761,9 +789,9 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
             raise ValidationError("Doctor does not Exist")
         if self.request.query_params.get("vc_appointment_status", None):
             return qs.filter(
-                doctor_id=doctor.id, status="1", appointment_mode="VC", payment_status="success")
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")
         return qs.filter(
-            doctor_id=doctor.id, status="1", appointment_mode="VC", payment_status="success").exclude(
+            doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(
                 vc_appointment_status=4)
 
 
@@ -797,18 +825,17 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def create(self, request):
-        document_param = dict()
-        if not (request.data.get("name") and request.data.get("document_type")):
-            raise ValidationError("Parameter is missing")
         appointment_instance = Appointment.objects.filter(
             appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError("Appointment doesn't Exist")
-        name_list = request.data.get("name").split(",")
-        document_type_list = request.data.get("document_type").split(",")
-        if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
-            raise ValidationError("Document parameter is missing")
+        if (request.data.get("name") and request.data.get("document_type")):
+            name_list = request.data.get("name").split(",")
+            document_type_list = request.data.get("document_type").split(",")
+            if not (name_list and document_type_list) or not (len(name_list) == len(document_type_list)):
+                raise ValidationError("Document parameter is missing")
         for i, f in enumerate(request.FILES.getlist('document')):
+            document_param = dict()
             document_param["appointment_info"] = appointment_instance.id
             document_param["name"] = name_list[i]
             document_param["document"] = f
@@ -821,8 +848,16 @@ class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
             "blood_pressure", None)
         vital_param["body_temperature"] = request.data.get(
             "body_temperature", None)
+        vital_param["weight"] = request.data.get("weight", None)
+        vital_param["height"] = request.data.get("height", None)
         vital_param["appointment_info"] = appointment_instance.id
-        vital_serializer = AppointmentVitalSerializer(data=vital_param)
+        appointment_vital_instance = AppointmentVital.objects.filter(
+            appointment_info_id=appointment_instance.id).first()
+        if appointment_vital_instance:
+            vital_serializer = AppointmentVitalSerializer(
+                appointment_vital_instance, data=vital_param, partial=True)
+        else:
+            vital_serializer = AppointmentVitalSerializer(data=vital_param)
         vital_serializer.is_valid(raise_exception=True)
         vital_serializer.save()
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
@@ -867,3 +902,57 @@ class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
         vital_serializer.save()
 
         return Response(status=status.HTTP_200_OK)
+
+
+class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = PrescriptionDocuments
+    queryset = PrescriptionDocuments.objects.all().order_by('-created_at')
+    serializer_class = PrescriptionDocumentsSerializer
+    create_success_message = "Prescription Document is uploaded successfully."
+    list_success_message = 'PrescriptionDocuments returned successfully!'
+    retrieve_success_message = 'Prescription Documents information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_permissions(self):
+        if self.action in ['list', 'create', ]:
+            permission_classes = [IsPatientUser | IsDoctor]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve', 'destroy', 'update']:
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(appointment_info__uhid=uhid)
+
+    def create(self, request):
+        document_param = dict()
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=request.data.get("appointment_identifier")).first()
+        if not appointment_instance:
+            raise ValidationError("Appointment doesn't Exist")
+        for i, f in enumerate(request.FILES.getlist('prescription')):
+            document_param["appointment_info"] = appointment_instance.id
+            document_param["prescription"] = f
+            document_param["name"] = f.name
+            document_param["appointment_identifier"] = appointment_instance.appointment_identifier
+            document_param["episode_number"] = appointment_instance.episode_number
+            document_param["hospital_code"] = appointment_instance.hospital.code
+            document_param["department_code"] = appointment_instance.department.code
+            document_param["episode_date_time"] = appointment_instance.episode_date_time
+            document_serializer = self.serializer_class(data=document_param)
+            if appointment_instance.appointment_presciptions.exists():
+                prescription_instance = appointment_instance.appointment_presciptions.all().first()
+                document_serializer = self.serializer_class(
+                    prescription_instance, data=document_param, partial=True)
+            document_serializer.is_valid(raise_exception=True)
+            document_serializer.save()
+        return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
