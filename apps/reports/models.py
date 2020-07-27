@@ -1,3 +1,7 @@
+import os
+
+from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.doctors.models import Doctor
@@ -5,14 +9,18 @@ from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
-from django.core.validators import FileExtensionValidator
 
 
-
-def generate_report_file_path(self, filename):
+def generate_lab_report_file_path(self, filename):
     _, obj_file_extension = os.path.splitext(filename)
     obj_name = str(self.id) + str(obj_file_extension)
-    return "report/{0}/documents/{1}".format(self.id, obj_name)
+    return "reports/{0}/documents/{1}".format(self.id, obj_name)
+
+
+def generate_radiology_report_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "reports/{0}/documents/{1}".format(self.id, obj_name)
 
 
 class Report(MyBaseModel):
@@ -198,38 +206,42 @@ class ReportDocuments(MyBaseModel):
                             blank=False,
                             null=False)
 
-    file_type = models.CharField(max_length=50,
-                                 default="Lab Report")
+    lab_report = models.FileField(upload_to=generate_lab_report_file_path,
+                                  storage=FileStorage(),
+                                  validators=[FileExtensionValidator(
+                                      settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                      validate_file_authenticity],
+                                  blank=True,
+                                  null=True)
 
-    report_document = models.FileField(upload_to=generate_report_file_path,
-                                       storage=FileStorage(),
-                                       validators=[FileExtensionValidator(
-                                           settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                           validate_file_authenticity],
-                                       blank=False,
-                                       null=False)
+    radiology_report = models.FileField(upload_to=generate_radiology_report_file_path,
+                                        storage=FileStorage(),
+                                        validators=[FileExtensionValidator(
+                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                        blank=True,
+                                        null=True)
 
-    name = models.CharField(max_length=500,
-                            blank=False,
-                            null=False)
+    lab_name = models.CharField(max_length=500,
+                                blank=True,
+                                null=True)
+
+    radiology_name = models.CharField(max_length=500,
+                                      blank=True,
+                                      null=True)
 
     doctor_name = models.CharField(max_length=500,
                                    null=True,
                                    blank=True)
 
-    visit_id = models.CharField(max_length=100,
-                                null=False,
-                                blank=False)
+    episode_number = models.CharField(max_length=100,
+                                      null=False,
+                                      blank=False)
 
     hospital = models.ForeignKey(Hospital,
                                  on_delete=models.PROTECT,
                                  null=True,
                                  blank=True)
-
-    doctor = models.ForeignKey(Doctor,
-                               on_delete=models.PROTECT,
-                               null=True,
-                               blank=True)
 
     upload_date_time = models.DateTimeField(null=True,
                                             blank=True)

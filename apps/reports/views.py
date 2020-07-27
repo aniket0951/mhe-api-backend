@@ -3,8 +3,9 @@ from datetime import date, datetime, timedelta
 from django.db.models import Q
 
 from apps.patients.models import FamilyMember
+from apps.master_data.models import Hospital
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+from rest_framework import filters, generics, status, viewsets
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -206,13 +207,29 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
 
     def create(self, request):
         document_param = dict()
+        file_type = request.data.get("file_type")
+        episode_number = request.data.get("episode_number")
         for i, f in enumerate(request.FILES.getlist('reports')):
+            hospital_code = request.data.get("hospital_code")
+            hospital = Hospital.objects.filter(code=hospital_code).first()
+            if not hospital:
+                raise ValidationError("Hospital Not Available")
+            document_param["file_type"] = file_type
+            if file_type == "Radiology":
+                document_param["radiology_report"] = f
+                document_param["radiology_name"] = f.name
+            else:
+                document_param["lab_report"] = f
+                document_param["lab_name"] = f.name
             document_param["uhid"] = request.data.get("uhid")
-            document_param["name"] = f.name
-            document_param["report_document"] = f
-            document_param["hospital_code"] = appointment_instance.hospital.code
-            document_param["department_code"] = appointment_instance.department.code
-            document_param["episode_date_time"] = appointment_instance.episode_date_time
+            document_param["episode_number"] = episode_number
+            document_param["hospital"] = hospital.id
             document_serializer = self.serializer_class(data=document_param)
+            report_instance = ReportDocuments.objects.filter(episode_number=episode_number).first()
+            if report_instance:
+                document_serializer = self.serializer_class(
+                    report_instance, data=document_param, partial=True)
+            document_serializer.is_valid(raise_exception=True)
+            document_serializer.save()
 
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)

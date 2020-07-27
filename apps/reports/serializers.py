@@ -110,8 +110,18 @@ class ReportDocumentsSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         try:
-            if instance.report_document:
-                response_object['report_document'] = generate_pre_signed_url(
-                    instance.report_document.url)
+            if instance.lab_report:
+                response_object['lab_report'] = generate_pre_signed_url(
+                    instance.lab_report.url)
+
+            if instance.radiology_report:
+                response_object['radiology_report'] = generate_pre_signed_url(
+                    instance.radiology_report.url)
+            
         except Exception as error:
-            response_object['report_document'] = None
+            response_object['lab_report'] = None
+            response_object['radiology_report'] = None
+
+        return response_object
+
+        
