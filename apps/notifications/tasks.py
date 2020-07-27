@@ -25,11 +25,11 @@ def send_push_notification(self, **kwargs):
     notification_instance = mobile_notification_serializer.save()
     recipient=notification_instance.recipient
     if (hasattr(recipient, 'device') and recipient.device.token):
-        if recipient.platform=='Android':
+        if recipient.device.platform=='Android':
             fcm = FCMNotification(api_key=settings.FCM_API_KEY)
             result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
                 "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
-        elif recipient.platform=='iOS':
+        elif recipient.device.platform=='iOS':
             apns = APNs(use_sandbox=settings.APNS_USE_SANDBOX, 
                     cert_file=settings.APNS_CERT_PATH, 
                     enhanced=True)
