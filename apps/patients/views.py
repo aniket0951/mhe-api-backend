@@ -351,8 +351,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         mobile = request.data.get('mobile')
         facebook_id = request.data.get('facebook_id')
         google_id = request.data.get('google_id')
+        apple_id = request.data.get("apple_id")
 
-        if not (mobile or facebook_id or google_id):
+        if not (mobile or facebook_id or google_id or apple_id):
             raise PatientDoesNotExistsValidationException
 
         if mobile:
@@ -367,9 +368,32 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if google_id:
             request_patient = self.get_queryset().filter(
                 google_id=google_id).first()
+        if apple_id:
+            request_patient = self.get_queryset().filter(
+                apple_id=apple_id).first()
+
 
         if not request_patient:
             raise PatientDoesNotExistsValidationException
+
+        if (facebook_id or google_id or apple_id):
+            serializer = self.get_serializer(request_patient)
+            payload = jwt_payload_handler(request_patient)
+            payload['username'] = payload['username'].raw_input
+            payload['mobile'] = payload['mobile'].raw_input
+            token = jwt_encode_handler(payload)
+            expiration = datetime.utcnow(
+            ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+            expiration_epoch = expiration.timestamp()
+            message = "Login successful!"
+            data = {
+            "data": serializer.data,
+            "message": message,
+            "token": token,
+            "token_expiration": expiration_epoch
+            }
+            return Response(data, status=status.HTTP_200_OK)
+
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
