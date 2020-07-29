@@ -112,6 +112,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 patient_obj.save()
             else:
                 patient_obj.delete()
+                patient_obj = None
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -125,6 +126,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_obj.otp_expiration_time=otp_expiration_time
             patient_obj.is_active = True
             patient_obj.save()
+            self.serializer = self.get_serializer(patient_obj)
             user_obj = patient_obj
 
         else:
@@ -149,6 +151,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration is completed successfully. Activate your account by entering the OTP which we have sent to your mobile number.'
         else:
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
+    
 
     def perform_update(self, serializer):
         is_new_mobile_to_be_verified = False
