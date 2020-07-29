@@ -93,11 +93,25 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+        facebook_id = request.data.get('facebook_id')
+        google_id = request.data.get('google_id')
+        apple_id = request.data.get("apple_id")
         patient_obj = self.get_queryset().filter(mobile=self.request.data.get('mobile')).first()
         if patient_obj:
+            message = "This Account is already Registered with us"
             if patient_obj.mobile_verified == True:
-                raise PatientMobileExistsValidationException
-            patient_obj.delete()
+                if facebook_id:
+                    patient_obj.facebook_id = facebook_id
+                    message = message + "Your account is linked with Facebook"
+                if google_id:
+                    patient_obj.google_id = google_id
+                    message = message + "Your account is linked with Google"
+                if apple_id:
+                    patient_obj.apple_id = apple_id
+                    message = message + "Your account is linked with Apple"
+                patient_obj.save()
+            else:
+                patient_obj.delete()
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -106,16 +120,24 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
-        user_obj = serializer.save(
-            otp_expiration_time=otp_expiration_time,
-            email_otp_expiration_time=otp_expiration_time,
-            email_otp=random_email_otp,
-            is_active=True)
+        if patient_obj:
+            patient_obj.set_password(random_password)
+            patient_obj.otp_expiration_time=otp_expiration_time
+            patient_obj.is_active = True
+            patient_obj.save()
+            user_obj = patient_obj
 
-        user_obj.set_password(random_password)
-        user_obj.save()
+        else:
+            user_obj = serializer.save(
+                otp_expiration_time=otp_expiration_time,
+                email_otp_expiration_time=otp_expiration_time,
+                email_otp=random_email_otp,
+                is_active=True)
 
-        send_email_activation_otp(str(user_obj.id), random_email_otp)
+            user_obj.set_password(random_password)
+            user_obj.save()
+
+            send_email_activation_otp(str(user_obj.id), random_email_otp)
 
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
             random_password, settings.OTP_EXPIRATION_TIME)
