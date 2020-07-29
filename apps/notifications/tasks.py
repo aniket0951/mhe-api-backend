@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management import call_command
+from pushjack import APNSClient
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.views import CancelMyAppointment
@@ -30,25 +31,32 @@ def send_push_notification(self, **kwargs):
             result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
                 "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
         elif recipient.device.platform=='iOS':
-            apns = APNs(use_sandbox=settings.APNS_USE_SANDBOX, 
-                    cert_file=settings.APNS_CERT_PATH, 
-                    enhanced=True)
-            aps = {
-            "badge": recipient.unread_notifications_count(),
-            "alert": notification_instance.message,
-            "sound": "default"
-        }
-            data_payload = {
-            "notification_id": notification_instance.pk,
-        }
-            custom_payload = {
-            "aps": aps,
-            "payload": data_payload
-        }
-            payload = Payload(custom=custom_payload)
-            return apns.gateway_server.send_notification(notification_instance.recipient.device.token, 
-                                                     payload, 
-                                                     identifier=notification_instance.pk)  
+            client = APNSClient(certificate=settings.APNS_CERT_PATH)
+            token = notification_instance.recipient.device.token
+            alert = notification_instance.message   
+            res = client.send(token,
+                  alert
+                  )     
+
+        #     apns = APNs(use_sandbox=settings.APNS_USE_SANDBOX, 
+        #             cert_file=settings.APNS_CERT_PATH, 
+        #             enhanced=True)
+        #     aps = {
+        #     "badge": recipient.unread_notifications_count(),
+        #     "alert": notification_instance.message,
+        #     "sound": "default"
+        # }
+        #     data_payload = {
+        #     "notification_id": notification_instance.pk,
+        # }
+        #     custom_payload = {
+        #     "aps": aps,
+        #     "payload": data_payload
+        # }
+        #     payload = Payload(custom=custom_payload)
+        #     return apns.gateway_server.send_notification(notification_instance.recipient.device.token, 
+        #                                              payload, 
+        #                                              identifier=notification_instance.pk)  
 
 
 
