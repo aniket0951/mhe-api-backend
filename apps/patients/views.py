@@ -355,6 +355,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         facebook_id = request.data.get('facebook_id')
         google_id = request.data.get('google_id')
         apple_id = request.data.get("apple_id")
+        apple_email = request.data.get("apple_email")
 
         if not (mobile or facebook_id or google_id or apple_id):
             raise PatientDoesNotExistsValidationException
@@ -384,6 +385,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         
         if (facebook_id or google_id or apple_id):
             serializer = self.get_serializer(request_patient)
+            if apple_email:
+                request_patient.apple_email = apple_email
+                request_patient.save()
             payload = jwt_payload_handler(request_patient)
             payload['username'] = payload['username'].raw_input
             payload['mobile'] = payload['mobile'].raw_input
