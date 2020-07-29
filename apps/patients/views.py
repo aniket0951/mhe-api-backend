@@ -93,8 +93,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        if self.get_queryset().filter(mobile=self.request.data.get('mobile')).exists():
-            raise PatientMobileExistsValidationException
+        patient_obj = self.get_queryset().filter(mobile=self.request.data.get('mobile')).first()
+        if patient_obj:
+            if patient_obj.mobile_verified == True:
+                raise PatientMobileExistsValidationException
+            patient_obj.delete()
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -376,6 +379,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not request_patient:
             raise PatientDoesNotExistsValidationException
 
+        if request_patient.mobile_verified == False:
+            raise PatientDoesNotExistsValidationException
+        
         if (facebook_id or google_id or apple_id):
             serializer = self.get_serializer(request_patient)
             payload = jwt_payload_handler(request_patient)
