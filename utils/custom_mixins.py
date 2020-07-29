@@ -19,7 +19,6 @@ class CreateModelMixin:
             data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        import pdb; pdb.set_trace()
         if hasattr(self, 'serializer'):
             serializer = self.serializer
         headers = self.get_success_headers(serializer.data)
