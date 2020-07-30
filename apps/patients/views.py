@@ -93,7 +93,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        
+
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
@@ -209,7 +209,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
         apple_email = self.request.data.get("apple_email")
-        email = self.request.data.get.get("email")
+        email = self.request.data.get("email")
 
         if not (username and password):
             raise InvalidCredentialsException
@@ -225,7 +225,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if authenticated_patient.mobile_verified:
             if email:
-                authenticated_patient.email = self.request.data.get("email")
+                authenticated_patient.email = email
             if facebook_id:
                 authenticated_patient.facebook_id = facebook_id
             if google_id:
