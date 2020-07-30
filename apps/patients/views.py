@@ -96,17 +96,20 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
+        apple_email = self.request.data.get("apple_email")
         patient_obj = self.get_queryset().filter(mobile=self.request.data.get('mobile')).first()
         if patient_obj:
             if not (facebook_id or google_id or apple_id):
                 raise PatientMobileExistsValidationException
             if patient_obj.mobile_verified == True:
+                patient_obj.email = self.request.data.get("email")
                 if facebook_id:
                     patient_obj.facebook_id = facebook_id
                 if google_id:
                     patient_obj.google_id = google_id
                 if apple_id:
                     patient_obj.apple_id = apple_id
+                    patient_obj.apple_email = apple_email
                 patient_obj.save()
             else:
                 patient_obj.delete()
