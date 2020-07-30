@@ -93,6 +93,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+        
+        facebook_id = self.request.data.get('facebook_id')
+        google_id = self.request.data.get('google_id')
+        apple_id = self.request.data.get("apple_id")
+
         patient_obj = self.get_queryset().filter(
             mobile=self.request.data.get('mobile')).first()
 
