@@ -93,25 +93,20 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
-        apple_email = self.request.data.get("apple_email")
-        patient_obj = self.get_queryset().filter(mobile=self.request.data.get('mobile')).first()
+
+        patient_obj = self.get_queryset().filter(
+            mobile=self.request.data.get('mobile')).first()
+
         if patient_obj:
+
             if not (facebook_id or google_id or apple_id):
                 raise PatientMobileExistsValidationException
-            if patient_obj.mobile_verified == True:
-                patient_obj.email = self.request.data.get("email")
-                if facebook_id:
-                    patient_obj.facebook_id = facebook_id
-                if google_id:
-                    patient_obj.google_id = google_id
-                if apple_id:
-                    patient_obj.apple_id = apple_id
-                    patient_obj.apple_email = apple_email
-                patient_obj.save()
-            else:
+
+            if patient_obj.mobile_verified == False:
                 patient_obj.delete()
                 patient_obj = None
 
@@ -124,8 +119,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if patient_obj:
             patient_obj.set_password(random_password)
-            patient_obj.otp_expiration_time=otp_expiration_time
-            patient_obj.is_active = True
+            patient_obj.otp_expiration_time = otp_expiration_time
             patient_obj.save()
             self.serializer = self.get_serializer(patient_obj)
             user_obj = patient_obj
@@ -152,7 +146,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration is completed successfully. Activate your account by entering the OTP which we have sent to your mobile number.'
         else:
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
-    
 
     def perform_update(self, serializer):
         is_new_mobile_to_be_verified = False
@@ -212,6 +205,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def verify_login_otp(self, request):
         username = request.data.get('mobile')
         password = request.data.get('password')
+        facebook_id = self.request.data.get('facebook_id')
+        google_id = self.request.data.get('google_id')
+        apple_id = self.request.data.get("apple_id")
+        apple_email = self.request.data.get("apple_email")
+        email = self.request.data.get("email")
 
         if not (username and password):
             raise InvalidCredentialsException
@@ -224,6 +222,18 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 authenticated_patient.otp_expiration_time.timestamp():
             raise OTPExpiredException
         message = "Login successful!"
+
+        if authenticated_patient.mobile_verified:
+            if email:
+                authenticated_patient.email = email
+            if facebook_id:
+                authenticated_patient.facebook_id = facebook_id
+            if google_id:
+                authenticated_patient.google_id = google_id
+            if apple_id:
+                authenticated_patient.apple_id = apple_id
+                authenticated_patient.apple_email = apple_email
+            authenticated_patient.save()
 
         update_last_login(None, authenticated_patient)
         if not authenticated_patient.mobile_verified:
@@ -402,13 +412,12 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             request_patient = self.get_queryset().filter(
                 apple_id=apple_id).first()
 
-
         if not request_patient:
             raise PatientDoesNotExistsValidationException
 
         if request_patient.mobile_verified == False:
             raise PatientDoesNotExistsValidationException
-        
+
         if (facebook_id or google_id or apple_id):
             serializer = self.get_serializer(request_patient)
             if apple_email:
@@ -423,13 +432,12 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             expiration_epoch = expiration.timestamp()
             message = "Login successful!"
             data = {
-            "data": serializer.data,
-            "message": message,
-            "token": token,
-            "token_expiration": expiration_epoch
+                "data": serializer.data,
+                "message": message,
+                "token": token,
+                "token_expiration": expiration_epoch
             }
             return Response(data, status=status.HTTP_200_OK)
-
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
