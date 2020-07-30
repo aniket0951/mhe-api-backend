@@ -222,13 +222,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             if email:
                 authenticated_patient.email = self.request.data.get("email")
             if facebook_id:
-                patient_obj.facebook_id = facebook_id
+                authenticated_patient.facebook_id = facebook_id
             if google_id:
-                patient_obj.google_id = google_id
+                authenticated_patient.google_id = google_id
             if apple_id:
-                patient_obj.apple_id = apple_id
-                patient_obj.apple_email = apple_email
-            patient_obj.save()
+                authenticated_patient.apple_id = apple_id
+                authenticated_patient.apple_email = apple_email
+            authenticated_patient.save()
 
         update_last_login(None, authenticated_patient)
         if not authenticated_patient.mobile_verified:
