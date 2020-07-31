@@ -52,7 +52,7 @@ class MobileDeviceViewSet(APIView):
 
 class TestPushIos(APIView):
     # model=MobileDevice
-    permission_classes = [IsPatientUser]
+    permission_classes = [AllowAny]
     serializer_class=MobileDeviceSerializer
 
     def get(self,request) :
