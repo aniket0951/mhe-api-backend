@@ -32,8 +32,8 @@ AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')  # e.g. us-east-2
 AWS_DEFAULT_ACL = 'private'
 AWS_S3_ENCRYPTION = env('AWS_S3_ENCRYPTION')
-GDAL_LIBRARY_PATH= r"C:\OSGeo4W64\bin\gdal300"
-GEOS_LIBRARY_PATH=r'C:\OSGeo4W64\bin\geos_c.dll'
+# GDAL_LIBRARY_PATH= r"C:\OSGeo4W64\bin\gdal300"
+# GEOS_LIBRARY_PATH=r'C:\OSGeo4W64\bin\geos_c.dll'
 
 # Tell django-storages the domain to use to refer to static files.
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
