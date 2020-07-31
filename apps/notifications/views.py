@@ -6,6 +6,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from utils import custom_viewsets
+from .tasks import send_push_notification
+from datetime import datetime, timedelta
+from apps.appointments.models import Appointment, HealthPackageAppointment
+
+
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 
@@ -44,3 +49,27 @@ class MobileDeviceViewSet(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+class TestPushIos(APIView):
+    # model=MobileDevice
+    permission_classes = [IsPatientUser]
+    serializer_class=MobileDeviceSerializer
+
+    def get(self,request) :
+        # now = datetime.today() + timedelta(hours=24)
+        appointments = Appointment.objects.filter(status="1")
+        for appointment_instance in appointments:
+            notification_data = {}
+            notification_data["title"] = "Reminder: Doctor Appointment"
+            user_message = "Hi Piyush ,this is ios push Notification"
+            notification_data["message"] = user_message
+            notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+            #notification_data["appointment_id"] = appointment_instance.appointment_identifier
+            notification_data["recipient"] = appointment_instance.patient.id
+            print("hello")
+            send_push_notification(notification_data=notification_data)
+        context={}
+        return Response(context)
+    
+                
+    
