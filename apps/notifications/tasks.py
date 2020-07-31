@@ -33,7 +33,7 @@ def send_push_notification(self, **kwargs):
         elif recipient.device.platform=='iOS':
             client = APNSClient(certificate=settings.APNS_CERT_PATH)
             alert = notification_instance.message   
-            token ="F8B473AD5F31D207F8E6F605401588DF4520CB7243AA26270BADB08AAD91E9B3"
+            token =notification_instance.recipient.device.token
             res = client.send(token,
                   alert
                   )
