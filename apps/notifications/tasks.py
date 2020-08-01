@@ -61,7 +61,7 @@ def send_silent_push_notification(self, **kwargs):
                     alert,
                     badge=1,
                     sound="default",
-                    content_available=False
+                    content_available=1
                     )
 
 
