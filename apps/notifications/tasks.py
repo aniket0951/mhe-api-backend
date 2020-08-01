@@ -36,8 +36,8 @@ def send_push_notification(self, **kwargs):
             token =notification_instance.recipient.device.token
             res = client.send(token,
                   alert,
-                  "badge": "1",
-                  "sound": "default"
+                  "badge"= "1",
+                  "sound"= "default"
                   )
 
 
