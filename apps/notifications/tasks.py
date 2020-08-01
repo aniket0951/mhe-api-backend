@@ -57,8 +57,9 @@ def send_silent_push_notification(self, **kwargs):
             elif patient_instance.device.platform=='iOS':
                 client = APNSClient(certificate=settings.APNS_CERT_PATH)  
                 token =patient_instance.device.token
+                alert = "Doctor completed this consultation"
                 res = client.send(token,
-                    alert = "Doctor completed this consultation",
+                    alert,
                     badge = 1,
                     sound = "default"
                     )
