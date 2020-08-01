@@ -57,8 +57,7 @@ def send_silent_push_notification(self, **kwargs):
                 client = APNSClient(certificate=settings.APNS_CERT_PATH)  
                 token =patient_instance.device.token
                 res = client.send(token,
-                    sound="",
-                    content_available=True
+                    "content-available":1
                     )
 
 
