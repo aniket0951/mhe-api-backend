@@ -37,7 +37,10 @@ def send_push_notification(self, **kwargs):
             res = client.send(token,
                   alert,
                   badge = 1,
-                  sound = "default"
+                  sound = "default",
+                  extra={'notification_type': '1',
+                  'appointment_id': notification_data["appointment_id"]
+                    }
                   )
     return 
 
@@ -61,7 +64,10 @@ def send_silent_push_notification(self, **kwargs):
                 res = client.send(token,
                     alert,
                     badge = 1,
-                    sound = "default"
+                    sound = "default",
+                    extra={'notification_type': '2',
+                           'appointment_id': notification_data["appointment_id"]
+                      }
                     )
     return 
 
