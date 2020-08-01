@@ -49,9 +49,21 @@ def send_silent_push_notification(self, **kwargs):
     if notification_data.get("patient"):
         patient_instance = Patient.objects.filter(
             id=notification_data.get("patient")["id"]).first()
-        if patient_instance and patient_instance.device and patient_instance.device.token:
-            result = fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
+        if (hasattr(recipient, 'device') and recipient.device.token):
+            if recipient.device.platform=='Android':
+                result = fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
                                               "notification_type": "SILENT_NOTIFICATION", "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+            elif recipient.device.platform=='iOS':
+                client = APNSClient(certificate=settings.APNS_CERT_PATH)
+                alert = notification_instance.message   
+                token =notification_instance.recipient.device.token
+                res = client.send(token,
+                    alert,
+                    badge=1,
+                    sound="default",
+                    content_available=False
+                    )
+
 
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
