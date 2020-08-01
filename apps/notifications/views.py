@@ -49,26 +49,5 @@ class MobileDeviceViewSet(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(data=serializer.data, status=status.HTTP_200_OK)
-
-class TestPushIos(APIView):
-    # model=MobileDevice
-    permission_classes = [AllowAny]
-    serializer_class=MobileDeviceSerializer
-
-    def get(self,request) :
-        # now = datetime.today() + timedelta(hours=24)
-        appointment_instance = Appointment.objects.filter(id="1473").first()
-        notification_data = {}
-        notification_data["title"] = "Reminder: Doctor Appointment"
-        user_message = "Hi Piyush ,this is ios push Notification"
-        notification_data["message"] = user_message
-        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
-        #notification_data["appointment_id"] = appointment_instance.appointment_identifier
-        notification_data["recipient"] = appointment_instance.patient.id
-        print("hello")
-        send_push_notification(notification_data=notification_data)
-        context={}
-        return Response(context)
-    
                 
     

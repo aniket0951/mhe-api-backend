@@ -39,6 +39,7 @@ def send_push_notification(self, **kwargs):
                   badge = 1,
                   sound = "default"
                   )
+    return 
 
 
 
@@ -61,6 +62,7 @@ def send_silent_push_notification(self, **kwargs):
                     badge = 1,
                     sound = "default"
                     )
+    return 
 
 
 
