@@ -58,7 +58,7 @@ def send_silent_push_notification(self, **kwargs):
                 token =patient_instance.device.token
                 res = client.send(token,
                     sound="",
-                    content_available=False
+                    content_available=True
                     )
 
 
