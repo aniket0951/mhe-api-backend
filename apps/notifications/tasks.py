@@ -49,13 +49,13 @@ def send_silent_push_notification(self, **kwargs):
     if notification_data.get("patient"):
         patient_instance = Patient.objects.filter(
             id=notification_data.get("patient")["id"]).first()
-        if (hasattr(recipient, 'device') and recipient.device.token):
-            if recipient.device.platform=='Android':
+        if (hasattr(patient_instance, 'device') and patient_instance.device.token):
+            if patient_instance.device.platform=='Android':
                 result = fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
                                               "notification_type": "SILENT_NOTIFICATION", "appointment_id": notification_data["appointment_id"]}, low_priority=False)
-            elif recipient.device.platform=='iOS':
+            elif patient_instance.device.platform=='iOS':
                 client = APNSClient(certificate=settings.APNS_CERT_PATH)  
-                token =notification_instance.recipient.device.token
+                token =patient_instance.device.token
                 res = client.send(token,
                     sound="",
                     content_available=False
