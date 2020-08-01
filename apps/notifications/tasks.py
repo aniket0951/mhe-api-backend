@@ -58,7 +58,7 @@ def send_silent_push_notification(self, **kwargs):
                 token =notification_instance.recipient.device.token
                 res = client.send(token,
                     sound="",
-                    content_available=1
+                    content_available=False
                     )
 
 
