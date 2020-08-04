@@ -285,7 +285,7 @@ class CancelMyAppointment(ProxyView):
                 param["location_code"] = instance.hospital.code
                 if instance.payment_appointment.exists():
                     payment_instance = instance.payment_appointment.filter(
-                        status="success").first()
+                        status="Refunded").first()
                     if payment_instance:
                         if payment_instance.payment_refund.exists():
                             refund_instance = payment_instance.payment_refund.filter(
