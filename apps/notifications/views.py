@@ -6,6 +6,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from utils import custom_viewsets
+from .tasks import send_push_notification
+from datetime import datetime, timedelta
+from apps.appointments.models import Appointment, HealthPackageAppointment
+
+
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 
@@ -44,3 +49,5 @@ class MobileDeviceViewSet(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+                
+    

@@ -81,7 +81,7 @@ class RoomCreationView(APIView):
         video_instance.save()
         notification_data = {}
         notification_data["title"] = "Doctor is available for Video consultancy"
-        user_message = "Plese Join the meeting. Doctor is ready for consultation"
+        user_message = "Please join the meeting. Doctor is ready for consultation"
         notification_data["notification_type"] = "VIDEO_CONSULTATION"
         notification_data["appointment_id"] = appointment.appointment_identifier
         notification_data["message"] = user_message

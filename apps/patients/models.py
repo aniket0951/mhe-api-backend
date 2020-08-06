@@ -70,6 +70,11 @@ class Patient(BaseUser):
                                  max_length=100,
                                  verbose_name="Google Id")
 
+    apple_id = models.CharField(blank=True,
+                                null=True,
+                                max_length=100,
+                                verbose_name="Apple Id")
+
     display_picture = models.ImageField(upload_to=generate_display_picture_path,
                                         storage=MediaStorage(),
                                         validators=[FileExtensionValidator(
@@ -81,6 +86,9 @@ class Patient(BaseUser):
 
     email = models.EmailField(null=False,
                               blank=False)
+
+    apple_email = models.EmailField(null=True,
+                              blank=True)
 
     email_otp = models.CharField(max_length=4,
                                  null=True,
