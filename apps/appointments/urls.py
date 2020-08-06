@@ -8,8 +8,9 @@ from .views import (AppointmentDocumentsViewSet, AppointmentsAPIView,
                     CancelHealthPackageAppointment, CancellationReasonlistView,
                     CancelMyAppointment, CreateMyAppointment,
                     DoctorRescheduleAppointmentView, DoctorsAppointmentAPIView,
-                    HealthPackageAppointmentView, ManipalPrescriptionViewSet,
-                    OfflineAppointment, PrescriptionDocumentsViewSet,
+                    FeedbackViewSet, HealthPackageAppointmentView,
+                    ManipalPrescriptionViewSet, OfflineAppointment,
+                    PrescriptionDocumentsViewSet,
                     RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
 
 router = DefaultRouter(trailing_slash=False)
@@ -20,6 +21,7 @@ router.register('upload_documents', AppointmentDocumentsViewSet)
 router.register('upcoming_appointments', UpcomingAppointmentsAPIView)
 router.register('vitals', AppointmentVitalViewSet)
 router.register('prescription', PrescriptionDocumentsViewSet)
+router.register('feedback', FeedbackViewSet)
 router.register('manipal_prescription', ManipalPrescriptionViewSet)
 router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 

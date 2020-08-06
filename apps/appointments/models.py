@@ -311,3 +311,20 @@ class PrescriptionDocuments(MyBaseModel):
     class Meta:
         verbose_name = "Appointment Prescription"
         verbose_name_plural = "Appointment Prescriptions"
+
+
+class Feedbacks(MyBaseModel):
+
+    feedback = models.TextField(blank=False,
+                              null=False,
+                              max_length=100)
+    
+    rating = models.IntegerField(default="1")
+
+    user_id = models.OneToOneField(
+        Patient, related_name='feedback_user', on_delete=models.PROTECT)
+
+    platform = models.CharField(max_length=20, choices=(
+        ('iOS', 'iOS'), ('Android', 'Android'),)) 
+
+    version = models.CharField(max_length=30, blank=True, null=True)
