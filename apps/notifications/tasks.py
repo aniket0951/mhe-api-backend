@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management import call_command
+from pushjack import APNSClient
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.views import CancelMyAppointment
@@ -16,18 +17,33 @@ from pyfcm import FCMNotification
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters
 
-
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
     notification_data = kwargs["notification_data"]
-    fcm = FCMNotification(api_key=settings.FCM_API_KEY)
     mobile_notification_serializer = MobileNotificationSerializer(
         data=notification_data)
     mobile_notification_serializer.is_valid(raise_exception=True)
     notification_instance = mobile_notification_serializer.save()
-    if (hasattr(notification_instance.recipient, 'device') and notification_instance.recipient.device.token):
-        result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-            "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+    recipient=notification_instance.recipient
+    if (hasattr(recipient, 'device') and recipient.device.token):
+        if recipient.device.platform=='Android':
+            fcm = FCMNotification(api_key=settings.FCM_API_KEY)
+            result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
+                "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+        elif recipient.device.platform=='iOS':
+            client = APNSClient(certificate=settings.APNS_CERT_PATH)
+            alert = notification_instance.message   
+            token =notification_instance.recipient.device.token
+            res = client.send(token,
+                  alert,
+                  badge = 1,
+                  sound = "default",
+                  extra={'notification_type': '1',
+                  'appointment_id': notification_data["appointment_id"]
+                    }
+                  )
+    return 
+
 
 
 @app.task(bind=True, name="silent_push_notification")
@@ -37,9 +53,24 @@ def send_silent_push_notification(self, **kwargs):
     if notification_data.get("patient"):
         patient_instance = Patient.objects.filter(
             id=notification_data.get("patient")["id"]).first()
-        if patient_instance and patient_instance.device and patient_instance.device.token:
-            result = fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
+        if (hasattr(patient_instance, 'device') and patient_instance.device.token):
+            if patient_instance.device.platform=='Android':
+                result = fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
                                               "notification_type": "SILENT_NOTIFICATION", "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+            elif patient_instance.device.platform=='iOS':
+                client = APNSClient(certificate=settings.APNS_CERT_PATH)  
+                token =patient_instance.device.token
+                alert = "Doctor completed this consultation"
+                res = client.send(token,
+                    alert,
+                    badge = 1,
+                    sound = "default",
+                    extra={'notification_type': '2',
+                           'appointment_id': notification_data["appointment_id"]
+                      }
+                    )
+    return 
+
 
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
