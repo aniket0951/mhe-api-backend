@@ -1022,12 +1022,14 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
         if not patient:
             raise ValidationError("Patient does not Exist")
         request.data["user_id"] = patient.id
-        feedback_instance = Feedback.objects.filter(user_id__id = patient.id).first()
+        feedback_instance = Feedbacks.objects.filter(
+            user_id__id=patient.id).first()
         request.data["user_id"] = patient.id
         if feedback_instance:
-            feedback_serializer = FeedbacksSerializer(feedback_instance, data = request.data, partial=True)
+            feedback_serializer = FeedbacksSerializer(
+                feedback_instance, data=request.data, partial=True)
         else:
-            feedback_serializer = FeedbacksSerializer(data = request.data)
+            feedback_serializer = FeedbacksSerializer(data=request.data)
         feedback_serializer.is_valid(raise_exception=True)
         feedback_serializer.save()
         return Response(data={"message": "Feedback Submitted"}, status=status.HTTP_200_OK)
