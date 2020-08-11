@@ -57,8 +57,10 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.reason:
             response_object["reason"] = CancellationReasonSerializer(
                 instance.reason).data
+                
         documents = AppointmentDocuments.objects.filter(
             appointment_info=instance.id)
+
         response_object["documents"] = AppointmentDocumentsSerializer(
             documents, many=True, fields=('document', 'document_type', 'name')).data
 

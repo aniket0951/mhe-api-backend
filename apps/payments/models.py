@@ -1,4 +1,7 @@
+import os
+from django.conf import settings
 from django.contrib.postgres.fields import JSONField
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
@@ -7,6 +10,14 @@ from apps.master_data.models import HomeCareService, Hospital
 from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient
 from fernet_fields import EncryptedTextField
+from utils.custom_storage import FileStorage
+from utils.validators import validate_file_authenticity, validate_file_size
+
+
+def generate_receipt_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "payment/{0}/receipts/{1}".format(self.id, obj_name)
 
 
 class Payment(MyBaseModel):
@@ -15,12 +26,15 @@ class Payment(MyBaseModel):
                                      null=False,
                                      blank=False,
                                      )
+
     transaction_id = models.CharField(max_length=50,
                                       null=True,
                                       blank=True,
                                       )
+
     status = models.CharField(max_length=10,
                               default="Initiated")
+
     amount = models.FloatField(default=0,
                                null=True)
 
@@ -64,14 +78,20 @@ class Payment(MyBaseModel):
                                                  on_delete=models.PROTECT,
                                                  blank=True,
                                                  null=True)
+
     payment_done_for_family_member = models.ForeignKey(FamilyMember,
                                                        on_delete=models.PROTECT,
                                                        blank=True,
                                                        null=True)
+
     payment_for_uhid_creation = models.BooleanField(default=False)
+
     payment_for_ip_deposit = models.BooleanField(default=False)
+
     payment_for_op_billing = models.BooleanField(default=False)
+
     payment_for_health_package = models.BooleanField(default=False)
+
     episode_number = models.CharField(max_length=20,
                                       blank=True,
                                       null=True)
@@ -125,3 +145,38 @@ class PaymentHospitalKey(MyBaseModel):
     mid = EncryptedTextField(blank=True, null=True)
 
     secret_key = EncryptedTextField(blank=True, null=True)
+
+
+class PaymentReceipts(MyBaseModel):
+
+    uhid = models.CharField(max_length=50,
+                            null=True,
+                            blank=True,
+                            )
+
+    name = models.CharField(max_length=500,
+                            blank=False,
+                            null=False)
+
+    receipt = models.FileField(upload_to=generate_receipt_file_path,
+                               storage=FileStorage(),
+                               validators=[FileExtensionValidator(
+                                   settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                   validate_file_authenticity],
+                               blank=False,
+                               null=False)
+
+    patient_info = models.ForeignKey(Patient,
+                                     on_delete=models.PROTECT,
+                                     blank=True,
+                                     null=True,
+                                     related_name='patient_receipt',)
+
+    payment_info = models.ForeignKey(Payment,
+                                     on_delete=models.PROTECT,
+                                     null=True,
+                                     blank=True,
+                                     related_name='payment_receipt',
+                                     )
+
+    receipt_date = models.DateTimeField(blank=True, null=True)

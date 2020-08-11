@@ -51,8 +51,8 @@ from utils.payment_parameter_generator import get_payment_param
 from utils.refund_parameter_generator import get_refund_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
-from .models import Payment, PaymentRefund
-from .serializers import PaymentRefundSerializer, PaymentSerializer
+from .models import Payment, PaymentRefund, PaymentReceipts
+from .serializers import PaymentRefundSerializer, PaymentSerializer, PaymentReceiptsSerializer
 
 logger = logging.getLogger('django')
 class AppointmentPayment(APIView):
@@ -583,4 +583,47 @@ class RefundView(APIView):
                     appointment_instance.payment_status = "Refunded"
                     appointment_instance.save()
                     payment_instance.save()
+        return Response(status=status.HTTP_200_OK)
+
+class ReceiptViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = PaymentReceipts
+    queryset = PaymentReceipts.objects.all().order_by('-created_at')
+    serializer_class = PaymentReceiptsSerializer
+    create_success_message = "Receipt is uploaded successfully."
+    list_success_message = 'Receipts returned successfully!'
+    retrieve_success_message = 'Receipts information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(payment_info__uhid=uhid)
+
+    def create(self, request):
+        import pdb; pdb.set_trace()
+        uhid = request.data.get("uhid", None)
+        receipt_number = request.data.get("receipt_number", None)
+        payment_data = dict()
+        payment_instance = Payment.objects.filter(receipt_number=receipt_number).first()
+        patient_instance  = Patient.objects.filter(uhid_number=uhid).first()
+        
+        if not (payment_instance or patient_instance):
+            raise ValidationError("Payment Instance or Patient does not Exist")
+
+        payment_data["payment_info"] = payment_instance.id
+        payment_data["patient_info"] = patient_instance.id
+        payment_data["receipt_number"] = receipt_number
+
+        file = request.FILES.getlist('receipt')[0]
+        payment_data["receipt"] = file
+        payment_data["name"] = file.name
+        payment_data["receipt_date"] = datetime.strptime(
+                   request.data.get("receipt_date", None) , '%Y%m%d%H%M%S')
+        receipt_serializer = PaymentReceiptsSerializer(data=payment_data)
+        receipt_serializer.is_valid(raise_exception=True)
+        receipt_serializer.save()
         return Response(status=status.HTTP_200_OK)
