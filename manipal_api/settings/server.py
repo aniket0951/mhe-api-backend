@@ -18,16 +18,12 @@ environ.Env.read_env('.env')
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-GDAL_LIBRARY_PATH =r"C:\OSGeo4W64\bin\gdal300"
-GEOS_LIBRARY_PATH = r'C:\OSGeo4W64\bin\geos_c.dll'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
-APNS_USE_SANDBOX=False
-APNS_CERT_PATH=os.path.join(BASE_DIR, "ManipalPush_default.pem")
 AWS_ACCESS_KEY_ID = None  # Set to None to use IAM role
 AWS_SECRET_ACCESS_KEY = None  # Set to None to use IAM role
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')

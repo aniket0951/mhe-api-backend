@@ -32,8 +32,6 @@ AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')  # e.g. us-east-2
 AWS_DEFAULT_ACL = 'private'
 AWS_S3_ENCRYPTION = env('AWS_S3_ENCRYPTION')
-APNS_USE_SANDBOX=env('APNS_USE_SANDBOX')
-APNS_CERT_PATH=env('APNS_CERT_PATH')
 
 
 # Tell django-storages the domain to use to refer to static files.

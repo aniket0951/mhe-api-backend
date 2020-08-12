@@ -14,13 +14,11 @@ from fcm_django.models import FCMDevice
 from manipal_api.celery import app
 from pyfcm import FCMNotification
 
-
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters
 
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
-    recipient = Patient.objects.get(id=kwargs.get("recipient_id"))
     notification_data = kwargs["notification_data"]
     mobile_notification_serializer = MobileNotificationSerializer(
         data=notification_data)
