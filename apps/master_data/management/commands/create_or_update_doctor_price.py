@@ -30,18 +30,19 @@ class Command(BaseCommand):
                     response = client.post('/api/doctors/doctor_charges',
                                            json.dumps({'location_code': location_code, 'specialty_code': each_department.department.code, 'doctor_code': doctor_code}), content_type='application/json')
                     consultation_charge = response.data["data"]
-                    data["hv_consultation_charges"] = consultation_charge["hv_charge"]
-                    data["vc_consultation_charges"] = consultation_charge["vc_charge"]
-                    data["pr_consultation_charges"] = consultation_charge["pr_charge"]
-                    doctor_instance = DoctorCharges.objects.filter(
-                        doctor_info__code=doctor_code, department_info__code=each_department.department.code).first()
-                    if doctor_instance:
-                        serializer = DoctorChargesSerializer(
-                            doctor_instance, data=data, partial=True)
-                    else:
-                        serializer = DoctorChargesSerializer(data=data)
-                    serializer.is_valid(raise_exception=True)
-                    serializer.save()
+                    if response.status_code == 200 and response.data["success"] == True:
+                        data["hv_consultation_charges"] = consultation_charge["hv_charge"]
+                        data["vc_consultation_charges"] = consultation_charge["vc_charge"]
+                        data["pr_consultation_charges"] = consultation_charge["pr_charge"]
+                        doctor_instance = DoctorCharges.objects.filter(
+                            doctor_info__code=doctor_code, department_info__code=each_department.department.code).first()
+                        if doctor_instance:
+                            serializer = DoctorChargesSerializer(
+                                doctor_instance, data=data, partial=True)
+                        else:
+                            serializer = DoctorChargesSerializer(data=data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save()
 
         except Exception as e:
             print(
