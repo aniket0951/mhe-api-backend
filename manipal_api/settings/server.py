@@ -24,14 +24,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
+APNS_USE_SANDBOX=False
+APNS_CERT_PATH=os.path.join(BASE_DIR, "ManipalPush_default.pem")
 AWS_ACCESS_KEY_ID = None  # Set to None to use IAM role
 AWS_SECRET_ACCESS_KEY = None  # Set to None to use IAM role
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')  # e.g. us-east-2
 AWS_DEFAULT_ACL = 'private'
 AWS_S3_ENCRYPTION = env('AWS_S3_ENCRYPTION')
-APNS_USE_SANDBOX=env('APNS_USE_SANDBOX')
-APNS_CERT_PATH=env('APNS_CERT_PATH')
+
 
 # Tell django-storages the domain to use to refer to static files.
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
