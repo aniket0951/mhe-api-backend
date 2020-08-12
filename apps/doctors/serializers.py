@@ -66,8 +66,7 @@ class DoctorSpecificSerializer(DynamicFieldsModelSerializer):
 class DoctorChargesSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = DoctorCharges
-        fields = ('pr_consultation_charges',
-                  'vc_consultation_charges', 'hv_consultation_charges')
+        fields = '__all__'
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
