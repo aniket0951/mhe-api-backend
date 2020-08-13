@@ -72,4 +72,5 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.department_info:
             response_object['department_code'] = instance.department_info.code
+            response_object['department_name'] = instance.department_info.name
         return response_object

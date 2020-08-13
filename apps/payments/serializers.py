@@ -9,6 +9,7 @@ from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
+from utils.utils import generate_pre_signed_url
 
 from .models import Payment, PaymentReceipts, PaymentRefund
 
@@ -90,3 +91,13 @@ class PaymentReceiptsSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = PaymentReceipts
         exclude = ('updated_at', 'created_at')
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        try:
+            if instance.receipt:
+                response_object['receipt'] = generate_pre_signed_url(
+                    instance.receipt.url)
+        except Exception as error:
+            response_object['receipt'] = None
+        return response_object
