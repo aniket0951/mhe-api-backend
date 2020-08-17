@@ -1,5 +1,6 @@
 from apps.appointments.models import Appointment
-from apps.appointments.serializers import AppointmentSerializer, HealthPackageAppointmentSerializer 
+from apps.appointments.serializers import (AppointmentSerializer,
+                                           HealthPackageAppointmentSerializer)
 from apps.health_packages.models import HealthPackage
 from apps.health_packages.serializers import HealthPackageDetailSerializer
 from apps.master_data.models import Hospital
@@ -8,9 +9,9 @@ from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
+from utils.utils import generate_pre_signed_url
 
-from .models import Payment,PaymentRefund
-
+from .models import Payment, PaymentReceipts, PaymentRefund
 
 
 class PaymentSerializer(DynamicFieldsModelSerializer):
@@ -22,31 +23,48 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         if instance.appointment:
-            response_object['appointment'] = AppointmentSerializer(instance.appointment).data
-        
+            response_object['appointment'] = AppointmentSerializer(
+                instance.appointment).data
+
         if instance.health_package_appointment:
-            response_object['health_package_appointment'] = HealthPackageAppointmentSerializer(instance.health_package_appointment).data
+            response_object['health_package_appointment'] = HealthPackageAppointmentSerializer(
+                instance.health_package_appointment).data
 
         if instance.patient:
-            response_object['patient'] = PatientSerializer(instance.patient).data
+            response_object['patient'] = PatientSerializer(
+                instance.patient).data
 
         if instance.payment_done_for_family_member:
-            response_object['payment_done_for_family_member'] = FamilyMemberSerializer(instance.payment_done_for_family_member).data
+            response_object['payment_done_for_family_member'] = FamilyMemberSerializer(
+                instance.payment_done_for_family_member).data
 
         if instance.payment_done_for_patient:
-            response_object['payment_done_for_patient'] = PatientSerializer(instance.payment_done_for_patient).data
+            response_object['payment_done_for_patient'] = PatientSerializer(
+                instance.payment_done_for_patient).data
 
         if instance.location:
-            response_object['location'] = HospitalSerializer(instance.location).data
+            response_object['location'] = HospitalSerializer(
+                instance.location).data
 
         response_object["refund"] = None
 
         if instance.payment_refund.exists():
-            payment_instance = instance.payment_refund.filter(status="success").first()
+            payment_instance = instance.payment_refund.filter(
+                status="success").first()
             if payment_instance:
-                response_object["refund"] = PaymentSpecificRefundSerializer(payment_instance).data
+                response_object["refund"] = PaymentSpecificRefundSerializer(
+                    payment_instance).data
+
+        response_object["receipt"] = None
+
+        receipts = PaymentReceipts.objects.filter(
+            payment_info=instance.id)
+
+        response_object["receipt"] = PaymentReceiptsSerializer(
+            receipts, many=True).data
 
         return response_object
+
 
 class PaymentRefundSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -57,11 +75,29 @@ class PaymentRefundSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         if instance.payment:
-            response_object['payment'] = PaymentSerializer(instance.payment).data
-        
+            response_object['payment'] = PaymentSerializer(
+                instance.payment).data
+
         return response_object
+
 
 class PaymentSpecificRefundSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = PaymentRefund
         exclude = ('updated_at', 'payment', 'created_at', 'uhid_number')
+
+
+class PaymentReceiptsSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = PaymentReceipts
+        exclude = ('updated_at', 'created_at')
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        try:
+            if instance.receipt:
+                response_object['receipt'] = generate_pre_signed_url(
+                    instance.receipt.url)
+        except Exception as error:
+            response_object['receipt'] = None
+        return response_object

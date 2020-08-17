@@ -57,8 +57,8 @@ class BookMySlot:
         self.reason_for_visit = param.get("reason_for_visit", "CONSULT")
         self.fast_care_id = param.get("fast_care_id", "PatientApp")
         self.speciality_code = param.get("speciality_code", None)
-        self.slot_type = param.get("appointment_mode",None)
-        self.dob = param.get("dob",None)
+        self.slot_type = param.get("appointment_mode", None)
+        self.dob = param.get("dob", None)
 
     def serialize(self, serializer):
         serializer.start_object('IbookAppointmentParam')
@@ -233,8 +233,8 @@ class EpisodeItems:
 
 
 class NextAvailableSlot:
-    def __init__(self, doctor_code=None, location_code=None, schedule_date=None, 
-                department_code=None, app_type=None):
+    def __init__(self, doctor_code=None, location_code=None, schedule_date=None,
+                 department_code=None, app_type=None):
         self.doctor_code = doctor_code
         self.location_code = location_code
         self.schedule_date = schedule_date
@@ -355,3 +355,16 @@ class RescheduleSlot:
         serializer.add_property('scheduleDate', self.schedule_date)
         serializer.add_property('source', self.source)
         serializer.add_property('appointmentType', self.appointment_type)
+
+
+class DoctorConsultationCharges:
+    def __init__(self, location_code=None, specialty_code=None, doctor_code=None):
+        self.location_code = location_code
+        self.specialty_code = specialty_code
+        self.doctor_code = doctor_code
+
+    def serialize(self, serializer):
+        serializer.start_object('consultchargesParam')
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('specialtyCode', self.specialty_code)
+        serializer.add_property('doctorCode', self.doctor_code)
