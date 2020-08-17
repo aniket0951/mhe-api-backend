@@ -61,7 +61,7 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
             payment_info=instance.id)
 
         response_object["receipt"] = PaymentReceiptsSerializer(
-            receipts, many=True).data
+            receipts).data
 
         return response_object
 
