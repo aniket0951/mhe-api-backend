@@ -13,6 +13,7 @@ urlpatterns = [
     path('login', views.DoctorloginView.as_view()),
     path('reschedule_slot', views.DoctorRescheduleSlot.as_view()),
     path('slot', views.DoctorSlotAvailability.as_view()),
+    path('doctor_charges', views.DoctorConsultationChargeView.as_view()),
     path('schedule', views.DoctorScheduleView.as_view()),
     path('next_slot', views.NextSlotAvailable.as_view()),
     *router.urls

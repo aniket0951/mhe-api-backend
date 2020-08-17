@@ -24,6 +24,8 @@ from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.models import Department, Hospital, Specialisation
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
+    DoctorConsultationCharges as serializable_DoctorConsultationCharges
+from proxy.custom_serializables import \
     DoctorSchedule as serializable_DoctorSchedule
 from proxy.custom_serializables import DoctotLogin as serializable_DoctotLogin
 from proxy.custom_serializables import \
@@ -361,3 +363,34 @@ class DoctorScheduleView(ProxyView):
 
         return self.custom_success_response(message='Available slots',
                                             success=True, data=records)
+
+
+class DoctorConsultationChargeView(ProxyView):
+    source = 'getconsultationcharges'
+    permission_classes = [AllowAny]
+
+    def get_request_data(self, request):
+        charges = serializable_DoctorConsultationCharges(**request.data)
+        request_data = custom_serializer().serialize(charges, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        data = dict()
+        message = "Could not fetch the price for the doctor"
+        success = False
+        if status == "1":
+            consultation_charges = root.find("consultchargesResp").text
+            if consultation_charges:
+                consultation_charges = ast.literal_eval(consultation_charges)
+                data["hv_charge"] = consultation_charges[0]["OPDConsCharges"]
+                data["vc_charge"] = consultation_charges[0]["VCConsCharges"]
+                data["pr_charge"] = consultation_charges[0]["PRConsCharges"]
+                message = "success"
+                success = True
+        return self.custom_success_response(message=message,
+                                            success=success, data=data)

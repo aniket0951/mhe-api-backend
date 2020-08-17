@@ -1,8 +1,26 @@
+import os
+
+from django.conf import settings
+from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
+from utils.custom_storage import FileStorage
+from utils.validators import validate_file_authenticity, validate_file_size
+
+
+def generate_lab_report_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "reports/{0}/documents/{1}".format(self.id, obj_name)
+
+
+def generate_radiology_report_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "reports/{0}/documents/{1}".format(self.id, obj_name)
 
 
 class Report(MyBaseModel):
@@ -177,6 +195,63 @@ class FreeTextReportDetails(MyBaseModel):
     class Meta:
         verbose_name = "Free TextReport Detail"
         verbose_name_plural = "Free TextReport Details"
+
+    def __str__(self):
+        return self.name
+
+
+class ReportDocuments(MyBaseModel):
+
+    uhid = models.CharField(max_length=20,
+                            blank=False,
+                            null=False)
+
+    lab_report = models.FileField(upload_to=generate_lab_report_file_path,
+                                  storage=FileStorage(),
+                                  validators=[FileExtensionValidator(
+                                      settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                      validate_file_authenticity],
+                                  blank=True,
+                                  null=True)
+
+    radiology_report = models.FileField(upload_to=generate_radiology_report_file_path,
+                                        storage=FileStorage(),
+                                        validators=[FileExtensionValidator(
+                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                        blank=True,
+                                        null=True)
+
+    lab_name = models.CharField(max_length=500,
+                                blank=True,
+                                null=True)
+
+    radiology_name = models.CharField(max_length=500,
+                                      blank=True,
+                                      null=True)
+
+    doctor_name = models.CharField(max_length=500,
+                                   null=True,
+                                   blank=True)
+
+    episode_number = models.CharField(max_length=100,
+                                      null=False,
+                                      blank=False)
+
+    hospital = models.ForeignKey(Hospital,
+                                 on_delete=models.PROTECT,
+                                 null=True,
+                                 blank=True)
+
+    upload_date_time = models.DateTimeField(null=True,
+                                            blank=True)
+
+    update_date_time = models.DateTimeField(null=True,
+                                            blank=True)
+
+    class Meta:
+        verbose_name = "Report Document"
+        verbose_name_plural = "Report Documents"
 
     def __str__(self):
         return self.name

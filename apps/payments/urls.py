@@ -7,11 +7,12 @@ from rest_framework.routers import DefaultRouter
 from .views import (AppointmentPayment, EpisodeItemView, HealthPackageAPIView,
                     HealthPackagePayment, IPDepositPayment, OPBillPayment,
                     PayBillOpView, PayBillView, PaymentResponse, PaymentReturn,
-                    PaymentsAPIView, RefundView, UHIDPayment)
+                    PaymentsAPIView, ReceiptViewSet, RefundView, UHIDPayment)
 
 router = DefaultRouter(trailing_slash=False)
 router.register('all_payments', PaymentsAPIView)
 router.register('all_health_package', HealthPackageAPIView)
+router.register('payment_receipt', ReceiptViewSet)
 
 
 urlpatterns = [
