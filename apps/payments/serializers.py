@@ -58,7 +58,7 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
         response_object["receipt"] = None
 
         receipts = PaymentReceipts.objects.filter(
-            payment_info=instance.id)
+            payment_info=instance.id).first()
 
         response_object["receipt"] = PaymentReceiptsSerializer(
             receipts).data
