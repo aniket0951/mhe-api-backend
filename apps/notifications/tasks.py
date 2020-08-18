@@ -217,6 +217,7 @@ def daily_update_scheduler():
     call_command("create_or_update_health_packages", verbosity=0)
     call_command("create_or_update_lab_and_radiology_items", verbosity=0)
     call_command("update_doctors_profile", verbosity=0)
+    call_command("create_or_update_doctor_price", verbosity=0)
 
 
 app.conf.beat_schedule = {
