@@ -47,7 +47,6 @@ class ReportSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-        import pdb; pdb.set_trace()
         if not self.context.get('request',None):
             response_object['text_reports'] = TextReportDetailsSerializer(
                 instance.text_report.all(),
