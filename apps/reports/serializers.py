@@ -154,7 +154,7 @@ class ReportDocumentsSerializer(DynamicFieldsModelSerializer):
 class VisitReportsSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = VisitReport
-        exclude = ('created_at', 'updated_at',)
+        exclude = ()
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
