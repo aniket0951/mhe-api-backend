@@ -255,3 +255,14 @@ class ReportDocuments(MyBaseModel):
 
     def __str__(self):
         return self.name
+
+
+class VisitReport(MyBaseModel):
+
+    uhid = models.CharField(max_length=20,
+                            blank=False,
+                            null=False)
+
+    visit_id = models.CharField(max_length=20,
+                                blank=False,
+                                null=False)

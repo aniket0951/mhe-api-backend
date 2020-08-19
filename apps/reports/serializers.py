@@ -3,10 +3,11 @@ from apps.master_data.serializers import HospitalSerializer
 from apps.patients.models import FamilyMember
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
-from utils.utils import patient_user_object, generate_pre_signed_url
+from utils.utils import generate_pre_signed_url, patient_user_object
 
 from .models import (FreeTextReportDetails, NumericReportDetails, Report,
-                     ReportDocuments, StringReportDetails, TextReportDetails)
+                     ReportDocuments, StringReportDetails, TextReportDetails,
+                     VisitReport)
 
 
 class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
@@ -46,6 +47,22 @@ class ReportSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
+        import pdb; pdb.set_trace()
+        if not self.context.get('request',None):
+            response_object['text_reports'] = TextReportDetailsSerializer(
+                instance.text_report.all(),
+                many=True).data
+            response_object['string_reports'] = StringReportDetailsSerializer(
+                instance.string_report.all(),
+                many=True).data
+            response_object['numeric_reports'] = NumericReportDetailsSerializer(
+                instance.numeric_report.all(),
+                many=True).data
+            response_object['free_text_reports'] = FreeTextReportDetailsSerializer(
+                instance.free_text_report.all(),
+                many=True).data
+            return response_object
+            
         if not self.context['request'].query_params.get('numeric_report__identifier', None):
 
             response_object['text_reports'] = TextReportDetailsSerializer(
@@ -117,11 +134,25 @@ class ReportDocumentsSerializer(DynamicFieldsModelSerializer):
             if instance.radiology_report:
                 response_object['radiology_report'] = generate_pre_signed_url(
                     instance.radiology_report.url)
-            
+
         except Exception as error:
             response_object['lab_report'] = None
             response_object['radiology_report'] = None
 
         return response_object
 
-        
+
+class VisitReportsSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = VisitReport
+        exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        response_object["reports"] = None
+
+        if instance.visit_id:
+            reports = Report.objects.filter(visit_id=instance.visit_id)
+            response_object["reports"] = ReportSerializer(
+                reports, many=True).data
+        return response_object

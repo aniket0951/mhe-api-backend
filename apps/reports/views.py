@@ -17,12 +17,13 @@ from utils.utils import patient_user_object
 
 from .filters import ReportFilter
 from .models import (FreeTextReportDetails, NumericReportDetails, Report,
-                     ReportDocuments, StringReportDetails, TextReportDetails)
+                     ReportDocuments, StringReportDetails, TextReportDetails, VisitReport)
 from .serializers import (FreeTextReportDetailsSerializer,
                           NumericReportDetailsSerializer,
                           ReportDocumentsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
-                          TextReportDetailsSerializer)
+                          TextReportDetailsSerializer, VisitReportsSerializer)
+
 from .utils import (free_text_report_hanlder, numeric_report_hanlder,
                     report_handler, string_report_hanlder, text_report_hanlder)
 
@@ -148,7 +149,17 @@ class ReportsSyncAPIView(CreateAPIView):
         except:
             return Response({"data": report_response.data, "consumed": False},
                             status=status.HTTP_200_OK)
-
+        visit_id = report_response.data["data"]["visit_id"]
+        if visit_id:
+            report_visit = VisitReport.objects.filter(
+                visit_id=visit_id).first()
+            if not report_visit:
+                data = dict()
+                data["visit_id"] = visit_id
+                data["uhid"] = report_response.data["data"]["uhid"]
+                serializer = VisitReportsSerializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
         if report_response.status_code == 201 and report_details and\
                 type(report_details) == list:
 
@@ -225,7 +236,8 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_param["episode_number"] = episode_number
             document_param["hospital"] = hospital.id
             document_serializer = self.serializer_class(data=document_param)
-            report_instance = ReportDocuments.objects.filter(episode_number=episode_number).first()
+            report_instance = ReportDocuments.objects.filter(
+                episode_number=episode_number).first()
             if report_instance:
                 document_serializer = self.serializer_class(
                     report_instance, data=document_param, partial=True)
@@ -233,3 +245,21 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_serializer.save()
 
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+
+class ReportVisitViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPatientUser, ]
+    model = VisitReport
+    queryset = VisitReport.objects.all().order_by('-created_at')
+    serializer_class = VisitReportsSerializer
+    create_success_message = "Report is uploaded successfully."
+    list_success_message = 'Report returned successfully!'
+    retrieve_success_message = 'Report information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(uhid=uhid)
