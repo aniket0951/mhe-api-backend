@@ -247,7 +247,7 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
 
 class ReportVisitViewSet(custom_viewsets.ModelViewSet):
-    permission_classes = [IsPatientUser, ]
+    permission_classes = [AllowAny, ]
     model = VisitReport
     queryset = VisitReport.objects.all().order_by('-created_at')
     serializer_class = VisitReportsSerializer

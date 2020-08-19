@@ -1,6 +1,6 @@
 from apps.doctors.serializers import DoctorSerializer
 from apps.master_data.serializers import HospitalSerializer
-from apps.patients.models import FamilyMember
+from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
@@ -47,7 +47,7 @@ class ReportSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-        if not self.context.get('request',None):
+        if not self.context.get('request', None):
             response_object['text_reports'] = TextReportDetailsSerializer(
                 instance.text_report.all(),
                 many=True).data
@@ -60,8 +60,17 @@ class ReportSerializer(DynamicFieldsModelSerializer):
             response_object['free_text_reports'] = FreeTextReportDetailsSerializer(
                 instance.free_text_report.all(),
                 many=True).data
+
+            if instance.doctor:
+                response_object['doctor'] = DoctorSerializer(
+                    instance.doctor).data
+
+            if instance.hospital:
+                response_object['hospital'] = HospitalSerializer(
+                    instance.hospital).data
+
             return response_object
-            
+
         if not self.context['request'].query_params.get('numeric_report__identifier', None):
 
             response_object['text_reports'] = TextReportDetailsSerializer(
@@ -102,6 +111,7 @@ class ReportSerializer(DynamicFieldsModelSerializer):
 
         family_member_id = self.context['request'].query_params.get(
             'user_id', None)
+
         if family_member_id:
             family_member = FamilyMember.objects.filter(patient_info=patient_user,
                                                         id=family_member_id).first()
@@ -149,9 +159,27 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         response_object["reports"] = None
+        response_object["patient_name"] = None
+        uhid = instance.uhid
+        patient = Patient.objects.filter(uhid_number=uhid).first()
+        family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
+        if family_member:
+            response_object["patient_name"] = family_member.first_name + \
+                " " + family_member.last_name
+        if patient:
+            response_object["patient_name"] = patient.first_name + \
+                " " + patient.last_name
 
         if instance.visit_id:
+            radiology = self.context['request'].query_params.get("radiology",None)
             reports = Report.objects.filter(visit_id=instance.visit_id)
+            if radiology:
+                reports = Report.objects.filter(visit_id=instance.visit_id,code__startswith="DRAD")
             response_object["reports"] = ReportSerializer(
                 reports, many=True).data
+            response_object["report_result"] = None
+            document = ReportDocuments.objects.filter(episode_number=instance.visit_id).first()
+            if document:
+                response_object["report_result"] = ReportDocumentsSerializer(document).data
+
         return response_object
