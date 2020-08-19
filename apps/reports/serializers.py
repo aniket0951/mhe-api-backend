@@ -169,15 +169,20 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
             response_object["patient_name"] = patient.first_name
 
         if instance.visit_id:
-            radiology = self.context['request'].query_params.get("radiology",None)
-            reports = Report.objects.filter(visit_id=instance.visit_id)
+            radiology = self.context['request'].query_params.get(
+                "radiology", None)
+            reports = Report.objects.filter(
+                visit_id=instance.visit_id, code__notstartswith="DRAD")
             if radiology:
-                reports = Report.objects.filter(visit_id=instance.visit_id,code__startswith="DRAD")
+                reports = Report.objects.filter(
+                    visit_id=instance.visit_id, code__startswith="DRAD")
             response_object["reports"] = ReportSerializer(
                 reports, many=True).data
             response_object["report_result"] = None
-            document = ReportDocuments.objects.filter(episode_number=instance.visit_id).first()
+            document = ReportDocuments.objects.filter(
+                episode_number=instance.visit_id).first()
             if document:
-                response_object["report_result"] = ReportDocumentsSerializer(document).data
+                response_object["report_result"] = ReportDocumentsSerializer(
+                    document).data
 
         return response_object
