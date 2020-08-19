@@ -172,7 +172,7 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
             radiology = self.context['request'].query_params.get(
                 "radiology", None)
             reports = Report.objects.filter(
-                visit_id=instance.visit_id, code__notstartswith="DRAD")
+                visit_id=instance.visit_id).exclude(code__startswith="DRAD")
             if radiology:
                 reports = Report.objects.filter(
                     visit_id=instance.visit_id, code__startswith="DRAD")
