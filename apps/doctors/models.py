@@ -4,6 +4,7 @@ from django.db import models
 
 from apps.master_data.models import (Department, Hospital, HospitalDepartment,
                                      Specialisation)
+from apps.meta_app.models import MyBaseModel
 from apps.users.models import BaseUser
 
 
@@ -104,3 +105,29 @@ class Doctor(BaseUser):
 
     def __str__(self):
         return self.representation
+
+
+class DoctorCharges(MyBaseModel):
+
+    doctor_info = models.ForeignKey(Doctor,
+                                    on_delete=models.PROTECT,
+                                    blank=False,
+                                    null=False)
+
+    department_info = models.ForeignKey(Department,
+                                        blank=True,
+                                        on_delete=models.PROTECT,
+                                        related_name='doctor_hospital_department_charges')
+
+    hv_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
+
+    vc_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
+
+    pr_consultation_charges = models.IntegerField(default=0,
+                                                  null=True)
+
+    class Meta:
+        verbose_name = "Consultation Charges"
+        verbose_name_plural = "Consultation charges"

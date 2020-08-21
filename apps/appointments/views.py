@@ -53,11 +53,11 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments, AppointmentVital,
-                     CancellationReason, HealthPackageAppointment,
+                     CancellationReason, Feedbacks, HealthPackageAppointment,
                      PrescriptionDocuments)
 from .serializers import (AppointmentDocumentsSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
-                          CancellationReasonSerializer,
+                          CancellationReasonSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
@@ -956,3 +956,80 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_serializer.is_valid(raise_exception=True)
             document_serializer.save()
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+
+
+class ManipalPrescriptionViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = PrescriptionDocuments
+    queryset = PrescriptionDocuments.objects.all().order_by('-created_at')
+    serializer_class = PrescriptionDocumentsSerializer
+    create_success_message = "Prescription Document is uploaded successfully."
+    list_success_message = 'PrescriptionDocuments returned successfully!'
+    retrieve_success_message = 'Prescription Documents information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(appointment_info__uhid=uhid)
+
+    def create(self, request):
+        document_param = dict()
+        appointment_identifier = request.query_params.get(
+            "appointment_identifier")
+        if not appointment_identifier:
+            raise ValidationError("Paramter Missing")
+        appointment_instance = Appointment.objects.filter(
+            appointment_identifier=appointment_identifier).first()
+        if not appointment_instance:
+            raise ValidationError("Appointment doesn't Exist")
+        for i, f in enumerate(request.FILES.getlist('prescription')):
+            document_param["appointment_info"] = appointment_instance.id
+            document_param["prescription"] = f
+            document_param["name"] = f.name
+            document_param["appointment_identifier"] = appointment_instance.appointment_identifier
+            document_param["episode_number"] = appointment_instance.episode_number
+            document_param["hospital_code"] = appointment_instance.hospital.code
+            document_param["department_code"] = appointment_instance.department.code
+            document_param["episode_date_time"] = appointment_instance.episode_date_time
+            document_serializer = self.serializer_class(data=document_param)
+            if appointment_instance.appointment_presciptions.exists():
+                prescription_instance = appointment_instance.appointment_presciptions.all().first()
+                document_serializer = self.serializer_class(
+                    prescription_instance, data=document_param, partial=True)
+            document_serializer.is_valid(raise_exception=True)
+            document_serializer.save()
+        return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+
+
+class FeedbackViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = Feedbacks
+    queryset = Feedbacks.objects.all().order_by('-created_at')
+    serializer_class = FeedbacksSerializer
+    create_success_message = "Feedback is uploaded successfully."
+    list_success_message = 'Feedbacks returned successfully!'
+    retrieve_success_message = 'Feedbacks information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def create(self, request):
+        user_id = request.user.id
+        patient = Patient.objects.filter(id=user_id).first()
+        if not patient:
+            raise ValidationError("Patient does not Exist")
+        request.data["user_id"] = patient.id
+        feedback_instance = Feedbacks.objects.filter(
+            user_id__id=patient.id).first()
+        request.data["user_id"] = patient.id
+        if feedback_instance:
+            feedback_serializer = FeedbacksSerializer(
+                feedback_instance, data=request.data, partial=True)
+        else:
+            feedback_serializer = FeedbacksSerializer(data=request.data)
+        feedback_serializer.is_valid(raise_exception=True)
+        feedback_serializer.save()
+        return Response(data={"message": "Feedback Submitted"}, status=status.HTTP_200_OK)
