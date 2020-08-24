@@ -96,6 +96,7 @@ CUSTOM_APPS = [
     'apps.dashboard',
     'apps.video_conferences',
     'apps.notifications.apps.NotificationsConfig',
+    'apps.discharge_summaries',
 
 ]
 
