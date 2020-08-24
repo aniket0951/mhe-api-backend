@@ -319,7 +319,7 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.filter(patient_id=self.request.user.id, hospital_id=self.request.query_params.get("location_id", None)).distinct('doctor')
+        return queryset.filter(patient_id=self.request.user.id, hospital_id=self.request.query_params.get("location_id", None)).distinct('doctor__code')
 
 
 class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
