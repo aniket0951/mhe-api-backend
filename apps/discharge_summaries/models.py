@@ -38,23 +38,23 @@ class DischargeSummary(MyBaseModel):
                                blank=True)
 
     department = models.ForeignKey(Department,
-                               on_delete=models.PROTECT,
-                               null=True,
-                               blank=True)
+                                   on_delete=models.PROTECT,
+                                   null=True,
+                                   blank=True)
 
     discharge_document = models.FileField(upload_to=generate_dischage_summary_file_path,
-                                storage=FileStorage(),
-                                validators=[FileExtensionValidator(
-                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                            validate_file_authenticity],
-                                blank=False,
-                                null=False)
+                                          storage=FileStorage(),
+                                          validators=[FileExtensionValidator(
+                                              settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                              validate_file_authenticity],
+                                          blank=False,
+                                          null=False)
 
     time = models.DateTimeField()
 
     class Meta:
         verbose_name = "Discharge Summary"
-        verbose_name_plural = "Discharge Summaries"
+        verbose_name_plural = "Discharge Summarys"
 
     def __str__(self):
         return self.name
