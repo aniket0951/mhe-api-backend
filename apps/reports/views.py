@@ -155,8 +155,6 @@ class ReportsSyncAPIView(CreateAPIView):
                 visit_id=visit_id).first()
             if not report_visit:
                 data = dict()
-                import pdb
-                pdb.set_trace()
                 data["visit_id"] = visit_id
                 data["uhid"] = report_response.data["data"]["uhid"]
                 data["patient_class"] = report_response.data["data"]["patient_class"][0]
