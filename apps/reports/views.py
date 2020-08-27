@@ -260,18 +260,6 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, )
 
     def get_queryset(self):
-        from apps.reports.models import Report, VisitReport
-        from apps.reports.serializers import VisitReportsSerializer
-        reports = Report.objects.all()
-        for report in reports:
-            data = dict()
-            data["visit_id"] = report.visit_id
-            data["uhid"] = report.uhid
-            data["patient_class"] = report.patient_class
-            if not VisitReport.objects.filter(visit_id=report.visit_id).exists():
-                serializer = VisitReportsSerializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
         qs = super().get_queryset()
         uhid = self.request.query_params.get("uhid", None)
         filter_by = self.request.query_params.get("filter_by", None)
