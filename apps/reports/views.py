@@ -260,7 +260,6 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
     retrieve_success_message = 'Report information returned successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, )
-    filter_class = ReportFilter
 
     def get_queryset(self):
         qs = super().get_queryset()
