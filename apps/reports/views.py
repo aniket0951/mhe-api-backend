@@ -2,8 +2,8 @@ from datetime import date, datetime, timedelta
 
 from django.db.models import Q
 
-from apps.patients.models import FamilyMember
 from apps.master_data.models import Hospital
+from apps.patients.models import FamilyMember
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.generics import CreateAPIView
@@ -17,13 +17,13 @@ from utils.utils import patient_user_object
 
 from .filters import ReportFilter
 from .models import (FreeTextReportDetails, NumericReportDetails, Report,
-                     ReportDocuments, StringReportDetails, TextReportDetails, VisitReport)
+                     ReportDocuments, StringReportDetails, TextReportDetails,
+                     VisitReport)
 from .serializers import (FreeTextReportDetailsSerializer,
                           NumericReportDetailsSerializer,
                           ReportDocumentsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
                           TextReportDetailsSerializer, VisitReportsSerializer)
-
 from .utils import (free_text_report_hanlder, numeric_report_hanlder,
                     report_handler, string_report_hanlder, text_report_hanlder)
 
@@ -246,6 +246,7 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
 
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
 
+
 class ReportVisitViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny, ]
     model = VisitReport
@@ -258,8 +259,39 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
                        filters.SearchFilter, )
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        qs = super().get_queryset()
         uhid = self.request.query_params.get("uhid", None)
+        filter_by = self.request.query_params.get("filter_by", None)
+        patient_class = self.request.query_params.get("patient_class", None)
+
         if not uhid:
             raise ValidationError("Invalid Parameters")
-        return queryset.filter(uhid=uhid)
+
+        if filter_by:
+            if filter_by == "current_week":
+                current_week = date.today().isocalendar()[1]
+                current_year = date.today().isocalendar()[0]
+                qs = qs.filter(created_at__week=current_week,
+                               created_at__year=current_year)
+            elif filter_by == "last_week":
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                qs = qs.filter(created_at__week=last_week,
+                               created_at__year=current_year)
+            elif filter_by == "last_month":
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                qs = qs.filter(created_at__month=last_month.month,
+                               created_at__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                qs = qs.filter(created_at__month=current_month.month,
+                               created_at__year=current_month.year)
+            elif filter_by == "date_range":
+                date_from = self.request.query_params.get("date_from", None)
+                date_to = self.request.query_params.get("date_to", None)
+                qs = qs.filter(created_at__date__range=[date_from, date_to])
+            else:
+                qs = qs.filter(created_at__date=filter_by)
+
+        return qs.filter(uhid=uhid)

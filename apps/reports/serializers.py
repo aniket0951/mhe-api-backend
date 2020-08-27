@@ -160,6 +160,8 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         response_object["reports"] = None
         response_object["patient_name"] = None
+        response_object["patient_type"] = None
+
         uhid = instance.uhid
         patient = Patient.objects.filter(uhid_number=uhid).first()
         family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
@@ -184,5 +186,9 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
             if document:
                 response_object["report_result"] = ReportDocumentsSerializer(
                     document).data
+
+            report = Report.objects.filter(visit_id=instance.visit_id).first()
+            if report:
+                response_object["patient_type"] = report.patient_class
 
         return response_object
