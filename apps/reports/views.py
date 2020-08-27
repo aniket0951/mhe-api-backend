@@ -155,8 +155,11 @@ class ReportsSyncAPIView(CreateAPIView):
                 visit_id=visit_id).first()
             if not report_visit:
                 data = dict()
+                import pdb
+                pdb.set_trace()
                 data["visit_id"] = visit_id
                 data["uhid"] = report_response.data["data"]["uhid"]
+                data["patient_class"] = report_response.data["data"]["patient_class"][0]
                 serializer = VisitReportsSerializer(data=data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
@@ -257,6 +260,7 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
     retrieve_success_message = 'Report information returned successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, )
+    filter_class = ReportFilter
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -293,5 +297,8 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
                 qs = qs.filter(created_at__date__range=[date_from, date_to])
             else:
                 qs = qs.filter(created_at__date=filter_by)
+
+        if patient_class:
+            qs = qs.filter(patient_class=patient_class)
 
         return qs.filter(uhid=uhid)
