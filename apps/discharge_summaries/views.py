@@ -45,3 +45,28 @@ class DischargeViewSet(custom_viewsets.ListCreateViewSet):
         if not uhid:
             raise ValidationError("Parameter Missing")
         return qs.filter(uhid=uhid)
+
+
+class DischargeSummarySyncAPIView(CreateAPIView):
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        discharge_info = request.data.get('MDMMessage', None)
+        discharge_details = request.data.get('MDMDetails', None)
+        import pdb; pdb.set_trace()
+        proxy_request = report_handler(report_info=report_info)
+
+        if not proxy_request:
+            ValidationError("Something went wrong!")
+        try:
+            report_response = ReportViewSet.as_view(
+                {'post': 'create'})(proxy_request)
+        except:
+            return Response({"data": report_response.data, "consumed": False},
+                            status=status.HTTP_200_OK)
+
+            return Response({"data": None, "consumed": True},
+                            status=status.HTTP_201_CREATED)
+
+        return Response({"data": report_response.data, "consumed": False},
+                        status=status.HTTP_200_OK)
