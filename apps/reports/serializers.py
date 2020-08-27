@@ -158,7 +158,6 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-        response_object["reports"] = None
         response_object["patient_name"] = None
         response_object["patient_type"] = None
 
@@ -178,8 +177,9 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
             if radiology:
                 reports = Report.objects.filter(
                     visit_id=instance.visit_id, code__startswith="DRAD")
-            response_object["reports"] = ReportSerializer(
-                reports, many=True).data
+            if reports:
+                response_object["reports"] = ReportSerializer(
+                    reports, many=True).data
             response_object["report_result"] = None
             document = ReportDocuments.objects.filter(
                 episode_number=instance.visit_id).first()
