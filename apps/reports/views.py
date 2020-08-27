@@ -150,17 +150,21 @@ class ReportsSyncAPIView(CreateAPIView):
             return Response({"data": report_response.data, "consumed": False},
                             status=status.HTTP_200_OK)
         visit_id = report_response.data["data"]["visit_id"]
+        report_obj = Report.objects.filter(
+            id=report_response.data['data']['id']).first()
         if visit_id:
-            report_visit = VisitReport.objects.filter(
+            report_visit_obj = VisitReport.objects.filter(
                 visit_id=visit_id).first()
-            if not report_visit:
+            if not report_visit_obj:
                 data = dict()
                 data["visit_id"] = visit_id
                 data["uhid"] = report_response.data["data"]["uhid"]
-                data["patient_class"] = report_response.data["data"]["patient_class"][0]
+                data["patiecnt_class"] = report_response.data["data"]["patient_class"][0]
                 serializer = VisitReportsSerializer(data=data)
                 serializer.is_valid(raise_exception=True)
-                serializer.save()
+                report_visit_obj = serializer.save()
+            report_visit_obj.report_info.add(report_obj)
+
         if report_response.status_code == 201 and report_details and\
                 type(report_details) == list:
 
@@ -264,9 +268,16 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
         uhid = self.request.query_params.get("uhid", None)
         filter_by = self.request.query_params.get("filter_by", None)
         patient_class = self.request.query_params.get("patient_class", None)
+        radiology = self.request.query_params.get("radiology", None)
 
         if not uhid:
             raise ValidationError("Invalid Parameters")
+
+        if radiology:
+            qs = qs.filter(report_info__code__startswith="DRAD")
+
+        else:
+            qs = qs.exclude(report_info__code__startswith="DRAD")
 
         if filter_by:
             if filter_by == "current_week":

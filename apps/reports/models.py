@@ -71,6 +71,8 @@ class Report(MyBaseModel):
 
     time = models.DateTimeField()
 
+
+
     class Meta:
         verbose_name = "Report"
         verbose_name_plural = "Reports"
@@ -256,7 +258,6 @@ class ReportDocuments(MyBaseModel):
     def __str__(self):
         return self.name
 
-
 class VisitReport(MyBaseModel):
 
     uhid = models.CharField(max_length=20,
@@ -270,3 +271,13 @@ class VisitReport(MyBaseModel):
     patient_class = models.CharField(max_length=100,
                                      null=False,
                                      blank=False)
+
+    report_info = models.ManyToManyField(Report,
+                                        blank=True,
+                                        related_name='report_visit')
+
+    class Meta:
+        verbose_name = "Report Visit"
+        verbose_name_plural = "Report Visits"
+
+
