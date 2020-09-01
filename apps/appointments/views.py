@@ -31,6 +31,8 @@ from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
 from proxy.custom_serializables import \
+    CurrentPatientList as serializable_CurrentPatientList
+from proxy.custom_serializables import \
     RescheduleAppointment as serializable_RescheduleAppointment
 from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
@@ -790,7 +792,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if self.request.query_params.get("hospital_visit", None):
             return qs.filter(
                 doctor__code=doctor.code, status="1", appointment_mode="HV")
-                
+
         if self.request.query_params.get("vc_appointment_status", None):
             return qs.filter(
                 doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")
@@ -1037,3 +1039,26 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
         feedback_serializer.is_valid(raise_exception=True)
         feedback_serializer.save()
         return Response(data={"message": "Feedback Submitted"}, status=status.HTTP_200_OK)
+
+
+class CurrentPatientListView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'CurrentPatients'
+
+    def get_request_data(self, request):
+        patient_list = serializable_CurrentPatientList(**request.data)
+        request_data = custom_serializer().serialize(patient_list, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        patient_list = []
+        if status == '1':
+            patient_list = ast.literal_eval(root.find("PatientList").text)
+        return self.custom_success_response(message=message,
+                                            success=True, data={"patient_list": patient_list})

@@ -7,10 +7,10 @@ from .views import (AppointmentDocumentsViewSet, AppointmentsAPIView,
                     AppointmentVitalViewSet, CancelAndRefundView,
                     CancelHealthPackageAppointment, CancellationReasonlistView,
                     CancelMyAppointment, CreateMyAppointment,
-                    DoctorRescheduleAppointmentView, DoctorsAppointmentAPIView,
-                    FeedbackViewSet, HealthPackageAppointmentView,
-                    ManipalPrescriptionViewSet, OfflineAppointment,
-                    PrescriptionDocumentsViewSet,
+                    CurrentPatientListView, DoctorRescheduleAppointmentView,
+                    DoctorsAppointmentAPIView, FeedbackViewSet,
+                    HealthPackageAppointmentView, ManipalPrescriptionViewSet,
+                    OfflineAppointment, PrescriptionDocumentsViewSet,
                     RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
 
 router = DefaultRouter(trailing_slash=False)
@@ -29,6 +29,7 @@ router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 urlpatterns = [
     path('cancel_appointment', CancelMyAppointment.as_view()),
     path('Cancel_and_refund', CancelAndRefundView.as_view()),
+    path('ip_patients', CurrentPatientListView.as_view()),
     path('cancel_health_package_appointment',
          CancelHealthPackageAppointment.as_view()),
     path('create_appointment', CreateMyAppointment.as_view()),
