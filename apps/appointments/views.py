@@ -787,6 +787,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         doctor = Doctor.objects.filter(id=doctor_id).first()
         if not doctor:
             raise ValidationError("Doctor does not Exist")
+        
         if self.request.query_params.get("vc_appointment_status", None):
             return qs.filter(
                 doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")

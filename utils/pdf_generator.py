@@ -10,8 +10,9 @@ from reportlab.lib.enums import TA_CENTER
 
 
 
-def pdf_generator(request):
+def get_discharge_summary(discharge_info, discharge_details):
     pdf_name = 'myfile.pdf'
+    import pdb; pdb.set_trace()
     title="DEPARMENT OF ORTHOPAEDICS"
     my_doc = SimpleDocTemplate(
         pdf_name,
@@ -34,7 +35,6 @@ def pdf_generator(request):
         fontSize=10,fontName='Helvetica-Bold',alignment=TA_CENTER
     )
     style = styles["Normal"]
-    #flowables = [Spacer(1,1*inch)]
     flowables=[]
     paragraph_0 = Paragraph("DEPARTMENT OF ORTHOPAEDICS", y)
     flowables.append(paragraph_0)
@@ -150,10 +150,10 @@ def pdf_generator(request):
     flowables.append(paragraph_18)
     flowables.append(Spacer(1,0.2*inch))
 
-    f = './python_image.png'
-    i=Image(f,height=0.1*inch,width=0.2*inch)
-    i.hAlign='LEFT'
-    flowables.append(i)
+    # f = './python_image.png'
+    # i=Image(f,height=0.1*inch,width=0.2*inch)
+    # i.hAlign='LEFT'
+    # flowables.append(i)
     flowables.append(Spacer(1,0.2*inch))
     z = ParagraphStyle(
         'small',
@@ -200,3 +200,5 @@ def pdf_generator(request):
     flowables.append(paragraph_27)
     flowables.append(paragraph_28)
     my_doc.build(flowables)
+    import pdb; pdb.set_trace()
+    return 

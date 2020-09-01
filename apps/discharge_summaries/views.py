@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
 from utils import custom_viewsets
+from utils.pdf_generator import get_discharge_summary
 from utils.custom_permissions import InternalAPICall, IsPatientUser
 from utils.utils import patient_user_object
 
@@ -54,6 +55,7 @@ class DischargeSummarySyncAPIView(CreateAPIView):
         discharge_info = request.data.get('MDMMessage', None)
         discharge_details = request.data.get('MDMDetails', None)
         import pdb; pdb.set_trace()
+        get_discharge_summary(discharge_info, discharge_details)
         proxy_request = report_handler(report_info=report_info)
 
         if not proxy_request:
@@ -65,8 +67,5 @@ class DischargeSummarySyncAPIView(CreateAPIView):
             return Response({"data": report_response.data, "consumed": False},
                             status=status.HTTP_200_OK)
 
-            return Response({"data": None, "consumed": True},
+        return Response({"data": None, "consumed": True},
                             status=status.HTTP_201_CREATED)
-
-        return Response({"data": report_response.data, "consumed": False},
-                        status=status.HTTP_200_OK)
