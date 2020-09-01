@@ -1042,7 +1042,7 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
 
 
 class CurrentPatientListView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsDoctor]
     source = 'CurrentPatients'
 
     def get_request_data(self, request):
