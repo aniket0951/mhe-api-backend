@@ -5,7 +5,8 @@ from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
 from .views import (AccessTokenGenerationView, CloseRoomView,
-                    InitiateTrackerAppointment, RoomCreationView, SendStatus)
+                    HoldAppointmentView, InitiateTrackerAppointment,
+                    RoomCreationView, SendStatus)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -16,6 +17,7 @@ urlpatterns = [
     path('initiate_vc', InitiateTrackerAppointment.as_view()),
     path('close_room', CloseRoomView.as_view()),
     path('send_status', SendStatus.as_view()),
+    path('hold_appointment', HoldAppointmentView.as_view()),
     *router.urls
 
 ]
