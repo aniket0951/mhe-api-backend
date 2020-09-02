@@ -3,6 +3,7 @@ import json
 import requests
 from django.conf import settings
 from django.core.management import BaseCommand
+from requests.auth import HTTPBasicAuth
 
 from apps.doctors.models import Doctor
 
@@ -12,19 +13,44 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
+            auth = HTTPBasicAuth(
+                settings.DOCTOR_PROFILE_USERNAME, settings.DOCTOR_PROFILE_PASSWORD)
+            
             response_data = requests.request(
-                'GET', settings.PATIENT_PROFILE_SYNC_API).text
+                'GET', settings.PATIENT_PROFILE_SYNC_API, auth=auth).text
             response_data = json.loads(response_data)
+
             for each_doctor_record in response_data:
+            
                 if not each_doctor_record['DoctorCode']:
                     continue
 
                 doctor_details = dict()
                 for key in sorted(each_doctor_record.keys()):
-                    if key in ['qualification', 'designation', 'field_expertise',
-                               'languages_spoken',
-                               'awards_achievements', 'fellowship_membership', 'photo']:
+                               
+                    if key == "doc.qualification":
+                        doctor_details["qualification"] = each_doctor_record[key]
+
+                    if key == "doc_codes.designation":
+                        doctor_details["designation"] = each_doctor_record[key]
+
+                    if key == "doc.field_expertise":
+                        doctor_details["field_expertise"] = each_doctor_record[key]
+                    
+                    if key == "doc.languages_spoken":
+                        doctor_details["languages_spoken"] = each_doctor_record[key]
+
+                    if key == "doc.awards_achievements":
+                        doctor_details["awards_achievements"] = each_doctor_record[key]
+
+                    if key == "'doc.fellowship_membership":
+                        doctor_details["'fellowship_membership"] = each_doctor_record[key]
+
+                    if key == "photo":
                         doctor_details[key] = each_doctor_record[key]
+
+                    if key == "doc_name":
+                        doctor_details["name"] = each_doctor_record[key]
 
                 Doctor.objects.filter(
                     code=each_doctor_record['DoctorCode']).update(**doctor_details)
