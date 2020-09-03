@@ -284,7 +284,7 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
                 current_week = date.today().isocalendar()[1]
                 current_year = date.today().isocalendar()[0]
                 qs = qs.filter(report_info__time__week=current_week,
-                               report_info__time__week=current_year)
+                               report_info__time__year=current_year)
             elif filter_by == "last_week":
                 previous_week = date.today() - timedelta(weeks=1)
                 last_week = previous_week.isocalendar()[1]
