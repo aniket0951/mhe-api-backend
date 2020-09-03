@@ -284,29 +284,29 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
                 current_week = date.today().isocalendar()[1]
                 current_year = date.today().isocalendar()[0]
                 qs = qs.filter(report_info__time__week=current_week,
-                               report_info__time__year=current_year)
+                               report_info__time__year=current_year).distinct()
             elif filter_by == "last_week":
                 previous_week = date.today() - timedelta(weeks=1)
                 last_week = previous_week.isocalendar()[1]
                 current_year = previous_week.isocalendar()[0]
                 qs = qs.filter(report_info__time__week=last_week,
-                               report_info__time__year=current_year)
+                               report_info__time__year=current_year).distinct()
             elif filter_by == "last_month":
                 last_month = datetime.today().replace(day=1) - timedelta(days=1)
                 qs = qs.filter(report_info__time__month=last_month.month,
-                               report_info__time__year=last_month.year)
+                               report_info__time__year=last_month.year).distinct()
             elif filter_by == "current_month":
                 current_month = datetime.today()
                 qs = qs.filter(report_info__time__month=current_month.month,
-                               report_info__time__year=current_month.year)
+                               report_info__time__year=current_month.year).distinct()
             elif filter_by == "date_range":
                 date_from = self.request.query_params.get("date_from", None)
                 date_to = self.request.query_params.get("date_to", None)
-                qs = qs.filter(report_info__time__date__range=[date_from, date_to])
+                qs = qs.filter(report_info__time__date__range=[date_from, date_to]).distinct()
             else:
-                qs = qs.filter(report_info__time__date=filter_by)
+                qs = qs.filter(report_info__time__date=filter_by).distinct()
 
         if patient_class:
-            qs = qs.filter(patient_class=patient_class)
+            qs = qs.filter(patient_class=patient_class).distinct()
 
-        return qs.filter(uhid=uhid)
+        return qs.filter(uhid=uhid).distinct()
