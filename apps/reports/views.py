@@ -2,8 +2,8 @@ from datetime import date, datetime, timedelta
 
 from django.db.models import Q
 
-from apps.patients.models import FamilyMember
 from apps.master_data.models import Hospital
+from apps.patients.models import FamilyMember
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.generics import CreateAPIView
@@ -17,12 +17,13 @@ from utils.utils import patient_user_object
 
 from .filters import ReportFilter
 from .models import (FreeTextReportDetails, NumericReportDetails, Report,
-                     ReportDocuments, StringReportDetails, TextReportDetails)
+                     ReportDocuments, StringReportDetails, TextReportDetails,
+                     VisitReport)
 from .serializers import (FreeTextReportDetailsSerializer,
                           NumericReportDetailsSerializer,
                           ReportDocumentsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
-                          TextReportDetailsSerializer)
+                          TextReportDetailsSerializer, VisitReportsSerializer)
 from .utils import (free_text_report_hanlder, numeric_report_hanlder,
                     report_handler, string_report_hanlder, text_report_hanlder)
 
@@ -148,6 +149,21 @@ class ReportsSyncAPIView(CreateAPIView):
         except:
             return Response({"data": report_response.data, "consumed": False},
                             status=status.HTTP_200_OK)
+        visit_id = report_response.data["data"]["visit_id"]
+        report_obj = Report.objects.filter(
+            id=report_response.data['data']['id']).first()
+        if visit_id:
+            report_visit_obj = VisitReport.objects.filter(
+                visit_id=visit_id).first()
+            if not report_visit_obj:
+                data = dict()
+                data["visit_id"] = visit_id
+                data["uhid"] = report_response.data["data"]["uhid"]
+                data["patiecnt_class"] = report_response.data["data"]["patient_class"][0]
+                serializer = VisitReportsSerializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                report_visit_obj = serializer.save()
+            report_visit_obj.report_info.add(report_obj)
 
         if report_response.status_code == 201 and report_details and\
                 type(report_details) == list:
@@ -225,7 +241,8 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_param["episode_number"] = episode_number
             document_param["hospital"] = hospital.id
             document_serializer = self.serializer_class(data=document_param)
-            report_instance = ReportDocuments.objects.filter(episode_number=episode_number).first()
+            report_instance = ReportDocuments.objects.filter(
+                episode_number=episode_number).first()
             if report_instance:
                 document_serializer = self.serializer_class(
                     report_instance, data=document_param, partial=True)
@@ -233,3 +250,63 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_serializer.save()
 
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+
+
+class ReportVisitViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = VisitReport
+    queryset = VisitReport.objects.all().order_by('-created_at')
+    serializer_class = VisitReportsSerializer
+    create_success_message = "Report is uploaded successfully."
+    list_success_message = 'Report returned successfully!'
+    retrieve_success_message = 'Report information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        filter_by = self.request.query_params.get("filter_by", None)
+        patient_class = self.request.query_params.get("patient_class", None)
+        radiology = self.request.query_params.get("radiology", None)
+
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+
+        if radiology:
+            qs = qs.filter(report_info__code__startswith="DRAD")
+
+        else:
+            qs = qs.exclude(report_info__code__startswith="DRAD")
+
+        if filter_by:
+            if filter_by == "current_week":
+                current_week = date.today().isocalendar()[1]
+                current_year = date.today().isocalendar()[0]
+                qs = qs.filter(created_at__week=current_week,
+                               created_at__year=current_year)
+            elif filter_by == "last_week":
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                qs = qs.filter(created_at__week=last_week,
+                               created_at__year=current_year)
+            elif filter_by == "last_month":
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                qs = qs.filter(created_at__month=last_month.month,
+                               created_at__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                qs = qs.filter(created_at__month=current_month.month,
+                               created_at__year=current_month.year)
+            elif filter_by == "date_range":
+                date_from = self.request.query_params.get("date_from", None)
+                date_to = self.request.query_params.get("date_to", None)
+                qs = qs.filter(created_at__date__range=[date_from, date_to])
+            else:
+                qs = qs.filter(created_at__date=filter_by)
+
+        if patient_class:
+            qs = qs.filter(patient_class=patient_class)
+
+        return qs.filter(uhid=uhid)
