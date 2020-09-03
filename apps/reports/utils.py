@@ -8,7 +8,8 @@ from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 
 from .exceptions import ReportExistsException
-from .models import Report
+from .models import Report, VisitReport
+from .serializers import VisitReportsSerializer
 
 
 def report_handler(report_info, factory=APIRequestFactory()):
@@ -17,7 +18,7 @@ def report_handler(report_info, factory=APIRequestFactory()):
 
     if report_info and type(report_info) == dict and \
             set(required_keys).issubset(set(report_info.keys())):
-
+        import pdb; pdb.set_trace()
         if Report.objects.filter(message_id=report_info['MsgID']).exists():
             raise ReportExistsException
 
@@ -41,6 +42,17 @@ def report_handler(report_info, factory=APIRequestFactory()):
             else:
                 report_request_data['doctor_name'] = report_info['DoctorName']
 
+        report_visit = VisitReport.objects.filter(
+                visit_id=report_info['VisitID']).first()
+        
+        if not report_visit:
+            data = dict()
+            data["visit_id"] = report_info['VisitID']
+            data["uhid"] = report_info['UHID']
+            data["patient_class"] = report_info['PatientClass']
+            serializer = VisitReportsSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            visit_obj = serializer.save()
         return factory.post(
             '', report_request_data, format='json')
 
