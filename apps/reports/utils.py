@@ -18,7 +18,6 @@ def report_handler(report_info, factory=APIRequestFactory()):
 
     if report_info and type(report_info) == dict and \
             set(required_keys).issubset(set(report_info.keys())):
-        import pdb; pdb.set_trace()
         if Report.objects.filter(message_id=report_info['MsgID']).exists():
             raise ReportExistsException
 
