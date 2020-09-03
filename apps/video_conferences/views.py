@@ -245,3 +245,39 @@ class SendStatus(ProxyView):
             if status == "1":
                 status = "success"
         return self.custom_success_response(message=message, success=status)
+
+
+class HoldAppointmentView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        room_name = request.data.get("room_name", None)
+        appointment = Appointment.objects.filter(
+            appointment_identifier=room_name).first()
+        if appointment:
+            appointment.vc_appointment_status, appointment.enable_join_button, appointment.patient_ready = 5, False, False
+            appointment.save()
+        room_name = "".join(room_name.split("||"))
+        room_instance = VideoConference.objects.filter(
+            room_name=room_name).first()
+        if not room_instance:
+            raise ValidationError("Room does not Exist")
+        room_sid = room_instance.room_sid
+        room_status = client.video.rooms(room_sid).fetch().status
+        if room_status == "in-progress":
+            room = client.video.rooms(room_sid).update(status="completed")
+        notification_data = {
+            "patient": PatientSerializer(appointment.patient).data,
+            "appointment_id": appointment.appointment_identifier,
+            "doctor_name": appointment.doctor.name,
+            "hold": True
+        }
+        param = dict()
+        param["app_id"] = appointment.appointment_identifier
+        param["location_code"] = appointment.hospital.code
+        param["set_status"] = "DEPARTED"
+        status_param = create_room_parameters(param)
+        response = SendStatus.as_view()(status_param)
+        send_silent_push_notification.delay(
+            notification_data=notification_data)
+        return Response(status=status.HTTP_200_OK)
