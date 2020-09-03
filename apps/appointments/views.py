@@ -447,7 +447,6 @@ class OfflineAppointment(APIView):
             return Response({"message": "User is not App user"}, status=status.HTTP_200_OK)
         if not (doctor and hospital and department):
             return Response({"message": "Hospital/doctor/department is not available"}, status=status.HTTP_200_OK)
-        appointment_data["booked_via_app"] = False
         appointment_identifier = data["appointmentIdentifier"].replace(
             "*", "|")
         appointment_data["patient"] = patient
@@ -480,6 +479,7 @@ class OfflineAppointment(APIView):
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
             else:
+                appointment_data["booked_via_app"] = False
                 appointment_serializer = AppointmentSerializer(
                     data=appointment_data)
             message = "Record Inserted"
