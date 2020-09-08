@@ -309,4 +309,4 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
         if patient_class:
             qs = qs.filter(patient_class=patient_class).distinct()
 
-        return qs.filter(uhid=uhid).distinct()
+        return qs.filter(uhid=uhid).order_by('-created_at').distinct()
