@@ -2,10 +2,9 @@ import base64
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
-from rest_framework.test import APIRequestFactory
-
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
+from rest_framework.test import APIRequestFactory
 
 from .exceptions import ReportExistsException
 from .models import Report, VisitReport
@@ -28,6 +27,8 @@ def report_handler(report_info, factory=APIRequestFactory()):
         report_request_data['visit_id'] = report_info['VisitID']
         report_request_data['message_id'] = report_info['MsgID']
         report_request_data['name'] = report_info['ReportName']
+        report_request_data['visit_date_time'] = datetime.strptime(
+            report_info["VisitDateTime"], '%Y%m%d%H%M%S')
         report_request_data['time'] = datetime.strptime(
             report_info['ReportDateTime'], '%Y%m%d%H%M%S')
         hospital_info = Hospital.objects.filter(
@@ -42,16 +43,20 @@ def report_handler(report_info, factory=APIRequestFactory()):
                 report_request_data['doctor_name'] = report_info['DoctorName']
 
         report_visit = VisitReport.objects.filter(
-                visit_id=report_info['VisitID']).first()
-        
+            visit_id=report_info['VisitID']).first()
+
         if not report_visit:
             data = dict()
             data["visit_id"] = report_info['VisitID']
             data["uhid"] = report_info['UHID']
             data["patient_class"] = report_info['PatientClass']
+            data['created_at'] = datetime.strptime(
+                report_info["VisitDateTime"], '%Y%m%d%H%M%S')
             serializer = VisitReportsSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             visit_obj = serializer.save()
+            visit_obj.created_at = data['created_at']
+            visit_obj.save()
         return factory.post(
             '', report_request_data, format='json')
 

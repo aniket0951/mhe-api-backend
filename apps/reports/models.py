@@ -71,6 +71,8 @@ class Report(MyBaseModel):
 
     time = models.DateTimeField()
 
+    visit_date_time = models.DateTimeField()
+
 
 
     class Meta:
