@@ -839,7 +839,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
             "data": serializer.data,
             "message": self.list_success_message,
             "pagination_data": pagination_data,
-            "count_details":count_detail
+            "count_details": count_detail
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -998,10 +998,6 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_param["department_code"] = appointment_instance.department.code
             document_param["episode_date_time"] = appointment_instance.episode_date_time
             document_serializer = self.serializer_class(data=document_param)
-            if appointment_instance.appointment_presciptions.exists():
-                prescription_instance = appointment_instance.appointment_presciptions.all().first()
-                document_serializer = self.serializer_class(
-                    prescription_instance, data=document_param, partial=True)
             document_serializer.is_valid(raise_exception=True)
             document_serializer.save()
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
@@ -1045,10 +1041,6 @@ class ManipalPrescriptionViewSet(custom_viewsets.ModelViewSet):
             document_param["department_code"] = appointment_instance.department.code
             document_param["episode_date_time"] = appointment_instance.episode_date_time
             document_serializer = self.serializer_class(data=document_param)
-            if appointment_instance.appointment_presciptions.exists():
-                prescription_instance = appointment_instance.appointment_presciptions.all().first()
-                document_serializer = self.serializer_class(
-                    prescription_instance, data=document_param, partial=True)
             document_serializer.is_valid(raise_exception=True)
             document_serializer.save()
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
