@@ -176,10 +176,6 @@ class PrescriptionDocumentsSerializer(DynamicFieldsModelSerializer):
         except Exception as error:
             response_object['prescription'] = None
 
-        if instance.prescription_documents:
-            response_object["prescription_documents"] = PrescriptionDocumentsSerializer(
-                instance.prescription_documents, many=True).data
-
         return response_object
 
 
@@ -200,8 +196,11 @@ class AppointmentPrescriptionSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         if instance.prescription_documents:
-            response_object["prescription_documents"] = AppointmentSerializer(
-                instance.appointment_info, fields=('doctor', 'department', 'appointment_identifier')).data
-        response_object["episode_number"] = instance.appointment_info.episode_number
+            response_object["prescription_documents"] = PrescriptionDocumentsSerializer(
+                instance.prescription_documents.all(), many=True).data
+
+        if instance.appointment_info:
+            response_object["appointment_info"] = AppointmentSerializer(
+                instance.appointment_info).data
 
         return response_object
