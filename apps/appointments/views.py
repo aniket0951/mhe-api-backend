@@ -4,7 +4,7 @@ import datetime
 import hashlib
 import logging
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from django.conf import settings
@@ -775,7 +775,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter)
-    permission_classes = [AllowAny, ]
+    permission_classes = [IsDoctor, ]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
     filter_fields = ('appointment_date',
@@ -799,6 +799,46 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         return qs.filter(
             doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(
                 vc_appointment_status=4)
+
+    def list(self, request, *args, **kwargs):
+        pagination_data = None
+        doctor_id = self.request.user.id
+        doctor = Doctor.objects.filter(id=doctor_id).first()
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            pagination_data = self.get_paginated_response(None)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+
+        count_detail = dict()
+        today = datetime.now().date()
+        tomorrow = today + timedelta(days=1)
+        if self.request.query_params.get("hospital_visit", None):
+            count_detail["total"] = queryset.count()
+            count_detail["today"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="HV",
+                appointment_date=today).count()
+            count_detail["tomorrow"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="HV",
+                appointment_date=tomorrow).count()
+        else:
+            count_detail["completed_count"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", vc_appointment_status=4).count()
+            count_detail["today"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=today).count()
+            count_detail["tomorrow"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=tomorrow).count()
+
+        data = {
+            "data": serializer.data,
+            "message": self.list_success_message,
+            "pagination_data": pagination_data,
+            "count_details":count_detail
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
