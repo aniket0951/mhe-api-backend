@@ -817,7 +817,8 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         today = datetime.now().date()
         tomorrow = today + timedelta(days=1)
         if self.request.query_params.get("hospital_visit", None):
-            count_detail["total"] = queryset.count()
+            count_detail["total"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="HV").count()
             count_detail["today"] = Appointment.objects.filter(
                 doctor__code=doctor.code, status="1", appointment_mode="HV",
                 appointment_date=today).count()
@@ -828,9 +829,11 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
             count_detail["completed_count"] = Appointment.objects.filter(
                 doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", vc_appointment_status=4).count()
             count_detail["today"] = Appointment.objects.filter(
-                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=today).count()
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=today).exclude(
+                vc_appointment_status=4).count()
             count_detail["tomorrow"] = Appointment.objects.filter(
-                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=tomorrow).count()
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=tomorrow).exclude(
+                vc_appointment_status=4).count()
 
         data = {
             "data": serializer.data,
