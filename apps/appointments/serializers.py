@@ -18,7 +18,8 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
-from .models import (Appointment, AppointmentDocuments, AppointmentVital,
+from .models import (Appointment, AppointmentDocuments,
+                     AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
                      PrescriptionDocuments)
 
@@ -57,7 +58,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.reason:
             response_object["reason"] = CancellationReasonSerializer(
                 instance.reason).data
-                
+
         documents = AppointmentDocuments.objects.filter(
             appointment_info=instance.id)
 
@@ -186,4 +187,12 @@ class FeedbacksSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Feedbacks
+        fields = '__all__'
+
+
+class AppointmentPrescriptionSerializer(DynamicFieldsModelSerializer):
+    prescription_documents = PrescriptionDocumentsSerializer(many=True)
+
+    class Meta:
+        model = AppointmentPrescription
         fields = '__all__'

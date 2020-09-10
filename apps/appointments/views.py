@@ -54,10 +54,12 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
-from .models import (Appointment, AppointmentDocuments, AppointmentVital,
+from .models import (Appointment, AppointmentDocuments,
+                     AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
                      PrescriptionDocuments)
 from .serializers import (AppointmentDocumentsSerializer,
+                          AppointmentPrescriptionSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
                           CancellationReasonSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
@@ -999,7 +1001,17 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_param["episode_date_time"] = appointment_instance.episode_date_time
             document_serializer = self.serializer_class(data=document_param)
             document_serializer.is_valid(raise_exception=True)
-            document_serializer.save()
+            prescription = document_serializer.save()
+            appointment_prescription = AppointmentPrescription.objects.filter(
+                appointment_info=appointment_instance.id).first()
+            if not appointment_prescription:
+                data = dict()
+                data["appointment_info"] = appointment_instance.id
+                prescription_serializer = AppointmentPrescriptionSerializer(
+                    data=data)
+                prescription_serializer.is_valid(raise_exception=True)
+                appointment_prescription = prescription_serializer.save()
+            appointment_prescription.prescription_documents.add(prescription)
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
 
 
@@ -1042,7 +1054,18 @@ class ManipalPrescriptionViewSet(custom_viewsets.ModelViewSet):
             document_param["episode_date_time"] = appointment_instance.episode_date_time
             document_serializer = self.serializer_class(data=document_param)
             document_serializer.is_valid(raise_exception=True)
-            document_serializer.save()
+            prescription = document_serializer.save()
+            appointment_prescription = AppointmentPrescription.objects.filter(
+                appointment_info=appointment_instance.id).first()
+            if not appointment_prescription:
+                data = dict()
+                data["appointment_info"] = appointment_instance.id
+                prescription_serializer = AppointmentPrescriptionSerializer(
+                    data=data)
+                prescription_serializer.is_valid(raise_exception=True)
+                appointment_prescription = prescription_serializer.save()
+            appointment_prescription.prescription_documents.add(prescription)
+
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
 
 
@@ -1097,3 +1120,22 @@ class CurrentPatientListView(ProxyView):
             patient_list = ast.literal_eval(root.find("PatientList").text)
         return self.custom_success_response(message=message,
                                             success=True, data={"patient_list": patient_list})
+
+
+class AppointmentPrescriptionViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = AppointmentPrescription
+    queryset = AppointmentPrescription.objects.all().order_by('-created_at')
+    serializer_class = AppointmentPrescriptionSerializer
+    create_success_message = "Prescription Document is uploaded successfully."
+    list_success_message = 'PrescriptionDocuments returned successfully!'
+    retrieve_success_message = 'Prescription Documents information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(appointment_info__uhid=uhid)
