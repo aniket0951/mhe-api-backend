@@ -98,7 +98,7 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
             else:
                 return qs.filter(time__date=filter_by)
 
-        return qs
+        return qs.order_by('-time')
 
 
 class NumericReportDetailsViewSet(custom_viewsets.CreateViewSet):
