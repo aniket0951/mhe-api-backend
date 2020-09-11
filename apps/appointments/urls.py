@@ -3,7 +3,8 @@ from django.urls import include, path
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
-from .views import (AppointmentDocumentsViewSet, AppointmentsAPIView,
+from .views import (AppointmentDocumentsViewSet,
+                    AppointmentPrescriptionViewSet, AppointmentsAPIView,
                     AppointmentVitalViewSet, CancelAndRefundView,
                     CancelHealthPackageAppointment, CancellationReasonlistView,
                     CancelMyAppointment, CreateMyAppointment,
@@ -24,6 +25,7 @@ router.register('prescription', PrescriptionDocumentsViewSet)
 router.register('feedback', FeedbackViewSet)
 router.register('manipal_prescription', ManipalPrescriptionViewSet)
 router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
+router.register('all_prescription', AppointmentPrescriptionViewSet)
 
 
 urlpatterns = [
