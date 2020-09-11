@@ -292,7 +292,7 @@ class HoldAppointmentView(APIView):
 
         notification_data = {}
         notification_data["title"] = "Consultation On Hold"
-        user_message = "Doctor has put the consultation on Hold"
+        notification_data["message"] = "Doctor has put the consultation on Hold"
         notification_data["notification_type"] = "HOLD_VC_NOTIFICATION"
         notification_data["appointment_id"] = appointment.appointment_identifier
         notification_data["doctor_name"] = appointment.doctor.name
