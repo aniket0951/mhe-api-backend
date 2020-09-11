@@ -28,8 +28,12 @@ def send_push_notification(self, **kwargs):
     if (hasattr(recipient, 'device') and recipient.device.token):
         if recipient.device.platform=='Android':
             fcm = FCMNotification(api_key=settings.FCM_API_KEY)
-            result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-                "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+            if notification_data.get("doctor_name"):
+                result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
+                    "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"], "doctor_name": notification_data["doctor_name"]}, low_priority=False)
+            else:
+                result = fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
+                    "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
         elif recipient.device.platform=='iOS':
             client = APNSClient(certificate=settings.APNS_CERT_PATH)
             alert = notification_instance.message   
