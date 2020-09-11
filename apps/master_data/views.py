@@ -285,8 +285,8 @@ class DoctorsView(ProxyView):
                 if key == "DocName" and each_doctor[key]:
                     each_doctor[key] = each_doctor[key].title()
 
-                if key =="IsOnlineAppt" and each_doctor[key]:
-                    if each_doctor[key] =="Yes":
+                if key == "IsOnlineAppt" and each_doctor[key]:
+                    if each_doctor[key] == "Yes":
                         each_doctor[key] = True
                     else:
                         each_doctor[key] = False
@@ -314,10 +314,10 @@ class DoctorsView(ProxyView):
             if specialisation_obj:
                 doctor.specialisations.add(specialisation_obj)
             all_doctors.append(doctor_details)
-            today_date = datetime.now().date()
-            previous_date = datetime.now() - timedelta(days=1)
-            Doctor.objects.filter(
-                updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
+        today_date = datetime.now().date()
+        previous_date = datetime.now() - timedelta(days=1)
+        Doctor.objects.filter(hospital__code=hospital_code,
+                              updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=all_doctors)

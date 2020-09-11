@@ -4,7 +4,7 @@ import datetime
 import hashlib
 import logging
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from django.conf import settings
@@ -54,10 +54,12 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 
 from .exceptions import (AppointmentAlreadyExistsException,
                          AppointmentDoesNotExistsValidationException)
-from .models import (Appointment, AppointmentDocuments, AppointmentVital,
+from .models import (Appointment, AppointmentDocuments,
+                     AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
                      PrescriptionDocuments)
 from .serializers import (AppointmentDocumentsSerializer,
+                          AppointmentPrescriptionSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
                           CancellationReasonSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
@@ -775,7 +777,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter)
-    permission_classes = [AllowAny, ]
+    permission_classes = [IsDoctor, ]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
     filter_fields = ('appointment_date',
@@ -799,6 +801,49 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         return qs.filter(
             doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(
                 vc_appointment_status=4)
+
+    def list(self, request, *args, **kwargs):
+        pagination_data = None
+        doctor_id = self.request.user.id
+        doctor = Doctor.objects.filter(id=doctor_id).first()
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            pagination_data = self.get_paginated_response(None)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+
+        count_detail = dict()
+        today = datetime.now().date()
+        tomorrow = today + timedelta(days=1)
+        if self.request.query_params.get("hospital_visit", None):
+            count_detail["total"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="HV").count()
+            count_detail["today"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="HV",
+                appointment_date=today).count()
+            count_detail["tomorrow"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="HV",
+                appointment_date=tomorrow).count()
+        else:
+            count_detail["completed_count"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", vc_appointment_status=4).count()
+            count_detail["today"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=today).exclude(
+                vc_appointment_status=4).count()
+            count_detail["tomorrow"] = Appointment.objects.filter(
+                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success", appointment_date=tomorrow).exclude(
+                vc_appointment_status=4).count()
+
+        data = {
+            "data": serializer.data,
+            "message": self.list_success_message,
+            "pagination_data": pagination_data,
+            "count_details": count_detail
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
@@ -955,12 +1000,18 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             document_param["department_code"] = appointment_instance.department.code
             document_param["episode_date_time"] = appointment_instance.episode_date_time
             document_serializer = self.serializer_class(data=document_param)
-            if appointment_instance.appointment_presciptions.exists():
-                prescription_instance = appointment_instance.appointment_presciptions.all().first()
-                document_serializer = self.serializer_class(
-                    prescription_instance, data=document_param, partial=True)
             document_serializer.is_valid(raise_exception=True)
-            document_serializer.save()
+            prescription = document_serializer.save()
+            appointment_prescription = AppointmentPrescription.objects.filter(
+                appointment_info=appointment_instance.id).first()
+            if not appointment_prescription:
+                data = dict()
+                data["appointment_info"] = appointment_instance.id
+                prescription_serializer = AppointmentPrescriptionSerializer(
+                    data=data)
+                prescription_serializer.is_valid(raise_exception=True)
+                appointment_prescription = prescription_serializer.save()
+            appointment_prescription.prescription_documents.add(prescription)
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
 
 
@@ -1002,12 +1053,19 @@ class ManipalPrescriptionViewSet(custom_viewsets.ModelViewSet):
             document_param["department_code"] = appointment_instance.department.code
             document_param["episode_date_time"] = appointment_instance.episode_date_time
             document_serializer = self.serializer_class(data=document_param)
-            if appointment_instance.appointment_presciptions.exists():
-                prescription_instance = appointment_instance.appointment_presciptions.all().first()
-                document_serializer = self.serializer_class(
-                    prescription_instance, data=document_param, partial=True)
             document_serializer.is_valid(raise_exception=True)
-            document_serializer.save()
+            prescription = document_serializer.save()
+            appointment_prescription = AppointmentPrescription.objects.filter(
+                appointment_info=appointment_instance.id).first()
+            if not appointment_prescription:
+                data = dict()
+                data["appointment_info"] = appointment_instance.id
+                prescription_serializer = AppointmentPrescriptionSerializer(
+                    data=data)
+                prescription_serializer.is_valid(raise_exception=True)
+                appointment_prescription = prescription_serializer.save()
+            appointment_prescription.prescription_documents.add(prescription)
+
         return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
 
 
@@ -1062,3 +1120,22 @@ class CurrentPatientListView(ProxyView):
             patient_list = ast.literal_eval(root.find("PatientList").text)
         return self.custom_success_response(message=message,
                                             success=True, data={"patient_list": patient_list})
+
+
+class AppointmentPrescriptionViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = AppointmentPrescription
+    queryset = AppointmentPrescription.objects.all().order_by('-created_at')
+    serializer_class = AppointmentPrescriptionSerializer
+    create_success_message = "Prescription Document is uploaded successfully."
+    list_success_message = 'PrescriptionDocuments returned successfully!'
+    retrieve_success_message = 'Prescription Documents information returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        uhid = self.request.query_params.get("uhid", None)
+        if not uhid:
+            raise ValidationError("Invalid Parameters")
+        return queryset.filter(appointment_info__uhid=uhid)
