@@ -202,6 +202,6 @@ class AppointmentPrescriptionSerializer(DynamicFieldsModelSerializer):
         if instance.appointment_info:
             response_object["appointment_info"] = AppointmentSerializer(
                 instance.appointment_info).data
-            response["episode_number"] = instance.appointment_info.episode_number
+            response_object["episode_number"] = instance.appointment_info.episode_number
 
         return response_object
