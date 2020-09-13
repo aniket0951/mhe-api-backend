@@ -18,7 +18,8 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
-from .models import (Appointment, AppointmentDocuments, AppointmentVital,
+from .models import (Appointment, AppointmentDocuments,
+                     AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
                      PrescriptionDocuments)
 
@@ -57,7 +58,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.reason:
             response_object["reason"] = CancellationReasonSerializer(
                 instance.reason).data
-                
+
         documents = AppointmentDocuments.objects.filter(
             appointment_info=instance.id)
 
@@ -175,10 +176,6 @@ class PrescriptionDocumentsSerializer(DynamicFieldsModelSerializer):
         except Exception as error:
             response_object['prescription'] = None
 
-        if instance.appointment_info:
-            response_object["appointment_info"] = AppointmentSerializer(
-                instance.appointment_info, fields=('doctor', 'department', 'appointment_identifier')).data
-
         return response_object
 
 
@@ -187,3 +184,24 @@ class FeedbacksSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Feedbacks
         fields = '__all__'
+
+
+class AppointmentPrescriptionSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = AppointmentPrescription
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        if instance.prescription_documents:
+            response_object["prescription_documents"] = PrescriptionDocumentsSerializer(
+                instance.prescription_documents.all(), many=True).data
+
+        if instance.appointment_info:
+            response_object["appointment_info"] = AppointmentSerializer(
+                instance.appointment_info).data
+            response_object["episode_number"] = instance.appointment_info.episode_number
+
+        return response_object

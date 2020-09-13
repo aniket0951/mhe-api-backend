@@ -62,8 +62,31 @@ class RoomCreationView(APIView):
         data = dict()
         if not appointment:
             raise ValidationError("Appointment does not Exist")
+        notification_data = {}
+        notification_data["title"] = "Doctor is available for Video consultancy"
+        user_message = "Please join the meeting. Doctor is ready for consultation"
+        notification_data["notification_type"] = "VIDEO_CONSULTATION"
+        notification_data["appointment_id"] = appointment.appointment_identifier
+        notification_data["doctor_name"] = appointment.doctor.name
+        notification_data["message"] = user_message
         if VideoConference.objects.filter(room_name=room_name).exists():
-            return Response({"message":"Room Already Exists"}, status=status.HTTP_200_OK)
+            if appointment.vc_appointment_status == 5:
+                if appointment.family_member:
+                    member = FamilyMember.objects.filter(
+                        id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
+                    if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+                        patient_member = Patient.objects.filter(
+                            uhid_number=member.uhid_number).first()
+                        notification_data["recipient"] = patient_member.id
+                        send_push_notification.delay(
+                            notification_data=notification_data)
+                notification_data["recipient"] = appointment.patient.id
+                send_push_notification.delay(
+                    notification_data=notification_data)
+                appointment.enable_join_button = True
+                appointment.vc_appointment_status = 2
+                appointment.save()
+            return Response({"message": "Room Already Exists"}, status=status.HTTP_200_OK)
         try:
             room = client.video.rooms.create(
                 record_participants_on_connect=True, type='group', unique_name=room_name)
@@ -79,12 +102,6 @@ class RoomCreationView(APIView):
         video_instance = VideoConferenceSerializer(data=data)
         video_instance.is_valid(raise_exception=True)
         video_instance.save()
-        notification_data = {}
-        notification_data["title"] = "Doctor is available for Video consultancy"
-        user_message = "Please join the meeting. Doctor is ready for consultation"
-        notification_data["notification_type"] = "VIDEO_CONSULTATION"
-        notification_data["appointment_id"] = appointment.appointment_identifier
-        notification_data["message"] = user_message
         if appointment.family_member:
             member = FamilyMember.objects.filter(
                 id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
@@ -216,10 +233,10 @@ class InitiateTrackerAppointment(APIView):
                 message = "Room Created"
             elif response.data.get("message") == "Room Already Exists":
                 message = "Room Already Exists"
-            return Response({"message":message,"url": result}, status=status.HTTP_200_OK)
+            return Response({"message": message, "url": result}, status=status.HTTP_200_OK)
         elif response.status_code == 417:
-            return Response({"Message":"Video Consultation is Open","uhid": response.data["appointment"][0]["uhid"], 
-                    "appointment_date":response.data["appointment"][0]["appointment_date"], "appointment_time":response.data["appointment"][0]["appointment_slot"]}, status=status.HTTP_200_OK)
+            return Response({"Message": "Video Consultation is Open", "uhid": response.data["appointment"][0]["uhid"],
+                             "appointment_date": response.data["appointment"][0]["appointment_date"], "appointment_time": response.data["appointment"][0]["appointment_slot"]}, status=status.HTTP_200_OK)
         return Response({"Error": "Something Went Wrong"}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -245,3 +262,51 @@ class SendStatus(ProxyView):
             if status == "1":
                 status = "success"
         return self.custom_success_response(message=message, success=status)
+
+
+class HoldAppointmentView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        room_name = request.data.get("room_name", None)
+        appointment = Appointment.objects.filter(
+            appointment_identifier=room_name).first()
+        if appointment:
+            appointment.vc_appointment_status, appointment.enable_join_button, appointment.patient_ready = 5, False, False
+            appointment.save()
+        room_name = "".join(room_name.split("||"))
+        room_instance = VideoConference.objects.filter(
+            room_name=room_name).first()
+        if not room_instance:
+            raise ValidationError("Room does not Exist")
+        room_sid = room_instance.room_sid
+        room_status = client.video.rooms(room_sid).fetch().status
+        if room_status == "in-progress":
+            room = client.video.rooms(room_sid).update(status="completed")
+        param = dict()
+        param["app_id"] = appointment.appointment_identifier
+        param["location_code"] = appointment.hospital.code
+        param["set_status"] = "DEPARTED"
+        status_param = create_room_parameters(param)
+        response = SendStatus.as_view()(status_param)
+
+        notification_data = {}
+        notification_data["title"] = "Consultation On Hold"
+        notification_data["message"] = "Doctor has put the consultation on Hold"
+        notification_data["notification_type"] = "HOLD_VC_NOTIFICATION"
+        notification_data["appointment_id"] = appointment.appointment_identifier
+        notification_data["doctor_name"] = appointment.doctor.name
+
+        if appointment.family_member:
+            member = FamilyMember.objects.filter(
+                id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
+            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+                patient_member = Patient.objects.filter(
+                    uhid_number=member.uhid_number).first()
+                notification_data["recipient"] = patient_member.id
+                send_push_notification.delay(
+                    notification_data=notification_data)
+        notification_data["recipient"] = appointment.patient.id
+        send_push_notification.delay(notification_data=notification_data)
+
+        return Response(status=status.HTTP_200_OK)

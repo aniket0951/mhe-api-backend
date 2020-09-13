@@ -328,3 +328,16 @@ class Feedbacks(MyBaseModel):
         ('iOS', 'iOS'), ('Android', 'Android'),))
 
     version = models.CharField(max_length=30, blank=True, null=True)
+
+
+class AppointmentPrescription(MyBaseModel):
+
+    appointment_info = models.ForeignKey(Appointment, on_delete=models.PROTECT,
+                                         related_name='appointment_prescription',
+                                         blank=True,
+                                         null=True)
+
+    prescription_documents = models.ManyToManyField(PrescriptionDocuments,
+                                                    blank=True,
+                                                    null=True
+                                                    )
