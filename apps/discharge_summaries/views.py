@@ -54,18 +54,7 @@ class DischargeSummarySyncAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         discharge_info = request.data.get('MDMMessage', None)
         discharge_details = request.data.get('MDMDetails', None)
-        import pdb; pdb.set_trace()
         get_discharge_summary(discharge_info, discharge_details)
-        proxy_request = report_handler(report_info=report_info)
-
-        if not proxy_request:
-            ValidationError("Something went wrong!")
-        try:
-            report_response = ReportViewSet.as_view(
-                {'post': 'create'})(proxy_request)
-        except:
-            return Response({"data": report_response.data, "consumed": False},
-                            status=status.HTTP_200_OK)
-
+        
         return Response({"data": None, "consumed": True},
                             status=status.HTTP_201_CREATED)
