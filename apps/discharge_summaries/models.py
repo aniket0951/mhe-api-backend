@@ -23,6 +23,10 @@ class DischargeSummary(MyBaseModel):
                             blank=False,
                             null=False)
 
+    visit_id = models.CharField(max_length=20,
+                            blank=True,
+                            null=True)
+
     name = models.CharField(max_length=500,
                             blank=False,
                             null=False)
@@ -36,11 +40,6 @@ class DischargeSummary(MyBaseModel):
                                on_delete=models.PROTECT,
                                null=True,
                                blank=True)
-
-    department = models.ForeignKey(Department,
-                                   on_delete=models.PROTECT,
-                                   null=True,
-                                   blank=True)
 
     discharge_document = models.FileField(upload_to=generate_dischage_summary_file_path,
                                           storage=FileStorage(),

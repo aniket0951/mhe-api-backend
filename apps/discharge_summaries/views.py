@@ -1,10 +1,12 @@
 from datetime import date, datetime, timedelta
+import os 
 
 from django.db.models import Q
 
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser,FileUploadParser
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,18 +14,21 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
 from utils import custom_viewsets
-from utils.pdf_generator import get_discharge_summary
 from utils.custom_permissions import InternalAPICall, IsPatientUser
+from utils.pdf_generator import get_discharge_summary
 from utils.utils import patient_user_object
 
 from .models import DischargeSummary
 from .serializers import DischargeSummarysSerializer
+from apps.doctors.models import Doctor
+from apps.master_data.models import Department, Hospital
 
 
 class DischargeViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [AllowAny, ]
     model = DischargeSummary
     queryset = DischargeSummary.objects.all()
+    parser_classes = (MultiPartParser, FormParser)
     serializer_class = DischargeSummarysSerializer
     create_success_message = "Discharge Summary is added successfully."
     list_success_message = 'Discharge Summaries returned successfully!'
@@ -47,6 +52,24 @@ class DischargeViewSet(custom_viewsets.ListCreateViewSet):
             raise ValidationError("Parameter Missing")
         return qs.filter(uhid=uhid)
 
+    def create(self, request):
+        data = request.data
+        visit_id = data["visit_id"]
+        discharge_obj = DischargeSummary.objects.filter(visit_id=visit_id).first()
+        doctor_code = data.pop("doctor_code")
+        if doctor_code:
+            doctor = Doctor.objects.filter(code=doctor_code)
+            if doctor:
+                data["doctor"] = doctor.id
+        data["time"] = datetime.strptime(
+            data["time"], '%Y%m%d%H%M%S') 
+        serializer = DischargeSummarysSerializer(data=data)
+        if discharge_obj:
+            serializer = DischargeSummarysSerializer(discharge_obj, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+
 
 class DischargeSummarySyncAPIView(CreateAPIView):
     permission_classes = [AllowAny]
@@ -54,7 +77,10 @@ class DischargeSummarySyncAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         discharge_info = request.data.get('MDMMessage', None)
         discharge_details = request.data.get('MDMDetails', None)
-        get_discharge_summary(discharge_info, discharge_details)
-        
+        file_name = get_discharge_summary(discharge_info, discharge_details)
+        try:
+            os.remove(file_name)
+        except:
+            pass
         return Response({"data": None, "consumed": True},
-                            status=status.HTTP_201_CREATED)
+                        status=status.HTTP_201_CREATED)

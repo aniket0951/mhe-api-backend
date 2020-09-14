@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime
+import json
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -12,13 +13,16 @@ from reportlab.platypus import (HRFlowable, Image, Paragraph,
 
 from apps.doctors.models import Doctor
 from apps.master_data.models import Department, Hospital
+from apps.discharge_summaries.serializers import DischargeSummarysSerializer
+from rest_framework.test import APIClient
+client = APIClient()
 
 
 def get_discharge_summary(discharge_info, discharge_details):
-    pdf_name = 'myfile.pdf'
     name = discharge_info["PatientName"]
     uhid = discharge_info["UHID"]
     visit_id = discharge_info["VisitID"]
+    pdf_name = visit_id + '.pdf'
     root = ET.fromstring(discharge_info['rawMessage'])
     doctor_code = root.find('PV1').find('PV1.7').find('PV1.7.1').text.upper()
     doctor = Doctor.objects.filter(code=doctor_code).first()
@@ -69,8 +73,8 @@ def get_discharge_summary(discharge_info, discharge_details):
     flowables.append(Spacer(1, 0.1*inch))
     data = [['Name : ' + name, 'Hospital NO : ' + uhid],
             ['Age/Sex : ' + sex, 'IP NO : ' + visit_id],
-            ['Admission Date : ' + admission_date_message,
-                'Medical Discharge Date : ' + admission_date_message],
+            ['Admission Date : ' + admission_date.strftime("%m/%d/%Y"),
+                'Medical Discharge Date : ' + admission_date.strftime("%m/%d/%Y")],
             ['Consultant : ' + doctor_name, 'Department : ' + department_code],
             ['PayorName : ' + name, 'Ward/Bed : ']]
     colwidths = [4*inch]
@@ -167,6 +171,18 @@ def get_discharge_summary(discharge_info, discharge_details):
 
     paragraph_27 = Paragraph("We offer HomeCare services to provide care at your home. \
         For further details please contact the HomeCare Hotline No: +91 95911 40000", x)
+
     flowables.append(paragraph_27)
     my_doc.build(flowables)
-    return
+    data = dict()
+    data["uhid"] = uhid
+    data["name"] = name
+    data["visit_id"] = visit_id
+    data["doctor_code"] = doctor_code
+    data["time"] = admission_date_message
+    f = open(pdf_name,'rb')
+    data["discharge_document"] = f
+    response = client.post('/api/discharge_summaries/all_disharge_summary',
+                                    data, format='multipart')
+
+    return pdf_name
