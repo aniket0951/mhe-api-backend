@@ -31,6 +31,14 @@ class DischargeSummary(MyBaseModel):
                             blank=False,
                             null=False)
 
+    file_name = models.CharField(max_length=500,
+                            blank=True,
+                            null=True)
+
+    doctor_name = models.CharField(max_length=500,
+                            blank=True,
+                            null=True)
+
     hospital = models.ForeignKey(Hospital,
                                  on_delete=models.PROTECT,
                                  null=True,

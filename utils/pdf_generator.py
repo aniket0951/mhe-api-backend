@@ -177,6 +177,8 @@ def get_discharge_summary(discharge_info, discharge_details):
     data = dict()
     data["uhid"] = uhid
     data["name"] = name
+    data["doctor_name"] = doctor_name
+    data["file_name"] = pdf_name
     data["visit_id"] = visit_id
     data["doctor_code"] = doctor_code
     data["time"] = admission_date_message
