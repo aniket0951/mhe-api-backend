@@ -48,7 +48,7 @@ class DashboardAPIView(ListAPIView):
                     if version_number == current_version:
                         dashboard_details["force_update_required"] = False
                     else:
-                        dashboard_details["force_update_required"] = False
+                        dashboard_details["force_update_required"] = True
 
                 dashboard_details['patient'] = PatientSerializer(
                     patient_obj).data
