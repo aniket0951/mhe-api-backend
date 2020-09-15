@@ -42,7 +42,7 @@ class DashboardAPIView(ListAPIView):
 
             patient_obj = patient_user_object(request)
             if patient_obj:
-                version_number = self.request.query_params.get("version", None):
+                version_number = self.request.query_params.get("version", None)
                 if version_number:
                     current_version = settings.IOS_VERSION
                     if version_number == current_version:
