@@ -112,8 +112,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         random_password = get_random_string(
             length=4, allowed_chars='0123456789')
-        random_email_otp = get_random_string(
-            length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -127,14 +125,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         else:
             user_obj = serializer.save(
                 otp_expiration_time=otp_expiration_time,
-                email_otp_expiration_time=otp_expiration_time,
-                email_otp=random_email_otp,
                 is_active=True)
 
             user_obj.set_password(random_password)
             user_obj.save()
-
-            send_email_activation_otp(str(user_obj.id), random_email_otp)
 
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
             random_password, settings.OTP_EXPIRATION_TIME)
