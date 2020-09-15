@@ -180,6 +180,7 @@ class CloseRoomView(APIView):
         if not room_instance:
             raise ValidationError("Room does not Exist")
         room_sid = room_instance.room_sid
+        channel_sid = room_instance.channel_sid
         room_status = client.video.rooms(room_sid).fetch().status
         if room_status == "in-progress":
             room = client.video.rooms(room_sid).update(status="completed")
@@ -195,6 +196,7 @@ class CloseRoomView(APIView):
         response = SendStatus.as_view()(status_param)
         send_silent_push_notification.delay(
             notification_data=notification_data)
+        client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).delete()
         return Response(status=status.HTTP_200_OK)
 
 
