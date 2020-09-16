@@ -368,6 +368,8 @@ class HealthPackagesView(ProxyView):
             'specialisation_name'
         ]
         for each_health_package in response_content:
+            if each_health_package["DateTo"]:
+                import pdb; pdb.set_trace()
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
                 if not each_health_package[key]:
@@ -413,7 +415,7 @@ class HealthPackagesView(ProxyView):
             if health_test_details['billing_sub_group']:
                 health_test_details['billing_sub_group'] = BillingSubGroup.objects.filter(
                     description=health_test_details['billing_sub_group']).first()
-
+            
             health_test, health_test_created = HealthTest.objects.update_or_create(
                 **health_test_kwargs, defaults=health_test_details)
 
@@ -447,23 +449,28 @@ class HealthPackagesView(ProxyView):
                 health_package_details['specialisation'] = Specialisation.objects.filter(
                     description=specialisation_name).first()
 
-            health_package, health_package_created = HealthPackage.objects.update_or_create(
-                **health_package_kwargs, defaults=health_package_details)
-            health_package.included_health_tests.add(health_test)
+            try:
+                health_package, health_package_created = HealthPackage.objects.update_or_create(
+                    **health_package_kwargs, defaults=health_package_details)
+                health_package.included_health_tests.add(health_test)
+            
 
-            hospital_health_package_kwargs['hospital'] = hospital
-            hospital_health_package_kwargs['health_package'] = health_package
-            hospital_health_package_details.update(
-                hospital_health_package_kwargs)
+                hospital_health_package_kwargs['hospital'] = hospital
+                hospital_health_package_kwargs['health_package'] = health_package
+                hospital_health_package_details.update(
+                    hospital_health_package_kwargs)
 
-            _, hospital_health_package_created = HealthPackagePricing.objects.update_or_create(
-                **hospital_health_package_kwargs, defaults=hospital_health_package_details)
+                _, hospital_health_package_created = HealthPackagePricing.objects.update_or_create(
+                    **hospital_health_package_kwargs, defaults=hospital_health_package_details)
 
-            health_package_details['health_test_created'] = health_test_created
-            health_package_details['health_package_created'] = health_package_created
-            health_package_details['hospital_health_package_created'] = hospital_health_package_created
+                health_package_details['health_test_created'] = health_test_created
+                health_package_details['health_package_created'] = health_package_created
+                health_package_details['hospital_health_package_created'] = hospital_health_package_created
 
-            all_health_packages.append(health_package_details)
+                all_health_packages.append(health_package_details)
+            
+            except:
+                pass
 
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=response_content)
