@@ -104,7 +104,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if patient_obj:
 
             if not (facebook_id or google_id or apple_id):
-                raise PatientMobileExistsValidationException
+                if patient_obj.mobile_verified == True:
+                    raise PatientMobileExistsValidationException
 
             if patient_obj.mobile_verified == False:
                 patient_obj.delete()
