@@ -368,8 +368,6 @@ class HealthPackagesView(ProxyView):
             'specialisation_name'
         ]
         for each_health_package in response_content:
-            if each_health_package["DateTo"]:
-                import pdb; pdb.set_trace()
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
                 if not each_health_package[key]:
