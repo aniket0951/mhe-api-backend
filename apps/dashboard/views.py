@@ -1,7 +1,4 @@
-from rest_framework import status
-from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
+from django.conf import settings
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import AppointmentSerializer
@@ -11,6 +8,10 @@ from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
+from rest_framework import status
+from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import IsManipalAdminUser
 from utils.utils import (get_appointment, manipal_admin_object,
@@ -41,6 +42,15 @@ class DashboardAPIView(ListAPIView):
 
             patient_obj = patient_user_object(request)
             if patient_obj:
+                version_number = self.request.query_params.get("version", None)
+                if version_number:
+                    dashboard_details["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
+                    current_version = settings.IOS_VERSION
+                    if version_number == current_version:
+                        dashboard_details["force_update_required"] = False
+                    else:
+                        dashboard_details["force_update_required"] = True
+
                 dashboard_details['patient'] = PatientSerializer(
                     patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
