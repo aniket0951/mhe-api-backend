@@ -10,6 +10,7 @@ from django.utils.timezone import datetime
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
+from apps.health_packages.serializers import HealthPackage, HealthPackagePricing
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
@@ -435,9 +436,6 @@ class HealthPackagesView(ProxyView):
 
             health_package_kwargs['code'] = health_package_details['code']
 
-            # if health_package_details['age_group']:
-            #     health_package_kwargs['age_group'] = health_package_details['age_group']
-
             if health_package_details['gender']:
                 health_package_kwargs['gender'] = health_package_details['gender']
 
@@ -468,8 +466,12 @@ class HealthPackagesView(ProxyView):
                 all_health_packages.append(health_package_details)
             
             except:
-                pass
+                print(each_health_package)
 
+        today_date = datetime.now().date()
+        previous_date = datetime.now() - timedelta(days=1)
+        HealthPackagePricing.objects.filter(hospital__code=hospital_code,
+                              updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date()))
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=response_content)
 
