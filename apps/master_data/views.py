@@ -471,7 +471,7 @@ class HealthPackagesView(ProxyView):
         today_date = datetime.now().date()
         previous_date = datetime.now() - timedelta(days=1)
         HealthPackagePricing.objects.filter(hospital__code=hospital_code,
-                              updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date()))
+                              updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=response_content)
 
