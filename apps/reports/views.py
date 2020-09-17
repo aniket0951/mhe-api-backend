@@ -223,10 +223,10 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
 
     def create(self, request):
         document_param = dict()
-        file_type = request.data.get("file_type")
-        episode_number = request.data.get("episode_number")
+        file_type = request.query_params.get("file_type")
+        episode_number = request.query_params.get("episode_number")
         for i, f in enumerate(request.FILES.getlist('reports')):
-            hospital_code = request.data.get("hospital_code")
+            hospital_code = request.query_params.get("hospital_code")
             hospital = Hospital.objects.filter(code=hospital_code).first()
             if not hospital:
                 raise ValidationError("Hospital Not Available")
@@ -237,7 +237,7 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             else:
                 document_param["lab_report"] = f
                 document_param["lab_name"] = f.name
-            document_param["uhid"] = request.data.get("uhid")
+            document_param["uhid"] = request.query_params.get("uhid")
             document_param["episode_number"] = episode_number
             document_param["hospital"] = hospital.id
             document_serializer = self.serializer_class(data=document_param)
@@ -302,7 +302,8 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
             elif filter_by == "date_range":
                 date_from = self.request.query_params.get("date_from", None)
                 date_to = self.request.query_params.get("date_to", None)
-                qs = qs.filter(created_at__date__range=[date_from, date_to]).distinct()
+                qs = qs.filter(created_at__date__range=[
+                               date_from, date_to]).distinct()
             else:
                 qs = qs.filter(created_at__date=filter_by).distinct()
 
