@@ -245,6 +245,8 @@ class PaymentResponse(APIView):
         if status_code == 1200:
             payment = {}
             payment["uhid_number"] = payment_account["account_number"]
+            if payment["uhid_number"]:
+                payment["uhid_number"] = payment["uhid_number"].upper()
 
             if payment_instance.appointment or payment_instance.payment_for_health_package:
                 payment_paydetail = payment_response["payDetailAPIResponse"]
