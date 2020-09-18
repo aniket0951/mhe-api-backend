@@ -293,6 +293,7 @@ class PaymentResponse(APIView):
             payment_serializer.save()
             uhid_info = {}
             if payment["uhid_number"] and payment["uhid_number"][:2] == "MH":
+                payment["uhid_number"] = payment["uhid_number"].upper()
                 uhid_info["uhid_number"] = payment["uhid_number"]
                 uhid = payment["uhid_number"]
             if (payment_instance.payment_for_uhid_creation):
