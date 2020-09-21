@@ -409,8 +409,8 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 5242880,  # 5 MB
-            'backupCount': 5,
+            'maxBytes': 15728640,  # 5 MB
+            'backupCount': 10,
             'formatter': 'standard'
         },
         'console_handler': {
@@ -429,8 +429,8 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 5242880,  # 5 MB
-            'backupCount': 5,
+            'maxBytes': 15728640,  # 5 MB
+            'backupCount': 10,
         },
         'django_request_console': {
             'class': 'logging.StreamHandler',
