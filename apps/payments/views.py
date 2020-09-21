@@ -377,7 +377,6 @@ class PaymentReturn(APIView):
     parser_classes = [FormParser, MultiPartParser, JSONParser]
 
     def post(self, request, format=None):
-        logger.info(request.data)
         data = request.data
         response_token = data["responseToken"]
         response_token_json = json.loads(response_token)
