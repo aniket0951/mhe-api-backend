@@ -17,11 +17,22 @@ def report_handler(report_info, factory=APIRequestFactory()):
 
     if report_info and type(report_info) == dict and \
             set(required_keys).issubset(set(report_info.keys())):
-        if Report.objects.filter(message_id=report_info['MsgID']).exists():
-            raise ReportExistsException
+        report_visit = VisitReport.objects.filter(
+            visit_id=report_info['VisitID']).first()
+        if Report.objects.filter(visit_id=report_info['VisitID'], place_order=report_info['place_order']).exists():
+            report_instance = Report.objects.filter(
+                visit_id=report_info['VisitID'], place_order=report_info['place_order']).first()
+            report_instance.text_report.all().delete()
+            report_instance.numeric_report.all().delete()
+            report_instance.string_report.all().delete()
+            report_instance.free_text_report.all().delete()
+            if report_visit:
+                report_visit.report_info.remove(report_instance)
+            report_instance.delete()
 
         report_request_data = {}
         report_request_data['uhid'] = report_info['UHID']
+        report_request_data['place_order'] = report_info['place_order']
         report_request_data['code'] = report_info['ReportCode']
         report_request_data['patient_class'] = report_info['PatientClass']
         report_request_data['visit_id'] = report_info['VisitID']
@@ -41,9 +52,6 @@ def report_handler(report_info, factory=APIRequestFactory()):
                 report_request_data['doctor'] = doctor_info.id
             else:
                 report_request_data['doctor_name'] = report_info['DoctorName']
-
-        report_visit = VisitReport.objects.filter(
-            visit_id=report_info['VisitID']).first()
 
         if not report_visit:
             data = dict()

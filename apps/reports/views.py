@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import xml.etree.ElementTree as ET
 
 from django.db.models import Q
 
@@ -138,6 +139,8 @@ class ReportsSyncAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         report_info = request.data.get('ORUMessage', None)
+        root = ET.fromstring(report_info['msgORB'])
+        report_info["place_order"] = root.find('OBR.2').find('OBR.2.1').text
         report_details = request.data.get('ORUDetails', None)
         proxy_request = report_handler(report_info=report_info)
 
