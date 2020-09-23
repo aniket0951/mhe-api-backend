@@ -89,6 +89,7 @@ class AppointmentPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
+        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -130,7 +131,7 @@ class HealthPackagePayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-
+        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -160,6 +161,7 @@ class UHIDPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
+        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -192,6 +194,7 @@ class OPBillPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
+        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -221,6 +224,7 @@ class IPDepositPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
+        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -294,7 +298,7 @@ class PaymentResponse(APIView):
             payment_serializer.is_valid(raise_exception=True)
             payment_serializer.save()
             uhid_info = {}
-            if payment["uhid_number"] and payment["uhid_number"][:2] == "MH":
+            if payment["uhid_number"] and (payment["uhid_number"][:2] == "MH" or payment["uhid_number"][:3] == "MMH"):
                 uhid_info["uhid_number"] = payment["uhid_number"]
                 uhid = payment["uhid_number"]
             if (payment_instance.payment_for_uhid_creation):
@@ -373,7 +377,6 @@ class PaymentReturn(APIView):
     parser_classes = [FormParser, MultiPartParser, JSONParser]
 
     def post(self, request, format=None):
-        logger.info(request.data)
         data = request.data
         response_token = data["responseToken"]
         response_token_json = json.loads(response_token)
