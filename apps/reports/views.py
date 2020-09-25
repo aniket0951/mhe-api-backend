@@ -277,10 +277,10 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Invalid Parameters")
 
         if radiology:
-            qs = qs.filter(report_info__code__startswith="DRAD")
+            qs = qs.filter(report_info__report_type="Radiology")
 
         else:
-            qs = qs.exclude(report_info__code__startswith="DRAD")
+            qs = qs.filter(report_info__report_type="Lab")
 
         if filter_by:
             if filter_by == "current_week":
