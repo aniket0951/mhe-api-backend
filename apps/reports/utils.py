@@ -38,6 +38,8 @@ def report_handler(report_info, factory=APIRequestFactory()):
         report_request_data['visit_id'] = report_info['VisitID']
         report_request_data['message_id'] = report_info['MsgID']
         report_request_data['name'] = report_info['ReportName']
+        if report_info['ReportCode'] and report_info['ReportCode'].startswith("DRAD"):
+            report_request_data['report_type'] = "Radiology"
         report_request_data['visit_date_time'] = datetime.strptime(
             report_info["VisitDateTime"], '%Y%m%d%H%M%S')
         report_request_data['time'] = datetime.strptime(

@@ -77,6 +77,9 @@ class Report(MyBaseModel):
 
     visit_date_time = models.DateTimeField()
 
+    report_type = models.CharField(max_length=20,
+                                  default="Lab")
+
     class Meta:
         verbose_name = "Report"
         verbose_name_plural = "Reports"
