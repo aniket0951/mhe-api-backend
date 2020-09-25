@@ -566,7 +566,7 @@ class LabRadiologyItemsView(ProxyView):
 
 
 class ItemsTarrifPriceView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'tariff'

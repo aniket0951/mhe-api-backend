@@ -81,14 +81,16 @@ class BookMySlot:
 
 
 class SyncAPIRequest:
-    def __init__(self, location_code=None, sync_method=None):
+    def __init__(self, location_code=None, sync_method=None,item_code=None):
         self.location_code = location_code
         self.sync_method = sync_method
+        self.item_code = item_code
 
     def serialize(self, serializer):
         serializer.start_object('SyncRequestParam')
         serializer.add_property('SyncLocationCode', self.location_code)
         serializer.add_property('SyncMethod', self.sync_method)
+        serializer.add_property('SyncItemCode', self.item_code)
 
 
 class ItemTariffPrice:
