@@ -42,6 +42,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.test import APIClient
 from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
@@ -54,8 +55,6 @@ from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment, PaymentReceipts, PaymentRefund
 from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer,
                           PaymentSerializer)
-
-from rest_framework.test import APIClient
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -94,23 +93,26 @@ class AppointmentPayment(APIView):
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
             response = client.post('/api/master_data/items_tariff_price',
-                                       json.dumps({'item_code' : 'AREG001','location_code': location_code}), content_type='application/json')
+                                   json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type='application/json')
 
             if response.status_code == 200 and response.data["success"] == True:
                 calculated_amount = int(response.data["data"][0]["ItemPrice"])
 
         response_doctor_charges = client.post('/api/doctors/doctor_charges',
-                                           json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code}), content_type='application/json')
+                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code}), content_type='application/json')
 
         if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
             if appointment_instance.appointment_mode == "HV":
-                calculated_amount += calculated_amount + int(response_doctor_charges.data["data"]["hv_charge"])
+                calculated_amount += calculated_amount + \
+                    int(response_doctor_charges.data["data"]["hv_charge"])
 
             if appointment_instance.appointment_mode == "VC":
-                calculated_amount += calculated_amount + int(response_doctor_charges.data["data"]["vc_charge"])
+                calculated_amount += calculated_amount + \
+                    int(response_doctor_charges.data["data"]["vc_charge"])
 
             if appointment_instance.appointment_mode == "PR":
-                calculated_amount += calculated_amount + int(response_doctor_chargesc.data["data"]["pr_charge"])
+                calculated_amount += calculated_amount + \
+                    int(response_doctor_chargesc.data["data"]["pr_charge"])
 
         if not (calculated_amount == int(param["token"]["accounts"][0]["amount"])):
             raise ValidationError("Price is Updated")
@@ -131,23 +133,21 @@ class HealthPackagePayment(APIView):
         registration_payment = request.data.get("registration_payment", False)
         appointment = request.data.get("appointment_id", None)
         family_member = request.data.get("user_id", None)
-        
+
         try:
             hospital = Hospital.objects.get(code=location_code)
         except Exception:
             raise HospitalDoesNotExistsValidationException
-        
-        """
+
         appointment_instance = HealthPackageAppointment.objects.filter(
             appointment_identifier=appointment).first()
         if not appointment_instance:
             raise ValidationError("Appointment is not available")
-        """
+
         package_code = request.data["package_code"]
         package_code_list = package_code.split(",")
         package_code = "||".join(package_code_list)
-        
-        """
+
         payment_data = {}
         param["token"]["package_code"] = package_code
         param["token"]["appointment_id"] = appointment
@@ -159,11 +159,14 @@ class HealthPackagePayment(APIView):
         payment_data["payment_for_health_package"] = True
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
-        """
+
         calculated_amount = 0
         for package in package_code_list:
-            response = requests.request("POST", settings.MANIPAL_API_URL + "/getpackageprice", data={"locationCode":location_code, "packageCode":package},verify=False)
-                                       
+            response = client.post('/api/health_packages/health_package_price',
+                                   json.dumps({'location_code': location_code, 'package_code': package}), content_type='application/json')
+
+            if response.status_code == 200 and response.data["success"] == True:
+                calculated_amount += round(int(response.data["message"]))
 
         if family_member is not None:
             payment_data["payment_done_for_family_member"] = family_member
@@ -201,11 +204,11 @@ class UHIDPayment(APIView):
 
         calculated_amount = 0
         response = client.post('/api/master_data/items_tariff_price',
-                                       json.dumps({'item_code' : 'AREG001','location_code': location_code}), content_type='application/json')
+                               json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type='application/json')
 
         if response.status_code == 200 and response.data["success"] == True:
             calculated_amount = int(response.data["data"][0]["ItemPrice"])
-        
+
         if not (calculated_amount == int(param["token"]["accounts"][0]["amount"])):
             raise ValidationError("Price is Updated")
 
@@ -222,7 +225,7 @@ class OPBillPayment(APIView):
 
     def post(self, request, format=None):
         payment_data = {}
-        
+
         family_member = request.data.get("user_id", None)
         location_code = request.data.get("location_code", None)
         episode_no = request.data.get("episode_no", None)
@@ -246,7 +249,7 @@ class OPBillPayment(APIView):
         payment_data["episode_number"] = episode_no
 
         response = client.post('/api/payments/op_bill_details',
-                                       json.dumps({ "uhid": param["token"]["accounts"][0]["account_number"],'location_code': location_code}), content_type='application/json') 
+                               json.dumps({"uhid": param["token"]["accounts"][0]["account_number"], 'location_code': location_code}), content_type='application/json')
         calculated_amount = 0
         if response.status_code == 200 and response.data["success"] == True:
             if response.data["data"]:
@@ -254,10 +257,9 @@ class OPBillPayment(APIView):
                 for episode in episode_list:
                     if episode["EpisodeNo"] == episode_no:
                         calculated_amount = int(episode["OutStandingAmt"])
-        
-        
+
         if not (calculated_amount == int(param["token"]["accounts"][0]["amount"])):
-            raise ValidationError("Price is Updated") 
+            raise ValidationError("Price is Updated")
 
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)

@@ -4,19 +4,19 @@ import xml.etree.ElementTree as ET
 
 from django.db.models import Exists, OuterRef, Q
 from django.utils.timezone import datetime
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.serializers import ValidationError
 
 from apps.cart_items.models import HealthPackageCart
 from apps.master_data.models import Hospital, Specialisation
+from django_filters.rest_framework import DjangoFilterBackend
+from proxy.custom_serializables import \
+    HealthPackagePrice as serializable_HealthPackagePrice
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
-
-from proxy.custom_serializables import HealthPackagePrice as serializable_HealthPackagePrice
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+from rest_framework import filters
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -201,7 +201,7 @@ class HealthPackagePrice(ProxyView):
 
     def get_request_data(self, request):
         price_obj = serializable_HealthPackagePrice(**request.data)
-        request_data = custom_serializer().serialize(price_obj, 'JSON')
+        request_data = custom_serializer().serialize(price_obj, 'XML')
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -209,5 +209,31 @@ class HealthPackagePrice(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response.content)
-        return self.custom_success_response(message='Available slots',
-                                            success=True, data=response)
+        message = "Please Try again"
+        success_status = False
+        response_message = {}
+        if response.status_code == 200:
+            status = root.find("Status").text
+            message = root.find("Message").text
+            if message == "Success":
+                package_detail = root.find("packagepricedetails").text
+                if package_detail:
+                    success_status = True
+                    response_message = "Price details"
+                    price_info = ast.literal_eval(package_detail)[0]
+                    actual_price = int(price_info["Price"])
+                    discount = price_info["Discount"]
+                    discounted_price = actual_price
+                    discount_end_date = price_info["DiscountEndDate"]
+                    today = datetime.now().date()
+                    discount_end_date = datetime.strptime(
+                        discount_end_date, '%d/%m/%Y').date()
+                    if today <= discount_end_date and discount:
+                        discounted_price = round(
+                            (100 - discount) * actual_price / 100)
+                    response_message = price_info
+                    response_message["discounted_price"] = discounted_price
+                    message = discounted_price
+
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=response_message)

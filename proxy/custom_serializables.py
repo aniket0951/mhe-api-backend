@@ -81,7 +81,7 @@ class BookMySlot:
 
 
 class SyncAPIRequest:
-    def __init__(self, location_code=None, sync_method=None,item_code=None):
+    def __init__(self, location_code=None, sync_method=None, item_code=None):
         self.location_code = location_code
         self.sync_method = sync_method
         self.item_code = item_code
@@ -393,5 +393,6 @@ class HealthPackagePrice:
         self.package_code = package_code
 
     def serialize(self, serializer):
-        serializer.add_property('locationCode', self.location_code)
+        serializer.start_object('packagepriceParam')
         serializer.add_property('packageCode', self.package_code)
+        serializer.add_property('locationCode', self.location_code)
