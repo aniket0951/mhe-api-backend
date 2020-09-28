@@ -20,15 +20,16 @@ def report_handler(report_info, factory=APIRequestFactory()):
         report_visit = VisitReport.objects.filter(
             visit_id=report_info['VisitID']).first()
         if Report.objects.filter(visit_id=report_info['VisitID'], place_order=report_info['place_order']).exists():
-            report_instance = Report.objects.filter(
-                visit_id=report_info['VisitID'], place_order=report_info['place_order']).first()
-            report_instance.text_report.all().delete()
-            report_instance.numeric_report.all().delete()
-            report_instance.string_report.all().delete()
-            report_instance.free_text_report.all().delete()
-            if report_visit:
-                report_visit.report_info.remove(report_instance)
-            report_instance.delete()
+            report_instances = Report.objects.filter(
+                visit_id=report_info['VisitID'], place_order=report_info['place_order'], code=report_info['ReportCode'])
+            for report_instance in report_instances:
+                report_instance.text_report.all().delete()
+                report_instance.numeric_report.all().delete()
+                report_instance.string_report.all().delete()
+                report_instance.free_text_report.all().delete()
+                if report_visit:
+                    report_visit.report_info.remove(report_instance)
+                report_instance.delete()
 
         report_request_data = {}
         report_request_data['uhid'] = report_info['UHID']
@@ -38,6 +39,8 @@ def report_handler(report_info, factory=APIRequestFactory()):
         report_request_data['visit_id'] = report_info['VisitID']
         report_request_data['message_id'] = report_info['MsgID']
         report_request_data['name'] = report_info['ReportName']
+        if report_info['ReportCode'] and report_info['ReportCode'].startswith("DRAD"):
+            report_request_data['report_type'] = "Radiology"
         report_request_data['visit_date_time'] = datetime.strptime(
             report_info["VisitDateTime"], '%Y%m%d%H%M%S')
         report_request_data['time'] = datetime.strptime(
