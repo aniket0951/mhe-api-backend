@@ -272,7 +272,6 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        import pdb; pdb.set_trace()
         uhid = self.request.query_params.get("uhid", None)
         filter_by = self.request.query_params.get("filter_by", None)
         patient_class = self.request.query_params.get("patient_class", None)

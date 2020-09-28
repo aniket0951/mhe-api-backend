@@ -385,3 +385,13 @@ class CurrentPatientList:
         serializer.add_property('DepartmentCode', self.specialty_code)
         serializer.add_property('DoctorCode', self.doctor_code)
         serializer.add_property('VisitType', self.visit_type)
+
+
+class HealthPackagePrice:
+    def __init__(self, location_code=None, package_code=None):
+        self.location_code = location_code
+        self.package_code = package_code
+
+    def serialize(self, serializer):
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('packageCode', self.package_code)

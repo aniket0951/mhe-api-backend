@@ -13,6 +13,8 @@ from apps.cart_items.models import HealthPackageCart
 from apps.master_data.models import Hospital, Specialisation
 from proxy.custom_serializables import \
     SlotAvailability as serializable_SlotAvailability
+
+from proxy.custom_serializables import HealthPackagePrice as serializable_HealthPackagePrice
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from utils import custom_viewsets
@@ -189,5 +191,23 @@ class HealthPackageSlotAvailability(ProxyView):
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
         response["price"] = price
+        return self.custom_success_response(message='Available slots',
+                                            success=True, data=response)
+
+
+class HealthPackagePrice(ProxyView):
+    source = 'getpackageprice'
+    permission_classes = [AllowAny]
+
+    def get_request_data(self, request):
+        price_obj = serializable_HealthPackagePrice(**request.data)
+        request_data = custom_serializer().serialize(price_obj, 'JSON')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
         return self.custom_success_response(message='Available slots',
                                             success=True, data=response)
