@@ -222,6 +222,7 @@ def daily_update_scheduler():
     call_command("create_or_update_lab_and_radiology_items", verbosity=0)
     call_command("update_doctors_profile", verbosity=0)
     call_command("create_or_update_doctor_price", verbosity=0)
+    call_command("update_health_package_image", verbosity=0)
 
 
 app.conf.beat_schedule = {
@@ -243,7 +244,7 @@ app.conf.beat_schedule = {
     },
     "daily_update_scheduler": {
         "task": "tasks.daily_update",
-        "schedule": crontab(minute="0", hour="0")
+        "schedule": crontab(minute="0", hour="6")
     },
     "hourly_auto_cancellation_for_unpaid_vc_appointment": {
         "task": "tasks.auto_appointment_cancellation",

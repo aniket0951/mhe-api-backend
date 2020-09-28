@@ -48,9 +48,10 @@ class HealthPackage(MyBaseModel):
     is_popular = models.BooleanField(default=False,
                                      verbose_name='Popular Health Package')
 
-    image = models.ImageField(blank=True,
-                              null=True,
-                              verbose_name='Health Package Picture')
+    image = models.URLField(max_length=300,
+                            null=True,
+                            blank=True,
+                            )
 
     class Meta:
         verbose_name = "Health Package"
