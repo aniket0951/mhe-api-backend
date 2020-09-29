@@ -79,16 +79,10 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
         return HealthTestSerializer(health_tests, many=True).data
 
     def to_representation(self, instance):
+
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
-
-        try:
-            if instance.image:
-                response_object['image'] = generate_pre_signed_url(
-                    instance.image.url)
-        except Exception as error:
-            response_object['image'] = None
 
         return response_object
 
@@ -126,16 +120,10 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
                                                                                           Q(start_date__lte=datetime.now().date())).exists()
 
     def to_representation(self, instance):
+
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
-
-        try:
-            if instance.image:
-                response_object['image'] = generate_pre_signed_url(
-                    instance.image.url)
-        except Exception as error:
-            response_object['image'] = None
 
         return response_object
 
@@ -196,14 +184,8 @@ class HealthPackageSpecificSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
+
         if instance.name:
             response_object['name'] = instance.name.title()
-
-        try:
-            if instance.image:
-                response_object['image'] = generate_pre_signed_url(
-                    instance.image.url)
-        except Exception as error:
-            response_object['image'] = None
 
         return response_object
