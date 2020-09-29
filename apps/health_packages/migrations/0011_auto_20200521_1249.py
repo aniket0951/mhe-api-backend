@@ -33,6 +33,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='healthpackagepricing',
             name='discount_start_date',
-            field=models.DateField(default='2020-05-14'),
+            field=models.DateField(),
         ),
     ]
