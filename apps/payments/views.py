@@ -67,7 +67,7 @@ class AppointmentPayment(APIView):
         param = get_payment_param(request.data)
         location_code = request.data.get("location_code", None)
         try:
-            hospital = Hospital.objects.get(code=location_code)
+            hospital = Hospital.objects.filter(code=location_code).first()
         except Exception:
             raise HospitalDoesNotExistsValidationException
         appointment = request.data["appointment_id"]
@@ -96,25 +96,26 @@ class AppointmentPayment(APIView):
                                    json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type='application/json')
 
             if response.status_code == 200 and response.data["success"] == True:
-                calculated_amount = int(response.data["data"][0]["ItemPrice"])
+                calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
         response_doctor_charges = client.post('/api/doctors/doctor_charges',
                                               json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code}), content_type='application/json')
 
         if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
+            
             if appointment_instance.appointment_mode == "HV":
-                calculated_amount += calculated_amount + \
-                    int(response_doctor_charges.data["data"]["hv_charge"])
+                calculated_amount = calculated_amount + \
+                    int(float(response_doctor_charges.data["data"]["hv_charge"]))
 
             if appointment_instance.appointment_mode == "VC":
-                calculated_amount += calculated_amount + \
-                    int(response_doctor_charges.data["data"]["vc_charge"])
+                calculated_amount = calculated_amount + \
+                    int(float(response_doctor_charges.data["data"]["vc_charge"]))
 
             if appointment_instance.appointment_mode == "PR":
-                calculated_amount += calculated_amount + \
-                    int(response_doctor_chargesc.data["data"]["pr_charge"])
+                calculated_amount = calculated_amount + \
+                    int(float(response_doctor_charges.data["data"]["pr_charge"]))
 
-        if not (calculated_amount == int(param["token"]["accounts"][0]["amount"])):
+        if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError("Price is Updated")
 
         payment = PaymentSerializer(data=payment_data)
@@ -166,7 +167,10 @@ class HealthPackagePayment(APIView):
                                    json.dumps({'location_code': location_code, 'package_code': package}), content_type='application/json')
 
             if response.status_code == 200 and response.data["success"] == True:
-                calculated_amount += round(int(response.data["message"]))
+                calculated_amount += int(float(response.data["message"]))
+
+        if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
+            raise ValidationError("Price is Updated")
 
         if family_member is not None:
             payment_data["payment_done_for_family_member"] = family_member
@@ -207,9 +211,9 @@ class UHIDPayment(APIView):
                                json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type='application/json')
 
         if response.status_code == 200 and response.data["success"] == True:
-            calculated_amount = int(response.data["data"][0]["ItemPrice"])
+            calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
-        if not (calculated_amount == int(param["token"]["accounts"][0]["amount"])):
+        if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError("Price is Updated")
 
         payment_data["payment_for_uhid_creation"] = True
@@ -256,9 +260,9 @@ class OPBillPayment(APIView):
                 episode_list = response.data["data"]
                 for episode in episode_list:
                     if episode["EpisodeNo"] == episode_no:
-                        calculated_amount = int(episode["OutStandingAmt"])
+                        calculated_amount += int(float(episode["OutStandingAmt"]))
 
-        if not (calculated_amount == int(param["token"]["accounts"][0]["amount"])):
+        if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError("Price is Updated")
 
         payment = PaymentSerializer(data=payment_data)

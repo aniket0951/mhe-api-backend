@@ -221,16 +221,17 @@ class HealthPackagePrice(ProxyView):
                     success_status = True
                     response_message = "Price details"
                     price_info = ast.literal_eval(package_detail)[0]
-                    actual_price = int(price_info["Price"])
+                    actual_price = int(float(price_info["Price"]))
                     discount = price_info["Discount"]
                     discounted_price = actual_price
                     discount_end_date = price_info["DiscountEndDate"]
                     today = datetime.now().date()
-                    discount_end_date = datetime.strptime(
-                        discount_end_date, '%d/%m/%Y').date()
-                    if today <= discount_end_date and discount:
-                        discounted_price = round(
-                            (100 - discount) * actual_price / 100)
+                    if discount_end_date:
+                        discount_end_date = datetime.strptime(
+                            discount_end_date, '%d/%m/%Y').date()
+                        if today <= discount_end_date and discount:
+                            discounted_price = round(
+                                (100 - int(float(discount))) * actual_price / 100)
                     response_message = price_info
                     response_message["discounted_price"] = discounted_price
                     message = discounted_price
