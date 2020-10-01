@@ -413,7 +413,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if request_patient.mobile_verified == False:
             if not sign_up:
-                raise PatientDoesNotExistsValidationException
+                raise PatientMobileDoesNotExistsValidationException
 
         if (facebook_id or google_id or apple_id):
             serializer = self.get_serializer(request_patient)
