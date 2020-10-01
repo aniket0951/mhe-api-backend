@@ -387,6 +387,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         google_id = request.data.get('google_id')
         apple_id = request.data.get("apple_id")
         apple_email = request.data.get("apple_email")
+        sign_up = request.data.get("sign_up")
 
         if not (mobile or facebook_id or google_id or apple_id):
             raise PatientDoesNotExistsValidationException
@@ -411,7 +412,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             raise PatientDoesNotExistsValidationException
 
         if request_patient.mobile_verified == False:
-            raise PatientDoesNotExistsValidationException
+            if not sign_up:
+                raise PatientDoesNotExistsValidationException
 
         if (facebook_id or google_id or apple_id):
             serializer = self.get_serializer(request_patient)

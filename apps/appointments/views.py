@@ -79,7 +79,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    filter_fields = ('status',)
+    filter_fields = ('status', 'appointment_identifier')
     ordering = ('appointment_date', '-appointment_slot', 'status')
     ordering_fields = ('appointment_date', 'appointment_slot', 'status')
     create_success_message = None
