@@ -71,3 +71,9 @@ class AmbulanceContactSerializer(DynamicFieldsModelSerializer):
         except Exception:
             pass
         return response_object
+
+
+class HospitalSpecificSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = Hospital
+        exclude = ('created_at', 'updated_at',)
