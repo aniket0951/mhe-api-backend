@@ -46,6 +46,10 @@ class Report(MyBaseModel):
                                    null=True,
                                    blank=True)
 
+    patient_name = models.CharField(max_length=500,
+                                    null=True,
+                                    blank=True)
+
     visit_id = models.CharField(max_length=100,
                                 null=False,
                                 blank=False)
@@ -78,7 +82,7 @@ class Report(MyBaseModel):
     visit_date_time = models.DateTimeField()
 
     report_type = models.CharField(max_length=20,
-                                  default="Lab")
+                                   default="Lab")
 
     class Meta:
         verbose_name = "Report"
@@ -279,6 +283,10 @@ class VisitReport(MyBaseModel):
     patient_class = models.CharField(max_length=100,
                                      null=False,
                                      blank=False)
+
+    patient_name = models.CharField(max_length=500,
+                                    null=True,
+                                    blank=True)
 
     report_info = models.ManyToManyField(Report,
                                          blank=True,

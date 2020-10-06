@@ -166,7 +166,8 @@ class ReportsSyncAPIView(CreateAPIView):
                 data = dict()
                 data["visit_id"] = visit_id
                 data["uhid"] = report_response.data["data"]["uhid"]
-                data["patiecnt_class"] = report_response.data["data"]["patient_class"][0]
+                data["patient_class"] = report_response.data["data"]["patient_class"][0]
+                data["patient_name"] = report_info["PatientName"]
                 serializer = VisitReportsSerializer(data=data)
                 serializer.is_valid(raise_exception=True)
                 report_visit_obj = serializer.save()
