@@ -36,6 +36,7 @@ def report_handler(report_info, factory=APIRequestFactory()):
         report_request_data['place_order'] = report_info['place_order']
         report_request_data['code'] = report_info['ReportCode']
         report_request_data['patient_class'] = report_info['PatientClass']
+        report_request_data['patient_name'] = report_info["PatientName"]
         report_request_data['visit_id'] = report_info['VisitID']
         report_request_data['message_id'] = report_info['MsgID']
         report_request_data['name'] = report_info['ReportName']
@@ -61,6 +62,7 @@ def report_handler(report_info, factory=APIRequestFactory()):
             data["visit_id"] = report_info['VisitID']
             data["uhid"] = report_info['UHID']
             data["patient_class"] = report_info['PatientClass']
+            data["patient_name"] = report_info["PatientName"]
             data['created_at'] = datetime.strptime(
                 report_info["VisitDateTime"], '%Y%m%d%H%M%S')
             serializer = VisitReportsSerializer(data=data)
