@@ -1,4 +1,6 @@
 from datetime import date, datetime, timedelta
+import xml.etree.ElementTree as ET
+import logging
 
 from django.db.models import Q
 
@@ -26,6 +28,8 @@ from .serializers import (FreeTextReportDetailsSerializer,
                           TextReportDetailsSerializer, VisitReportsSerializer)
 from .utils import (free_text_report_hanlder, numeric_report_hanlder,
                     report_handler, string_report_hanlder, text_report_hanlder)
+
+logger = logging.getLogger('django')
 
 
 class ReportViewSet(custom_viewsets.ListCreateViewSet):
@@ -137,7 +141,10 @@ class ReportsSyncAPIView(CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        logger.info(request.data)
         report_info = request.data.get('ORUMessage', None)
+        root = ET.fromstring(report_info['msgORB'])
+        report_info["place_order"] = root.find('OBR.2').find('OBR.2.1').text
         report_details = request.data.get('ORUDetails', None)
         proxy_request = report_handler(report_info=report_info)
 
@@ -159,7 +166,8 @@ class ReportsSyncAPIView(CreateAPIView):
                 data = dict()
                 data["visit_id"] = visit_id
                 data["uhid"] = report_response.data["data"]["uhid"]
-                data["patiecnt_class"] = report_response.data["data"]["patient_class"][0]
+                data["patient_class"] = report_response.data["data"]["patient_class"][0]
+                data["patient_name"] = report_info["PatientName"]
                 serializer = VisitReportsSerializer(data=data)
                 serializer.is_valid(raise_exception=True)
                 report_visit_obj = serializer.save()
@@ -274,10 +282,10 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Invalid Parameters")
 
         if radiology:
-            qs = qs.filter(report_info__code__startswith="DRAD")
+            qs = qs.filter(report_info__report_type="Radiology")
 
         else:
-            qs = qs.exclude(report_info__code__startswith="DRAD")
+            qs = qs.filter(report_info__report_type="Lab")
 
         if filter_by:
             if filter_by == "current_week":

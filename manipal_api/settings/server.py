@@ -366,6 +366,9 @@ DOCTOR_PROFILE_USERNAME = env('DOCTOR_PROFILE_USERNAME')
 DOCTOR_PROFILE_PASSWORD = env('DOCTOR_PROFILE_PASSWORD')
 IOS_VERSION = env('IOS_VERSION')
 FORCE_UPDATE_ENABLE = env('FORCE_UPDATE_ENABLE')
+HEALTH_PACKAGE_UPDATE_API= env('HEALTH_PACKAGE_UPDATE_API')
+HEALTH_PACKAGE_UPDATE_USER = env('HEALTH_PACKAGE_UPDATE_USER')
+HEALTH_PACKAGE_UPDATE_PASSWORD = env('HEALTH_PACKAGE_UPDATE_PASSWORD')
 
 
 # Logger configuration
@@ -401,8 +404,8 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 5242880,  # 5 MB
-            'backupCount': 5,
+            'maxBytes': 15728640,  # 5 MB
+            'backupCount': 10,
             'formatter': 'standard'
         },
         'console_handler': {
@@ -421,8 +424,8 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 5242880,  # 5 MB
-            'backupCount': 5,
+            'maxBytes': 15728640,  # 5 MB
+            'backupCount': 10,
         },
         'django_request_console': {
             'class': 'logging.StreamHandler',

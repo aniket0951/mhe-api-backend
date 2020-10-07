@@ -46,9 +46,17 @@ class Report(MyBaseModel):
                                    null=True,
                                    blank=True)
 
+    patient_name = models.CharField(max_length=500,
+                                    null=True,
+                                    blank=True)
+
     visit_id = models.CharField(max_length=100,
                                 null=False,
                                 blank=False)
+
+    place_order = models.CharField(max_length=100,
+                                   blank=True,
+                                   null=True)
 
     message_id = models.CharField(max_length=100,
                                   null=False,
@@ -73,7 +81,8 @@ class Report(MyBaseModel):
 
     visit_date_time = models.DateTimeField()
 
-
+    report_type = models.CharField(max_length=20,
+                                   default="Lab")
 
     class Meta:
         verbose_name = "Report"
@@ -260,6 +269,7 @@ class ReportDocuments(MyBaseModel):
     def __str__(self):
         return self.name
 
+
 class VisitReport(MyBaseModel):
 
     uhid = models.CharField(max_length=20,
@@ -274,12 +284,14 @@ class VisitReport(MyBaseModel):
                                      null=False,
                                      blank=False)
 
+    patient_name = models.CharField(max_length=500,
+                                    null=True,
+                                    blank=True)
+
     report_info = models.ManyToManyField(Report,
-                                        blank=True,
-                                        related_name='report_visit')
+                                         blank=True,
+                                         related_name='report_visit')
 
     class Meta:
         verbose_name = "Report Visit"
         verbose_name_plural = "Report Visits"
-
-

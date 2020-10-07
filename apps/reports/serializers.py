@@ -158,25 +158,16 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-        response_object["patient_name"] = None
         response_object["patient_type"] = None
-
-        uhid = instance.uhid
-        patient = Patient.objects.filter(uhid_number=uhid).first()
-        family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
-        if family_member:
-            response_object["patient_name"] = family_member.first_name
-        if patient:
-            response_object["patient_name"] = patient.first_name
-
+        
         if instance.visit_id:
             radiology = self.context['request'].query_params.get(
                 "radiology", None)
             reports = Report.objects.filter(
-                visit_id=instance.visit_id).exclude(code__startswith="DRAD")
+                visit_id=instance.visit_id, report_type="Lab").distinct("place_order", "code")
             if radiology:
                 reports = Report.objects.filter(
-                    visit_id=instance.visit_id, code__startswith="DRAD")
+                    visit_id=instance.visit_id, report_type="Radiology").distinct("place_order", "code")
             if reports:
                 response_object["reports"] = ReportSerializer(
                     reports, many=True).data
