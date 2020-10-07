@@ -383,3 +383,18 @@ class CurrentPatientList:
         serializer.add_property('DepartmentCode', self.specialty_code)
         serializer.add_property('DoctorCode', self.doctor_code)
         serializer.add_property('VisitType', self.visit_type)
+
+
+class CurrentAppointmentList:
+    def __init__(self, location_code="MHB", app_date=None, doctor_code=None, visit_type=None):
+        self.location_code = location_code
+        self.app_date = app_date
+        self.doctor_code = doctor_code
+        self.visit_type = visit_type
+
+    def serialize(self, serializer):
+        serializer.start_object('doctorappParam')
+        serializer.add_property('LocationCode', self.location_code)
+        serializer.add_property('AppDate', self.app_date)
+        serializer.add_property('DoctorCode', self.doctor_code)
+        serializer.add_property('VisitType', self.visit_type)

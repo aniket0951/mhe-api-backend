@@ -2,6 +2,7 @@ import ast
 import base64
 import datetime
 import hashlib
+import json
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -30,6 +31,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
+from proxy.custom_serializables import \
+    CurrentAppointmentList as serializable_CurrentAppointmentList
 from proxy.custom_serializables import \
     CurrentPatientList as serializable_CurrentPatientList
 from proxy.custom_serializables import \
@@ -1139,3 +1142,40 @@ class AppointmentPrescriptionViewSet(custom_viewsets.ModelViewSet):
         if not uhid:
             raise ValidationError("Invalid Parameters")
         return queryset.filter(appointment_info__uhid=uhid)
+
+
+class CurrentAppointmentListView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'doctorappointments'
+
+    def get_request_data(self, request):
+        patient_list = serializable_CurrentAppointmentList(**request.data)
+        request_data = custom_serializer().serialize(patient_list, 'XML')
+        print(request_data)
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        print(response.content)
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        appointment_list = []
+        if status == '1':
+
+            app_list = json.loads(root.find("applist").text)
+            today_count = app_list["TodaysCount"]
+            tomorrow_count = app_list["TomorrowCount"]
+            appointment_list = app_list["AppointmentList"]
+            for appointment in appointment_list:
+                uhid = appointment["HospNo"]
+                app_user = Patient.objects.filter(uhid_number=uhid).exists()
+                if not app_user:
+                    app_user = FamilyMember.objects.filter(
+                        uhid_number=uhid).exists()
+                appointment["app_user"] = app_user
+
+        return self.custom_success_response(message=message,
+                                            success=True, data={"appointment_list": appointment_list})
