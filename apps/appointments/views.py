@@ -1170,12 +1170,24 @@ class CurrentAppointmentListView(ProxyView):
             tomorrow_count = app_list["TomorrowCount"]
             appointment_list = app_list["AppointmentList"]
             for appointment in appointment_list:
+
                 uhid = appointment["HospNo"]
-                app_user = Patient.objects.filter(uhid_number=uhid).exists()
-                if not app_user:
-                    app_user = FamilyMember.objects.filter(
-                        uhid_number=uhid).exists()
-                appointment["app_user"] = app_user
+                appointment_identifier = appointment["AppId"]
+                appointment_instance = Appointment.objects.filter(
+                    appointment_identifier=appointment_identifier).first()
+
+                if appointment_instance:
+                    appointment["status"] = appointment_instance.status
+                    appointment["patient_ready"] = appointment_instance.patient_ready
+                    appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
+                    appointment["app_user"] = True
+                    if appointment_instance.appointment_mode="VC" and appointment_instance.payment_status="success":
+                        appointment["enable_vc"] = True
+                    else:
+                        appointment["enable_vc"] = False
+
+                else:
+                    appointment["app_user"] = False
 
         return self.custom_success_response(message=message,
                                             success=True, data={"appointment_list": appointment_list})
