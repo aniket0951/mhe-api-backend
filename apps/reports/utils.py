@@ -104,6 +104,7 @@ def free_text_report_hanlder(report_detail, report_id, factory=APIRequestFactory
         string_report_request_data['name'] = report_detail['ObxIdentifierText']
         string_report_request_data['observation_value'] = report_detail['ObxValue']
         string_report_request_data['report'] = report_id
+
         return factory.post(
             '', string_report_request_data, format='json')
 
@@ -132,7 +133,7 @@ def text_report_hanlder(report_detail, report_id, factory=APIRequestFactory()):
             observation_results += observation_results_info.text
 
         text_report_request_data['observation_value'] = observation_results
-
+        
         return factory.post(
             '', text_report_request_data, format='json')
 
@@ -151,8 +152,13 @@ def numeric_report_hanlder(report_detail, report_id, factory=APIRequestFactory()
         numeric_report_request_data['observation_value'] = report_detail['ObxValue']
         numeric_report_request_data['observation_range'] = report_detail['ObxRange']
         if report_detail['ObxUnit']:
-            numeric_report_request_data['observation_unit'] = base64.b64decode(
-                report_detail['ObxUnit']).decode('utf-8')
+            try:
+                numeric_report_request_data['observation_unit'] = base64.b64decode(
+                    report_detail['ObxUnit']).decode('utf-8')
+            except:
+                numeric_report_request_data['observation_unit'] = report_detail['ObxUnit']
+
         numeric_report_request_data['report'] = report_id
+        
         return factory.post(
             '', numeric_report_request_data, format='json')
