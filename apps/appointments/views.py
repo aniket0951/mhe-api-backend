@@ -1181,7 +1181,7 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
-                    if appointment_instance.appointment_mode="VC" and appointment_instance.payment_status="success":
+                    if appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
                         appointment["enable_vc"] = True
                     else:
                         appointment["enable_vc"] = False
