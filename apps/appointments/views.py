@@ -1151,14 +1151,12 @@ class CurrentAppointmentListView(ProxyView):
     def get_request_data(self, request):
         patient_list = serializable_CurrentAppointmentList(**request.data)
         request_data = custom_serializer().serialize(patient_list, 'XML')
-        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        print(response.content)
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
@@ -1183,6 +1181,14 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["app_user"] = True
                     if appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
                         appointment["enable_vc"] = True
+                        appointment["vitals_available"] = False
+                        appointment["prescription_available"] = False
+                        if appointment_instance.appointment_vitals.exists():
+                            appointment["vitals_available"] = True
+                        
+                        if appointment_instance.appointment_prescription.exists():
+                            appointment["prescription_available"] = True
+
                     else:
                         appointment["enable_vc"] = False
 
