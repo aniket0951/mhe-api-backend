@@ -229,3 +229,14 @@ class AmbulanceContact(MyBaseModel):
     class Meta:
         verbose_name = "Ambulance Contact"
         verbose_name_plural = "Ambulance Contacts"
+
+
+class Company(MyBaseModel):
+
+    name = models.SlugField(unique=True,
+                            blank=False,
+                            null=False)
+
+    domain = models.CharField(max_length=30,
+                            null=True,
+                            blank=True)

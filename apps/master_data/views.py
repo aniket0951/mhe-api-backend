@@ -38,11 +38,12 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalDoesNotExistsValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
-from .models import (AmbulanceContact, BillingGroup, BillingSubGroup,
+from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
                      Department, Hospital, HospitalDepartment, Specialisation)
-from .serializers import (AmbulanceContactSerializer, DepartmentSerializer,
-                          HospitalDepartmentSerializer, HospitalSerializer,
-                          HospitalSpecificSerializer, SpecialisationSerializer)
+from .serializers import (AmbulanceContactSerializer, CompanySerializer,
+                          DepartmentSerializer, HospitalDepartmentSerializer,
+                          HospitalSerializer, HospitalSpecificSerializer,
+                          SpecialisationSerializer)
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -689,3 +690,30 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except Exception as e:
             pass
         return super().get_queryset()
+
+
+class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [AllowAny]
+    model = Company
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    list_success_message = 'Company list returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+    def get_permissions(self):
+        if self.action in ['list', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        company_serializer = CompanySerializer(data=request.data)
+        company_serializer.is_valid(raise_exception=True)
+        company_serializer.save()
+        return Response(status=status.HTTP_200_OK)
