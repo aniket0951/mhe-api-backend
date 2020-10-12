@@ -10,7 +10,7 @@ from django.core.validators import (FileExtensionValidator, MaxValueValidator,
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
-from apps.master_data.models import Hospital
+from apps.master_data.models import Hospital, Company
 from apps.meta_app.models import MyBaseModel
 from apps.patient_registration.models import Relation
 from apps.users.models import BaseUser
@@ -88,7 +88,7 @@ class Patient(BaseUser):
                               blank=False)
 
     apple_email = models.EmailField(null=True,
-                              blank=True)
+                                    blank=True)
 
     email_otp = models.CharField(max_length=4,
                                  null=True,
@@ -136,6 +136,26 @@ class Patient(BaseUser):
         blank=True,
         null=True,
         verbose_name='New mobile OTP Key Expiration DateTime')
+
+    company_info = models.ForeignKey(Company,
+                              on_delete=models.PROTECT,
+                              null=True,
+                              blank=True,
+                              related_name='patient_company_info')
+
+    corporate_email = models.EmailField(null=True, blank=True)
+
+    corporate_email_otp = models.CharField(max_length=4,
+                                          null=True,
+                                           blank=True)
+
+    corporate_email_otp_expiration_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Corporatse Email OTP Key Expiration DateTime')
+
+    active_view = models.CharField(default="Normal",
+                                  max_length=20)
 
     @property
     def representation(self):
