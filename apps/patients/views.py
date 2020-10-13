@@ -118,6 +118,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
+
         if patient_obj:
             patient_obj.set_password(random_password)
             patient_obj.otp_expiration_time = otp_expiration_time
@@ -566,7 +567,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             str(authenticated_patient.id), corporate_email, random_email_otp)
 
         if company_instance:
-            authenticated_patient.company_info = company_instance.id
+            authenticated_patient.company_info = company_instance
             authenticated_patient.corporate_email = corporate_email
 
         authenticated_patient.corporate_email_otp = random_email_otp
