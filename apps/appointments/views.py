@@ -1161,6 +1161,8 @@ class CurrentAppointmentListView(ProxyView):
         status = root.find("Status").text
         message = root.find("Message").text
         appointment_list = []
+        today_count = 0
+        tomorrow_count = 0
         if status == '1':
 
             app_list = json.loads(root.find("applist").text)
@@ -1173,16 +1175,17 @@ class CurrentAppointmentListView(ProxyView):
                 appointment_identifier = appointment["AppId"]
                 appointment_instance = Appointment.objects.filter(
                     appointment_identifier=appointment_identifier).first()
+                appointment["enable_vc"] = False
+                appointment["vitals_available"] = False
+                appointment["prescription_available"] = False
 
                 if appointment_instance:
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
-                    if appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
+                    if appointment_instance.status == 1 and appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
                         appointment["enable_vc"] = True
-                        appointment["vitals_available"] = False
-                        appointment["prescription_available"] = False
                         if appointment_instance.appointment_vitals.exists():
                             appointment["vitals_available"] = True
                         
