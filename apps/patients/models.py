@@ -84,8 +84,8 @@ class Patient(BaseUser):
                                         null=True,
                                         verbose_name='Profile Picture')
 
-    email = models.EmailField(null=False,
-                              blank=False)
+    email = models.EmailField(null=True,
+                              blank=True)
 
     apple_email = models.EmailField(null=True,
                                     blank=True)
