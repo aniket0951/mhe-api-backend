@@ -1201,4 +1201,4 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["app_user"] = False
 
         return self.custom_success_response(message=message,
-                                            success=True, data={"appointment_list": appointment_list})
+                                            success=True, data={"appointment_list": appointment_list, "today_count":today_count, "tomorrow_count":tomorrow_count})
