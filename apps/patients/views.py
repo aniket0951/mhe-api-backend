@@ -553,9 +553,9 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient = patient_user_object(request)
         company_name = self.request.data.get("company_name")
         corporate_email = self.request.data.get("corporate_email")
-
+        
         if company_name:
-            company_instance = Company.objects.filter(name="company_name").first()
+            company_instance = Company.objects.filter(name=company_name).first()
 
         random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
