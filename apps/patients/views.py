@@ -548,7 +548,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return Response(data, status=status.HTTP_200_OK)
 
     
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['POST'])
     def generate_corporate_email_verification_otp(self, request):
         authenticated_patient = patient_user_object(request)
         company_name = self.request.data.get("company_name")
