@@ -63,11 +63,13 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         try:
+            qs = self.get_queryset()
             longitude = float(self.request.query_params.get("longitude", 0))
             latitude = float(self.request.query_params.get("latitude", 0))
             if longitude and latitude:
                 user_location = Point(longitude, latitude, srid=4326)
-                return self.get_queryset().annotate(calculated_distance=Django_Distance('location',
+                qs = qs.filter(corporate_only=False)
+                return qs.annotate(calculated_distance=Django_Distance('location',
                                                                                         user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
