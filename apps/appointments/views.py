@@ -783,6 +783,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsDoctor, ]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
+    ordering_fields = ('appointment_date', 'appointment_slot')
     filter_fields = ('appointment_date',
                      'appointment_identifier', 'vc_appointment_status',)
     list_success_message = 'Appointment list returned successfully!'
@@ -1151,18 +1152,18 @@ class CurrentAppointmentListView(ProxyView):
     def get_request_data(self, request):
         patient_list = serializable_CurrentAppointmentList(**request.data)
         request_data = custom_serializer().serialize(patient_list, 'XML')
-        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        print(response.content)
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
         appointment_list = []
+        today_count = 0
+        tomorrow_count = 0
         if status == '1':
 
             app_list = json.loads(root.find("applist").text)
@@ -1175,14 +1176,25 @@ class CurrentAppointmentListView(ProxyView):
                 appointment_identifier = appointment["AppId"]
                 appointment_instance = Appointment.objects.filter(
                     appointment_identifier=appointment_identifier).first()
+                appointment["enable_vc"] = False
+                appointment["vitals_available"] = False
+                appointment["prescription_available"] = False
 
                 if appointment_instance:
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
-                    if appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
+                    if appointment_instance.status == 1 and appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
                         appointment["enable_vc"] = True
+                        if appointment_instance.vc_appointment_status == 4:
+                            appointment["enable_vc"] = False
+                        if appointment_instance.appointment_vitals.exists():
+                            appointment["vitals_available"] = True
+                        
+                        if appointment_instance.appointment_prescription.exists():
+                            appointment["prescription_available"] = True
+
                     else:
                         appointment["enable_vc"] = False
 
@@ -1190,4 +1202,4 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["app_user"] = False
 
         return self.custom_success_response(message=message,
-                                            success=True, data={"appointment_list": appointment_list})
+                                            success=True, data={"appointment_list": appointment_list, "today_count":today_count, "tomorrow_count":tomorrow_count})
