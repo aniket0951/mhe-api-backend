@@ -68,7 +68,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if self.action in ['generate_uhid_otp', 'validate_uhid_otp',
                            'generate_email_verification_otp', 'verify_email_otp',
-                           'generate_new_mobile_verification_otp', 'verify_new_mobile_otp']:
+                           'generate_new_mobile_verification_otp', 'verify_new_mobile_otp', 'switch_view',
+                           'verify_corporate_email_otp', 'generate_corporate_email_verification_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -117,7 +118,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
-
 
         if patient_obj:
             patient_obj.set_password(random_password)
@@ -548,15 +548,15 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
-    
     @action(detail=False, methods=['POST'])
     def generate_corporate_email_verification_otp(self, request):
         authenticated_patient = patient_user_object(request)
         company_name = self.request.data.get("company_name")
         corporate_email = self.request.data.get("corporate_email")
-        
+
         if company_name:
-            company_instance = Company.objects.filter(name=company_name).first()
+            company_instance = Company.objects.filter(
+                name=company_name).first()
 
         random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -579,7 +579,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": "OTP to verify you email is sent successfully!",
         }
         return Response(data, status=status.HTTP_200_OK)
-
 
     @action(detail=False, methods=['POST'])
     def verify_corporate_email_otp(self, request):
