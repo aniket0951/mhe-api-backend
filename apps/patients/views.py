@@ -605,7 +605,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['POST'])
     def switch_view(self, request):
         patient = request.user
         view = request.data("view")
