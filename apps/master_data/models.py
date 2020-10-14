@@ -242,3 +242,8 @@ class Company(MyBaseModel):
     domain = models.CharField(max_length=30,
                             null=True,
                             blank=True)
+
+    hospital_info = models.ManyToManyField(Hospital,
+                                             blank=True,
+                                             null=True,
+                                             related_name='company_hospital')
