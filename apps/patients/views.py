@@ -606,6 +606,25 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['GET'])
+    def switch_view(self, request):
+        patient = request.user
+        view = request.data("view")
+        if view not in ["Normal", "Corporate"]:
+            raise ValidationError("View Not Acceptable")
+
+        if not patient:
+            raise ValidationError("You are not a User")
+        patient.active_view = view
+        patient.save()
+        serialize_data = PatientSerializer(patient)
+
+        data = {
+            "data": serialize_data.data,
+            "message": "OTP to verify you email is sent successfully!",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
