@@ -597,6 +597,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         authenticated_patient.corporate_email_otp = random_email_otp
         authenticated_patient.active_view = "Corporate"
+        authenticated_patient.is_corporate = True
         authenticated_patient.save()
 
         data = {

@@ -138,15 +138,15 @@ class Patient(BaseUser):
         verbose_name='New mobile OTP Key Expiration DateTime')
 
     company_info = models.ForeignKey(Company,
-                              on_delete=models.PROTECT,
-                              null=True,
-                              blank=True,
-                              related_name='patient_company_info')
+                                     on_delete=models.PROTECT,
+                                     null=True,
+                                     blank=True,
+                                     related_name='patient_company_info')
 
     corporate_email = models.EmailField(null=True, blank=True)
 
     corporate_email_otp = models.CharField(max_length=4,
-                                          null=True,
+                                           null=True,
                                            blank=True)
 
     corporate_email_otp_expiration_time = models.DateTimeField(
@@ -155,7 +155,10 @@ class Patient(BaseUser):
         verbose_name='Corporatse Email OTP Key Expiration DateTime')
 
     active_view = models.CharField(default="Normal",
-                                  max_length=20)
+                                   max_length=20)
+
+    is_corporate = models.BooleanField(default=False,
+                                       verbose_name='is_corporate')
 
     @property
     def representation(self):
