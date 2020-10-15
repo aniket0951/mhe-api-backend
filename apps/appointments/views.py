@@ -230,9 +230,24 @@ class CreateMyAppointment(ProxyView):
                 if request.data.get('corporate',None):
                     new_appointment["corporate_appointment"] = True
 
-                appointment = AppointmentSerializer(data=new_appointment)
+                instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                if instance:
+                    appointment = AppointmentSerializer(instance, data=new_appointment, partial=True)
+                else:
+                    appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
+
+                if request.data.get('corporate',None):
+                    date_time = datetime_object.strftime("%Y%m%d")
+                    corporate_appointment = dict()
+                    corporate_appointment["uhid"] = new_appointment["uhid"]
+                    corporate_appointment["location_code"] = data.get("hospital").code
+                    corporate_appointment["app_date"] = date_time
+                    corporate_appointment["app_id"] = appointment_identifier
+
+                    corporate_param = cancel_and_refund_parameters(corporate_appointment)
+                    response = AppointmentPaymentView.as_view()(corporate_param)
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
@@ -1210,19 +1225,20 @@ class CurrentAppointmentListView(ProxyView):
                                             success=True, data={"appointment_list": appointment_list, "today_count":today_count, "tomorrow_count":tomorrow_count})
 
 
-class CurrentAppointmentListView(ProxyView):
+class AppointmentPaymentView(ProxyView):
     permission_classes = [AllowAny]
-    source = 'doctorappointments'
+    source = 'OnlinePayment'
 
     def get_request_data(self, request):
-        patient_list = serializable_CurrentAppointmentList(**request.data)
-        request_data = custom_serializer().serialize(patient_list, 'XML')
+        request_xml = serializable_CurrentAppointmentList(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        print(response.content)
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
