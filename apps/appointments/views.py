@@ -145,7 +145,7 @@ class CreateMyAppointment(ProxyView):
         patient_id = request.user.id
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
-        corporate_appointment = request.data.pop("corporate", None)
+        corporate = request.data.pop("corporate", None)
         patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(
             id=family_member_id).first()
@@ -227,7 +227,7 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["hospital"] = data.get("hospital").id
                 new_appointment["appointment_mode"] = data.get(
                     "appointment_mode", None)
-                if request.data.get('corporate',None):
+                if data.get('corporate',None):
                     new_appointment["corporate_appointment"] = True
 
                 instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
