@@ -408,7 +408,7 @@ class PaymentUpdate:
         self.processing_id = param.get("processing_id", "CORPORATE")
         self.source = param.get("source", "PatientApp")
         self.drawer = param.get("drawer", None)
-        self.amt = param.get("amt", 0)
+        self.amt = param.get("amt", "0")
         self.location_code = param.get("location_code", None)
         self.app_date = param.get("app_date", None)
         self.package_code = param.get("package_code", None)
