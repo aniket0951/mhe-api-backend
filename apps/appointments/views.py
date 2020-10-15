@@ -1230,7 +1230,7 @@ class AppointmentPaymentView(ProxyView):
     source = 'OnlinePayment'
 
     def get_request_data(self, request):
-        request_xml = serializable_CurrentAppointmentList(request.data)
+        request_xml = serializable_CurrentAppointmentList(**request.data)
         request_data = custom_serializer().serialize(request_xml, 'XML')
         print(request_data)
         return request_data
