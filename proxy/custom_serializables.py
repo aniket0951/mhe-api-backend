@@ -427,7 +427,7 @@ class PaymentUpdate:
         serializer.add_property('AppDate', self.app_date)
         serializer.add_property('PkagCode', self.package_code)
         serializer.add_property('Ttype', self.type)
-        serializer.add_property('ApptId', self.self.app_id)
+        serializer.add_property('ApptId', self.app_id)
 
 
 class CorporateRegistration:
