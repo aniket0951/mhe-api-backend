@@ -240,7 +240,7 @@ class CreateMyAppointment(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
 
-                if not data.get('corporate',None):
+                if data.get('corporate',None):
                     date_time = datetime_object.strftime("%Y%m%d")
                     corporate_appointment = dict()
                     corporate_appointment["uhid"] = new_appointment["uhid"]
@@ -1232,7 +1232,6 @@ class AppointmentPaymentView(ProxyView):
     source = 'OnlinePayment'
 
     def get_request_data(self, request):
-        import pdb; pdb.set_trace()
         request_xml = serializable_PaymentUpdate(request.data)
         request_data = custom_serializer().serialize(request_xml, 'XML')
         print(request_data)
