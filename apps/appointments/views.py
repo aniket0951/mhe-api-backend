@@ -41,6 +41,8 @@ from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
 from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
+from proxy.custom_serializables import \
+    PaymentUpdate as serializable_PaymentUpdate
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -1231,7 +1233,7 @@ class AppointmentPaymentView(ProxyView):
 
     def get_request_data(self, request):
         import pdb; pdb.set_trace()
-        request_xml = serializable_CurrentAppointmentList(request.data)
+        request_xml = serializable_PaymentUpdate(request.data)
         request_data = custom_serializer().serialize(request_xml, 'XML')
         print(request_data)
         return request_data
