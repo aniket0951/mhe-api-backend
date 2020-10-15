@@ -238,14 +238,14 @@ class CreateMyAppointment(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
 
-                if request.data.get('corporate',None):
+                if not data.get('corporate',None):
                     date_time = datetime_object.strftime("%Y%m%d")
                     corporate_appointment = dict()
                     corporate_appointment["uhid"] = new_appointment["uhid"]
                     corporate_appointment["location_code"] = data.get("hospital").code
                     corporate_appointment["app_date"] = date_time
                     corporate_appointment["app_id"] = appointment_identifier
-
+                    print(corporate_appointment)
                     corporate_param = cancel_and_refund_parameters(corporate_appointment)
                     response = AppointmentPaymentView.as_view()(corporate_param)
                 response_success = True
@@ -1232,6 +1232,7 @@ class AppointmentPaymentView(ProxyView):
     def get_request_data(self, request):
         request_xml = serializable_CurrentAppointmentList(request.data)
         request_data = custom_serializer().serialize(request_xml, 'XML')
+        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
