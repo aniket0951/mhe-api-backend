@@ -145,6 +145,7 @@ class CreateMyAppointment(ProxyView):
         patient_id = request.user.id
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
+        corporate_appointment = request.data.pop("corporate", None)
         patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(
             id=family_member_id).first()
@@ -184,6 +185,7 @@ class CreateMyAppointment(ProxyView):
         request.data["doctor"] = doctor
         request.data["department"] = department
         request.data["consultation_amount"] = amount
+        request.data['corporate'] = corporate
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -225,6 +227,9 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["hospital"] = data.get("hospital").id
                 new_appointment["appointment_mode"] = data.get(
                     "appointment_mode", None)
+                if request.data.get('corporate',None):
+                    new_appointment["corporate_appointment"] = True
+
                 appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
@@ -1203,3 +1208,27 @@ class CurrentAppointmentListView(ProxyView):
 
         return self.custom_success_response(message=message,
                                             success=True, data={"appointment_list": appointment_list, "today_count":today_count, "tomorrow_count":tomorrow_count})
+
+
+class CurrentAppointmentListView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'doctorappointments'
+
+    def get_request_data(self, request):
+        patient_list = serializable_CurrentAppointmentList(**request.data)
+        request_data = custom_serializer().serialize(patient_list, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        data = dict()
+        if status == '1':
+            pass
+
+        return self.custom_success_response(message=message,
+                                            success=True, data=data)

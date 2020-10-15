@@ -403,15 +403,15 @@ class CurrentAppointmentList:
 class PaymentUpdate:
     def __init__(self, param):
         self.uhid = param.get("uhid", None)
-        self.transaction_number = param.get("transaction_number", None)
-        self.processing_id = param.get("processing_id", None)
-        self.source = param.get("source", None)
+        self.transaction_number = param.get("transaction_number", "CORPORATE")
+        self.processing_id = param.get("processing_id", "CORPORATE")
+        self.source = param.get("source", "PatientApp")
         self.drawer = param.get("drawer", None)
         self.amt = param.get("amt", None)
         self.location_code = param.get("location_code", None)
         self.app_date = param.get("app_date", None)
         self.package_code = param.get("package_code", None)
-        self.type = param.get("type", None)
+        self.type = param.get("type", "A")
         self.app_id = param.get("app_id", None)
 
     def serialize(self, serializer):
