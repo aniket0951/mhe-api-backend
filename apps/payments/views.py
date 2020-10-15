@@ -666,7 +666,7 @@ class CorporateUhidRegistration(ProxyView):
                 success_status = True
                 response_message = "UHID Registration Successfully"
                 uhid = root.find("UID").text
-                patient = Patient.objects.filter(id=request.user.id).first()
+                patient = Patient.objects.filter(id=self.request.user.id).first()
                 if patient:
                     patient.uhid_number = uhid
                     patient.save()
