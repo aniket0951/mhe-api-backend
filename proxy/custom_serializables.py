@@ -402,6 +402,7 @@ class CurrentAppointmentList:
 
 class PaymentUpdate:
     def __init__(self, param):
+        import pdb; pdb.set_trace()
         self.uhid = param.get("uhid", None)
         self.transaction_number = param.get("transaction_number", "CORPORATE")
         self.processing_id = param.get("processing_id", "CORPORATE")
