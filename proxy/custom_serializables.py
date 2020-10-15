@@ -440,7 +440,7 @@ class CorporateRegistration:
 
 
     def serialize(self, serializer):
-        serializer.start_object('PaymentForRegistration')
+        serializer.start_object('RegPayementParam')
         serializer.add_property('locationCode',self.location_code)
         serializer.add_property('fcrId', self.temp_id)
         serializer.add_property('transactionReferenceId', self.transaction_id)
