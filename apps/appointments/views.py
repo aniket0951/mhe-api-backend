@@ -240,14 +240,13 @@ class CreateMyAppointment(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
 
-                if not data.get('corporate',None):
+                if data.get('corporate',None):
                     date_time = datetime_object.strftime("%Y%m%d")
                     corporate_appointment = dict()
                     corporate_appointment["uhid"] = new_appointment["uhid"]
                     corporate_appointment["location_code"] = data.get("hospital").code
                     corporate_appointment["app_date"] = date_time
                     corporate_appointment["app_id"] = appointment_identifier
-                    print(corporate_appointment)
                     corporate_param = cancel_and_refund_parameters(corporate_appointment)
                     response = AppointmentPaymentView.as_view()(corporate_param)
                 response_success = True
@@ -1250,7 +1249,6 @@ class AppointmentPaymentView(ProxyView):
         if status == '1':
             bill_detail = root.find("BillDetail").text
             if bill_detail:
-                import pdb; pdb.set_trace()
                 app_id = self.request.data.get("app_id")
                 aap_list = ast.literal_eval(bill_detail)
                 if aap_list:
