@@ -1245,6 +1245,7 @@ class AppointmentPaymentView(ProxyView):
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
+        success_status = False
         data = dict()
         if status == '1':
             bill_detail = root.find("BillDetail").text
@@ -1252,14 +1253,14 @@ class AppointmentPaymentView(ProxyView):
                 import pdb; pdb.set_trace()
                 app_id = self.request.data.get("app_id")
                 aap_list = ast.literal_eval(bill_detail)
-                appointment_identifier = aap_list.get("AppointmentId")
-                appointment_instance = Appointment.objects.filter(appointment_identifier=app_id).first()
-                if appointment_instance:
-                    appointment_instance.payment_status = "success"
-                    if appointment_identifier:
-                        appointment_instance.appointment_identifier = appointment_identifier
-                    appointment_instance.save()
-
-
+                if aap_list:
+                    appointment_identifier = aap_list[0].get("AppointmentId")
+                    appointment_instance = Appointment.objects.filter(appointment_identifier=app_id).first()
+                    if appointment_instance:
+                        success_status = True
+                        appointment_instance.payment_status = "success"
+                        if appointment_identifier:
+                            appointment_instance.appointment_identifier = appointment_identifier
+                        appointment_instance.save()
         return self.custom_success_response(message=message,
-                                            success=True, data=data)
+                                            success=success_status, data=data)
