@@ -406,11 +406,11 @@ class PaymentUpdate:
         self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
         self.processing_id = param.get("processing_id", "CORPORATE")
         self.source = param.get("source", "PatientApp")
-        self.drawer = param.get("drawer", None)
+        self.drawer = param.get("drawer", "NA")
         self.amt = param.get("amt", "0")
         self.location_code = param.get("location_code", None)
         self.app_date = param.get("app_date", None)
-        self.package_code = param.get("package_code", None)
+        self.package_code = param.get("package_code", "NA")
         self.type = param.get("type", "A")
         self.app_id = param.get("app_id", None)
 
