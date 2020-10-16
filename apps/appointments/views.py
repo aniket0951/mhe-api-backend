@@ -240,7 +240,7 @@ class CreateMyAppointment(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
 
-                if data.get('corporate',None):
+                if not data.get('corporate',None):
                     date_time = datetime_object.strftime("%Y%m%d")
                     corporate_appointment = dict()
                     corporate_appointment["uhid"] = new_appointment["uhid"]
@@ -1247,7 +1247,19 @@ class AppointmentPaymentView(ProxyView):
         message = root.find("Message").text
         data = dict()
         if status == '1':
-            pass
+            bill_detail = root.find("BillDetail").text
+            if bill_detail:
+                import pdb; pdb.set_trace()
+                app_id = self.request.data.get("app_id")
+                aap_list = ast.literal_eval(bill_detail)
+                appointment_identifier = aap_list.get("AppointmentId")
+                appointment_instance = Appointment.objects.filter(appointment_identifier=app_id).first()
+                if appointment_instance:
+                    appointment_instance.payment_status = "success"
+                    if appointment_identifier:
+                        appointment_instance.appointment_identifier = appointment_identifier
+                    appointment_instance.save()
+
 
         return self.custom_success_response(message=message,
                                             success=True, data=data)
