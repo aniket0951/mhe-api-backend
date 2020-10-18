@@ -33,6 +33,7 @@ from proxy.custom_serializables import \
     EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
+from proxy.custom_serializables import CorporateRegistration as serializable_CorporateRegistration
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, status
@@ -640,3 +641,36 @@ class ReceiptViewSet(custom_viewsets.ModelViewSet):
         receipt_serializer.is_valid(raise_exception=True)
         receipt_serializer.save()
         return Response(status=status.HTTP_200_OK)
+
+
+class CorporateUhidRegistration(ProxyView):
+    source = 'PaymentForRegistration'
+    permission_classes = [AllowAny]
+
+    def get_request_data(self, request):
+        registration = serializable_CorporateRegistration(**request.data)
+        request_data = custom_serializer().serialize(registration, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        response_data = {}
+        response_message = "We are unable to cancel fetch the information. Please Try again"
+        success_status = False
+        if response.status_code == 200:
+            status = root.find("Status").text
+            if status == "1":
+                success_status = True
+                response_message = "UHID Registration Successfully"
+                uhid = root.find("UID").text
+                patient = Patient.objects.filter(id=self.request.user.id).first()
+                if patient:
+                    patient.uhid_number = uhid
+                    patient.save()
+                response_data["uhid"] = uhid
+
+        return self.custom_success_response(message=response_message,
+                                            success=success_status, data=response_data)

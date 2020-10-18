@@ -38,11 +38,12 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalDoesNotExistsValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
-from .models import (AmbulanceContact, BillingGroup, BillingSubGroup,
+from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
                      Department, Hospital, HospitalDepartment, Specialisation)
-from .serializers import (AmbulanceContactSerializer, DepartmentSerializer,
-                          HospitalDepartmentSerializer, HospitalSerializer,
-                          HospitalSpecificSerializer, SpecialisationSerializer)
+from .serializers import (AmbulanceContactSerializer, CompanySerializer,
+                          DepartmentSerializer, HospitalDepartmentSerializer,
+                          HospitalSerializer, HospitalSpecificSerializer,
+                          SpecialisationSerializer)
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -62,12 +63,21 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         try:
+            qs = super().get_queryset()
             longitude = float(self.request.query_params.get("longitude", 0))
             latitude = float(self.request.query_params.get("latitude", 0))
+            corporate = self.request.query_params.get("corporate", None)
             if longitude and latitude:
                 user_location = Point(longitude, latitude, srid=4326)
-                return self.get_queryset().annotate(calculated_distance=Django_Distance('location',
-                                                                                        user_location)).order_by('calculated_distance')
+                if corporate:
+                    company_id = self.request.query_params.get(
+                        "company_id", None)
+                    company = Company.objects.filter(id=company_id).first()
+                    if company:
+                        qs = company.hospital_info.all()
+                        return qs.annotate(calculated_distance=Django_Distance('location', user_location)).order_by('calculated_distance')
+                qs = qs.filter(corporate_only=False)
+                return qs.annotate(calculated_distance=Django_Distance('location', user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
         return super().get_queryset()
@@ -689,3 +699,30 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except Exception as e:
             pass
         return super().get_queryset()
+
+
+class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [AllowAny]
+    model = Company
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    list_success_message = 'Company list returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+    def get_permissions(self):
+        if self.action in ['list', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        company_serializer = CompanySerializer(data=request.data)
+        company_serializer.is_valid(raise_exception=True)
+        company_serializer.save()
+        return Response(status=status.HTTP_200_OK)

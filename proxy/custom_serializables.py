@@ -398,3 +398,52 @@ class CurrentAppointmentList:
         serializer.add_property('AppDate', self.app_date)
         serializer.add_property('DoctorCode', self.doctor_code)
         serializer.add_property('VisitType', self.visit_type)
+
+
+class PaymentUpdate:
+    def __init__(self, param):
+        self.uhid = param.get("uhid", None)
+        self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
+        self.processing_id = param.get("processing_id", "CORPORATE")
+        self.source = param.get("source", "PatientApp")
+        self.drawer = param.get("drawer", "NA")
+        self.amt = param.get("amt", "0")
+        self.location_code = param.get("location_code", None)
+        self.app_date = param.get("app_date", None)
+        self.package_code = param.get("package_code", "NA")
+        self.type = param.get("type", "A")
+        self.app_id = param.get("app_id", None)
+
+    def serialize(self, serializer):
+        serializer.start_object('OnlinePaymentParam')
+        serializer.add_property('hospno', self.uhid)
+        serializer.add_property('tranno', self.transaction_number)
+        serializer.add_property('ProcessID', self.processing_id)
+        serializer.add_property('Source', self.source)
+        serializer.add_property('Drawer', self.drawer)
+        serializer.add_property('amt', self.amt)
+        serializer.add_property('HospCode', self.location_code)
+        serializer.add_property('AppDate', self.app_date)
+        serializer.add_property('PkagCode', self.package_code)
+        serializer.add_property('Ttype', self.type)
+        serializer.add_property('ApptId', self.app_id)
+
+
+class CorporateRegistration:
+    def __init__(self, temp_id=None, location_code=None, transaction_id="Infosys",amount=0, discount_reason="Infosys"):
+        self.temp_id = temp_id
+        self.location_code = location_code
+        self.transaction_id = transaction_id
+        self.amount = amount
+        self.discount_reason = discount_reason
+        self.paymode = None
+
+
+    def serialize(self, serializer):
+        serializer.start_object('RegPayementParam')
+        serializer.add_property('locationCode',self.location_code)
+        serializer.add_property('fcrId', self.temp_id)
+        serializer.add_property('transactionReferenceId', self.transaction_id)
+        serializer.add_property('amount', self.amount)
+        serializer.add_property('discountReason', self.discount_reason)
+        serializer.add_property('payMode', self.paymode)

@@ -109,6 +109,8 @@ class Appointment(models.Model):
 
     episode_date_time = models.DateTimeField(auto_now=True)
 
+    corporate_appointment = models.BooleanField(default=False)
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
