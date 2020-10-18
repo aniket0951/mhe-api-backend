@@ -9,6 +9,7 @@ from django.contrib.gis.geos import Point
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 
+from apps.master_data.models import Company
 from apps.master_data.views import ValidateUHIDView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
@@ -29,7 +30,8 @@ from utils.custom_permissions import (BlacklistDestroyMethodPermission,
 from utils.custom_sms import send_sms
 from utils.utils import manipal_admin_object, patient_user_object
 
-from .emails import (send_email_activation_otp,
+from .emails import (send_corporate_email_activation_otp,
+                     send_email_activation_otp,
                      send_family_member_email_activation_otp)
 from .exceptions import (InvalidCredentialsException, InvalidEmailOTPException,
                          InvalidUHID, OTPExpiredException,
@@ -66,7 +68,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if self.action in ['generate_uhid_otp', 'validate_uhid_otp',
                            'generate_email_verification_otp', 'verify_email_otp',
-                           'generate_new_mobile_verification_otp', 'verify_new_mobile_otp']:
+                           'generate_new_mobile_verification_otp', 'verify_new_mobile_otp', 'switch_view',
+                           'verify_corporate_email_otp', 'generate_corporate_email_verification_otp']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
@@ -542,6 +545,83 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         data = {
             "data": uhid_user_info,
             "message": "Fetched user details!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def generate_corporate_email_verification_otp(self, request):
+        authenticated_patient = patient_user_object(request)
+        company_name = self.request.data.get("company_name")
+        corporate_email = self.request.data.get("corporate_email")
+
+        if company_name:
+            company_instance = Company.objects.filter(
+                name=company_name).first()
+
+        random_email_otp = get_random_string(
+            length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+
+        send_corporate_email_activation_otp(
+            str(authenticated_patient.id), corporate_email, random_email_otp)
+
+        if company_instance:
+            authenticated_patient.company_info = company_instance
+            authenticated_patient.corporate_email = corporate_email
+
+        authenticated_patient.corporate_email_otp = random_email_otp
+        authenticated_patient.corporate_email_otp_expiration_time = otp_expiration_time
+        authenticated_patient.save()
+
+        data = {
+            "data": {"email": str(authenticated_patient.corporate_email), },
+            "message": "OTP to verify you email is sent successfully!",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def verify_corporate_email_otp(self, request):
+        email_otp = request.data.get('email_otp')
+        authenticated_patient = patient_user_object(request)
+
+        if not authenticated_patient.corporate_email_otp == email_otp:
+            raise InvalidEmailOTPException
+
+        if datetime.now().timestamp() > \
+                authenticated_patient.corporate_email_otp_expiration_time.timestamp():
+            raise OTPExpiredException
+
+        random_email_otp = get_random_string(
+            length=4, allowed_chars='0123456789')
+
+        authenticated_patient.corporate_email_otp = random_email_otp
+        authenticated_patient.active_view = "Corporate"
+        authenticated_patient.is_corporate = True
+        authenticated_patient.save()
+
+        data = {
+            "data": self.get_serializer(authenticated_patient).data,
+            "message": "You email is verified successfully!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def switch_view(self, request):
+        patient = Patient.objects.filter(id=request.user.id).first()
+        view = request.data.get("view", None)
+        if view not in ["Normal", "Corporate"]:
+            raise ValidationError("View Not Acceptable")
+
+        if not patient:
+            raise ValidationError("You are not a User")
+        patient.active_view = view
+        patient.save()
+        serialize_data = PatientSerializer(patient)
+
+        data = {
+            "data": serialize_data.data,
+            "message": "OTP to verify you email is sent successfully!",
         }
         return Response(data, status=status.HTTP_200_OK)
 

@@ -250,13 +250,14 @@ class DoctorloginView(ProxyView):
             login_response = root.find("loginresp").text
             login_response = ast.literal_eval(login_response)
             if login_response:
+                
                 login_response_json = login_response[0]
                 login_status = login_response_json["Status"]
                 if login_status == "Success":
                     doctor_code = login_response_json["CTPCP_Code"]
                     location_code = login_response_json["Hosp"]
                     doctor = Doctor.objects.filter(
-                        code=doctor_code, hospital__code=location_code).first()
+                        code=doctor_code).first()
                     payload = jwt_payload_handler(doctor)
                     payload["username"] = doctor.code
                     token = jwt_encode_handler(payload)

@@ -4,7 +4,8 @@ from django.urls import path
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
-from .views import (AppointmentPayment, EpisodeItemView, HealthPackageAPIView,
+from .views import (AppointmentPayment, CorporateUhidRegistration,
+                    EpisodeItemView, HealthPackageAPIView,
                     HealthPackagePayment, IPDepositPayment, OPBillPayment,
                     PayBillOpView, PayBillView, PaymentResponse, PaymentReturn,
                     PaymentsAPIView, ReceiptViewSet, RefundView, UHIDPayment)
@@ -27,6 +28,7 @@ urlpatterns = [
     path('op_bill_details', PayBillOpView.as_view()),
     path('episode_items_details', EpisodeItemView.as_view()),
     path('refund', RefundView.as_view()),
+    path('corporate_uhid_registration', CorporateUhidRegistration.as_view()),
     *router.urls
 
 ]

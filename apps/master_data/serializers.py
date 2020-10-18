@@ -5,7 +5,7 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import (AmbulanceContact, Department, Hospital,
-                     HospitalDepartment, Specialisation)
+                     HospitalDepartment, Specialisation, Company)
 
 
 class HospitalSerializer(DynamicFieldsModelSerializer):
@@ -77,3 +77,19 @@ class HospitalSpecificSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Hospital
         exclude = ('created_at', 'updated_at',)
+
+
+class CompanySerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = Company
+        exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.hospital_info:
+            response_object['hospital_info'] = HospitalSerializer(
+                instance.hospital_info, many=True).data
+        
+        return response_object
+
+    
