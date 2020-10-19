@@ -48,7 +48,7 @@ def send_corporate_email_activation_otp(user_id ,email_id, otp_number):
     user = Patient.objects.get(id=user_id)
     recipients = [email_id]
     subject = 'Corporate Account Activation OTP'
-    text_content = 'Dear {}, Please enter this OTP {} to link your corporate account on Manipal Mobile apps'.format(
+    text_content = 'Dear {}, Please enter this OTP {} to verify your corporate account on Manipal Mobile apps'.format(
         user.first_name, otp_number)
 
     email = EmailMultiAlternatives(
