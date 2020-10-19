@@ -142,69 +142,74 @@ class ReportsSyncAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         logger.info(request.data)
-        report_info = request.data.get('ORUMessage', None)
-        root = ET.fromstring(report_info['msgORB'])
-        report_info["place_order"] = root.find('OBR.2').find('OBR.2.1').text
-        report_details = request.data.get('ORUDetails', None)
-        proxy_request = report_handler(report_info=report_info)
-
-        if not proxy_request:
-            ValidationError("Something went wrong!")
         try:
-            report_response = ReportViewSet.as_view(
-                {'post': 'create'})(proxy_request)
-        except:
-            return Response({"data": report_response.data, "consumed": False},
-                            status=status.HTTP_200_OK)
-        visit_id = report_response.data["data"]["visit_id"]
-        report_obj = Report.objects.filter(
-            id=report_response.data['data']['id']).first()
-        if visit_id:
-            report_visit_obj = VisitReport.objects.filter(
-                visit_id=visit_id).first()
-            if not report_visit_obj:
-                data = dict()
-                data["visit_id"] = visit_id
-                data["uhid"] = report_response.data["data"]["uhid"]
-                data["patiecnt_class"] = report_response.data["data"]["patient_class"][0]
-                serializer = VisitReportsSerializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                report_visit_obj = serializer.save()
-            report_visit_obj.report_info.add(report_obj)
+            report_info = request.data.get('ORUMessage', None)
+            root = ET.fromstring(report_info['msgORB'])
+            report_info["place_order"] = root.find('OBR.2').find('OBR.2.1').text
+            report_details = request.data.get('ORUDetails', None)
+            proxy_request = report_handler(report_info=report_info)
 
-        if report_response.status_code == 201 and report_details and\
-                type(report_details) == list:
+            if not proxy_request:
+                ValidationError("Something went wrong!")
+            try:
+                report_response = ReportViewSet.as_view(
+                    {'post': 'create'})(proxy_request)
+            except:
+                return Response({"data": report_response.data, "consumed": False},
+                                status=status.HTTP_200_OK)
+            visit_id = report_response.data["data"]["visit_id"]
+            report_obj = Report.objects.filter(
+                id=report_response.data['data']['id']).first()
+            if visit_id:
+                report_visit_obj = VisitReport.objects.filter(
+                    visit_id=visit_id).first()
+                if not report_visit_obj:
+                    data = dict()
+                    data["visit_id"] = visit_id
+                    data["uhid"] = report_response.data["data"]["uhid"]
+                    data["patient_class"] = report_response.data["data"]["patient_class"][0]
+                    data["patient_name"] = report_info["PatientName"]
+                    serializer = VisitReportsSerializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    report_visit_obj = serializer.save()
+                report_visit_obj.report_info.add(report_obj)
 
-            for each_report_detail in report_details:
-                if each_report_detail['ObxType'] == 'NM':
-                    numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,
-                                                                          report_id=report_response.data['data']['id'])
-                    NumericReportDetailsViewSet.as_view(
-                        {'post': 'create'})(numeric_report_proxy_request)
-                    continue
+            if report_response.status_code == 201 and report_details and\
+                    type(report_details) == list:
 
-                if each_report_detail['ObxType'] == 'ST':
-                    string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,
+                for each_report_detail in report_details:
+                    if each_report_detail['ObxType'] == 'NM':
+                        numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,
+                                                                            report_id=report_response.data['data']['id'])
+                        NumericReportDetailsViewSet.as_view(
+                            {'post': 'create'})(numeric_report_proxy_request)
+                        continue
+
+                    if each_report_detail['ObxType'] == 'ST':
+                        string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,
+                                                                            report_id=report_response.data['data']['id'])
+                        StringReportDetailsViewSet.as_view(
+                            {'post': 'create'})(string_report_proxy_request)
+                        continue
+
+                    if each_report_detail['ObxType'] == 'TX':
+                        text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,
                                                                         report_id=report_response.data['data']['id'])
-                    StringReportDetailsViewSet.as_view(
-                        {'post': 'create'})(string_report_proxy_request)
-                    continue
+                        TextReportDetailsViewSet.as_view(
+                            {'post': 'create'})(text_report_proxy_request)
+                        continue
 
-                if each_report_detail['ObxType'] == 'TX':
-                    text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,
-                                                                    report_id=report_response.data['data']['id'])
-                    TextReportDetailsViewSet.as_view(
-                        {'post': 'create'})(text_report_proxy_request)
-                    continue
+                    if each_report_detail['ObxType'] == 'FT':
+                        string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,
+                                                                            report_id=report_response.data['data']['id'])
+                        FreeTextReportDetailsViewSet.as_view(
+                            {'post': 'create'})(string_report_proxy_request)
 
-                if each_report_detail['ObxType'] == 'FT':
-                    string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,
-                                                                           report_id=report_response.data['data']['id'])
-                    FreeTextReportDetailsViewSet.as_view(
-                        {'post': 'create'})(string_report_proxy_request)
-
-            return Response({"data": None, "consumed": True},
-                            status=status.HTTP_201_CREATED)
+                return Response({"data": None, "consumed": True},
+                                status=status.HTTP_201_CREATED)
+        except:
+            return Response({"data": "Parameters are not sufficient", "consumed": False},
+                        status=status.HTTP_200_OK)
 
         return Response({"data": report_response.data, "consumed": False},
                         status=status.HTTP_200_OK)

@@ -42,6 +42,8 @@ class Hospital(MyBaseModel):
                                                       null=True,
                                                       blank=True,)
 
+    corporate_only = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = "Hospital"
         verbose_name_plural = "Hospitals"
@@ -229,3 +231,19 @@ class AmbulanceContact(MyBaseModel):
     class Meta:
         verbose_name = "Ambulance Contact"
         verbose_name_plural = "Ambulance Contacts"
+
+
+class Company(MyBaseModel):
+
+    name = models.SlugField(unique=True,
+                            blank=False,
+                            null=False)
+
+    domain = models.CharField(max_length=30,
+                            null=True,
+                            blank=True)
+
+    hospital_info = models.ManyToManyField(Hospital,
+                                             blank=True,
+                                             null=True,
+                                             related_name='company_hospital')

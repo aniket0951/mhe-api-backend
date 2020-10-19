@@ -36,6 +36,7 @@ def report_handler(report_info, factory=APIRequestFactory()):
         report_request_data['place_order'] = report_info['place_order']
         report_request_data['code'] = report_info['ReportCode']
         report_request_data['patient_class'] = report_info['PatientClass']
+        report_request_data['patient_name'] = report_info["PatientName"]
         report_request_data['visit_id'] = report_info['VisitID']
         report_request_data['message_id'] = report_info['MsgID']
         report_request_data['name'] = report_info['ReportName']
@@ -61,6 +62,7 @@ def report_handler(report_info, factory=APIRequestFactory()):
             data["visit_id"] = report_info['VisitID']
             data["uhid"] = report_info['UHID']
             data["patient_class"] = report_info['PatientClass']
+            data["patient_name"] = report_info["PatientName"]
             data['created_at'] = datetime.strptime(
                 report_info["VisitDateTime"], '%Y%m%d%H%M%S')
             serializer = VisitReportsSerializer(data=data)
@@ -102,6 +104,7 @@ def free_text_report_hanlder(report_detail, report_id, factory=APIRequestFactory
         string_report_request_data['name'] = report_detail['ObxIdentifierText']
         string_report_request_data['observation_value'] = report_detail['ObxValue']
         string_report_request_data['report'] = report_id
+
         return factory.post(
             '', string_report_request_data, format='json')
 
@@ -130,7 +133,7 @@ def text_report_hanlder(report_detail, report_id, factory=APIRequestFactory()):
             observation_results += observation_results_info.text
 
         text_report_request_data['observation_value'] = observation_results
-
+        
         return factory.post(
             '', text_report_request_data, format='json')
 
@@ -149,8 +152,13 @@ def numeric_report_hanlder(report_detail, report_id, factory=APIRequestFactory()
         numeric_report_request_data['observation_value'] = report_detail['ObxValue']
         numeric_report_request_data['observation_range'] = report_detail['ObxRange']
         if report_detail['ObxUnit']:
-            numeric_report_request_data['observation_unit'] = base64.b64decode(
-                report_detail['ObxUnit']).decode('utf-8')
+            try:
+                numeric_report_request_data['observation_unit'] = base64.b64decode(
+                    report_detail['ObxUnit']).decode('utf-8')
+            except:
+                numeric_report_request_data['observation_unit'] = report_detail['ObxUnit']
+
         numeric_report_request_data['report'] = report_id
+        
         return factory.post(
             '', numeric_report_request_data, format='json')

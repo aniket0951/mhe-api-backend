@@ -3,8 +3,8 @@ from django.urls import path
 
 from rest_framework.routers import DefaultRouter
 
-from .views import (AmbulanceContactViewSet, DepartmentsView, DoctorsView,
-                    HealthPackagesView, HospitalDepartmentViewSet,
+from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
+                    DoctorsView, HealthPackagesView, HospitalDepartmentViewSet,
                     HospitalViewSet, ItemsTarrifPriceView,
                     LabRadiologyItemsView, SpecialisationViewSet,
                     ValidateOTPView, ValidateUHIDView)
@@ -15,6 +15,7 @@ router.register('all_hospitals', HospitalViewSet)
 router.register('all_hospital_departments', HospitalDepartmentViewSet)
 router.register('all_specialisations', SpecialisationViewSet)
 router.register('all_ambulance_contacts', AmbulanceContactViewSet)
+router.register('all_companies', CompanyViewSet)
 
 
 urlpatterns = [

@@ -10,7 +10,8 @@ from django.utils.timezone import datetime
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
-from apps.health_packages.serializers import HealthPackage, HealthPackagePricing
+from apps.health_packages.serializers import (HealthPackage,
+                                              HealthPackagePricing)
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
@@ -22,9 +23,11 @@ from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
-from rest_framework import filters
+from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -35,15 +38,16 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalDoesNotExistsValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
-from .models import (AmbulanceContact, BillingGroup, BillingSubGroup,
+from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
                      Department, Hospital, HospitalDepartment, Specialisation)
-from .serializers import (AmbulanceContactSerializer, DepartmentSerializer,
-                          HospitalDepartmentSerializer, HospitalSerializer,
+from .serializers import (AmbulanceContactSerializer, CompanySerializer,
+                          DepartmentSerializer, HospitalDepartmentSerializer,
+                          HospitalSerializer, HospitalSpecificSerializer,
                           SpecialisationSerializer)
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     model = Hospital
     queryset = Hospital.objects.all()
     serializer_class = HospitalSerializer
@@ -59,12 +63,21 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         try:
+            qs = super().get_queryset()
             longitude = float(self.request.query_params.get("longitude", 0))
             latitude = float(self.request.query_params.get("latitude", 0))
+            corporate = self.request.query_params.get("corporate", None)
             if longitude and latitude:
                 user_location = Point(longitude, latitude, srid=4326)
-                return self.get_queryset().annotate(calculated_distance=Django_Distance('location',
-                                                                                        user_location)).order_by('calculated_distance')
+                if corporate:
+                    company_id = self.request.query_params.get(
+                        "company_id", None)
+                    company = Company.objects.filter(id=company_id).first()
+                    if company:
+                        qs = company.hospital_info.all()
+                        return qs.annotate(calculated_distance=Django_Distance('location', user_location)).order_by('calculated_distance')
+                qs = qs.filter(corporate_only=False)
+                return qs.annotate(calculated_distance=Django_Distance('location', user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
         return super().get_queryset()
@@ -74,7 +87,32 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
+        if self.action in ['partial_update', 'create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
         return super().get_permissions()
+
+    def post(self, request, format=None):
+        longitude = float(self.request.data.pop("longitude", 0))
+        latitude = float(self.request.data.pop("latitude", 0))
+        mobile = self.request.data.pop("ambulance_contact_number", None)
+        if not (longitude and latitude):
+            raise ValidationError("Mandatory Parameter missing")
+        location = Point(longitude, latitude, srid=4326)
+        self.request.data["location"] = location
+        hospital_serializer = HospitalSpecificSerializer(
+            data=self.request.data)
+        hospital_serializer.is_valid(raise_exception=True)
+        hospital_instance = hospital_serializer.save()
+        ambulance_data = dict()
+        ambulance_data["mobile"] = mobile
+        ambulance_data["hospital"] = hospital_instance
+        try:
+            contact, contact_created = AmbulanceContact.objects.update_or_create(
+                **ambulance_data, defaults=ambulance_data)
+        except:
+            pass
+        return Response(data=hospital_serializer.data, status=status.HTTP_200_OK)
 
 
 class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -414,7 +452,7 @@ class HealthPackagesView(ProxyView):
             if health_test_details['billing_sub_group']:
                 health_test_details['billing_sub_group'] = BillingSubGroup.objects.filter(
                     description=health_test_details['billing_sub_group']).first()
-            
+
             health_test, health_test_created = HealthTest.objects.update_or_create(
                 **health_test_kwargs, defaults=health_test_details)
 
@@ -449,7 +487,6 @@ class HealthPackagesView(ProxyView):
                 health_package, health_package_created = HealthPackage.objects.update_or_create(
                     **health_package_kwargs, defaults=health_package_details)
                 health_package.included_health_tests.add(health_test)
-            
 
                 hospital_health_package_kwargs['hospital'] = hospital
                 hospital_health_package_kwargs['health_package'] = health_package
@@ -464,14 +501,14 @@ class HealthPackagesView(ProxyView):
                 health_package_details['hospital_health_package_created'] = hospital_health_package_created
 
                 all_health_packages.append(health_package_details)
-            
+
             except:
                 print(each_health_package)
 
         today_date = datetime.now().date()
         previous_date = datetime.now() - timedelta(days=1)
         HealthPackagePricing.objects.filter(hospital__code=hospital_code,
-                              updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
+                                            updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
         return self.custom_success_response(message=self.success_msg,
                                             success=True, data=response_content)
 
@@ -662,3 +699,30 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except Exception as e:
             pass
         return super().get_queryset()
+
+
+class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [AllowAny]
+    model = Company
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    list_success_message = 'Company list returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+    def get_permissions(self):
+        if self.action in ['list', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        company_serializer = CompanySerializer(data=request.data)
+        company_serializer.is_valid(raise_exception=True)
+        company_serializer.save()
+        return Response(status=status.HTTP_200_OK)

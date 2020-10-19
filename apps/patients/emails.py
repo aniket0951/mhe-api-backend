@@ -41,3 +41,19 @@ def send_family_member_email_activation_otp(user_id, otp_number):
 
     if not email_sent:
         raise UnablToSendEmailException
+
+
+def send_corporate_email_activation_otp(user_id ,email_id, otp_number):
+
+    user = Patient.objects.get(id=user_id)
+    recipients = [email_id]
+    subject = 'Corporate Account OTP Verification'
+    text_content = 'Dear {}, Please enter this OTP {} to verify your corporate account on Manipal Mobile apps'.format(
+        user.first_name, otp_number)
+
+    email = EmailMultiAlternatives(
+        subject, text_content, settings.EMAIL_FROM_USER, recipients)
+    email_sent = email.send()
+
+    if not email_sent:
+        raise UnablToSendEmailException

@@ -2,6 +2,7 @@ import ast
 import base64
 import datetime
 import hashlib
+import json
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -31,6 +32,8 @@ from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
 from proxy.custom_serializables import \
+    CurrentAppointmentList as serializable_CurrentAppointmentList
+from proxy.custom_serializables import \
     CurrentPatientList as serializable_CurrentPatientList
 from proxy.custom_serializables import \
     RescheduleAppointment as serializable_RescheduleAppointment
@@ -38,6 +41,8 @@ from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
 from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
+from proxy.custom_serializables import \
+    PaymentUpdate as serializable_PaymentUpdate
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -79,7 +84,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    filter_fields = ('status',)
+    filter_fields = ('status', 'appointment_identifier')
     ordering = ('appointment_date', '-appointment_slot', 'status')
     ordering_fields = ('appointment_date', 'appointment_slot', 'status')
     create_success_message = None
@@ -142,6 +147,7 @@ class CreateMyAppointment(ProxyView):
         patient_id = request.user.id
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
+        corporate = request.data.pop("corporate", None)
         patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(
             id=family_member_id).first()
@@ -181,6 +187,7 @@ class CreateMyAppointment(ProxyView):
         request.data["doctor"] = doctor
         request.data["department"] = department
         request.data["consultation_amount"] = amount
+        request.data['corporate'] = corporate
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -222,9 +229,26 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["hospital"] = data.get("hospital").id
                 new_appointment["appointment_mode"] = data.get(
                     "appointment_mode", None)
-                appointment = AppointmentSerializer(data=new_appointment)
+                if data.get('corporate',None):
+                    new_appointment["corporate_appointment"] = True
+
+                instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                if instance:
+                    appointment = AppointmentSerializer(instance, data=new_appointment, partial=True)
+                else:
+                    appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
+
+                if data.get('corporate',None):
+                    date_time = datetime_object.strftime("%Y%m%d")
+                    corporate_appointment = dict()
+                    corporate_appointment["uhid"] = new_appointment["uhid"]
+                    corporate_appointment["location_code"] = data.get("hospital").code
+                    corporate_appointment["app_date"] = date_time
+                    corporate_appointment["app_id"] = appointment_identifier
+                    corporate_param = cancel_and_refund_parameters(corporate_appointment)
+                    response = AppointmentPaymentView.as_view()(corporate_param)
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
@@ -780,6 +804,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsDoctor, ]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
+    ordering_fields = ('appointment_date', 'appointment_slot')
     filter_fields = ('appointment_date',
                      'appointment_identifier', 'vc_appointment_status',)
     list_success_message = 'Appointment list returned successfully!'
@@ -1139,3 +1164,101 @@ class AppointmentPrescriptionViewSet(custom_viewsets.ModelViewSet):
         if not uhid:
             raise ValidationError("Invalid Parameters")
         return queryset.filter(appointment_info__uhid=uhid)
+
+
+class CurrentAppointmentListView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'doctorappointments'
+
+    def get_request_data(self, request):
+        patient_list = serializable_CurrentAppointmentList(**request.data)
+        request_data = custom_serializer().serialize(patient_list, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        appointment_list = []
+        today_count = 0
+        tomorrow_count = 0
+        if status == '1':
+
+            app_list = json.loads(root.find("applist").text)
+            today_count = app_list["TodaysCount"]
+            tomorrow_count = app_list["TomorrowCount"]
+            appointment_list = app_list["AppointmentList"]
+            for appointment in appointment_list:
+
+                uhid = appointment["HospNo"]
+                appointment_identifier = appointment["AppId"]
+                appointment_instance = Appointment.objects.filter(
+                    appointment_identifier=appointment_identifier).first()
+                appointment["enable_vc"] = False
+                appointment["vitals_available"] = False
+                appointment["prescription_available"] = False
+
+                if appointment_instance:
+                    appointment["status"] = appointment_instance.status
+                    appointment["patient_ready"] = appointment_instance.patient_ready
+                    appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
+                    appointment["app_user"] = True
+                    if appointment_instance.status == 1 and appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
+                        appointment["enable_vc"] = True
+                        if appointment_instance.vc_appointment_status == 4:
+                            appointment["enable_vc"] = False
+                        if appointment_instance.appointment_vitals.exists():
+                            appointment["vitals_available"] = True
+                        
+                        if appointment_instance.appointment_prescription.exists():
+                            appointment["prescription_available"] = True
+
+                    else:
+                        appointment["enable_vc"] = False
+
+                else:
+                    appointment["app_user"] = False
+
+        return self.custom_success_response(message=message,
+                                            success=True, data={"appointment_list": appointment_list, "today_count":today_count, "tomorrow_count":tomorrow_count})
+
+
+class AppointmentPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'OnlinePayment'
+
+    def get_request_data(self, request):
+        request_xml = serializable_PaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        print(request_data)
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        print(response.content)
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            bill_detail = root.find("BillDetail").text
+            if bill_detail:
+                app_id = self.request.data.get("app_id")
+                aap_list = ast.literal_eval(bill_detail)
+                if aap_list:
+                    appointment_identifier = aap_list[0].get("AppointmentId")
+                    appointment_instance = Appointment.objects.filter(appointment_identifier=app_id).first()
+                    if appointment_instance:
+                        success_status = True
+                        appointment_instance.payment_status = "success"
+                        if appointment_identifier:
+                            appointment_instance.appointment_identifier = appointment_identifier
+                        appointment_instance.save()
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
