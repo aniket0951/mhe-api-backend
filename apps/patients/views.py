@@ -44,6 +44,8 @@ from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
                           PatientSerializer)
 from .utils import fetch_uhid_user_details
 
+from axes.models import AccessAttempt, AccessLog
+
 
 class PatientViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
