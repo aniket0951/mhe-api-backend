@@ -212,7 +212,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not (username and password):
             raise InvalidCredentialsException
 
-        authenticated_patient = authenticate(username=username,
+        authenticated_patient = authenticate(request=request,username=username,
                                              password=password)
         if not authenticated_patient:
             raise InvalidCredentialsException
