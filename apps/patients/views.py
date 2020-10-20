@@ -212,8 +212,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not (username and password):
             raise InvalidCredentialsException
 
-        authenticated_patient = authenticate(request=request,username=username,
+        try:
+            authenticated_patient = authenticate(request=request,username=username,
                                              password=password)
+        except:
+            import pdb; pdb.set_trace()
         if not authenticated_patient:
             raise InvalidCredentialsException
         if datetime.now().timestamp() > \
