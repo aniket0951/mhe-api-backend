@@ -217,8 +217,20 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient = authenticate(request=request,username=username,
                                             password=password)
         import pdb; pdb.set_trace()
+        access_log =  AccessAttempt.objects.filter(username=username).first()
         if not authenticated_patient:
+            if access_log:
+                attempt = access_log.failures_since_start
+                if attempt < 3:
+                    message = "You have entered wrong OTP {} times. Account will be locked after 3 unscuccessful attempt".format(attempt)
+                    raise ValidationError(message)
+                if attempt >= 3:
+                    message = "Your account is locked. Please try after 10 mins"
+                    raise ValidationError(message)
             raise InvalidCredentialsException
+
+        access_log.delete()
+        
         if datetime.now().timestamp() > \
                 authenticated_patient.otp_expiration_time.timestamp():
             raise OTPExpiredException
