@@ -502,6 +502,11 @@ class OfflineAppointment(APIView):
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
             if appointment_instance:
+                if appointment_instance.payment_status == "success":
+                    appointment_data.pop("payment_status")
+                    appointment_data.pop("patient")
+                    appointment_data.pop("family_member")
+                    print(appointment_data)
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
             else:
