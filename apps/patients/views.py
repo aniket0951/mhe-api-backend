@@ -229,7 +229,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                     raise ValidationError(message)
             raise InvalidCredentialsException
 
-        access_log.delete()
+        if access_log:
+            access_log.delete()
 
         if datetime.now().timestamp() > \
                 authenticated_patient.otp_expiration_time.timestamp():
