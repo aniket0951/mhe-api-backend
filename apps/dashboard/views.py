@@ -143,7 +143,7 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['appointment_statistics']["opd_visit"] = Appointment.objects.filter(
                     status=1, appointment_mode="HV").count()
 
-                dashboard_details['appointment_statistics'][" rescheduled"] = Appointment.objects.filter(
+                dashboard_details['appointment_statistics']["rescheduled"] = Appointment.objects.filter(
                     status=5).count()
 
                 dashboard_details['health_package_statistics'] = {}
