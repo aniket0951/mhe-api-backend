@@ -108,7 +108,8 @@ THIRD_PARTY_APPS = [
     'import_export',
     'django_extensions',
     'django.contrib.gis',
-    'fcm_django'
+    'fcm_django',
+    'axes'
 ]
 
 # Application definition
@@ -131,6 +132,7 @@ DEFAULT_MIDDLEWARES = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',
 ]
 
 

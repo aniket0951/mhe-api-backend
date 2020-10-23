@@ -109,7 +109,8 @@ THIRD_PARTY_APPS = [
     'import_export',
     'django_extensions',
     'django.contrib.gis',
-    'fcm_django'
+    'fcm_django',
+    'axes'
 ]
 
 # Application definition
@@ -120,6 +121,7 @@ AUTH_USER_MODEL = 'users.BaseUser'
 
 AUTHENTICATION_BACKENDS = (
     # 'django.contrib.auth.backends.ModelBackend',
+    'axes.backends.AxesBackend',
     'utils.custom_authentication.CustomPatientAuthBackend',
 
 )
@@ -132,6 +134,7 @@ DEFAULT_MIDDLEWARES = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',
 ]
 
 
@@ -377,6 +380,11 @@ FORCE_UPDATE_ENABLE = env('FORCE_UPDATE_ENABLE')
 HEALTH_PACKAGE_UPDATE_API= env('HEALTH_PACKAGE_UPDATE_API')
 HEALTH_PACKAGE_UPDATE_USER = env('HEALTH_PACKAGE_UPDATE_USER')
 HEALTH_PACKAGE_UPDATE_PASSWORD = env('HEALTH_PACKAGE_UPDATE_PASSWORD')
+
+
+AXES_FAILURE_LIMIT=3
+AXES_COOLOFF_TIME = datetime.timedelta(minutes=10)
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 
 
 # Logger configuration
