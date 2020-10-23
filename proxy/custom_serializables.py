@@ -81,14 +81,16 @@ class BookMySlot:
 
 
 class SyncAPIRequest:
-    def __init__(self, location_code=None, sync_method=None):
+    def __init__(self, location_code=None, sync_method=None, item_code=None):
         self.location_code = location_code
         self.sync_method = sync_method
+        self.item_code = item_code
 
     def serialize(self, serializer):
         serializer.start_object('SyncRequestParam')
         serializer.add_property('SyncLocationCode', self.location_code)
         serializer.add_property('SyncMethod', self.sync_method)
+        serializer.add_property('SyncItemCode', self.item_code)
 
 
 class ItemTariffPrice:
@@ -385,6 +387,15 @@ class CurrentPatientList:
         serializer.add_property('VisitType', self.visit_type)
 
 
+class HealthPackagePrice:
+    def __init__(self, location_code=None, package_code=None):
+        self.location_code = location_code
+        self.package_code = package_code
+
+    def serialize(self, serializer):
+        serializer.start_object('packagepriceParam')
+        serializer.add_property('packageCode', self.package_code)
+        serializer.add_property('locationCode', self.location_code)
 class CurrentAppointmentList:
     def __init__(self, location_code="MHB", app_date=None, doctor_code=None, visit_type=None):
         self.location_code = location_code

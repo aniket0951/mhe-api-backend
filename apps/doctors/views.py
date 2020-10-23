@@ -232,6 +232,9 @@ class DoctorloginView(ProxyView):
     def get_request_data(self, request):
         appointment_identifier = request.data.pop(
             "appointment_identifier", None)
+        user_id = request.data.get("user_id")
+        if user_id and user_id.upper().startswith("MMH"):
+            request.data["location_code"] = "MMH"
         schedule = serializable_DoctotLogin(**request.data)
         request_data = custom_serializer().serialize(schedule, 'XML')
         request.data["appointment_identifier"] = appointment_identifier
