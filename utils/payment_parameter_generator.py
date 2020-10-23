@@ -10,8 +10,7 @@ from rest_framework.serializers import ValidationError
 
 
 def get_payment_param(data=None):
-    param = {}
-    token = {}
+    param, token = {}, {}
     processing_id = get_processing_id()
     token["auth"] = {}
     token["auth"]["user"] = settings.SALUCRO_AUTH_USER
