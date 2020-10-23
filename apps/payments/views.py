@@ -62,7 +62,7 @@ client = APIClient()
 
 
 class AppointmentPayment(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (IsPatientUser,)
 
     def post(self, request, format=None):
         param = get_payment_param(request.data)
@@ -127,7 +127,7 @@ class AppointmentPayment(APIView):
 
 
 class HealthPackagePayment(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (IsPatientUser,)
 
     def post(self, request, format=None):
         param = get_payment_param(request.data)
@@ -185,7 +185,7 @@ class HealthPackagePayment(APIView):
 
 
 class UHIDPayment(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (IsPatientUser,)
 
     def post(self, request, format=None):
         payment_data = {}
@@ -226,7 +226,7 @@ class UHIDPayment(APIView):
 
 
 class OPBillPayment(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (IsPatientUser,)
 
     def post(self, request, format=None):
         payment_data = {}
@@ -274,7 +274,7 @@ class OPBillPayment(APIView):
 
 
 class IPDepositPayment(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (IsPatientUser,)
 
     def post(self, request, format=None):
         payment_data = {}
