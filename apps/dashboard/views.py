@@ -6,8 +6,10 @@ from apps.doctors.models import Doctor
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
 from apps.manipal_admin.serializers import ManipalAdminSerializer
+from apps.notifications.models import MobileDevice
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
+from apps.payments.models import Payment
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
@@ -69,6 +71,38 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['patients_count'] = len(unique_uhid_info)
                 dashboard_details['app_users_count'] = Patient.objects.count()
 
+                dashboard_details['registered_user_count'] = Patient.objects.filter(
+                    mobile_verified=True).count()
+
+                dashboard_details['user_with_uhid_count'] = Patient.objects.filter(
+                    mobile_verified=True, uhid_number__isnull=False).count()
+
+                dashboard_details['family_Member_count'] = FamilyMember.objects.filter(
+                    is_visible=True).count()
+
+                dashboard_details['family_Member_with_uhid_count'] = FamilyMember.objects.filter(
+                    is_visible=True, uhid_number__isnull=False).count()
+
+                dashboard_details["android_user"] = MobileDevice.objects.filter(
+                    platform='Android').count()
+
+                dashboard_details["apple_user"] = MobileDevice.objects.filter(
+                    platform='iOS').count()
+
+                dashboard_details['payments_info'] = {}
+                dashboard_details['payments_info']["total"] = Payment.objects.filter(
+                    status="success").count()
+                dashboard_details['payments_info']["uhid_registration"] = Payment.objects.filter(
+                    payment_for_uhid_creation=True, status="success").count()
+                dashboard_details['payments_info']["doctor_consultation"] = Payment.objects.filter(
+                    appointment__isnull=False, status="success").count()
+                dashboard_details['payments_info']["health_package_count"] = Payment.objects.filter(
+                    payment_for_health_package=True, status="success").count()
+                dashboard_details['payments_info']["inpatient_deposit_count"] = Payment.objects.filter(
+                    payment_for_ip_deposit=True, status="success").count()
+                dashboard_details['payments_info']["payment_for_op_billing_count"] = Payment.objects.filter(
+                    payment_for_op_billing=True, status="success").count()
+
                 dashboard_details['home_collection_statistics'] = {}
                 dashboard_details['home_collection_statistics']['total'] = HomeCollectionAppointment.objects.count(
                 )
@@ -102,6 +136,15 @@ class DashboardAPIView(ListAPIView):
                     status=1).count()
                 dashboard_details['appointment_statistics']['cancelled'] = Appointment.objects.filter(
                     status=2).count()
+
+                dashboard_details['appointment_statistics']["video_consultation"] = Appointment.objects.filter(
+                    status=1, appointment_mode="VC", payment_status="success").count()
+
+                dashboard_details['appointment_statistics']["opd_visit"] = Appointment.objects.filter(
+                    status=1, appointment_mode="HV").count()
+
+                dashboard_details['appointment_statistics']["rescheduled"] = Appointment.objects.filter(
+                    status=5).count()
 
                 dashboard_details['health_package_statistics'] = {}
                 dashboard_details['health_package_statistics']['total'] = HealthPackageAppointment.objects.filter(

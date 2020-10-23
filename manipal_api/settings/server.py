@@ -174,16 +174,8 @@ DATABASES = {
         'USER': env('MANIPAL_DB_USER'),
         'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),
         'HOST': env('MANIPAL_DB_HOST'),
-        'PORT': env('MANIPAL_DB_PORT'), },
-    # 'write_db': {
-    #     'ENGINE': 'django.contrib.gis.db.backends.postgis',
-    #     'NAME': env('MANIPAL_DB_NAME'),
-    #     'USER': env('MANIPAL_DB_USER'),
-    #     'PASSWORD': env('MANIPAL_DB_USER_PASSWORD'),
-    #     'HOST': env('MANIPAL_DB_HOST'),
-    #     'PORT': env('MANIPAL_DB_PORT'),
-
-    # },
+        'PORT': env('MANIPAL_DB_PORT'), 
+        }
     # 'read_db': {
     #     'ENGINE': 'django.contrib.gis.db.backends.postgis',
     #     'NAME': env('MANIPAL_READ_DB_NAME'),
