@@ -108,22 +108,30 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return qs.filter(appointment_date__gte=datetime.now().date(), status=1)
             return qs
 
+        patient = Patient.objects.filter(id=self.request.user.id).first()
+        if not patient:
+            raise ValidationError("Patient does not Exist")
         elif (family_member is not None):
             member = FamilyMember.objects.filter(id=family_member).first()
             if not member:
                 raise ValidationError("Family Member does not Exist")
             member_uhid = member.uhid_number
             if is_upcoming:
+                if patient.active_view == 'Corporate':
+                    return super().get_queryset().filter(
+                        Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
+                        Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=True)
+
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
                     Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
+            if patient.active_view == 'Corporate':
+                return super().get_queryset().filter(
+                    (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).filter(corporate_appointment=True)
+
             return super().get_queryset().filter(
                 (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member)))
         else:
-            patient = Patient.objects.filter(id=self.request.user.id).first()
-            if not patient:
-                raise ValidationError("Patient does not Exist")
-
             member_uhid = patient.uhid_number
             if is_upcoming:
                 if patient.active_view == 'Corporate':
