@@ -123,13 +123,30 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             patient = Patient.objects.filter(id=self.request.user.id).first()
             if not patient:
                 raise ValidationError("Patient does not Exist")
+
             member_uhid = patient.uhid_number
             if is_upcoming:
+                if patient.active_view == 'Corporate':
+                    return super().get_queryset().filter(
+                        Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
+                        & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
+                                                                            & Q(family_member__isnull=True)))).exclude(
+                        Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=True)
+
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
                     & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
                                                                         & Q(family_member__isnull=True)))).exclude(
                     Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
+
+            if patient.active_view == 'Corporate':
+                return super().get_queryset().filter(
+                    (Q(appointment_date__lt=datetime.now().date())
+                     | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
+                    & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
+                       | (Q(patient_id=patient.id)) &
+                        Q(family_member__isnull=True))).filter(corporate_appointment=True)
+
             return super().get_queryset().filter(
                 (Q(appointment_date__lt=datetime.now().date())
                  | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
@@ -229,25 +246,29 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["hospital"] = data.get("hospital").id
                 new_appointment["appointment_mode"] = data.get(
                     "appointment_mode", None)
-                if data.get('corporate',None):
+                if data.get('corporate', None):
                     new_appointment["corporate_appointment"] = True
 
-                instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                instance = Appointment.objects.filter(
+                    appointment_identifier=appointment_identifier).first()
                 if instance:
-                    appointment = AppointmentSerializer(instance, data=new_appointment, partial=True)
+                    appointment = AppointmentSerializer(
+                        instance, data=new_appointment, partial=True)
                 else:
                     appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
 
-                if data.get('corporate',None):
+                if data.get('corporate', None):
                     date_time = datetime_object.strftime("%Y%m%d")
                     corporate_appointment = dict()
                     corporate_appointment["uhid"] = new_appointment["uhid"]
-                    corporate_appointment["location_code"] = data.get("hospital").code
+                    corporate_appointment["location_code"] = data.get(
+                        "hospital").code
                     corporate_appointment["app_date"] = date_time
                     corporate_appointment["app_id"] = appointment_identifier
-                    corporate_param = cancel_and_refund_parameters(corporate_appointment)
+                    corporate_param = cancel_and_refund_parameters(
+                        corporate_appointment)
                     response = AppointmentPaymentView.as_view()(corporate_param)
                 response_success = True
                 response_message = "Appointment has been created"
@@ -1210,13 +1231,13 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
-                    if appointment_instance.status == 1 and appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
+                    if appointment_instance.status == 1 and appointment_instance.appointment_mode == "VC" and appointment_instance.payment_status == "success":
                         appointment["enable_vc"] = True
                         if appointment_instance.vc_appointment_status == 4:
                             appointment["enable_vc"] = False
                         if appointment_instance.appointment_vitals.exists():
                             appointment["vitals_available"] = True
-                        
+
                         if appointment_instance.appointment_prescription.exists():
                             appointment["prescription_available"] = True
 
@@ -1227,7 +1248,7 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["app_user"] = False
 
         return self.custom_success_response(message=message,
-                                            success=True, data={"appointment_list": appointment_list, "today_count":today_count, "tomorrow_count":tomorrow_count})
+                                            success=True, data={"appointment_list": appointment_list, "today_count": today_count, "tomorrow_count": tomorrow_count})
 
 
 class AppointmentPaymentView(ProxyView):
@@ -1257,7 +1278,8 @@ class AppointmentPaymentView(ProxyView):
                 aap_list = ast.literal_eval(bill_detail)
                 if aap_list:
                     appointment_identifier = aap_list[0].get("AppointmentId")
-                    appointment_instance = Appointment.objects.filter(appointment_identifier=app_id).first()
+                    appointment_instance = Appointment.objects.filter(
+                        appointment_identifier=app_id).first()
                     if appointment_instance:
                         success_status = True
                         appointment_instance.payment_status = "success"
