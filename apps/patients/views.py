@@ -39,7 +39,7 @@ from .exceptions import (InvalidCredentialsException, InvalidEmailOTPException,
                          PatientMobileDoesNotExistsValidationException,
                          PatientMobileExistsValidationException,
                          PatientOTPExceededLimitException)
-from .models import FamilyMember, Patient, PatientAddress
+from .models import FamilyMember, Patient, PatientAddress, OtpGenerationCount
 from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
                           PatientSerializer)
 from .utils import fetch_uhid_user_details
@@ -258,7 +258,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.set_password(random_password)
         authenticated_patient.save()
         serializer = self.get_serializer(authenticated_patient)
-
         payload = jwt_payload_handler(authenticated_patient)
         payload['username'] = payload['username'].raw_input
         payload['mobile'] = payload['mobile'].raw_input
@@ -266,6 +265,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         expiration = datetime.utcnow(
         ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
         expiration_epoch = expiration.timestamp()
+
+        otp_instance = OtpGenerationCount.objects.filter(mobile=authenticated_patient.mobile).first()
+        if otp_instance:
+            otp_instance.otp_generation_count = 0
+            otp_instance.save()
 
         data = {
             "data": serializer.data,
@@ -416,6 +420,23 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 mobile=mobile).first()
             if not request_patient:
                 raise PatientMobileDoesNotExistsValidationException
+
+            otp_instance = OtpGenerationCount.objects.filter(mobile=mobile).first()
+            if not otp_instance:
+                otp_instance = OtpGenerationCount.objects.create(mobile=mobile,otp_generation_count=1)
+            
+            current_time = datetime.today()
+            delta = current_time - otp_instance.updated_at
+            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
+                raise ValidationError("You have reached Maximum Otp generation Limit. Please try after 10 minutes")
+
+            if delta.seconds > 600:
+                otp_instance.otp_generation_count = 1
+                otp_instance.save()
+
+            if delta.seconds <= 600:
+                otp_instance.otp_generation_count += 1
+                otp_instance.save()
 
         if facebook_id:
             request_patient = self.get_queryset().filter(
@@ -626,7 +647,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def switch_view(self, request):
         patient = Patient.objects.filter(id=request.user.id).first()
         view = request.data.get("view", None)
-        if view not in ["Normal", "Corporate"]:
+        if view not in ["Normal", "Corporate"] or not is_corporate:
             raise ValidationError("View Not Acceptable")
 
         if not patient:

@@ -344,3 +344,20 @@ class PatientAddress(MyBaseModel):
 
     def __str__(self):
         return self.representation
+
+
+class OtpGenerationCount(MyBaseModel):
+
+    mobile = PhoneNumberField(blank=True,
+                              null=True,
+                              verbose_name="Mobile Number")
+
+    otp_generation_count = models.IntegerField(default = 0, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Patient Otp Count"
+        verbose_name_plural = "Patient Otp Counts"
+
+
+
+
