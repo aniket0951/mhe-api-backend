@@ -260,14 +260,15 @@ class CreateMyAppointment(ProxyView):
                 instance = Appointment.objects.filter(
                     appointment_identifier=appointment_identifier).first()
                 if instance:
+                    new_appointment["booked_via_app"] = True
                     appointment = AppointmentSerializer(
                         instance, data=new_appointment, partial=True)
                 else:
                     appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
-
-                if data.get('corporate', None):
+                patient = data.get("patient", None)
+                if patient and patient.active_view == 'Corporate':
                     date_time = datetime_object.strftime("%Y%m%d")
                     corporate_appointment = dict()
                     corporate_appointment["uhid"] = new_appointment["uhid"]
@@ -807,10 +808,15 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["hospital"] = instance.hospital.id
                         new_appointment["appointment_mode"] = self.request.data.get(
                             "app_type")
-                        appointment = AppointmentSerializer(
-                            data=new_appointment)
-                        appointment.is_valid(raise_exception=True)
-                        appointment = appointment.save()
+                        new_appointment["corporate_appointment"] = instance.corporate_appointment
+                        new_appointment["booked_via_app"] = True
+                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
+                        if appointment_instance:
+                            appointment_serializer = AppointmentSerializer(appointment_instance, data=new_appointment, partial=True)
+                        else:
+                            appointment_serializer = AppointmentSerializer(data=new_appointment)
+                        appointment_serializer.is_valid(raise_exception=True)
+                        appointment = appointment_serializer.save()
                         if instance.payment_appointment.exists():
                             payment_instance = instance.payment_appointment.filter(
                                 status="success").first()
