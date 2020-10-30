@@ -18,7 +18,7 @@ class Command(BaseCommand):
             response_data = requests.request(
                 'GET', settings.HEALTH_PACKAGE_UPDATE_API, params=params).text
             response_data = json.loads(response_data)
-
+            print(response_data)
             for each_health_package in response_data:
 
                 if not each_health_package['his_code']:

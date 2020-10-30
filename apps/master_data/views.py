@@ -193,6 +193,7 @@ class DepartmentsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        print(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
 
@@ -273,6 +274,7 @@ class DoctorsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        print(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
@@ -375,6 +377,7 @@ class HealthPackagesView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        print(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
@@ -526,6 +529,7 @@ class LabRadiologyItemsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        print(response.content)
         item = ET.fromstring(response._content).find('SyncResponse')
         if item.text.startswith('Request Parameter'):
             raise HospitalCodeMissingValidationException
