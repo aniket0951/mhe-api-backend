@@ -647,7 +647,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def switch_view(self, request):
         patient = Patient.objects.filter(id=request.user.id).first()
         view = request.data.get("view", None)
-        if view not in ["Normal", "Corporate"] or not is_corporate:
+        if view not in ["Normal", "Corporate"] or not patient.is_corporate:
             raise ValidationError("View Not Acceptable")
 
         if not patient:
