@@ -1,4 +1,5 @@
 import json
+import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
@@ -44,6 +45,8 @@ from .serializers import (AmbulanceContactSerializer, CompanySerializer,
                           DepartmentSerializer, HospitalDepartmentSerializer,
                           HospitalSerializer, HospitalSpecificSerializer,
                           SpecialisationSerializer)
+
+logger = logging.getLogger('django')
 
 
 class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -193,6 +196,7 @@ class DepartmentsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
 
@@ -273,6 +277,7 @@ class DoctorsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
@@ -375,6 +380,7 @@ class HealthPackagesView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
@@ -526,6 +532,7 @@ class LabRadiologyItemsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         item = ET.fromstring(response._content).find('SyncResponse')
         if item.text.startswith('Request Parameter'):
             raise HospitalCodeMissingValidationException

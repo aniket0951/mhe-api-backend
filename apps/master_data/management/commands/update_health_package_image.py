@@ -1,4 +1,5 @@
 import json
+import logging
 
 import requests
 from django.conf import settings
@@ -6,6 +7,8 @@ from django.core.management import BaseCommand
 from requests.auth import HTTPBasicAuth
 
 from apps.health_packages.models import HealthPackage
+
+logger = logging.getLogger('django')
 
 
 class Command(BaseCommand):
@@ -18,7 +21,7 @@ class Command(BaseCommand):
             response_data = requests.request(
                 'GET', settings.HEALTH_PACKAGE_UPDATE_API, params=params).text
             response_data = json.loads(response_data)
-
+            logger.info(response_data)
             for each_health_package in response_data:
 
                 if not each_health_package['his_code']:

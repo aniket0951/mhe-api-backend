@@ -321,6 +321,9 @@ class PaymentResponse(APIView):
         except Exception:
             raise ProcessingIdDoesNotExistsValidationException
         uhid = "-1"
+        payment_instance.raw_info_from_salucro_response = response_token_json
+        payment_instance.save()
+        
         if status_code == 1200:
             payment = {}
             payment["uhid_number"] = payment_account["account_number"]
@@ -367,7 +370,6 @@ class PaymentResponse(APIView):
                 "-" + payment_response["mode"]
             payment["transaction_id"] = payment_response["txnid"]
             payment["amount"] = payment_response["net_amount_debit"]
-            payment["raw_info_from_salucro_response"] = response_token_json
             payment_serializer = PaymentSerializer(
                 payment_instance, data=payment, partial=True)
             payment_serializer.is_valid(raise_exception=True)
