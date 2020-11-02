@@ -64,6 +64,7 @@ class PushNotificationViewSet(APIView):
         for user in user_list:
             patient = Patient.objects.filter(id=user).first()
             if patient:
+                notification_data = dict()
                 notification_data["title"] = self.request.data.get("title")
                 notification_data["message"] = self.request.data.get(
                     "user_message")
