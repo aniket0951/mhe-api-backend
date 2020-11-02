@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django.shortcuts import render
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.patients.models import Patient
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
