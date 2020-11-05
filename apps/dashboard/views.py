@@ -94,14 +94,28 @@ class DashboardAPIView(ListAPIView):
                     status="success").count()
                 dashboard_details['payments_info']["uhid_registration"] = Payment.objects.filter(
                     payment_for_uhid_creation=True, status="success").count()
+                dashboard_details['payments_info']["uhid_total_amount"] = Payment.objects.filter(
+                    payment_for_uhid_creation=True, status="success").aggregate(Sum('amount'))
+
                 dashboard_details['payments_info']["doctor_consultation"] = Payment.objects.filter(
                     appointment__isnull=False, status="success").count()
+                dashboard_details['payments_info']["doctor_consultation_total_amount"] = Payment.objects.filter(
+                    appointment__isnull=False, status="success").aggregate(Sum('amount'))
+
                 dashboard_details['payments_info']["health_package_count"] = Payment.objects.filter(
                     payment_for_health_package=True, status="success").count()
+                dashboard_details['payments_info']["health_package_total_amount"] = Payment.objects.filter(
+                    payment_for_health_package=True, status="success").aggregate(Sum('amount'))
+
                 dashboard_details['payments_info']["inpatient_deposit_count"] = Payment.objects.filter(
                     payment_for_ip_deposit=True, status="success").count()
+                dashboard_details['payments_info']["inpatient_deposit_total_amount"] = Payment.objects.filter(
+                    payment_for_ip_deposit=True, status="success").aggregate(Sum('amount'))
+
                 dashboard_details['payments_info']["payment_for_op_billing_count"] = Payment.objects.filter(
                     payment_for_op_billing=True, status="success").count()
+                dashboard_details['payments_info']["payment_for_op_billing_total_amount"] = Payment.objects.filter(
+                    payment_for_op_billing=True, status="success").aggregate(Sum('amount'))
 
                 dashboard_details['home_collection_statistics'] = {}
                 dashboard_details['home_collection_statistics']['total'] = HomeCollectionAppointment.objects.count(
@@ -130,21 +144,30 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['doctor_count'] = Doctor.objects.count()
 
                 dashboard_details['appointment_statistics'] = {}
-                dashboard_details['appointment_statistics']['total'] = Appointment.objects.count(
-                )
+                dashboard_details['appointment_statistics']['total'] = Appointment.objects.filter(
+                    booked_via_app=True).count()
                 dashboard_details['appointment_statistics']['confirmed'] = Appointment.objects.filter(
-                    status=1).count()
+                    booked_via_app=True, status=1).count()
                 dashboard_details['appointment_statistics']['cancelled'] = Appointment.objects.filter(
-                    status=2).count()
+                    booked_via_app=True, status=2).count()
 
                 dashboard_details['appointment_statistics']["video_consultation"] = Appointment.objects.filter(
-                    status=1, appointment_mode="VC", payment_status="success").count()
+                    booked_via_app=True, status=1, appointment_mode="VC", payment_status="success").count()
 
                 dashboard_details['appointment_statistics']["opd_visit"] = Appointment.objects.filter(
-                    status=1, appointment_mode="HV").count()
+                    booked_via_app=True, status=1, appointment_mode="HV").count()
 
                 dashboard_details['appointment_statistics']["rescheduled"] = Appointment.objects.filter(
-                    status=5).count()
+                    booked_via_app=True, status=5).count()
+
+                dashboard_details['appointment_statistics']['total_appointment_hospital_wise'] = Appointment.objects.filter(
+                    status=1, booked_via_app=True).values('hospital__code').annotate(Count('hospital'))
+
+                dashboard_details['appointment_statistics']['opd_appointment_hospital_wise'] = Appointment.objects.filter(
+                    booked_via_app=True, status=1, appointment_mode="HV").values('hospital__code').annotate(Count('hospital'))
+
+                dashboard_details['appointment_statistics']['vc_appointment_hospital_wise'] = Appointment.objects.filter(
+                    booked_via_app=True, status=1, appointment_mode="VC", payment_status="success").values('hospital__code').annotate(Count('hospital'))
 
                 dashboard_details['health_package_statistics'] = {}
                 dashboard_details['health_package_statistics']['total'] = HealthPackageAppointment.objects.filter(
