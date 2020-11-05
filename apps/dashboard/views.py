@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models import Sum
+from django.db.models import Sum, Count
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import AppointmentSerializer
