@@ -124,13 +124,13 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
-                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=False)
             if patient.active_view == 'Corporate':
                 return super().get_queryset().filter(
                     (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).filter(corporate_appointment=True)
 
             return super().get_queryset().filter(
-                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member)))
+                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).filter(corporate_appointment=False)
         else:
             member_uhid = patient.uhid_number
             if is_upcoming:
@@ -145,7 +145,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
                     & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
                                                                         & Q(family_member__isnull=True)))).exclude(
-                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=False)
 
             if patient.active_view == 'Corporate':
                 return super().get_queryset().filter(
@@ -160,7 +160,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                  | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
                 & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
                    | (Q(patient_id=patient.id)) &
-                   Q(family_member__isnull=True)))
+                   Q(family_member__isnull=True))).filter(corporate_appointment=False)
 
 
 class CreateMyAppointment(ProxyView):
