@@ -17,6 +17,8 @@ from apps.health_packages.serializers import (HealthPackage,
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
+
+from apps.notifications.tasks import update_health_package, update_doctor, update_item, daily_update_scheduler
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
@@ -743,17 +745,13 @@ class RequestSyncView(APIView):
     def post(self, request, format=None):
         sync_request = self.request.data.get("sync_request", None)
         if sync_request == 'health_package':
-            call_command("create_or_update_health_packages", verbosity=0)
-            call_command("update_health_package_image", verbosity=0)
+            update_health_package.delay()
 
         elif sync_request == 'doctor':
-            call_command("create_or_update_doctors", verbosity=0)
-            call_command("update_doctors_profile", verbosity=0)
-            call_command("create_or_update_doctor_price", verbosity=0)
+            update_doctor.delay()
 
         elif sync_request == 'item':
-            call_command(
-                "create_or_update_lab_and_radiology_items", verbosity=0)
+            update_item.delay()
 
         else:
             raise ValidationError("Parameter Missing")
