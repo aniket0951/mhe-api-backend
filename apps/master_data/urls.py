@@ -41,7 +41,7 @@ urlpatterns = [
     url('^validate_uhid_otp', ValidateOTPView.as_view(),
         name="validate_otp"),
 
-    path('request_sync', RequestSyncView.as_view()),
+    url('^request_sync', RequestSyncView.as_view()),
 
     *router.urls
 ]
