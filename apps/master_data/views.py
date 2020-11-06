@@ -689,15 +689,24 @@ class ValidateOTPView(ProxyView):
                                             data=response_content)
 
 
-class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
-    permission_classes = [AllowAny]
+class AmbulanceContactViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
     model = AmbulanceContact
     queryset = AmbulanceContact.objects.all()
     serializer_class = AmbulanceContactSerializer
     list_success_message = 'Ambulance Contact list returned successfully!'
+    retrieve_success_message = 'Ambulance Contact returned successfully!'
+    update_success_message = 'Ambulance Contact updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_fields = ('hospital__id',)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
 
     def get_queryset(self):
         try:
@@ -713,7 +722,7 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
-    permission_classes = [AllowAny]
+    permission_classes = [IsManipalAdminUser]
     model = Company
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
@@ -722,12 +731,12 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
 
     def get_permissions(self):
-        if self.action in ['list', ]:
+        if self.action in ['list']:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
         if self.action in ['create']:
-            permission_classes = [AllowAny]
+            permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
@@ -740,7 +749,7 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class RequestSyncView(APIView):
-    permission_classes = (AllowAny,)
+    permission_classes = (IsManipalAdminUser,)
 
     def post(self, request, format=None):
         sync_request = self.request.data.get("sync_request", None)
