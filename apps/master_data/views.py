@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
+from django.core.management import call_command
 from django.db.models import Q
 from django.utils.timezone import datetime
 
@@ -29,6 +30,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -732,4 +734,28 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
         company_serializer = CompanySerializer(data=request.data)
         company_serializer.is_valid(raise_exception=True)
         company_serializer.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+class RequestSyncView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, format=None):
+        sync_request = self.request.data.get("sync_request", None)
+        if sync_request == 'health_package':
+            call_command("create_or_update_health_packages", verbosity=0)
+            call_command("update_health_package_image", verbosity=0)
+
+        elif sync_request == 'doctor':
+            call_command("create_or_update_doctors", verbosity=0)
+            call_command("update_doctors_profile", verbosity=0)
+            call_command("create_or_update_doctor_price", verbosity=0)
+
+        elif sync_request == 'item':
+            call_command(
+                "create_or_update_lab_and_radiology_items", verbosity=0)
+
+        else:
+            raise ValidationError("Parameter Missing")
+
         return Response(status=status.HTTP_200_OK)

@@ -6,8 +6,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
                     DoctorsView, HealthPackagesView, HospitalDepartmentViewSet,
                     HospitalViewSet, ItemsTarrifPriceView,
-                    LabRadiologyItemsView, SpecialisationViewSet,
-                    ValidateOTPView, ValidateUHIDView)
+                    LabRadiologyItemsView, RequestSyncView,
+                    SpecialisationViewSet, ValidateOTPView, ValidateUHIDView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -40,6 +40,8 @@ urlpatterns = [
 
     url('^validate_uhid_otp', ValidateOTPView.as_view(),
         name="validate_otp"),
+
+    path('request_sync', RequestSyncView.as_view()),
 
     *router.urls
 ]
