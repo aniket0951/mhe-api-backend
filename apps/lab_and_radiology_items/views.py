@@ -83,8 +83,10 @@ class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
     create_success_message = "Home care service is added successfully."
     list_success_message = 'Home care services list returned successfully!'
     retrieve_success_message = 'Home care service information returned successfully!'
+    update_success_message = 'Home care service information is updated successfuly!'
 
     def get_permissions(self):
+        import pdb; pdb.set_trace()
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
