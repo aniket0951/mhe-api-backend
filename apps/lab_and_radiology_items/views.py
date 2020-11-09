@@ -75,7 +75,7 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
             .distinct().annotate(is_added_to_cart=Exists(user_cart_collections))
 
 
-class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class HomeCareServiceViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = HomeCareService
     queryset = HomeCareService.objects.all()
@@ -86,7 +86,6 @@ class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = 'Home care service information is updated successfuly!'
 
     def get_permissions(self):
-        import pdb; pdb.set_trace()
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
