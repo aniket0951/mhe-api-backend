@@ -80,6 +80,7 @@ class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
     model = HomeCareService
     queryset = HomeCareService.objects.all()
     serializer_class = HomeCareServiceSerializer
+    create_success_message = "Home care service is added successfully."
     list_success_message = 'Home care services list returned successfully!'
     retrieve_success_message = 'Home care service information returned successfully!'
 
@@ -88,7 +89,7 @@ class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['update', 'delete']:
+        if self.action in ['update', 'delete', 'create']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
