@@ -87,6 +87,11 @@ class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
+
+        if self.action in ['update', 'delete']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
         return super().get_permissions()
 
 
