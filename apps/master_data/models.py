@@ -6,7 +6,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from apps.meta_app.models import MyBaseModel
 from django.contrib.gis.db import models
 
-from utils.custom_storage import FileStorage
+from utils.custom_storage import FileStorage, MediaStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 from django.core.validators import FileExtensionValidator
 from django.conf import settings
@@ -217,10 +217,10 @@ class HomeCareService(MyBaseModel):
                             null=True,
                             blank=True,)
     
-    image = models.FileField(upload_to=generate_service_file_path,
-                                storage=FileStorage(),
+    image = models.ImageField(upload_to=generate_service_file_path,
+                                storage=MediaStorage(),
                                 validators=[FileExtensionValidator(
-                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
+                                            settings.VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
                                             validate_file_authenticity],
                                 blank=True,
                                 null=True)
