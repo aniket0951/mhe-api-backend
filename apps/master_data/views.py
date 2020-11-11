@@ -17,8 +17,8 @@ from apps.health_packages.serializers import (HealthPackage,
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
-
-from apps.notifications.tasks import update_health_package, update_doctor, update_item, daily_update_scheduler
+from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
+                                      update_health_package, update_item)
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
@@ -718,7 +718,7 @@ class AmbulanceContactViewSet(custom_viewsets.ModelViewSet):
                                                                                         user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
-        return super().get_queryset()
+        return super().get_queryset().order_by('hospital__code')
 
 
 class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
