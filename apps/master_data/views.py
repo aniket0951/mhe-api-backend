@@ -94,7 +94,7 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'create']:
+        if self.action in ['update', 'partial_update', 'create']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
         return super().get_permissions()
