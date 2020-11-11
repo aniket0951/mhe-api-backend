@@ -53,15 +53,15 @@ from .serializers import (AmbulanceContactSerializer, CompanySerializer,
 logger = logging.getLogger('django')
 
 
-class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class HospitalViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     model = Hospital
     queryset = Hospital.objects.all()
     serializer_class = HospitalSerializer
-    create_success_message = None
+    create_success_message = 'Hospital information created successfully!'
     list_success_message = 'Hospitals list returned successfully!'
     retrieve_success_message = 'Hospital information returned successfully!'
-    update_success_message = None
+    update_success_message = 'Hospital information updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', 'address', ]
