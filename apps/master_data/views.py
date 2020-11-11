@@ -121,6 +121,19 @@ class HospitalViewSet(custom_viewsets.ModelViewSet):
             pass
         return Response(data=hospital_serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['POST'])
+    def update_hospital_location(self, request):
+        hospital_id = self.request.data.get("hospital_id")
+        longitude = float(self.request.data.get("longitude", 0))
+        latitude = float(self.request.data.get("latitude", 0))
+        hospital_instance = Hospital.objects.filter(id=hospital_id).first()
+        if not (longitude and latitude and hospital_instance):
+            raise ValidationError("Mandatory Parameter missing")
+        location = Point(longitude, latitude, srid=4326)
+        hospital_instance.location = location
+        hospital_instance.save()
+        return Response(data= {"message":"Location Updated"}, status=status.HTTP_200_OK)
+
 
 class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
