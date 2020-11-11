@@ -68,6 +68,16 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
     filter_fields = ['is_home_collection_supported', ]
     ordering_fields = ('code',)
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['update', 'partial_update', 'create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        return super().get_permissions()
+
     def get_queryset(self):
         try:
             qs = super().get_queryset().filter(hospital_enabled=True)
@@ -88,16 +98,6 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except Exception as e:
             pass
         return super().get_queryset()
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve', ]:
-            permission_classes = [AllowAny]
-            return [permission() for permission in permission_classes]
-
-        if self.action in ['update', 'partial_update', 'create']:
-            permission_classes = [IsManipalAdminUser]
-            return [permission() for permission in permission_classes]
-        return super().get_permissions()
 
     def post(self, request, format=None):
         longitude = float(self.request.data.pop("longitude", 0))
