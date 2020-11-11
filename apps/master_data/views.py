@@ -70,7 +70,7 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         try:
-            qs = super().get_queryset()
+            qs = super().get_queryset().filter(hospital_enabled=True)
             longitude = float(self.request.query_params.get("longitude", 0))
             latitude = float(self.request.query_params.get("latitude", 0))
             corporate = self.request.query_params.get("corporate", None)

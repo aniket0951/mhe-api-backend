@@ -54,6 +54,8 @@ class Hospital(MyBaseModel):
 
     corporate_only = models.BooleanField(default=False)
 
+    hospital_enabled = models.BooleanField(default=True)
+
     class Meta:
         verbose_name = "Hospital"
         verbose_name_plural = "Hospitals"
