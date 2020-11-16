@@ -920,7 +920,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "data": serializer.data,
             "message": "Your family member UHID is updated successfully!"
         }
+        import pdb; pdb.set_trace()
         link_uhid(request)
+
         return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['PATCH'])
