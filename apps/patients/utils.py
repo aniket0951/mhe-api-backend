@@ -43,7 +43,7 @@ def fetch_uhid_user_details(request):
 
 def link_uhid(request):
     import pdb; pdb.set_trace()
-    uhid = request.data.get('uhid')
+    uhid = request.data.get('uhid_number')
     print(uhid)
     if not uhid:
         return False
