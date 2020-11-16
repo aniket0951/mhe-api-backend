@@ -555,6 +555,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "data": self.get_serializer(self.get_object()).data,
             "message": "Your UHID is updated successfully!"
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['POST'])
@@ -583,6 +584,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "data": uhid_user_info,
             "message": "Fetched user details!"
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['POST'])
@@ -873,6 +875,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "data": serializer.data,
             "message": "New family member is added successfully!"
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['PATCH'])
@@ -917,6 +920,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "data": serializer.data,
             "message": "Your family member UHID is updated successfully!"
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['PATCH'])
