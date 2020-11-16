@@ -43,14 +43,14 @@ def fetch_uhid_user_details(request):
 
 def link_uhid(request):
     uhid = request.data.get('uhid')
-
+    print(uhid)
     if not uhid:
         return False
-
     factory = APIRequestFactory()
     proxy_request = factory.post(
         '', {"uhid": uhid}, format='json')
     response = LinkUhidView().as_view()(proxy_request)
+    print(response.data)
     if not (response.status_code == 200 and response.data['success']):
         return False
     return True
