@@ -20,6 +20,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
+from proxy.custom_serializables import LinkUhid as serializable_LinkUhid
 from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
@@ -733,3 +734,27 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
         company_serializer.is_valid(raise_exception=True)
         company_serializer.save()
         return Response(status=status.HTTP_200_OK)
+
+
+class LinkUhidView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'LinkUHID'
+
+    def get_request_data(self, request):
+        link_uhid = serializable_LinkUhid(**request.data)
+        request_data = custom_serializer().serialize(link_uhid, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        success = False
+        message = "Fail"
+        if response.status_code == 200:
+            message = root.find('msgLinkUHID').text
+            if message == "Success":
+                success = True
+        return self.custom_success_response(success=success, message=message,
+                                            data=None)
