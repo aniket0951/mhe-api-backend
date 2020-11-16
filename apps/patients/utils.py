@@ -1,7 +1,6 @@
+from apps.master_data.views import LinkUhidView, ValidateOTPView
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
-
-from apps.master_data.views import ValidateOTPView, LinkUhidView
 
 
 def fetch_uhid_user_details(request):
@@ -52,6 +51,3 @@ def link_uhid(request):
     if not (response.status_code == 200 and response.data['success']):
         return False
     return True
-    
-
-
