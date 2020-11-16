@@ -753,8 +753,10 @@ class LinkUhidView(ProxyView):
         root = ET.fromstring(response._content)
         print(response._content)
         success = False
-        message = root.find('msgLinkUHID')
-        if message == "Success":
-            success = True
+        message = "Fail"
+        if response.status_code == 200:
+            message = root.find('msgLinkUHID').text
+            if message == "Success":
+                success = True
         return self.custom_success_response(success=success, message=message,
                                             data=None)
