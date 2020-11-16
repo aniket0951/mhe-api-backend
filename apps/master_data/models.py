@@ -264,3 +264,14 @@ class Company(MyBaseModel):
                                              blank=True,
                                              null=True,
                                              related_name='company_hospital')
+
+
+class EmergencyContact(MyBaseModel):
+
+    mobile = PhoneNumberField(blank=True,
+                              null=True,
+                              verbose_name="Emergency Number")
+    
+    class Meta:
+        verbose_name = "Emergency Contact"
+        verbose_name_plural = "Emergency Contacts"

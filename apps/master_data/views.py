@@ -44,11 +44,12 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
-                     Department, Hospital, HospitalDepartment, Specialisation)
+                     Department, EmergencyContact, Hospital,
+                     HospitalDepartment, Specialisation)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
-                          DepartmentSerializer, HospitalDepartmentSerializer,
-                          HospitalSerializer, HospitalSpecificSerializer,
-                          SpecialisationSerializer)
+                          DepartmentSerializer, EmergencyContactSerializer,
+                          HospitalDepartmentSerializer, HospitalSerializer,
+                          HospitalSpecificSerializer, SpecialisationSerializer)
 
 logger = logging.getLogger('django')
 
@@ -132,7 +133,7 @@ class HospitalViewSet(custom_viewsets.ModelViewSet):
         location = Point(longitude, latitude, srid=4326)
         hospital_instance.location = location
         hospital_instance.save()
-        return Response(data= {"message":"Location Updated"}, status=status.HTTP_200_OK)
+        return Response(data={"message": "Location Updated"}, status=status.HTTP_200_OK)
 
 
 class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -779,3 +780,17 @@ class RequestSyncView(APIView):
             raise ValidationError("Parameter Missing")
 
         return Response(status=status.HTTP_200_OK)
+
+
+class EmergencyContactViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = EmergencyContact
+    queryset = EmergencyContact.objects.all()
+    serializer_class = EmergencyContactSerializer
+    create_success_message = 'Emergency Contact information created successfully!'
+    list_success_message = 'Emergency Contact returned successfully!'
+    retrieve_success_message = 'Emergency Contact returned successfully!'
+    update_success_message = 'Emergency Contact updated successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    

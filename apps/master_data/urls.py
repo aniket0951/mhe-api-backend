@@ -4,10 +4,11 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
-                    DoctorsView, HealthPackagesView, HospitalDepartmentViewSet,
-                    HospitalViewSet, ItemsTarrifPriceView,
-                    LabRadiologyItemsView, RequestSyncView,
-                    SpecialisationViewSet, ValidateOTPView, ValidateUHIDView)
+                    DoctorsView, EmergencyContactViewSet, HealthPackagesView,
+                    HospitalDepartmentViewSet, HospitalViewSet,
+                    ItemsTarrifPriceView, LabRadiologyItemsView,
+                    RequestSyncView, SpecialisationViewSet, ValidateOTPView,
+                    ValidateUHIDView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -16,6 +17,7 @@ router.register('all_hospital_departments', HospitalDepartmentViewSet)
 router.register('all_specialisations', SpecialisationViewSet)
 router.register('all_ambulance_contacts', AmbulanceContactViewSet)
 router.register('all_companies', CompanyViewSet)
+router.register('emergency_contact', EmergencyContactViewSet)
 
 
 urlpatterns = [
