@@ -42,7 +42,7 @@ from .exceptions import (InvalidCredentialsException, InvalidEmailOTPException,
 from .models import FamilyMember, Patient, PatientAddress, OtpGenerationCount
 from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
                           PatientSerializer)
-from .utils import fetch_uhid_user_details
+from .utils import fetch_uhid_user_details, link_uhid
 
 from axes.models import AccessAttempt, AccessLog
 
