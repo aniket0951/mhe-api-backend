@@ -743,7 +743,6 @@ class LinkUhidView(ProxyView):
     def get_request_data(self, request):
         link_uhid = serializable_LinkUhid(**request.data)
         request_data = custom_serializer().serialize(link_uhid, 'XML')
-        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -751,7 +750,6 @@ class LinkUhidView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        print(response._content)
         success = False
         message = "Fail"
         if response.status_code == 200:
