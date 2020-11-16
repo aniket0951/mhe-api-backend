@@ -1,7 +1,6 @@
+from apps.master_data.views import LinkUhidView, ValidateOTPView
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
-
-from apps.master_data.views import ValidateOTPView
 
 
 def fetch_uhid_user_details(request):
@@ -39,3 +38,16 @@ def fetch_uhid_user_details(request):
     uhid_user_info['raw_info_from_manipal_API'] = response.data['data']
 
     return uhid_user_info
+
+
+def link_uhid(request):
+    uhid = request.data.get('uhid_number')
+    if not uhid:
+        return False
+    factory = APIRequestFactory()
+    proxy_request = factory.post(
+        '', {"uhid": uhid}, format='json')
+    response = LinkUhidView().as_view()(proxy_request)
+    if not (response.status_code == 200 and response.data['success']):
+        return False
+    return True

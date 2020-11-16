@@ -458,3 +458,15 @@ class CorporateRegistration:
         serializer.add_property('amount', self.amount)
         serializer.add_property('discountReason', self.discount_reason)
         serializer.add_property('payMode', self.paymode)
+
+
+class LinkUhid:
+    def __init__(self, uhid=None, location_code="MHB"):
+        self.uhid = uhid
+        self.location_code = location_code
+
+
+    def serialize(self, serializer):
+        serializer.start_object('LinkUHIDParam')
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('LocationCode', self.location_code)
