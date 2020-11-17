@@ -11,6 +11,7 @@ from django.utils.crypto import get_random_string
 
 from apps.master_data.models import Company
 from apps.master_data.views import ValidateUHIDView
+from axes.models import AccessAttempt, AccessLog
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -39,12 +40,10 @@ from .exceptions import (InvalidCredentialsException, InvalidEmailOTPException,
                          PatientMobileDoesNotExistsValidationException,
                          PatientMobileExistsValidationException,
                          PatientOTPExceededLimitException)
-from .models import FamilyMember, Patient, PatientAddress, OtpGenerationCount
+from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
                           PatientSerializer)
-from .utils import fetch_uhid_user_details
-
-from axes.models import AccessAttempt, AccessLog
+from .utils import fetch_uhid_user_details, link_uhid
 
 
 class PatientViewSet(custom_viewsets.ModelViewSet):
@@ -214,15 +213,16 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not (username and password):
             raise InvalidCredentialsException
 
-        authenticated_patient = authenticate(request=request,username=username,
-                                            password=password)
-        
-        access_log =  AccessAttempt.objects.filter(username=username).first()
+        authenticated_patient = authenticate(request=request, username=username,
+                                             password=password)
+
+        access_log = AccessAttempt.objects.filter(username=username).first()
         if not authenticated_patient:
             if access_log:
                 attempt = access_log.failures_since_start
                 if attempt < 3:
-                    message = "You have entered wrong OTP in your {} attempt. Account will be locked after 3 unscuccessful attempts".format(attempt)
+                    message = "You have entered wrong OTP in your {} attempt. Account will be locked after 3 unscuccessful attempts".format(
+                        attempt)
                     raise ValidationError(message)
                 if attempt >= 3:
                     message = "Your account is locked. Please try after 10 mins"
@@ -266,7 +266,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
         expiration_epoch = expiration.timestamp()
 
-        otp_instance = OtpGenerationCount.objects.filter(mobile=authenticated_patient.mobile).first()
+        otp_instance = OtpGenerationCount.objects.filter(
+            mobile=authenticated_patient.mobile).first()
         if otp_instance:
             otp_instance.otp_generation_count = 0
             otp_instance.save()
@@ -421,14 +422,17 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             if not request_patient:
                 raise PatientMobileDoesNotExistsValidationException
 
-            otp_instance = OtpGenerationCount.objects.filter(mobile=mobile).first()
+            otp_instance = OtpGenerationCount.objects.filter(
+                mobile=mobile).first()
             if not otp_instance:
-                otp_instance = OtpGenerationCount.objects.create(mobile=mobile,otp_generation_count=1)
-            
+                otp_instance = OtpGenerationCount.objects.create(
+                    mobile=mobile, otp_generation_count=1)
+
             current_time = datetime.today()
             delta = current_time - otp_instance.updated_at
             if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
-                raise ValidationError("You have reached Maximum Otp generation Limit. Please try after 10 minutes")
+                raise ValidationError(
+                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
 
             if delta.seconds > 600:
                 otp_instance.otp_generation_count = 1
@@ -555,6 +559,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "data": self.get_serializer(self.get_object()).data,
             "message": "Your UHID is updated successfully!"
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['POST'])
@@ -583,6 +588,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "data": uhid_user_info,
             "message": "Fetched user details!"
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['POST'])
@@ -873,6 +879,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "data": serializer.data,
             "message": "New family member is added successfully!"
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['PATCH'])
@@ -917,6 +924,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "data": serializer.data,
             "message": "Your family member UHID is updated successfully!"
         }
+        link_uhid(request)
+
         return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['PATCH'])

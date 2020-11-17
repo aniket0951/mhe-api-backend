@@ -7,6 +7,8 @@ class ValidateUHID:
         serializer.start_object('ValidateRequestParam')
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('POTP', self.otp)
+        serializer.add_property('LocationCode', "MHB")
+
 
 
 class SlotAvailability:
@@ -458,3 +460,30 @@ class CorporateRegistration:
         serializer.add_property('amount', self.amount)
         serializer.add_property('discountReason', self.discount_reason)
         serializer.add_property('payMode', self.paymode)
+
+
+class LinkUhid:
+    def __init__(self, uhid=None, location_code="MHB"):
+        self.uhid = uhid
+        self.location_code = location_code
+
+
+    def serialize(self, serializer):
+        serializer.start_object('LinkUHIDParam')
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('LocationCode', self.location_code)
+
+
+class ValidatePatientMobile:
+    def __init__(self, uhid=None, location_code="MHB", mobile_no = None):
+        self.uhid = uhid
+        self.location_code = location_code
+        self.mobile_no = mobile_no
+
+    def serialize(self, serializer):
+        serializer.start_object('ValidatePatientParam')
+        serializer.add_property('mobileno', self.mobile_no)
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('locationCode', self.location_code)
+
+

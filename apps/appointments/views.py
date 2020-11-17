@@ -1272,14 +1272,12 @@ class AppointmentPaymentView(ProxyView):
     def get_request_data(self, request):
         request_xml = serializable_PaymentUpdate(request.data)
         request_data = custom_serializer().serialize(request_xml, 'XML')
-        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        print(response.content)
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
