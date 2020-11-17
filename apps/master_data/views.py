@@ -22,6 +22,8 @@ from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
 from proxy.custom_serializables import LinkUhid as serializable_LinkUhid
 from proxy.custom_serializables import \
+    ValidatePatientMobile as serializable_validate_patient_mobile
+from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
@@ -758,3 +760,56 @@ class LinkUhidView(ProxyView):
                 success = True
         return self.custom_success_response(success=success, message=message,
                                             data=None)
+
+
+class ValidateMobileView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'ValidatePatient'
+    success_msg = 'One time password has been sent on your registered mobile.'
+
+    def get_request_data(self, request):
+        mobile = serializable_validate_patient_mobile(**request.data)
+        request_data = custom_serializer().serialize(mobile, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        item = root.find('ValidatePatientResp')
+        response_content = json.loads(item.text)[0]
+        success = str(response_content.get('Status')) == "Pass"
+        message = str(response_content.get('Message'))
+        return self.custom_success_response(success, message)
+
+
+class ValidateMobileOTPView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'ValidateOTPWeb'
+    success_msg = 'OTP validated successfully'
+
+    def get_request_data(self, request):
+        uhid_otp = serializable_validate_UHID(**request.data)
+        request_data = custom_serializer().serialize(uhid_otp, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        message = None
+        item = root.find('ValidateResponse')
+        response_content = json.loads(item.text)
+        if response_content and response_content[0] and ('Status' in response_content[0]):
+            success = False
+            message = response_content[0]['Message']
+            response_content = None
+        else:
+            success = True
+        if success and not message:
+            message = self.success_msg
+        return self.custom_success_response(success=success, message=message,
+                                            data=response_content)
+
