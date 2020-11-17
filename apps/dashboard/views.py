@@ -7,6 +7,7 @@ from apps.doctors.models import Doctor
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
 from apps.manipal_admin.serializers import ManipalAdminSerializer
+from apps.manipal_admin.models import ManipalAdmin
 from apps.notifications.models import MobileDevice
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
@@ -62,6 +63,7 @@ class DashboardAPIView(ListAPIView):
                 ).data
 
             manipal_admin_obj = manipal_admin_object(request)
+
             if manipal_admin_obj:
                 dashboard_details['manipal_admin'] = ManipalAdminSerializer(
                     manipal_admin_obj).data
@@ -148,7 +150,7 @@ class DashboardAPIView(ListAPIView):
                     status='Completed').count()
                 dashboard_details['home_collection_statistics']['in_progress'] = home_collection_qs.filter(
                     status='In Progress').count()
-                dashboard_details['home_collection_statistics']['cancelled'] = HomeCollectionAppointment.filter(
+                dashboard_details['home_collection_statistics']['cancelled'] = home_collection_qs.filter(
                     status='Cancelled').count()
 
                 dashboard_details['services_statistics'] = {}
