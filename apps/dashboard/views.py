@@ -113,6 +113,15 @@ class DashboardAPIView(ListAPIView):
                     health_package_qs = HealthPackageAppointment.objects.filter(
                         created_at__date__range=[date_from, date_to])
 
+                    location_code = self.request.query_params.get(
+                        "location_code", None)
+                    if location_code:
+                        payment_qs = payment_qs.filter(location__code=location_code)
+                        appointment_qs = appointment_qs.filter(hospital__code=location_code)
+                        home_collection_qs = home_collection_qs.filter(hospital__code=location_code)
+                        patient_service_qs = patient_service_qs.filter(hospital__code=location_code)
+                        health_package_qs = health_package_qs.filter(hospital__code=location_code)
+
                 dashboard_details['payments_info'] = {}
                 dashboard_details['payments_info']["total"] = payment_qs.filter(
                     status="success").count()
