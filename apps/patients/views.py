@@ -719,6 +719,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "data": serialize_data.data,
             "message": "fetched user details",
         }
+        link_uhid(request)
         return Response(data, status=status.HTTP_200_OK)
 
 
