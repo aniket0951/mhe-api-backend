@@ -75,18 +75,25 @@ class HomeCollectionViewSet(custom_viewsets.ModelViewSet):
             .distinct().annotate(is_added_to_cart=Exists(user_cart_collections))
 
 
-class HomeCareServiceViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class HomeCareServiceViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = HomeCareService
     queryset = HomeCareService.objects.all()
     serializer_class = HomeCareServiceSerializer
+    create_success_message = "Home care service is added successfully."
     list_success_message = 'Home care services list returned successfully!'
     retrieve_success_message = 'Home care service information returned successfully!'
+    update_success_message = 'Home care service information is updated successfuly!'
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
+
+        if self.action in ['update', 'delete', 'create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
         return super().get_permissions()
 
 

@@ -224,6 +224,22 @@ def daily_update_scheduler():
     call_command("create_or_update_doctor_price", verbosity=0)
     call_command("update_health_package_image", verbosity=0)
 
+@app.task(name="tasks.update_health_package")
+def update_health_package():
+    call_command("create_or_update_health_packages", verbosity=0)
+    call_command("update_health_package_image", verbosity=0)
+
+@app.task(name="tasks.update_doctor")
+def update_doctor():
+    call_command("create_or_update_doctors", verbosity=0)
+    call_command("update_doctors_profile", verbosity=0)
+    call_command("create_or_update_doctor_price", verbosity=0)
+
+@app.task(name="tasks.update_item")
+def update_item():
+    call_command("create_or_update_lab_and_radiology_items", verbosity=0)
+
+
 
 app.conf.beat_schedule = {
     "appointment_reminder": {

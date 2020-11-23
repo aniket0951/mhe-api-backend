@@ -1,4 +1,4 @@
-
+import os
 from django.contrib.gis.geos import Point
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
@@ -6,6 +6,16 @@ from phonenumber_field.modelfields import PhoneNumberField
 from apps.meta_app.models import MyBaseModel
 from django.contrib.gis.db import models
 
+from utils.custom_storage import FileStorage, MediaStorage
+from utils.validators import validate_file_authenticity, validate_file_size
+from django.core.validators import FileExtensionValidator
+from django.conf import settings
+
+
+def generate_service_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.name) + str(obj_file_extension)
+    return "home_services/{0}".format(obj_name)
 
 class Hospital(MyBaseModel):
 
@@ -43,6 +53,8 @@ class Hospital(MyBaseModel):
                                                       blank=True,)
 
     corporate_only = models.BooleanField(default=False)
+
+    hospital_enabled = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Hospital"
@@ -207,9 +219,14 @@ class HomeCareService(MyBaseModel):
                             null=True,
                             blank=True,)
     
-    image = models.ImageField(blank=True,
-                              null=True,
-                              verbose_name='Display Picture')
+    image = models.ImageField(upload_to=generate_service_file_path,
+                                storage=MediaStorage(),
+                                validators=[FileExtensionValidator(
+                                            settings.VALID_IMAGE_FILE_EXTENSIONS), validate_file_size,
+                                            validate_file_authenticity],
+                                blank=True,
+                                null=True)
+
 
     class Meta:
         verbose_name = "Home Care Service"
@@ -247,3 +264,14 @@ class Company(MyBaseModel):
                                              blank=True,
                                              null=True,
                                              related_name='company_hospital')
+
+
+class EmergencyContact(MyBaseModel):
+
+    mobile = PhoneNumberField(blank=True,
+                              null=True,
+                              verbose_name="Emergency Number")
+    
+    class Meta:
+        verbose_name = "Emergency Contact"
+        verbose_name_plural = "Emergency Contacts"
