@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
+from django.core.management import call_command
 from django.db.models import Q
 from django.utils.timezone import datetime
 
@@ -16,6 +17,8 @@ from apps.health_packages.serializers import (HealthPackage,
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
+from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
+                                      update_health_package, update_item)
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
@@ -32,6 +35,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -43,33 +47,44 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
-                     Department, Hospital, HospitalDepartment, Specialisation)
+                     Department, EmergencyContact, Hospital,
+                     HospitalDepartment, Specialisation)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
-                          DepartmentSerializer, HospitalDepartmentSerializer,
-                          HospitalSerializer, HospitalSpecificSerializer,
-                          SpecialisationSerializer)
+                          DepartmentSerializer, EmergencyContactSerializer,
+                          HospitalDepartmentSerializer, HospitalSerializer,
+                          HospitalSpecificSerializer, SpecialisationSerializer)
 
 logger = logging.getLogger('django')
 
 
-class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class HospitalViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     model = Hospital
     queryset = Hospital.objects.all()
     serializer_class = HospitalSerializer
-    create_success_message = None
+    create_success_message = 'Hospital information created successfully!'
     list_success_message = 'Hospitals list returned successfully!'
     retrieve_success_message = 'Hospital information returned successfully!'
-    update_success_message = None
+    update_success_message = 'Hospital information updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', 'address', ]
     filter_fields = ['is_home_collection_supported', ]
     ordering_fields = ('code',)
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['update', 'partial_update', 'create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        return super().get_permissions()
+
     def get_queryset(self):
         try:
-            qs = super().get_queryset()
+            qs = super().get_queryset().filter(hospital_enabled=True)
             longitude = float(self.request.query_params.get("longitude", 0))
             latitude = float(self.request.query_params.get("latitude", 0))
             corporate = self.request.query_params.get("corporate", None)
@@ -87,16 +102,6 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except Exception as e:
             pass
         return super().get_queryset()
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve', ]:
-            permission_classes = [AllowAny]
-            return [permission() for permission in permission_classes]
-
-        if self.action in ['partial_update', 'create']:
-            permission_classes = [IsManipalAdminUser]
-            return [permission() for permission in permission_classes]
-        return super().get_permissions()
 
     def post(self, request, format=None):
         longitude = float(self.request.data.pop("longitude", 0))
@@ -119,6 +124,19 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except:
             pass
         return Response(data=hospital_serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def update_hospital_location(self, request):
+        hospital_id = self.request.data.get("hospital_id")
+        longitude = float(self.request.data.get("longitude", 0))
+        latitude = float(self.request.data.get("latitude", 0))
+        hospital_instance = Hospital.objects.filter(id=hospital_id).first()
+        if not (longitude and latitude and hospital_instance):
+            raise ValidationError("Mandatory Parameter missing")
+        location = Point(longitude, latitude, srid=4326)
+        hospital_instance.location = location
+        hospital_instance.save()
+        return Response(data={"message": "Location Updated"}, status=status.HTTP_200_OK)
 
 
 class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -688,15 +706,24 @@ class ValidateOTPView(ProxyView):
                                             data=response_content)
 
 
-class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
-    permission_classes = [AllowAny]
+class AmbulanceContactViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
     model = AmbulanceContact
     queryset = AmbulanceContact.objects.all()
     serializer_class = AmbulanceContactSerializer
     list_success_message = 'Ambulance Contact list returned successfully!'
+    retrieve_success_message = 'Ambulance Contact returned successfully!'
+    update_success_message = 'Ambulance Contact updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_fields = ('hospital__id',)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
 
     def get_queryset(self):
         try:
@@ -708,11 +735,11 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
                                                                                         user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
-        return super().get_queryset()
+        return super().get_queryset().order_by('hospital__code')
 
 
 class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
-    permission_classes = [AllowAny]
+    permission_classes = [IsManipalAdminUser]
     model = Company
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
@@ -721,12 +748,12 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
 
     def get_permissions(self):
-        if self.action in ['list', ]:
+        if self.action in ['list']:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
         if self.action in ['create']:
-            permission_classes = [AllowAny]
+            permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
@@ -738,6 +765,38 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 
+class RequestSyncView(APIView):
+    permission_classes = (IsManipalAdminUser,)
+
+    def post(self, request, format=None):
+        sync_request = self.request.data.get("sync_request", None)
+        if sync_request == 'health_package':
+            update_health_package.delay()
+
+        elif sync_request == 'doctor':
+            update_doctor.delay()
+
+        elif sync_request == 'item':
+            update_item.delay()
+
+        else:
+            raise ValidationError("Parameter Missing")
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class EmergencyContactViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = EmergencyContact
+    queryset = EmergencyContact.objects.all()
+    serializer_class = EmergencyContactSerializer
+    create_success_message = 'Emergency Contact information created successfully!'
+    list_success_message = 'Emergency Contact returned successfully!'
+    retrieve_success_message = 'Emergency Contact returned successfully!'
+    update_success_message = 'Emergency Contact updated successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    
 class LinkUhidView(ProxyView):
     permission_classes = [AllowAny]
     source = 'LinkUHID'

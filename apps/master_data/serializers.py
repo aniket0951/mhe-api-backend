@@ -4,8 +4,8 @@ from django.contrib.gis.geos import Point, fromstr
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import (AmbulanceContact, Department, Hospital,
-                     HospitalDepartment, Specialisation, Company)
+from .models import (AmbulanceContact, Company, Department, EmergencyContact,
+                     Hospital, HospitalDepartment, Specialisation)
 
 
 class HospitalSerializer(DynamicFieldsModelSerializer):
@@ -89,7 +89,11 @@ class CompanySerializer(DynamicFieldsModelSerializer):
         if instance.hospital_info:
             response_object['hospital_info'] = HospitalSerializer(
                 instance.hospital_info, many=True).data
-        
+
         return response_object
 
-    
+
+class EmergencyContactSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = EmergencyContact
+        exclude = ('created_at', 'updated_at',)

@@ -1,21 +1,21 @@
+from datetime import datetime, timedelta
+
 from django.shortcuts import render
 
+from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.patients.models import Patient
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from utils import custom_viewsets
-from .tasks import send_push_notification
-from datetime import datetime, timedelta
-from apps.appointments.models import Appointment, HealthPackageAppointment
-
-
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 
 from .models import MobileDevice, MobileNotification
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer
+from .tasks import send_push_notification
 
 
 class NotificationlistView(custom_viewsets.ReadOnlyModelViewSet):
@@ -49,5 +49,29 @@ class MobileDeviceViewSet(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(data=serializer.data, status=status.HTTP_200_OK)
-                
-    
+
+
+class PushNotificationViewSet(APIView):
+    permission_classes = (AllowAny,)
+    queryset = MobileNotification.objects.all()
+    serializer_class = MobileNotificationSerializer
+
+    def post(self, request, format=None):
+        user_id_list = self.request.data.get("user_id_list")
+        if not user_id_list:
+            raise ValidationError("Parameter Missing")
+        user_list = user_id_list.split(",")
+        for user in user_list:
+            patient = Patient.objects.filter(id=user).first()
+            if patient:
+                notification_data = dict()
+                notification_data["title"] = self.request.data.get("title")
+                notification_data["message"] = self.request.data.get(
+                    "user_message")
+                notification_data["recipient"] = patient.id
+                notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+                notification_data["appointment_id"] = None
+                send_push_notification.delay(
+                    notification_data=notification_data)
+
+        return Response(status=status.HTTP_200_OK)

@@ -17,6 +17,7 @@ router.register('all_hospital_departments', HospitalDepartmentViewSet)
 router.register('all_specialisations', SpecialisationViewSet)
 router.register('all_ambulance_contacts', AmbulanceContactViewSet)
 router.register('all_companies', CompanyViewSet)
+router.register('emergency_contact', EmergencyContactViewSet)
 
 
 urlpatterns = [
@@ -42,6 +43,11 @@ urlpatterns = [
     url('^validate_uhid_otp', ValidateOTPView.as_view(),
         name="validate_otp"),
 
+<<<<<<< HEAD
+    url('^request_sync', RequestSyncView.as_view()),
+
+    *router.urls
+=======
     url('^generate_mobile_otp', ValidateMobileView.as_view(),
         name="validate_mobile"),
 
@@ -49,4 +55,5 @@ urlpatterns = [
         name="validate_mobile_otp"),
 
     * router.urls
+>>>>>>> a746bba97ec007aae49e8f6fb4aff1b51cb85f4b
 ]
