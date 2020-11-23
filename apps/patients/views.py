@@ -10,7 +10,7 @@ from django.shortcuts import render
 from django.utils.crypto import get_random_string
 
 from apps.master_data.models import Company
-from apps.master_data.views import ValidateUHIDView
+from apps.master_data.views import ValidateMobileView, ValidateUHIDView
 from axes.models import AccessAttempt, AccessLog
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
@@ -665,6 +665,26 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         data = {
             "data": serialize_data.data,
             "message": "OTP to verify you email is sent successfully!",
+        }
+        return Response(data, status=status.HTTP_200_OK)
+        
+
+    @action(detail=False, methods=['POST'])
+    def generate_mobile_uhid_otp(self, request):
+        mobile = request.data.get('mobile')
+        if not mobile:
+            raise ValidationError('Mobile number is missing')
+
+        factory = APIRequestFactory()
+        proxy_request = factory.post('', {"mobile_no": mobile}, format='json')
+        response = ValidateMobileView.as_view()(proxy_request)
+
+        if not (response.status_code == 200 and response.data['success']):
+            raise ValidationError(response.data['message'])
+
+        data = {
+            "data": None,
+            "message": response.data['message'],
         }
         return Response(data, status=status.HTTP_200_OK)
 
