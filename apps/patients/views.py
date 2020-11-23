@@ -1126,6 +1126,50 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         return Response(data, status=status.HTTP_200_OK)
 
 
+    @action(detail=False, methods=['POST'])
+    def add_new_family_member_using_mobile(self, request):
+        if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
+            raise ValidationError(
+                "You have reached limit, you cannot add family members!")
+
+        uhid_number=request.data.get('uhid_number')
+        if not uhid_number:
+            raise ValidationError(
+                "Enter valid UHID number.")
+
+        patient_info=patient_user_object(request)
+        if patient_info.uhid_number == uhid_number:
+            raise ValidationError(
+                "Your cannnot associate your UHID number to your family member.")
+
+        if self.model.objects.filter(patient_info=patient_info,
+                                     uhid_number=uhid_number, is_visible=True).exists():
+            raise ValidationError(
+                "You have an existing family member with this UHID.")
+                
+        uhid_user_info=dict()
+        uhid_user_info['first_name'] = request.data.get("first_name")
+        uhid_user_info['mobile'] = request.data.get("mobile")
+        uhid_user_info['age'] = request.data.get("age")
+        uhid_user_info['sex'] = request.data.get("sex")
+        uhid_user_info['uhid_numher'] = uhid_number
+        uhid_user_info['mobile_verified']=True
+        uhid_user_info['is_visible']=True
+        uhid_user_info['email_verified']=True
+        uhid_user_info['patient_info']=patient_info
+
+        self.model.objects.create(**uhid_user_info)
+
+        serializer=self.get_serializer(self.get_queryset(), many=True)
+
+        data={
+            "data": serializer.data,
+            "message": "New family member is added successfully!"
+        }
+        link_uhid(request)
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
 class PatientAddressViewSet(custom_viewsets.ModelViewSet):
     permission_classes=[IsPatientUser]
     model=PatientAddress
