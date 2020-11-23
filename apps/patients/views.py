@@ -692,8 +692,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def mobile_uhid_link(self, request):
         patient = Patient.objects.filter(id=request.user.id).first()
         if not patient:
-            raise ValidationError("You are not a User"
-
+            raise ValidationError("You are not a User")
+        
         uhid_number=request.data.get("uhid_number")
         if not uhid_number:
             raise ValidationError('UHID is missing!')
@@ -804,8 +804,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError(
                 "You have reached limit, you cannot add family members!")
 
-        if not 'email' in serializer.validated_data or
-                not serializer.validated_data['email']:
+        if not 'email' in serializer.validated_data or not serializer.validated_data['email']:
             raise ValidationError("Email is not mentioned!")
 
         random_mobile_password=get_random_string(
@@ -857,15 +856,13 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         is_email_to_be_verified=False
         is_mobile_to_be_verified=False
 
-        if 'new_mobile' in serializer.validated_data and
-                not family_member_object.mobile == serializer.validated_data['new_mobile']:
+        if 'new_mobile' in serializer.validated_data and not family_member_object.mobile == serializer.validated_data['new_mobile']:
             if not serializer.validated_data['new_mobile'] == str(request_patient.mobile.raw_input):
                 is_mobile_to_be_verified=True
             else:
                 serializer.validated_data['mobile']=serializer.validated_data['new_mobile']
 
-        if 'email' in serializer.validated_data and
-                not family_member_object.email == serializer.validated_data['email']:
+        if 'email' in serializer.validated_data and not family_member_object.email == serializer.validated_data['email']:
 
             is_email_to_be_verified=True
 
