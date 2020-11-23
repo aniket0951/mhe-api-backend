@@ -1170,6 +1170,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info['age'] = request.data.get("age")
         uhid_user_info['gender'] = request.data.get("gender")
         uhid_user_info['uhid_number'] = uhid_number
+        uhid_user_info['relationship_id'] = request.data.get("relation",'adcd8135-bc67-43a5-b998-632a83498acf')
         uhid_user_info['mobile_verified']=True
         uhid_user_info['is_visible']=True
         uhid_user_info['email_verified']=True
