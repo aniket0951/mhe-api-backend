@@ -58,19 +58,29 @@ class PushNotificationViewSet(APIView):
 
     def post(self, request, format=None):
         user_id_list = self.request.data.get("user_id_list")
+        selected_all = self.request.data.get("selected_all", False)
+        notification_data = dict()
+        notification_data["title"] = self.request.data.get("title")
+        notification_data["message"] = self.request.data.get("user_message")
+        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+        notification_data["appointment_id"] = None
+        if selected_all:
+            device_qs = MobileDevice.objects.all()
+            for each_device in device_qs:
+                patient_id = each_device.participant.id
+                notification_data["recipient"] = patient.id
+                send_push_notification.delay(
+                    notification_data=notification_data)
+
+            return Response(status=status.HTTP_200_OK)
+
         if not user_id_list:
             raise ValidationError("Parameter Missing")
         user_list = user_id_list.split(",")
         for user in user_list:
             patient = Patient.objects.filter(id=user).first()
             if patient:
-                notification_data = dict()
-                notification_data["title"] = self.request.data.get("title")
-                notification_data["message"] = self.request.data.get(
-                    "user_message")
                 notification_data["recipient"] = patient.id
-                notification_data["notification_type"] = "GENERAL_NOTIFICATION"
-                notification_data["appointment_id"] = None
                 send_push_notification.delay(
                     notification_data=notification_data)
 
