@@ -54,7 +54,7 @@ class DashboardAPIView(ListAPIView):
                         dashboard_details["force_update_required"] = False
                     else:
                         dashboard_details["force_update_required"] = True
-
+                
                 dashboard_details['patient'] = PatientSerializer(
                     patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
@@ -68,11 +68,15 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['manipal_admin'] = ManipalAdminSerializer(
                     manipal_admin_obj).data
                 unique_uhid_info = set(Patient.objects.filter(
-                    uhid_number__isnull=False).values_list('uhid_number', flat=True))
+                    uhid_number__isnull=False, mobile_verified=True).values_list('uhid_number', flat=True))
                 unique_uhid_info.update(set(FamilyMember.objects.filter(
                     uhid_number__isnull=False, is_visible=True).values_list('uhid_number', flat=True)))
                 dashboard_details['patients_count'] = len(unique_uhid_info)
-                dashboard_details['app_users_count'] = Patient.objects.count()
+
+                user_without_uhid_count = Patient.objects.filter(
+                    uhid_number__isnull=True, mobile_verified=True).count() + FamilyMember.objects.filter(
+                    uhid_number__isnull=True, is_visible=True).count()
+                dashboard_details['app_users_count'] = dashboard_details['patients_count'] + user_without_uhid_count
 
                 dashboard_details['registered_user_count'] = Patient.objects.filter(
                     mobile_verified=True).count()
