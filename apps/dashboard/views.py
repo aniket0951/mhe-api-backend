@@ -68,11 +68,16 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['manipal_admin'] = ManipalAdminSerializer(
                     manipal_admin_obj).data
                 unique_uhid_info = set(Patient.objects.filter(
-                    uhid_number__isnull=False).values_list('uhid_number', flat=True))
+                    uhid_number__isnull=False, mobile_verified=True).values_list('uhid_number', flat=True))
                 unique_uhid_info.update(set(FamilyMember.objects.filter(
                     uhid_number__isnull=False, is_visible=True).values_list('uhid_number', flat=True)))
                 dashboard_details['patients_count'] = len(unique_uhid_info)
-                dashboard_details['app_users_count'] = Patient.objects.count()
+
+                user_without_uhid_count = Patient.objects.filter(
+                    uhid_number__isnull=True, mobile_verified=True).count() + FamilyMember.objects.filter(
+                    uhid_number__isnull=True, is_visible=True).count()
+                dashboard_details['app_users_count'] = dashboard_details['patients_count'] + \
+                    user_without_uhid_count
 
                 dashboard_details['registered_user_count'] = Patient.objects.filter(
                     mobile_verified=True).count()
@@ -102,25 +107,32 @@ class DashboardAPIView(ListAPIView):
                     date_from = self.request.query_params.get(
                         "date_from", None)
                     date_to = self.request.query_params.get("date_to", None)
-                    payment_qs = Payment.objects.filter(
-                        created_at__date__range=[date_from, date_to])
-                    appointment_qs = Appointment.objects.filter(
-                        created_at__date__range=[date_from, date_to])
-                    home_collection_qs = HomeCollectionAppointment.objects.filter(
-                        created_at__date__range=[date_from, date_to])
-                    patient_service_qs = PatientServiceAppointment.objects.filter(
-                        created_at__date__range=[date_from, date_to])
-                    health_package_qs = HealthPackageAppointment.objects.filter(
-                        created_at__date__range=[date_from, date_to])
+                    if date_from and date_to:
+                        payment_qs = Payment.objects.filter(
+                            created_at__date__range=[date_from, date_to])
+                        appointment_qs = Appointment.objects.filter(
+                            created_at__date__range=[date_from, date_to])
+                        home_collection_qs = HomeCollectionAppointment.objects.filter(
+                            created_at__date__range=[date_from, date_to])
+                        patient_service_qs = PatientServiceAppointment.objects.filter(
+                            created_at__date__range=[date_from, date_to])
+                        health_package_qs = HealthPackageAppointment.objects.filter(
+                            created_at__date__range=[date_from, date_to])
 
                     location_code = self.request.query_params.get(
                         "location_code", None)
+
                     if location_code:
-                        payment_qs = payment_qs.filter(location__code=location_code)
-                        appointment_qs = appointment_qs.filter(hospital__code=location_code)
-                        home_collection_qs = home_collection_qs.filter(hospital__code=location_code)
-                        patient_service_qs = patient_service_qs.filter(hospital__code=location_code)
-                        health_package_qs = health_package_qs.filter(hospital__code=location_code)
+                        payment_qs = payment_qs.filter(
+                            location__code=location_code)
+                        appointment_qs = appointment_qs.filter(
+                            hospital__code=location_code)
+                        home_collection_qs = home_collection_qs.filter(
+                            hospital__code=location_code)
+                        patient_service_qs = patient_service_qs.filter(
+                            hospital__code=location_code)
+                        health_package_qs = health_package_qs.filter(
+                            hospital__code=location_code)
 
                 dashboard_details['payments_info'] = {}
                 dashboard_details['payments_info']["total"] = payment_qs.filter(
