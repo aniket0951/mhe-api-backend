@@ -211,12 +211,11 @@ class NextSlotAvailable(ProxyView):
     def parse_proxy_response(self, response):
         root = ET.fromstring(response.content)
         response_message = "We are unable to cancel the appointment. Please Try again"
-        success_status = False
+        response_success = False
         response_data = {}
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             next_date = root.find("nextdate").text
-            status = root.find("Status").text
             message = root.find("Message").text
             response_success = True
             response_message = message

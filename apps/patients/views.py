@@ -1099,7 +1099,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'])
     def generate_family_member_mobile_verification_otp(self, request, pk=None):
         try:
-            # TODO: self.get_object() doesn't seem to work
             family_member=self.model.objects.get(pk=pk)
         except:
             raise NotFound(detail='Requested information not found!')
