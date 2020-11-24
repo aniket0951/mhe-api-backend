@@ -68,7 +68,7 @@ class PushNotificationViewSet(APIView):
             device_qs = MobileDevice.objects.all()
             for each_device in device_qs:
                 patient_id = each_device.participant.id
-                notification_data["recipient"] = patient.id
+                notification_data["recipient"] = patient_id
                 send_push_notification.delay(
                     notification_data=notification_data)
 
