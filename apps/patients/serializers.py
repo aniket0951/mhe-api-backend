@@ -1,11 +1,11 @@
 from uuid import UUID
 
 from phonenumber_field.serializerfields import PhoneNumberField
-from rest_framework import serializers
 
 from apps.master_data.models import Hospital
 from apps.master_data.serializers import HospitalSerializer
 from apps.patient_registration.serializers import RelationSerializer
+from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
 
