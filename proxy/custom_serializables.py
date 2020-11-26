@@ -405,25 +405,25 @@ class PatientAppStatus:
         self.hospital_code = param.get("hospital_code", None) 
         self.trans_date = param.get("trans_date", None)
         self.trans_time = param.get("trans_time", None)
-        self.android_download = param.get("android_download") or "0"
-        self.ios_download = param.get("ios_download") or "0"
-        self.linked_user_count = param.get("linked_user_count") or "0"
-        self.family_member_count = param.get("family_member_count") or "0"
-        self.primary_user_count = param.get("primary_user_count") or "0"
-        self.hv_count = param.get("hv_count") or "0"
-        self.vc_count = param.get("vc_count") or "0"
-        self.hc_count = param.get("hc_count") or "0"
-        self.hv_amount = param.get("hv_amount") or "0"
-        self.vc_amount = param.get("vc_amount") or "0"
-        self.ip_deposit_amount = param.get("ip_deposit_amount") or "0"
-        self.ip_deposit_count = param.get("ip_deposit_count") or "0"
-        self.hc_package_amount = param.get("hc_package_amount") or "0"
-        self.op_outstanding_amount = param.get("op_outstanding_amount") or "0"
-        self.registered_patient_count = param.get("registered_patient_count") or "0"
-        self.registration_amount = param.get("registration_amount") or "0"
-        self.home_collection_count = param.get("home_collection_count") or "0"
-        self.home_service_count = param.get("home_service_count") or "0"
-        self.preferred_hospital_count = param.get("preferred_hospital_count") or "0"
+        self.android_download = str(param.get("android_download" or "0"))
+        self.ios_download = str(param.get("ios_download") or "0")
+        self.linked_user_count = str(param.get("linked_user_count") or "0")
+        self.family_member_count = str(param.get("family_member_count") or "0")
+        self.primary_user_count = str(param.get("primary_user_count") or "0")
+        self.hv_count = str(param.get("hv_count") or "0")
+        self.vc_count = str(param.get("vc_count") or "0")
+        self.hc_count = str(param.get("hc_count") or "0")
+        self.hv_amount = str(param.get("hv_amount") or "0")
+        self.vc_amount = str(param.get("vc_amount") or "0")
+        self.ip_deposit_amount = str(param.get("ip_deposit_amount") or "0")
+        self.ip_deposit_count = str(param.get("ip_deposit_count") or "0")
+        self.hc_package_amount = str(param.get("hc_package_amount") or "0")
+        self.op_outstanding_amount = str(param.get("op_outstanding_amount") or "0")
+        self.registered_patient_count = str(param.get("registered_patient_count") or "0")
+        self.registration_amount = str(param.get("registration_amount") or "0")
+        self.home_collection_count = str(param.get("home_collection_count") or "0")
+        self.home_service_count = str(param.get("home_service_count") or "0")
+        self.preferred_hospital_count = str(param.get("preferred_hospital_count") or "0")
 
         
 
