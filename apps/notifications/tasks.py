@@ -215,6 +215,7 @@ def daily_auto_appointment_cancellation():
 
 @app.task(name="tasks.daily_update")
 def daily_update_scheduler():
+    call_command("generate_app_statistics", verbosity=0)
     call_command("create_or_update_departments", verbosity=0)
     call_command("create_or_update_doctors", verbosity=0)
     call_command("create_or_update_health_packages", verbosity=0)

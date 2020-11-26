@@ -1,7 +1,7 @@
 import json
 import logging
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
@@ -25,6 +25,8 @@ from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
 from proxy.custom_serializables import LinkUhid as serializable_LinkUhid
 from proxy.custom_serializables import \
+    PatientAppStatus as serializable_patient_app_status
+from proxy.custom_serializables import \
     ValidatePatientMobile as serializable_validate_patient_mobile
 from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
@@ -40,6 +42,7 @@ from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       InternalAPICall, IsManipalAdminUser)
+from utils.utils import get_report_info
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -719,7 +722,6 @@ class AmbulanceContactViewSet(custom_viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
-
         return super().get_permissions()
 
     def get_queryset(self):
@@ -733,6 +735,33 @@ class AmbulanceContactViewSet(custom_viewsets.ModelViewSet):
         except Exception as e:
             pass
         return super().get_queryset().order_by('hospital__code')
+
+
+class PatientAppointmentStatus(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'PatAppStats_Save'
+
+    def get_request_data(self, request):
+        hospital_code = request.data.get("hospital_code")
+        param = get_report_info(hospital_code=hospital_code)
+        request_param = serializable_patient_app_status(param)
+        request_data = custom_serializer().serialize(request_param, 'XML')
+        print(request_data)
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        response_message = "Report could not pushed"
+        response_success = False
+        print(response.content)
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            response_message = root.find("PatAppStatsResponse").text
+            response_success = True
+        return self.custom_success_response(message=response_message,
+                                            success=response_success, data=None)
 
 
 class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -793,7 +822,8 @@ class EmergencyContactViewSet(custom_viewsets.ModelViewSet):
     update_success_message = 'Emergency Contact updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    
+
+
 class LinkUhidView(ProxyView):
     permission_classes = [AllowAny]
     source = 'LinkUHID'
@@ -868,4 +898,3 @@ class ValidateMobileOTPView(ProxyView):
             message = self.success_msg
         return self.custom_success_response(success=success, message=message,
                                             data=response_content)
-

@@ -413,6 +413,57 @@ class CurrentAppointmentList:
         serializer.add_property('VisitType', self.visit_type)
 
 
+class PatientAppStatus:
+    def __init__(self, param):
+        self.hospital_code = param.get("hospital_code", None) 
+        self.trans_date = param.get("trans_date", None)
+        self.trans_time = param.get("trans_time", None)
+        self.android_download = str(param.get("android_download" or "0"))
+        self.ios_download = str(param.get("ios_download") or "0")
+        self.linked_user_count = str(param.get("linked_user_count") or "0")
+        self.family_member_count = str(param.get("family_member_count") or "0")
+        self.primary_user_count = str(param.get("primary_user_count") or "0")
+        self.hv_count = str(param.get("hv_count") or "0")
+        self.vc_count = str(param.get("vc_count") or "0")
+        self.hc_count = str(param.get("hc_count") or "0")
+        self.hv_amount = str(param.get("hv_amount") or "0")
+        self.vc_amount = str(param.get("vc_amount") or "0")
+        self.ip_deposit_amount = str(param.get("ip_deposit_amount") or "0")
+        self.ip_deposit_count = str(param.get("ip_deposit_count") or "0")
+        self.hc_package_amount = str(param.get("hc_package_amount") or "0")
+        self.op_outstanding_amount = str(param.get("op_outstanding_amount") or "0")
+        self.registered_patient_count = str(param.get("registered_patient_count") or "0")
+        self.registration_amount = str(param.get("registration_amount") or "0")
+        self.home_collection_count = str(param.get("home_collection_count") or "0")
+        self.home_service_count = str(param.get("home_service_count") or "0")
+        self.preferred_hospital_count = str(param.get("preferred_hospital_count") or "0")
+
+        
+
+    def serialize(self, serializer):
+        serializer.start_object('PatAppStatsParam')
+        serializer.add_property('HospitalCode', self.hospital_code)
+        serializer.add_property('TransDate',self.trans_date)
+        serializer.add_property('TransTime', self.trans_time)
+        serializer.add_property('AndroidDownloads', self.android_download)
+        serializer.add_property('IOSDownloads', self.ios_download)
+        serializer.add_property('LinkedUserCount', self.linked_user_count)
+        serializer.add_property('FamilyMemberCount', self.family_member_count)
+        serializer.add_property('PrimaryUserCount', self.primary_user_count)
+        serializer.add_property('HVCount', self.hv_count)
+        serializer.add_property('VCCount', self.vc_count)
+        serializer.add_property('HCCount', self.hc_count)
+        serializer.add_property('HVPaymentAmt', self.hv_amount)
+        serializer.add_property('VCPaymentAmt', self.vc_amount)
+        serializer.add_property('IPDepositTransCount', self.ip_deposit_count)
+        serializer.add_property('IPDepositAmt', self.ip_deposit_amount)
+        serializer.add_property('HCPkgAmt', self.hc_package_amount)
+        serializer.add_property('OPOutstandingPaid', self.op_outstanding_amount)
+        serializer.add_property('RegisteredPatientCount', self.registered_patient_count)
+        serializer.add_property('UHIDRegistrationAmt', self.registration_amount)
+        serializer.add_property('HomeCollectionRqstCount', self.home_collection_count)
+        serializer.add_property('HomeServiceRqstCount', self.home_service_count)
+        serializer.add_property('PrefHospitalUserCount', self.preferred_hospital_count)
 class PaymentUpdate:
     def __init__(self, param):
         self.uhid = param.get("uhid", None)
