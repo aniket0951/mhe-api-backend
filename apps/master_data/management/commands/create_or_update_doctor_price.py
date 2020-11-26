@@ -19,6 +19,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             all_doctors = Doctor.objects.all()
+            print(all_doctors)
             for each_doctor in all_doctors:
                 all_departments = each_doctor.hospital_departments.all()
                 for each_department in all_departments:

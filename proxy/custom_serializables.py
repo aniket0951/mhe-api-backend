@@ -7,6 +7,8 @@ class ValidateUHID:
         serializer.start_object('ValidateRequestParam')
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('POTP', self.otp)
+        serializer.add_property('LocationCode', "MHB")
+
 
 
 class SlotAvailability:
@@ -81,14 +83,16 @@ class BookMySlot:
 
 
 class SyncAPIRequest:
-    def __init__(self, location_code=None, sync_method=None):
+    def __init__(self, location_code=None, sync_method=None, item_code=None):
         self.location_code = location_code
         self.sync_method = sync_method
+        self.item_code = item_code
 
     def serialize(self, serializer):
         serializer.start_object('SyncRequestParam')
         serializer.add_property('SyncLocationCode', self.location_code)
         serializer.add_property('SyncMethod', self.sync_method)
+        serializer.add_property('SyncItemCode', self.item_code)
 
 
 class ItemTariffPrice:
@@ -385,6 +389,15 @@ class CurrentPatientList:
         serializer.add_property('VisitType', self.visit_type)
 
 
+class HealthPackagePrice:
+    def __init__(self, location_code=None, package_code=None):
+        self.location_code = location_code
+        self.package_code = package_code
+
+    def serialize(self, serializer):
+        serializer.start_object('packagepriceParam')
+        serializer.add_property('packageCode', self.package_code)
+        serializer.add_property('locationCode', self.location_code)
 class CurrentAppointmentList:
     def __init__(self, location_code="MHB", app_date=None, doctor_code=None, visit_type=None):
         self.location_code = location_code
@@ -451,3 +464,77 @@ class PatientAppStatus:
         serializer.add_property('HomeCollectionRqstCount', self.home_collection_count)
         serializer.add_property('HomeServiceRqstCount', self.home_service_count)
         serializer.add_property('PrefHospitalUserCount', self.preferred_hospital_count)
+class PaymentUpdate:
+    def __init__(self, param):
+        self.uhid = param.get("uhid", None)
+        self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
+        self.processing_id = param.get("processing_id", "CORPORATE")
+        self.source = param.get("source", "PatientApp")
+        self.drawer = param.get("drawer", "NA")
+        self.amt = param.get("amt", "0")
+        self.location_code = param.get("location_code", None)
+        self.app_date = param.get("app_date", None)
+        self.package_code = param.get("package_code", "NA")
+        self.type = param.get("type", "A")
+        self.app_id = param.get("app_id", None)
+
+    def serialize(self, serializer):
+        serializer.start_object('OnlinePaymentParam')
+        serializer.add_property('hospno', self.uhid)
+        serializer.add_property('tranno', self.transaction_number)
+        serializer.add_property('ProcessID', self.processing_id)
+        serializer.add_property('Source', self.source)
+        serializer.add_property('Drawer', self.drawer)
+        serializer.add_property('amt', self.amt)
+        serializer.add_property('HospCode', self.location_code)
+        serializer.add_property('AppDate', self.app_date)
+        serializer.add_property('PkagCode', self.package_code)
+        serializer.add_property('Ttype', self.type)
+        serializer.add_property('ApptId', self.app_id)
+
+
+class CorporateRegistration:
+    def __init__(self, temp_id=None, location_code=None, transaction_id="Infosys",amount=0, discount_reason="Infosys"):
+        self.temp_id = temp_id
+        self.location_code = location_code
+        self.transaction_id = transaction_id
+        self.amount = amount
+        self.discount_reason = discount_reason
+        self.paymode = None
+
+
+    def serialize(self, serializer):
+        serializer.start_object('RegPayementParam')
+        serializer.add_property('locationCode',self.location_code)
+        serializer.add_property('fcrId', self.temp_id)
+        serializer.add_property('transactionReferenceId', self.transaction_id)
+        serializer.add_property('amount', self.amount)
+        serializer.add_property('discountReason', self.discount_reason)
+        serializer.add_property('payMode', self.paymode)
+
+
+class LinkUhid:
+    def __init__(self, uhid=None, location_code="MHB"):
+        self.uhid = uhid
+        self.location_code = location_code
+
+
+    def serialize(self, serializer):
+        serializer.start_object('LinkUHIDParam')
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('LocationCode', self.location_code)
+
+
+class ValidatePatientMobile:
+    def __init__(self, uhid=None, location_code="MHB", mobile_no = None):
+        self.uhid = uhid
+        self.location_code = location_code
+        self.mobile_no = mobile_no
+
+    def serialize(self, serializer):
+        serializer.start_object('ValidatePatientParam')
+        serializer.add_property('mobileno', self.mobile_no)
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('locationCode', self.location_code)
+
+

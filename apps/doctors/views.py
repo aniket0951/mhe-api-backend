@@ -211,12 +211,11 @@ class NextSlotAvailable(ProxyView):
     def parse_proxy_response(self, response):
         root = ET.fromstring(response.content)
         response_message = "We are unable to cancel the appointment. Please Try again"
-        success_status = False
+        response_success = False
         response_data = {}
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             next_date = root.find("nextdate").text
-            status = root.find("Status").text
             message = root.find("Message").text
             response_success = True
             response_message = message
@@ -232,6 +231,9 @@ class DoctorloginView(ProxyView):
     def get_request_data(self, request):
         appointment_identifier = request.data.pop(
             "appointment_identifier", None)
+        user_id = request.data.get("user_id")
+        if user_id and user_id.upper().startswith("MMH"):
+            request.data["location_code"] = "MMH"
         schedule = serializable_DoctotLogin(**request.data)
         request_data = custom_serializer().serialize(schedule, 'XML')
         request.data["appointment_identifier"] = appointment_identifier
@@ -250,13 +252,14 @@ class DoctorloginView(ProxyView):
             login_response = root.find("loginresp").text
             login_response = ast.literal_eval(login_response)
             if login_response:
+                
                 login_response_json = login_response[0]
                 login_status = login_response_json["Status"]
                 if login_status == "Success":
                     doctor_code = login_response_json["CTPCP_Code"]
                     location_code = login_response_json["Hosp"]
                     doctor = Doctor.objects.filter(
-                        code=doctor_code, hospital__code=location_code).first()
+                        code=doctor_code).first()
                     payload = jwt_payload_handler(doctor)
                     payload["username"] = doctor.code
                     token = jwt_encode_handler(payload)

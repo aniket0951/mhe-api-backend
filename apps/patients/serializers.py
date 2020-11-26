@@ -3,7 +3,7 @@ from uuid import UUID
 from phonenumber_field.serializerfields import PhoneNumberField
 
 from apps.master_data.models import Hospital
-from apps.master_data.serializers import HospitalSerializer
+from apps.master_data.serializers import HospitalSerializer, CompanySerializer
 from apps.patient_registration.serializers import RelationSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
@@ -61,6 +61,10 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                 instance.display_picture.url)
         except Exception as error:
             response_object['display_picture'] = None
+
+        if instance.company_info:
+            response_object['company_info'] = CompanySerializer(
+                instance.company_info).data
 
         return response_object
 
@@ -121,7 +125,8 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         if instance.relationship:
-            response_object['relationship'] = RelationSerializer(instance.relationship).data
+            response_object['relationship'] = RelationSerializer(
+                instance.relationship).data
 
         try:
             response_object['display_picture'] = generate_pre_signed_url(

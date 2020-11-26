@@ -1,9 +1,11 @@
 import json
+import logging
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
+from django.core.management import call_command
 from django.db.models import Q
 from django.utils.timezone import datetime
 
@@ -15,12 +17,17 @@ from apps.health_packages.serializers import (HealthPackage,
 from apps.health_tests.models import HealthTest
 from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
+from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
+                                      update_health_package, update_item)
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
+from proxy.custom_serializables import LinkUhid as serializable_LinkUhid
 from proxy.custom_serializables import \
     PatientAppStatus as serializable_patient_app_status
+from proxy.custom_serializables import \
+    ValidatePatientMobile as serializable_validate_patient_mobile
 from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
@@ -30,60 +37,74 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 from utils import custom_viewsets
-from utils.utils import get_report_info
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       InternalAPICall, IsManipalAdminUser)
+from utils.utils import get_report_info
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
                          HospitalDoesNotExistsValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
-from .models import (AmbulanceContact, BillingGroup, BillingSubGroup,
-                     Department, Hospital, HospitalDepartment, Specialisation)
-from .serializers import (AmbulanceContactSerializer, DepartmentSerializer,
+from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
+                     Department, EmergencyContact, Hospital,
+                     HospitalDepartment, Specialisation)
+from .serializers import (AmbulanceContactSerializer, CompanySerializer,
+                          DepartmentSerializer, EmergencyContactSerializer,
                           HospitalDepartmentSerializer, HospitalSerializer,
                           HospitalSpecificSerializer, SpecialisationSerializer)
 
+logger = logging.getLogger('django')
 
-class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
+
+class HospitalViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     model = Hospital
     queryset = Hospital.objects.all()
     serializer_class = HospitalSerializer
-    create_success_message = None
+    create_success_message = 'Hospital information created successfully!'
     list_success_message = 'Hospitals list returned successfully!'
     retrieve_success_message = 'Hospital information returned successfully!'
-    update_success_message = None
+    update_success_message = 'Hospital information updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['code', 'description', 'address', ]
     filter_fields = ['is_home_collection_supported', ]
     ordering_fields = ('code',)
 
-    def get_queryset(self):
-        try:
-            longitude = float(self.request.query_params.get("longitude", 0))
-            latitude = float(self.request.query_params.get("latitude", 0))
-            if longitude and latitude:
-                user_location = Point(longitude, latitude, srid=4326)
-                return self.get_queryset().annotate(calculated_distance=Django_Distance('location',
-                                                                                        user_location)).order_by('calculated_distance')
-        except Exception as e:
-            pass
-        return super().get_queryset()
-
     def get_permissions(self):
         if self.action in ['list', 'retrieve', ]:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'create']:
+        if self.action in ['update', 'partial_update', 'create']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
         return super().get_permissions()
+
+    def get_queryset(self):
+        try:
+            qs = super().get_queryset().filter(hospital_enabled=True)
+            longitude = float(self.request.query_params.get("longitude", 0))
+            latitude = float(self.request.query_params.get("latitude", 0))
+            corporate = self.request.query_params.get("corporate", None)
+            if longitude and latitude:
+                user_location = Point(longitude, latitude, srid=4326)
+                if corporate:
+                    company_id = self.request.query_params.get(
+                        "company_id", None)
+                    company = Company.objects.filter(id=company_id).first()
+                    if company:
+                        qs = company.hospital_info.all()
+                        return qs.annotate(calculated_distance=Django_Distance('location', user_location)).order_by('calculated_distance')
+                qs = qs.filter(corporate_only=False)
+                return qs.annotate(calculated_distance=Django_Distance('location', user_location)).order_by('calculated_distance')
+        except Exception as e:
+            pass
+        return super().get_queryset()
 
     def post(self, request, format=None):
         longitude = float(self.request.data.pop("longitude", 0))
@@ -106,6 +127,19 @@ class HospitalViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except:
             pass
         return Response(data=hospital_serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def update_hospital_location(self, request):
+        hospital_id = self.request.data.get("hospital_id")
+        longitude = float(self.request.data.get("longitude", 0))
+        latitude = float(self.request.data.get("latitude", 0))
+        hospital_instance = Hospital.objects.filter(id=hospital_id).first()
+        if not (longitude and latitude and hospital_instance):
+            raise ValidationError("Mandatory Parameter missing")
+        location = Point(longitude, latitude, srid=4326)
+        hospital_instance.location = location
+        hospital_instance.save()
+        return Response(data={"message": "Location Updated"}, status=status.HTTP_200_OK)
 
 
 class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -186,6 +220,7 @@ class DepartmentsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
 
@@ -212,9 +247,6 @@ class DepartmentsView(ProxyView):
                 if key in ['DateFrom', 'DateTo'] and each_department[key]:
                     each_department[key] = datetime.strptime(
                         each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
-
-                if key == "DeptName" and each_department[key]:
-                    each_department[key] = each_department[key]
 
                 department_details[department_sorted_keys[index]
                                    ] = each_department[key]
@@ -266,6 +298,7 @@ class DoctorsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
@@ -368,6 +401,7 @@ class HealthPackagesView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
         if item.text.startswith('Request Parameter'):
@@ -519,6 +553,7 @@ class LabRadiologyItemsView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        logger.info(response.content)
         item = ET.fromstring(response._content).find('SyncResponse')
         if item.text.startswith('Request Parameter'):
             raise HospitalCodeMissingValidationException
@@ -596,7 +631,7 @@ class LabRadiologyItemsView(ProxyView):
 
 
 class ItemsTarrifPriceView(ProxyView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     source = SYNC_SERVICE
     success_msg = 'Lab Radiology items list returned successfully'
     sync_method = 'tariff'
@@ -671,15 +706,23 @@ class ValidateOTPView(ProxyView):
                                             data=response_content)
 
 
-class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
-    permission_classes = [AllowAny]
+class AmbulanceContactViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
     model = AmbulanceContact
     queryset = AmbulanceContact.objects.all()
     serializer_class = AmbulanceContactSerializer
     list_success_message = 'Ambulance Contact list returned successfully!'
+    retrieve_success_message = 'Ambulance Contact returned successfully!'
+    update_success_message = 'Ambulance Contact updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_fields = ('hospital__id',)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', ]:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+        return super().get_permissions()
 
     def get_queryset(self):
         try:
@@ -691,7 +734,7 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
                                                                                         user_location)).order_by('calculated_distance')
         except Exception as e:
             pass
-        return super().get_queryset()
+        return super().get_queryset().order_by('hospital__code')
 
 
 class PatientAppointmentStatus(ProxyView):
@@ -719,3 +762,139 @@ class PatientAppointmentStatus(ProxyView):
             response_success = True
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=None)
+
+
+class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = Company
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    list_success_message = 'Company list returned successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+    def get_permissions(self):
+        if self.action in ['list']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        company_serializer = CompanySerializer(data=request.data)
+        company_serializer.is_valid(raise_exception=True)
+        company_serializer.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+class RequestSyncView(APIView):
+    permission_classes = (IsManipalAdminUser,)
+
+    def post(self, request, format=None):
+        sync_request = self.request.data.get("sync_request", None)
+        if sync_request == 'health_package':
+            update_health_package.delay()
+
+        elif sync_request == 'doctor':
+            update_doctor.delay()
+
+        elif sync_request == 'item':
+            update_item.delay()
+
+        else:
+            raise ValidationError("Parameter Missing")
+
+        return Response(status=status.HTTP_200_OK)
+
+
+class EmergencyContactViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = EmergencyContact
+    queryset = EmergencyContact.objects.all()
+    serializer_class = EmergencyContactSerializer
+    create_success_message = 'Emergency Contact information created successfully!'
+    list_success_message = 'Emergency Contact returned successfully!'
+    retrieve_success_message = 'Emergency Contact returned successfully!'
+    update_success_message = 'Emergency Contact updated successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+
+class LinkUhidView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'LinkUHID'
+
+    def get_request_data(self, request):
+        link_uhid = serializable_LinkUhid(**request.data)
+        request_data = custom_serializer().serialize(link_uhid, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        success = False
+        message = "Fail"
+        if response.status_code == 200:
+            message = root.find('msgLinkUHID').text
+            if message == "Success":
+                success = True
+        return self.custom_success_response(success=success, message=message,
+                                            data=None)
+
+
+class ValidateMobileView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'ValidatePatient'
+    success_msg = 'One time password has been sent on your registered mobile.'
+
+    def get_request_data(self, request):
+        mobile = serializable_validate_patient_mobile(**request.data)
+        request_data = custom_serializer().serialize(mobile, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        item = root.find('ValidatePatientResp')
+        response_content = json.loads(item.text)[0]
+        success = str(response_content.get('Status')) == "Pass"
+        message = str(response_content.get('Message'))
+        return self.custom_success_response(success, message)
+
+
+class ValidateMobileOTPView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'ValidateOTPWeb'
+    success_msg = 'OTP validated successfully'
+
+    def get_request_data(self, request):
+        uhid_otp = serializable_validate_UHID(**request.data)
+        request_data = custom_serializer().serialize(uhid_otp, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        message = None
+        item = root.find('ValidateResponse')
+        response_content = json.loads(item.text)
+        if response_content and response_content[0] and ('Status' in response_content[0]):
+            success = False
+            message = response_content[0]['Message']
+            response_content = None
+        else:
+            success = True
+        if success and not message:
+            message = self.success_msg
+        return self.custom_success_response(success=success, message=message,
+                                            data=response_content)

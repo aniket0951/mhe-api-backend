@@ -23,3 +23,20 @@ def rebook_parameters(instance, factory=APIRequestFactory()):
     param["location_code"] = instance.hospital.code
     return factory.post(
         '', param, format='json')
+
+
+def get_processing_id(*args):
+    t = time.time()*1000
+    r = random.random()*100000000000000000
+    a = random.random()*100000000000000000
+    processing_id = str(t)+' '+str(r)+' '+str(a)+' '+str(args)
+    processing_id = hashlib.md5(processing_id.encode('utf-8')).hexdigest()
+    return processing_id
+
+def get_transaction_id(*args):
+    t = time.time()*1000
+    r = random.random()*100000000000000000
+    a = random.random()*100000000000000000
+    processing_id = str(t)+' '+str(r)+' '+str(a)+' '+str(args)
+    processing_id = hashlib.md5(processing_id.encode('utf-8')).hexdigest()
+    return transaction_id

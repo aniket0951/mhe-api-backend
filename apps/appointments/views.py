@@ -41,6 +41,8 @@ from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
 from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
+from proxy.custom_serializables import \
+    PaymentUpdate as serializable_PaymentUpdate
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -106,34 +108,59 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return qs.filter(appointment_date__gte=datetime.now().date(), status=1)
             return qs
 
+        patient = Patient.objects.filter(id=self.request.user.id).first()
+        if not patient:
+            raise ValidationError("Patient does not Exist")
         elif (family_member is not None):
             member = FamilyMember.objects.filter(id=family_member).first()
             if not member:
                 raise ValidationError("Family Member does not Exist")
             member_uhid = member.uhid_number
             if is_upcoming:
+                if patient.active_view == 'Corporate':
+                    return super().get_queryset().filter(
+                        Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
+                        Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=True)
+
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
-                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=False)
+            if patient.active_view == 'Corporate':
+                return super().get_queryset().filter(
+                    (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).filter(corporate_appointment=True)
+
             return super().get_queryset().filter(
-                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member)))
+                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).filter(corporate_appointment=False)
         else:
-            patient = Patient.objects.filter(id=self.request.user.id).first()
-            if not patient:
-                raise ValidationError("Patient does not Exist")
             member_uhid = patient.uhid_number
             if is_upcoming:
+                if patient.active_view == 'Corporate':
+                    return super().get_queryset().filter(
+                        Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
+                        & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
+                                                                            & Q(family_member__isnull=True)))).exclude(
+                        Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=True)
+
                 return super().get_queryset().filter(
                     Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
                     & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
                                                                         & Q(family_member__isnull=True)))).exclude(
-                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True)))
+                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=False)
+
+            if patient.active_view == 'Corporate':
+                return super().get_queryset().filter(
+                    (Q(appointment_date__lt=datetime.now().date())
+                     | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
+                    & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
+                       | (Q(patient_id=patient.id)) &
+                        Q(family_member__isnull=True))).filter(corporate_appointment=True)
+
             return super().get_queryset().filter(
                 (Q(appointment_date__lt=datetime.now().date())
                  | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
                 & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
                    | (Q(patient_id=patient.id)) &
-                   Q(family_member__isnull=True)))
+                   Q(family_member__isnull=True))).filter(corporate_appointment=False)
 
 
 class CreateMyAppointment(ProxyView):
@@ -145,6 +172,7 @@ class CreateMyAppointment(ProxyView):
         patient_id = request.user.id
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
+        corporate = request.data.pop("corporate", None)
         patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(
             id=family_member_id).first()
@@ -184,6 +212,7 @@ class CreateMyAppointment(ProxyView):
         request.data["doctor"] = doctor
         request.data["department"] = department
         request.data["consultation_amount"] = amount
+        request.data['corporate'] = corporate
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -225,9 +254,31 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["hospital"] = data.get("hospital").id
                 new_appointment["appointment_mode"] = data.get(
                     "appointment_mode", None)
-                appointment = AppointmentSerializer(data=new_appointment)
+                if data.get('corporate', None):
+                    new_appointment["corporate_appointment"] = True
+
+                instance = Appointment.objects.filter(
+                    appointment_identifier=appointment_identifier).first()
+                if instance:
+                    new_appointment["booked_via_app"] = True
+                    appointment = AppointmentSerializer(
+                        instance, data=new_appointment, partial=True)
+                else:
+                    appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
+                patient = data.get("patient", None)
+                if patient and patient.active_view == 'Corporate':
+                    date_time = datetime_object.strftime("%Y%m%d")
+                    corporate_appointment = dict()
+                    corporate_appointment["uhid"] = new_appointment["uhid"]
+                    corporate_appointment["location_code"] = data.get(
+                        "hospital").code
+                    corporate_appointment["app_date"] = date_time
+                    corporate_appointment["app_id"] = appointment_identifier
+                    corporate_param = cancel_and_refund_parameters(
+                        corporate_appointment)
+                    response = AppointmentPaymentView.as_view()(corporate_param)
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
@@ -481,6 +532,10 @@ class OfflineAppointment(APIView):
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
             if appointment_instance:
+                if appointment_instance.payment_status == "success":
+                    appointment_data.pop("payment_status")
+                    appointment_data.pop("patient")
+                    appointment_data.pop("family_member")
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
             else:
@@ -753,10 +808,15 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["hospital"] = instance.hospital.id
                         new_appointment["appointment_mode"] = self.request.data.get(
                             "app_type")
-                        appointment = AppointmentSerializer(
-                            data=new_appointment)
-                        appointment.is_valid(raise_exception=True)
-                        appointment = appointment.save()
+                        new_appointment["corporate_appointment"] = instance.corporate_appointment
+                        new_appointment["booked_via_app"] = True
+                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
+                        if appointment_instance:
+                            appointment_serializer = AppointmentSerializer(appointment_instance, data=new_appointment, partial=True)
+                        else:
+                            appointment_serializer = AppointmentSerializer(data=new_appointment)
+                        appointment_serializer.is_valid(raise_exception=True)
+                        appointment = appointment_serializer.save()
                         if instance.payment_appointment.exists():
                             payment_instance = instance.payment_appointment.filter(
                                 status="success").first()
@@ -1185,13 +1245,13 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
-                    if appointment_instance.status == 1 and appointment_instance.appointment_mode =="VC" and appointment_instance.payment_status =="success":
+                    if appointment_instance.status == 1 and appointment_instance.appointment_mode == "VC" and appointment_instance.payment_status == "success":
                         appointment["enable_vc"] = True
                         if appointment_instance.vc_appointment_status == 4:
                             appointment["enable_vc"] = False
                         if appointment_instance.appointment_vitals.exists():
                             appointment["vitals_available"] = True
-                        
+
                         if appointment_instance.appointment_prescription.exists():
                             appointment["prescription_available"] = True
 
@@ -1202,4 +1262,41 @@ class CurrentAppointmentListView(ProxyView):
                     appointment["app_user"] = False
 
         return self.custom_success_response(message=message,
-                                            success=True, data={"appointment_list": appointment_list, "today_count":today_count, "tomorrow_count":tomorrow_count})
+                                            success=True, data={"appointment_list": appointment_list, "today_count": today_count, "tomorrow_count": tomorrow_count})
+
+
+class AppointmentPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'OnlinePayment'
+
+    def get_request_data(self, request):
+        request_xml = serializable_PaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            bill_detail = root.find("BillDetail").text
+            if bill_detail:
+                app_id = self.request.data.get("app_id")
+                aap_list = ast.literal_eval(bill_detail)
+                if aap_list:
+                    appointment_identifier = aap_list[0].get("AppointmentId")
+                    appointment_instance = Appointment.objects.filter(
+                        appointment_identifier=app_id).first()
+                    if appointment_instance:
+                        success_status = True
+                        appointment_instance.payment_status = "success"
+                        if appointment_identifier:
+                            appointment_instance.appointment_identifier = appointment_identifier
+                        appointment_instance.save()
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
