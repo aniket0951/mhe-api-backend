@@ -75,9 +75,9 @@ def get_report_info(hospital_code=None):
                     uhid_number__isnull=False, is_visible=True, created_at__date=yesterday.date()).values_list('uhid_number', flat=True)))
 
     param['trans_date'] = yesterday.strftime("%Y-%m-%d")
-    param['trans_time'] = yesterday.strftime("%H:%M %p")
+    param['trans_time'] = yesterday.strftime("%I:%M %p")
     param['linked_user_count'] = len(unique_uhid_info)
-    param['family_member_count'] = FamilyMember.objects.filter(is_visible=True, created_at__date=yesterday.date()).count() 
+    param['family_member_count'] = FamilyMember.objects.filter(is_visible=True, created_at__date=yesterday.date()).count()
     param['primary_user_count'] = Patient.objects.filter(mobile_verified=True, created_at__date=yesterday.date()).count() 
     param['android_download'] = MobileDevice.objects.filter(platform='Android', participant__created_at__date=yesterday.date()).count()
     param['ios_download'] = MobileDevice.objects.filter(platform='iOS', participant__created_at__date=yesterday.date()).count()
