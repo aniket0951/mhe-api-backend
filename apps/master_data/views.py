@@ -20,6 +20,8 @@ from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
 from proxy.custom_serializables import \
+    PatientAppStatus as serializable_patient_app_status
+from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
@@ -29,6 +31,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
+from utils.utils import get_report_info
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       InternalAPICall, IsManipalAdminUser)
@@ -689,3 +692,30 @@ class AmbulanceContactViewSet(custom_viewsets.ReadOnlyModelViewSet):
         except Exception as e:
             pass
         return super().get_queryset()
+
+
+class PatientAppointmentStatus(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'PatAppStats_Save'
+
+    def get_request_data(self, request):
+        hospital_code = request.data.get("hospital_code")
+        param = get_report_info(hospital_code=hospital_code)
+        request_param = serializable_patient_app_status(param)
+        request_data = custom_serializer().serialize(request_param, 'XML')
+        print(request_data)
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        response_message = "Report could not pushed"
+        response_success = False
+        print(response.content)
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            response_message = root.find("PatAppStatsResponse").text
+            response_success = True
+        return self.custom_success_response(message=response_message,
+                                            success=response_success, data=None)
