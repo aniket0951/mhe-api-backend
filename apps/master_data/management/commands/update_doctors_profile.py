@@ -1,4 +1,5 @@
 import json
+import logging
 
 import requests
 from django.conf import settings
@@ -6,6 +7,8 @@ from django.core.management import BaseCommand
 from requests.auth import HTTPBasicAuth
 
 from apps.doctors.models import Doctor
+
+logger = logging.getLogger('django')
 
 
 class Command(BaseCommand):
@@ -15,19 +18,19 @@ class Command(BaseCommand):
         try:
             auth = HTTPBasicAuth(
                 settings.DOCTOR_PROFILE_USERNAME, settings.DOCTOR_PROFILE_PASSWORD)
-            
+
             response_data = requests.request(
                 'GET', settings.PATIENT_PROFILE_SYNC_API, auth=auth).text
             response_data = json.loads(response_data)
-
+            logger.info(response_data)
             for each_doctor_record in response_data:
-            
+
                 if not each_doctor_record['DoctorCode']:
                     continue
 
                 doctor_details = dict()
                 for key in sorted(each_doctor_record.keys()):
-                               
+
                     if key == "doc.qualification":
                         doctor_details["qualification"] = each_doctor_record[key]
 
@@ -36,7 +39,7 @@ class Command(BaseCommand):
 
                     if key == "doc.field_expertise":
                         doctor_details["field_expertise"] = each_doctor_record[key]
-                    
+
                     if key == "doc.languages_spoken":
                         doctor_details["languages_spoken"] = each_doctor_record[key]
 

@@ -182,7 +182,25 @@
             "health_package_doctor_code":"MHWHC",
             "health_package_department_code":"MHWHSVC",
             "is_home_collection_supported":"True",
-            "location": ""
+            "location": "0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8213",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MIO",
+            "description": "Manipal Infosys OHC",
+            "email": "",
+            "mobile": "",
+            "address": "",
+            "is_health_package_online_purchase_supported": "False",
+            "health_package_doctor_code":"",
+            "health_package_department_code":"",
+            "is_home_collection_supported":"True",
+            "location":"",
+            "corporate_only":"True"
         }
     }
 

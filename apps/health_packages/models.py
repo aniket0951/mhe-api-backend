@@ -81,7 +81,8 @@ class HealthPackagePricing(MyBaseModel):
 
     price = models.IntegerField()
 
-    start_date = models.DateField()
+    start_date = models.DateField(null=True,
+                                blank=True)
 
     end_date = models.DateField(null=True,
                                 blank=True
@@ -89,7 +90,8 @@ class HealthPackagePricing(MyBaseModel):
 
     discount_percentage = models.IntegerField(default=0)
 
-    discount_start_date = models.DateField(default='2020-05-14')
+    discount_start_date = models.DateField(null=True,
+                                         blank=True)
 
     discount_end_date = models.DateField(null=True,
                                          blank=True
