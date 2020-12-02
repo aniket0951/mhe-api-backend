@@ -917,8 +917,7 @@ class UhidConsultationPricingView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        import pdb
-        pdb.set_trace()
+        
         message = "Something went Wrong!!"
         success = False
         item = root.find('consultchargesResp')
