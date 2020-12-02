@@ -27,6 +27,8 @@ from proxy.custom_serializables import LinkUhid as serializable_LinkUhid
 from proxy.custom_serializables import \
     PatientAppStatus as serializable_patient_app_status
 from proxy.custom_serializables import \
+    UhidBasedConsultation as serializable_uhid_based_consultation
+from proxy.custom_serializables import \
     ValidatePatientMobile as serializable_validate_patient_mobile
 from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
@@ -896,5 +898,35 @@ class ValidateMobileOTPView(ProxyView):
             success = True
         if success and not message:
             message = self.success_msg
+        return self.custom_success_response(success=success, message=message,
+                                            data=response_content)
+
+
+class UhidConsultationPricingView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'getconsultationcharges'
+
+    def get_request_data(self, request):
+        consultation_obj = serializable_uhid_based_consultation(**request.data)
+        request_data = custom_serializer().serialize(consultation_obj, 'XML')
+        print(request_data)
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        import pdb
+        pdb.set_trace()
+        message = "Something went Wrong!!"
+        success = False
+        item = root.find('consultchargesResp')
+        response_content = json.loads(item.text)
+        if response_content:
+            response_content = response_content[0]
+            success = True
+            message = "Price returned successfully!!"
+
         return self.custom_success_response(success=success, message=message,
                                             data=response_content)
