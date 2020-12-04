@@ -167,7 +167,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class CreateMyAppointment(ProxyView):
-    permission_classes = [IsPatientUser | InternalAPICall | AllowAny]
+    permission_classes = [IsPatientUser | InternalAPICall]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
