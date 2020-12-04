@@ -282,17 +282,19 @@ class CreateMyAppointment(ProxyView):
                     corporate_param = cancel_and_refund_parameters(
                         corporate_appointment)
                     response = AppointmentPaymentView.as_view()(corporate_param)
-                import pdb; pdb.set_trace()
+                
                 uhid = new_appointment["uhid"] or "None"
                 location_code = data.get("hospital").code
                 doctor_code = data.get("doctor").code
                 specialty_code = data.get("department").code
-                response = client.post('/api/master_data/consultation_charges',
+                consultation_response = client.post('/api/master_data/consultation_charges',
                                        json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code}), content_type='application/json')
                 
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
+                if consultation_response.status_code == 200 and consultation_response.data and consultation_response['data']:
+                    response_data['consultation_object'] = consultation_response.data['data']
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
