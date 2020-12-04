@@ -291,7 +291,6 @@ class CreateMyAppointment(ProxyView):
                                        json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code}), content_type='application/json')
                 
                 response_success = True
-                import pdb; pdb.set_trace()
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
                 if consultation_response.status_code == 200 and consultation_response.data and consultation_response.data['data']:
