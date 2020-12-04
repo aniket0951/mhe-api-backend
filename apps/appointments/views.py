@@ -70,6 +70,9 @@ from .serializers import (AppointmentDocumentsSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
+from rest_framework.test import APIClient
+
+client = APIClient()
 
 logger = logging.getLogger('django')
 
@@ -164,7 +167,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
 class CreateMyAppointment(ProxyView):
-    permission_classes = [IsPatientUser | InternalAPICall]
+    permission_classes = [IsPatientUser | InternalAPICall | AllowAny]
     source = 'bookAppointment'
 
     def get_request_data(self, request):
@@ -279,6 +282,13 @@ class CreateMyAppointment(ProxyView):
                     corporate_param = cancel_and_refund_parameters(
                         corporate_appointment)
                     response = AppointmentPaymentView.as_view()(corporate_param)
+                
+                uhid = new_appointment["uhid"] or "None"
+                doctor_code = data.get("doctor").code
+                specialty_code = data.get("department").code
+                response = client.post('/api/master_data/consultation_charges',
+                                       json.dumps({'location_code': corporate_appointment["location_code"], 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code}), content_type='application/json')
+                import pdb; pdb.set_trace()
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
