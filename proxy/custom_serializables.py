@@ -549,7 +549,7 @@ class ValidatePatientMobile:
 
 
 class UhidBasedConsultation:
-    def __init__(self, uhid=None, location_code=None, specialty_code=None, doctor_code=None, promo_code=None, order_date=None):
+    def __init__(self, uhid="None", location_code=None, specialty_code=None, doctor_code=None, promo_code="None", order_date=None):
         self.uhid = uhid
         self.location_code = location_code
         self.specialty_code = specialty_code
