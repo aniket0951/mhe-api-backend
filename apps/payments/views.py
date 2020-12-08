@@ -92,6 +92,7 @@ class AppointmentPayment(APIView):
         calculated_amount = 0
         payment_data["location"] = hospital.id
         uhid = appointment_instance.uhid
+        order_date = appointment_instance.appointment_date.strftime("%d%m%Y")
         if registration_payment:
             uhid = "None"
             payment_data["payment_for_uhid_creation"] = True
@@ -102,7 +103,7 @@ class AppointmentPayment(APIView):
                 calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
         response_doctor_charges = client.post('/api/master_data/consultation_charges',
-                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid}), content_type='application/json')
+                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid, 'order_date': order_date}), content_type='application/json')
 
 
         if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
