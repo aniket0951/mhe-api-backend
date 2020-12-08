@@ -549,12 +549,13 @@ class ValidatePatientMobile:
 
 
 class UhidBasedConsultation:
-    def __init__(self, uhid=None, location_code=None, specialty_code=None, doctor_code=None, promo_code=None):
+    def __init__(self, uhid=None, location_code=None, specialty_code=None, doctor_code=None, promo_code=None, order_date=None):
         self.uhid = uhid
         self.location_code = location_code
         self.specialty_code = specialty_code
         self.doctor_code = doctor_code
         self.promo_code = promo_code
+        self.order_date = order_date
 
     def serialize(self, serializer):
         serializer.start_object('consultchargesParam')
@@ -563,3 +564,4 @@ class UhidBasedConsultation:
         serializer.add_property('doctorCode', self.doctor_code)
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('PromoCode', self.promo_code)
+        serializer.add_property('OrderDate', self.order_date)
