@@ -287,8 +287,9 @@ class CreateMyAppointment(ProxyView):
                 location_code = data.get("hospital").code
                 doctor_code = data.get("doctor").code
                 specialty_code = data.get("department").code
+                order_date = datetime_object.strftime("%d%m%Y")
                 consultation_response = client.post('/api/master_data/consultation_charges',
-                                       json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code}), content_type='application/json')
+                                       json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code, 'order_date':order_date}), content_type='application/json')
                 
                 response_success = True
                 response_message = "Appointment has been created"
