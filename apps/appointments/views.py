@@ -296,6 +296,10 @@ class CreateMyAppointment(ProxyView):
                 response_data["appointment_identifier"] = appointment_identifier
                 if consultation_response.status_code == 200 and consultation_response.data and consultation_response.data['data']:
                     response_data['consultation_object'] = consultation_response.data['data']
+                    if consultation_response.data['data'].get('IsFollowUp'):
+                        if consultation_response.data['data'].get('IsFollowUp') != "N":
+                            appointment.is_follow_up = True
+                            appointment.save()
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
