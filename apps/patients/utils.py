@@ -6,7 +6,7 @@ from rest_framework.test import APIRequestFactory
 def fetch_uhid_user_details(request):
     uhid_number = request.data.get('uhid_number')
     otp = request.data.get('otp')
-
+    import pdb; pdb.set_trace()
     if not (uhid_number and otp):
         raise ValidationError('UHID or OTP is missing!')
 
