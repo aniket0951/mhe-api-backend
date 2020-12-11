@@ -690,7 +690,7 @@ class ValidateOTPView(ProxyView):
     def get_request_data(self, request):
         uhid_otp = serializable_validate_UHID(**request.data)
         request_data = custom_serializer().serialize(uhid_otp, 'XML')
-        import pdb; pdb.set_trace()
+        
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -698,7 +698,6 @@ class ValidateOTPView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        import pdb; pdb.set_trace()
 
         item = root.find('ValidateResponse')
         response_content = json.loads(item.text)[0]
