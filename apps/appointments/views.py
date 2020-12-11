@@ -305,7 +305,7 @@ class CreateMyAppointment(ProxyView):
                                 corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                                 corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
                                 followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
-                                response = AppointmentPaymentView.as_view()(corporate_param)
+                                response = AppointmentPaymentView.as_view()(followup_payment_param)
                                 appointment_instance.payment_status = "success"
                             appointment_instance.is_follow_up = True
                             appointment_instance.save()
