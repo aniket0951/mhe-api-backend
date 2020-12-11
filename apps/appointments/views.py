@@ -271,14 +271,14 @@ class CreateMyAppointment(ProxyView):
                 appointment.is_valid(raise_exception=True)
                 appointment.save()
                 patient = data.get("patient", None)
+                date_time = datetime_object.strftime("%Y%m%d")
+                corporate_appointment = dict()
+                corporate_appointment["uhid"] = new_appointment["uhid"]
+                corporate_appointment["location_code"] = data.get(
+                    "hospital").code
+                corporate_appointment["app_date"] = date_time
+                corporate_appointment["app_id"] = appointment_identifier
                 if patient and patient.active_view == 'Corporate':
-                    date_time = datetime_object.strftime("%Y%m%d")
-                    corporate_appointment = dict()
-                    corporate_appointment["uhid"] = new_appointment["uhid"]
-                    corporate_appointment["location_code"] = data.get(
-                        "hospital").code
-                    corporate_appointment["app_date"] = date_time
-                    corporate_appointment["app_id"] = appointment_identifier
                     corporate_param = cancel_and_refund_parameters(
                         corporate_appointment)
                     response = AppointmentPaymentView.as_view()(corporate_param)
@@ -298,6 +298,15 @@ class CreateMyAppointment(ProxyView):
                     response_data['consultation_object'] = consultation_response.data['data']
                     if consultation_response.data['data'].get('IsFollowUp'):
                         if consultation_response.data['data'].get('IsFollowUp') != "N":
+                            hv_charges = consultation_response.data['data'].get("OPDConsCharges")
+                            vc_charges = consultation_response.data['data'].get("VCConsCharges")
+                            pr_charges = consultation_response.data['data'].get("PRConsCharges")
+                            if (appointment.appointment_mode == "HV" and hv_charges == "0") or (appointment.appointment_mode == "VC" and vc_charges == "0") or (appointment.appointment_mode == "PR" and pr_charges == "0"):
+                                corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
+                                corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
+                                followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
+                                response = AppointmentPaymentView.as_view()(corporate_param)
+                                appointment.payment_status = "success"
                             appointment.is_follow_up = True
                             appointment.save()
 
