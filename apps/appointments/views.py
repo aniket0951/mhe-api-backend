@@ -297,6 +297,7 @@ class CreateMyAppointment(ProxyView):
                 if consultation_response.status_code == 200 and consultation_response.data and consultation_response.data['data']:
                     response_data['consultation_object'] = consultation_response.data['data']
                     if consultation_response.data['data'].get('IsFollowUp'):
+                        import pdb; pdb.set_trace()
                         if consultation_response.data['data'].get('IsFollowUp') != "N":
                             hv_charges = consultation_response.data['data'].get("OPDConsCharges")
                             vc_charges = consultation_response.data['data'].get("VCConsCharges")
@@ -309,6 +310,7 @@ class CreateMyAppointment(ProxyView):
                                 appointment.payment_status = "success"
                             appointment.is_follow_up = True
                             appointment.save()
+                            
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
