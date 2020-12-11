@@ -269,7 +269,7 @@ class CreateMyAppointment(ProxyView):
                 else:
                     appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
-                appointment.save()
+                appointment_instance = appointment.save()
                 patient = data.get("patient", None)
                 date_time = datetime_object.strftime("%Y%m%d")
                 corporate_appointment = dict()
@@ -307,9 +307,9 @@ class CreateMyAppointment(ProxyView):
                                 corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
                                 followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
                                 response = AppointmentPaymentView.as_view()(corporate_param)
-                                appointment.payment_status = "success"
-                            appointment.is_follow_up = True
-                            appointment.save()
+                                appointment_instance.payment_status = "success"
+                            appointment_instance.is_follow_up = True
+                            appointment_instance.save()
                             
 
         return self.custom_success_response(message=response_message,
