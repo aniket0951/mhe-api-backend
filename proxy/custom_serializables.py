@@ -489,6 +489,8 @@ class PaymentUpdate:
         self.package_code = param.get("package_code", "NA")
         self.type = param.get("type", "A")
         self.app_id = param.get("app_id", None)
+        self.plan_code = param.get("plan_code", None) or "NA"
+        self.is_followup = param.get("is_followup", "N") or "N"
 
     def serialize(self, serializer):
         serializer.start_object('OnlinePaymentParam')
@@ -503,6 +505,8 @@ class PaymentUpdate:
         serializer.add_property('PkagCode', self.package_code)
         serializer.add_property('Ttype', self.type)
         serializer.add_property('ApptId', self.app_id)
+        serializer.add_property('PlanCode', self.plan_code)
+        serializer.add_property('IsFollowUp', self.is_followup)
 
 
 class CorporateRegistration:
