@@ -690,6 +690,7 @@ class ValidateOTPView(ProxyView):
     def get_request_data(self, request):
         uhid_otp = serializable_validate_UHID(**request.data)
         request_data = custom_serializer().serialize(uhid_otp, 'XML')
+        import pdb; pdb.set_trace()
         return request_data
 
     def post(self, request, *args, **kwargs):
