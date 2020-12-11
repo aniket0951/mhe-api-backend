@@ -15,7 +15,7 @@ def fetch_uhid_user_details(request):
     proxy_request = factory.post(
         '', {"uhid": uhid_number, "otp": otp}, format='json')
     response = ValidateOTPView().as_view()(proxy_request)
-
+    print(response.data)
     if not (response.status_code == 200 and response.data['success']):
         raise ValidationError(response.data['message'])
 
