@@ -697,6 +697,7 @@ class ValidateOTPView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
+        import pdb; pdb.set_trace()
 
         item = root.find('ValidateResponse')
         response_content = json.loads(item.text)[0]
