@@ -302,7 +302,7 @@ class CreateMyAppointment(ProxyView):
                             hv_charges = consultation_response.data['data'].get("OPDConsCharges")
                             vc_charges = consultation_response.data['data'].get("VCConsCharges")
                             pr_charges = consultation_response.data['data'].get("PRConsCharges")
-                            if (appointment.appointment_mode == "HV" and hv_charges == "0") or (appointment.appointment_mode == "VC" and vc_charges == "0") or (appointment.appointment_mode == "PR" and pr_charges == "0"):
+                            if (appointment_instance.appointment_mode == "HV" and hv_charges == "0") or (appointment_instance.appointment_mode == "VC" and vc_charges == "0") or (appointment_instance.appointment_mode == "PR" and pr_charges == "0"):
                                 corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                                 corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
                                 followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
