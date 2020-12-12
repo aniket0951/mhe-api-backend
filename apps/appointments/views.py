@@ -70,6 +70,9 @@ from .serializers import (AppointmentDocumentsSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters
+from rest_framework.test import APIClient
+
+client = APIClient()
 
 logger = logging.getLogger('django')
 
@@ -266,22 +269,48 @@ class CreateMyAppointment(ProxyView):
                 else:
                     appointment = AppointmentSerializer(data=new_appointment)
                 appointment.is_valid(raise_exception=True)
-                appointment.save()
+                appointment_instance = appointment.save()
                 patient = data.get("patient", None)
+                date_time = datetime_object.strftime("%Y%m%d")
+                corporate_appointment = dict()
+                corporate_appointment["uhid"] = new_appointment["uhid"]
+                corporate_appointment["location_code"] = data.get(
+                    "hospital").code
+                corporate_appointment["app_date"] = date_time
+                corporate_appointment["app_id"] = appointment_identifier
                 if patient and patient.active_view == 'Corporate':
-                    date_time = datetime_object.strftime("%Y%m%d")
-                    corporate_appointment = dict()
-                    corporate_appointment["uhid"] = new_appointment["uhid"]
-                    corporate_appointment["location_code"] = data.get(
-                        "hospital").code
-                    corporate_appointment["app_date"] = date_time
-                    corporate_appointment["app_id"] = appointment_identifier
                     corporate_param = cancel_and_refund_parameters(
                         corporate_appointment)
                     response = AppointmentPaymentView.as_view()(corporate_param)
+                
+                uhid = new_appointment["uhid"] or "None"
+                location_code = data.get("hospital").code
+                doctor_code = data.get("doctor").code
+                specialty_code = data.get("department").code
+                order_date = datetime_object.strftime("%d%m%Y")
+                consultation_response = client.post('/api/master_data/consultation_charges',
+                                       json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code, 'order_date':order_date}), content_type='application/json')
+                
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
+                if consultation_response.status_code == 200 and consultation_response.data and consultation_response.data['data']:
+                    response_data['consultation_object'] = consultation_response.data['data']
+                    if consultation_response.data['data'].get('IsFollowUp'):
+                        if consultation_response.data['data'].get('IsFollowUp') != "N":
+                            hv_charges = consultation_response.data['data'].get("OPDConsCharges")
+                            vc_charges = consultation_response.data['data'].get("VCConsCharges")
+                            pr_charges = consultation_response.data['data'].get("PRConsCharges")
+                            if (appointment_instance.appointment_mode == "HV" and hv_charges == "0") or (appointment_instance.appointment_mode == "VC" and vc_charges == "0") or (appointment_instance.appointment_mode == "PR" and pr_charges == "0"):
+                                corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
+                                corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
+                                followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
+                                appointment_instance.consultation_amount = 0
+                                response = AppointmentPaymentView.as_view()(followup_payment_param)
+                                appointment_instance.payment_status = "success"
+                            appointment_instance.is_follow_up = True
+                            appointment_instance.save()
+                            
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
