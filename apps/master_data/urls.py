@@ -8,8 +8,9 @@ from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
                     HospitalDepartmentViewSet, HospitalViewSet,
                     ItemsTarrifPriceView, LabRadiologyItemsView,
                     PatientAppointmentStatus, RequestSyncView,
-                    SpecialisationViewSet, ValidateMobileOTPView,
-                    ValidateMobileView, ValidateOTPView, ValidateUHIDView)
+                    SpecialisationViewSet, UhidConsultationPricingView,
+                    ValidateMobileOTPView, ValidateMobileView, ValidateOTPView,
+                    ValidateUHIDView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -54,6 +55,9 @@ urlpatterns = [
 
     url('^validate_mobile_otp', ValidateMobileOTPView.as_view(),
         name="validate_mobile_otp"),
+
+    url('^consultation_charges', UhidConsultationPricingView.as_view(),
+        name="consultation_charges"),
 
     * router.urls
 ]

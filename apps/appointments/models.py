@@ -111,6 +111,8 @@ class Appointment(models.Model):
 
     corporate_appointment = models.BooleanField(default=False)
 
+    is_follow_up = models.BooleanField(default=False)
+
     @property
     def is_cancellable(self):
         if self.appointment_date:
