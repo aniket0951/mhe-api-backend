@@ -91,7 +91,10 @@ class AppointmentPayment(APIView):
 
         calculated_amount = 0
         payment_data["location"] = hospital.id
+        uhid = appointment_instance.uhid
+        order_date = appointment_instance.appointment_date.strftime("%d%m%Y")
         if registration_payment:
+            uhid = "None"
             payment_data["payment_for_uhid_creation"] = True
             response = client.post('/api/master_data/items_tariff_price',
                                    json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type='application/json')
@@ -99,22 +102,23 @@ class AppointmentPayment(APIView):
             if response.status_code == 200 and response.data["success"] == True:
                 calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
-        response_doctor_charges = client.post('/api/doctors/doctor_charges',
-                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code}), content_type='application/json')
+        response_doctor_charges = client.post('/api/master_data/consultation_charges',
+                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid, 'order_date': order_date}), content_type='application/json')
+
 
         if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
             
             if appointment_instance.appointment_mode == "HV":
                 calculated_amount = calculated_amount + \
-                    int(float(response_doctor_charges.data["data"]["hv_charge"]))
+                    int(float(response_doctor_charges.data["data"]["OPDConsCharges"]))
 
             if appointment_instance.appointment_mode == "VC":
                 calculated_amount = calculated_amount + \
-                    int(float(response_doctor_charges.data["data"]["vc_charge"]))
+                    int(float(response_doctor_charges.data["data"]["VCConsCharges"]))
 
             if appointment_instance.appointment_mode == "PR":
                 calculated_amount = calculated_amount + \
-                    int(float(response_doctor_charges.data["data"]["pr_charge"]))
+                    int(float(response_doctor_charges.data["data"]["PRConsCharges"]))
 
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError("Price is Updated")

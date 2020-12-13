@@ -10,7 +10,6 @@ class ValidateUHID:
         serializer.add_property('LocationCode', "MHB")
 
 
-
 class SlotAvailability:
     def __init__(self, doctor_code=None, location_code=None, schedule_date=None,
                  appointment_type=None, speciality_code=None):
@@ -390,14 +389,21 @@ class CurrentPatientList:
 
 
 class HealthPackagePrice:
-    def __init__(self, location_code=None, package_code=None):
+    def __init__(self, location_code=None, package_code=None, uhid="NA", promo_code="NA"):
         self.location_code = location_code
         self.package_code = package_code
+        self.uhid = uhid
+        self.promo_code = promo_code
 
     def serialize(self, serializer):
         serializer.start_object('packagepriceParam')
         serializer.add_property('packageCode', self.package_code)
         serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('PromoCode', self.promo_code)
+
+
+
 class CurrentAppointmentList:
     def __init__(self, location_code="MHB", app_date=None, doctor_code=None, visit_type=None):
         self.location_code = location_code
@@ -415,7 +421,7 @@ class CurrentAppointmentList:
 
 class PatientAppStatus:
     def __init__(self, param):
-        self.hospital_code = param.get("hospital_code", None) 
+        self.hospital_code = param.get("hospital_code", None)
         self.trans_date = param.get("trans_date", None)
         self.trans_time = param.get("trans_time", None)
         self.android_download = str(param.get("android_download" or "0"))
@@ -431,19 +437,21 @@ class PatientAppStatus:
         self.ip_deposit_amount = str(param.get("ip_deposit_amount") or "0")
         self.ip_deposit_count = str(param.get("ip_deposit_count") or "0")
         self.hc_package_amount = str(param.get("hc_package_amount") or "0")
-        self.op_outstanding_amount = str(param.get("op_outstanding_amount") or "0")
-        self.registered_patient_count = str(param.get("registered_patient_count") or "0")
+        self.op_outstanding_amount = str(
+            param.get("op_outstanding_amount") or "0")
+        self.registered_patient_count = str(
+            param.get("registered_patient_count") or "0")
         self.registration_amount = str(param.get("registration_amount") or "0")
-        self.home_collection_count = str(param.get("home_collection_count") or "0")
+        self.home_collection_count = str(
+            param.get("home_collection_count") or "0")
         self.home_service_count = str(param.get("home_service_count") or "0")
-        self.preferred_hospital_count = str(param.get("preferred_hospital_count") or "0")
-
-        
+        self.preferred_hospital_count = str(
+            param.get("preferred_hospital_count") or "0")
 
     def serialize(self, serializer):
         serializer.start_object('PatAppStatsParam')
         serializer.add_property('HospitalCode', self.hospital_code)
-        serializer.add_property('TransDate',self.trans_date)
+        serializer.add_property('TransDate', self.trans_date)
         serializer.add_property('TransTime', self.trans_time)
         serializer.add_property('AndroidDownloads', self.android_download)
         serializer.add_property('IOSDownloads', self.ios_download)
@@ -458,16 +466,25 @@ class PatientAppStatus:
         serializer.add_property('IPDepositTransCount', self.ip_deposit_count)
         serializer.add_property('IPDepositAmt', self.ip_deposit_amount)
         serializer.add_property('HCPkgAmt', self.hc_package_amount)
-        serializer.add_property('OPOutstandingPaid', self.op_outstanding_amount)
-        serializer.add_property('RegisteredPatientCount', self.registered_patient_count)
-        serializer.add_property('UHIDRegistrationAmt', self.registration_amount)
-        serializer.add_property('HomeCollectionRqstCount', self.home_collection_count)
-        serializer.add_property('HomeServiceRqstCount', self.home_service_count)
-        serializer.add_property('PrefHospitalUserCount', self.preferred_hospital_count)
+        serializer.add_property('OPOutstandingPaid',
+                                self.op_outstanding_amount)
+        serializer.add_property('RegisteredPatientCount',
+                                self.registered_patient_count)
+        serializer.add_property('UHIDRegistrationAmt',
+                                self.registration_amount)
+        serializer.add_property('HomeCollectionRqstCount',
+                                self.home_collection_count)
+        serializer.add_property('HomeServiceRqstCount',
+                                self.home_service_count)
+        serializer.add_property('PrefHospitalUserCount',
+                                self.preferred_hospital_count)
+
+
 class PaymentUpdate:
     def __init__(self, param):
         self.uhid = param.get("uhid", None)
-        self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
+        self.transaction_number = param.get(
+            "transaction_number", "CORPORATE_INFOSYS")
         self.processing_id = param.get("processing_id", "CORPORATE")
         self.source = param.get("source", "PatientApp")
         self.drawer = param.get("drawer", "NA")
@@ -477,6 +494,8 @@ class PaymentUpdate:
         self.package_code = param.get("package_code", "NA")
         self.type = param.get("type", "A")
         self.app_id = param.get("app_id", None)
+        self.plan_code = param.get("plan_code", None) or "NA"
+        self.is_followup = param.get("is_followup", "N") or "N"
 
     def serialize(self, serializer):
         serializer.start_object('OnlinePaymentParam')
@@ -491,10 +510,12 @@ class PaymentUpdate:
         serializer.add_property('PkagCode', self.package_code)
         serializer.add_property('Ttype', self.type)
         serializer.add_property('ApptId', self.app_id)
+        serializer.add_property('PlanCode', self.plan_code)
+        serializer.add_property('IsFollowUp', self.is_followup)
 
 
 class CorporateRegistration:
-    def __init__(self, temp_id=None, location_code=None, transaction_id="Infosys",amount=0, discount_reason="Infosys"):
+    def __init__(self, temp_id=None, location_code=None, transaction_id="Infosys", amount=0, discount_reason="Infosys"):
         self.temp_id = temp_id
         self.location_code = location_code
         self.transaction_id = transaction_id
@@ -502,10 +523,9 @@ class CorporateRegistration:
         self.discount_reason = discount_reason
         self.paymode = None
 
-
     def serialize(self, serializer):
         serializer.start_object('RegPayementParam')
-        serializer.add_property('locationCode',self.location_code)
+        serializer.add_property('locationCode', self.location_code)
         serializer.add_property('fcrId', self.temp_id)
         serializer.add_property('transactionReferenceId', self.transaction_id)
         serializer.add_property('amount', self.amount)
@@ -518,7 +538,6 @@ class LinkUhid:
         self.uhid = uhid
         self.location_code = location_code
 
-
     def serialize(self, serializer):
         serializer.start_object('LinkUHIDParam')
         serializer.add_property('UHID', self.uhid)
@@ -526,7 +545,7 @@ class LinkUhid:
 
 
 class ValidatePatientMobile:
-    def __init__(self, uhid=None, location_code="MHB", mobile_no = None):
+    def __init__(self, uhid=None, location_code="MHB", mobile_no=None):
         self.uhid = uhid
         self.location_code = location_code
         self.mobile_no = mobile_no
@@ -538,3 +557,20 @@ class ValidatePatientMobile:
         serializer.add_property('locationCode', self.location_code)
 
 
+class UhidBasedConsultation:
+    def __init__(self, uhid="None", location_code=None, specialty_code=None, doctor_code=None, promo_code="None", order_date=None):
+        self.uhid = uhid
+        self.location_code = location_code
+        self.specialty_code = specialty_code
+        self.doctor_code = doctor_code
+        self.promo_code = promo_code
+        self.order_date = order_date
+
+    def serialize(self, serializer):
+        serializer.start_object('consultchargesParam')
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('specialtyCode', self.specialty_code)
+        serializer.add_property('doctorCode', self.doctor_code)
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('PromoCode', self.promo_code)
+        serializer.add_property('OrderDate', self.order_date)
