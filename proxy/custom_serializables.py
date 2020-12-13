@@ -389,14 +389,19 @@ class CurrentPatientList:
 
 
 class HealthPackagePrice:
-    def __init__(self, location_code=None, package_code=None):
+    def __init__(self, location_code=None, package_code=None, uhid="NA", promo_code="NA"):
         self.location_code = location_code
         self.package_code = package_code
+        self.uhid = uhid
+        self.promo_code = promo_code
 
     def serialize(self, serializer):
         serializer.start_object('packagepriceParam')
         serializer.add_property('packageCode', self.package_code)
         serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('UHID', self.uhid)
+        serializer.add_property('PromoCode', self.promo_code)
+
 
 
 class CurrentAppointmentList:
