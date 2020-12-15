@@ -205,14 +205,14 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['appointment_statistics']["rescheduled"] = appointment_qs.filter(
                     booked_via_app=True, status=5).count()
 
-                dashboard_details['appointment_statistics']['total_appointment_hospital_wise'] = appointment_qs.filter(
-                    status=1, booked_via_app=True).values('hospital__code').annotate(Count('hospital'))
+                dashboard_details['appointment_statistics']['total_appointment_hospital_wise'] = list(appointment_qs.filter(
+                    status=1, booked_via_app=True).values('hospital__code').annotate(Count('hospital')))
 
-                dashboard_details['appointment_statistics']['opd_appointment_hospital_wise'] = appointment_qs.filter(
-                    booked_via_app=True, status=1, appointment_mode="HV").values('hospital__code').annotate(Count('hospital'))
+                dashboard_details['appointment_statistics']['opd_appointment_hospital_wise'] = list(appointment_qs.filter(
+                    booked_via_app=True, status=1, appointment_mode="HV").values('hospital__code').annotate(Count('hospital')))
 
-                dashboard_details['appointment_statistics']['vc_appointment_hospital_wise'] = appointment_qs.filter(
-                    booked_via_app=True, status=1, appointment_mode="VC", payment_status="success").values('hospital__code').annotate(Count('hospital'))
+                dashboard_details['appointment_statistics']['vc_appointment_hospital_wise'] =  list(appointment_qs.filter(
+                    booked_via_app=True, status=1, appointment_mode="VC", payment_status="success").values('hospital__code').annotate(Count('hospital')))
 
                 dashboard_details['health_package_statistics'] = {}
                 dashboard_details['health_package_statistics']['total'] = health_package_qs.filter(
