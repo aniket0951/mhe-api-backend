@@ -11,3 +11,4 @@ celerybeat-schedule.dir
 /env/
 /sonar-project.properties
 .env*
+/.scannerwork/
