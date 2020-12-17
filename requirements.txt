@@ -54,11 +54,14 @@ psycopg2-binary==2.8.4
 pushjack==1.6.0
 pycodestyle==2.5.0
 pycparser==2.20
+pycryptodome==3.9.9
 pycurl==7.43.0.2
+pydotplus==2.0.2
 pyfcm==1.4.7
 PyJWT==1.7.1
 pylint==2.4.4
 PyMySQL==0.9.3
+pyparsing==3.0.0b1
 python-crontab==2.4.1
 python-dateutil==2.8.1
 python-magic==0.4.15
