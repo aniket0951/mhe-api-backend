@@ -737,7 +737,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
             patient.uhid_number = uhid_number
             patient.first_name = request.data.get("first_name", None)
-            patient.mobile = request.data.get("mobile", None)
             patient.age = request.data.get("age", None)
             patient.gender = request.data.get("gender", None)
             patient.email = request.data.get("email", None)
