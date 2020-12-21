@@ -715,11 +715,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
             member.uhid_number = uhid_number
             member.first_name = request.data.get("first_name", None)
+            member.last_name = None
+            member.middle_name = None
             member.mobile = request.data.get("mobile", None)
             member.age = request.data.get("age", None)
             member.gender = request.data.get("gender", None)
-            member.email = request.data.get("email", None)
             if request.data.get("email", None):
+                member.email = request.data.get("email", None)
                 member.email_verified = True
             member.save()
 
@@ -739,8 +741,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient.first_name = request.data.get("first_name", None)
             patient.age = request.data.get("age", None)
             patient.gender = request.data.get("gender", None)
-            patient.email = request.data.get("email", None)
+            patient.last_name = None
+            patient.middle_name = None
             if request.data.get("email", None):
+                patient.email = request.data.get("email", None)
                 patient.email_verified = True
             patient.save()
 
@@ -950,7 +954,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info=fetch_uhid_user_details(request)
         uhid_user_info['mobile_verified']=True
         uhid_user_info['is_visible']=True
-        uhid_user_info['email_verified']=True
+        if uhid_user_info['email']:
+            uhid_user_info['email_verified']=True
         uhid_user_info['patient_info']=patient_info
 
         self.model.objects.create(**uhid_user_info)
@@ -1176,8 +1181,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info['mobile'] = request.data.get("mobile")
         uhid_user_info['age'] = request.data.get("age")
         uhid_user_info['gender'] = request.data.get("gender")
-        uhid_user_info['email'] = request.data.get("email")
-        if uhid_user_info['email']:
+        
+        if request.data.get("email", None):
+            uhid_user_info['email'] = request.data.get("email")
             uhid_user_info['email_verified'] = True
         uhid_user_info['uhid_number'] = uhid_number
         uhid_user_info['mobile_verified']=True
