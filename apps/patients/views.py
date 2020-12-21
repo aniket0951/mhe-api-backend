@@ -520,9 +520,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['PATCH'])
     def update_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
-        is_capture_details_enabled = request.data.get(
-            'is_capture_details_enabled', False)
-
+        
         if not uhid_number:
             raise ValidationError(
                 "Enter valid UHID number.")
@@ -545,13 +543,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         patient_user_obj = self.get_object()
 
-        if is_capture_details_enabled:
-            patient_user_obj.email_verified = True
-            patient_user_obj.first_name = uhid_user_info['first_name']
-            patient_user_obj.last_name = None
-            patient_user_obj.middle_name = None
+        patient_user_obj.first_name = uhid_user_info['first_name']
+        patient_user_obj.last_name = None
+        patient_user_obj.middle_name = None
+        if uhid_user_info['email']:
             patient_user_obj.email = uhid_user_info['email']
-            patient_user_obj.gender = uhid_user_info['gender']
+            patient_user_obj.email_verified = True
+        patient_user_obj.gender = uhid_user_info['gender']
 
         patient_user_obj.uhid_number = uhid_number
         patient_user_obj.save()
@@ -716,6 +714,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                     "You have an existing family member with this UHID.")
 
             member.uhid_number = uhid_number
+            member.first_name = request.data.get("first_name", None)
+            member.mobile = request.data.get("mobile", None)
+            member.age = request.data.get("age", None)
+            member.gender = request.data.get("gender", None)
+            member.email = request.data.get("email", None)
+            if request.data.get("email", None):
+                member.email_verified = True
             member.save()
 
             serialize_data = FamilyMemberSerializer(family_member, many=True)
@@ -731,6 +736,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError("You have an existing family member with this UHID.")
 
             patient.uhid_number = uhid_number
+            patient.first_name = request.data.get("first_name", None)
+            patient.mobile = request.data.get("mobile", None)
+            patient.age = request.data.get("age", None)
+            patient.gender = request.data.get("gender", None)
+            patient.email = request.data.get("email", None)
+            if request.data.get("email", None):
+                patient.email_verified = True
             patient.save()
 
             serialize_data = PatientSerializer(patient)
@@ -956,8 +968,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=True, methods=['PATCH'])
     def update_family_member_uhid(self, request, pk=None):
         uhid_number=request.data.get('uhid_number')
-        is_capture_details_enabled=request.data.get(
-            'is_capture_details_enabled', False)
 
         if not uhid_number:
             raise ValidationError(
@@ -976,16 +986,15 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info=fetch_uhid_user_details(request)
 
         family_member=self.get_object()
-
-        if is_capture_details_enabled:
-            family_member.mobile_verified=True
-            family_member.email_verified=True
-            family_member.first_name=uhid_user_info['first_name']
-            family_member.last_name=None
-            family_member.middle_name=None
-            family_member.mobile=uhid_user_info['mobile']
+        family_member.mobile_verified=True
+        family_member.first_name=uhid_user_info['first_name']
+        family_member.last_name=None
+        family_member.middle_name=None
+        family_member.mobile=uhid_user_info['mobile']
+        if uhid_user_info['email']:
             family_member.email=uhid_user_info['email']
-            family_member.gender=uhid_user_info['gender']
+            family_member.email_verified=True
+        family_member.gender=uhid_user_info['gender']
 
         family_member.uhid_number=uhid_number
         family_member.save()
