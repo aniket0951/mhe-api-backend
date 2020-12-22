@@ -11,7 +11,7 @@ from apps.health_packages.models import HealthPackagePricing
 from apps.health_packages.serializers import (HealthPackageDetailSerializer,
                                               HealthPackagePricingSerializer,
                                               HealthPackageSpecificSerializer)
-from apps.master_data.models import Hospital
+from apps.master_data.models import Hospital, Department
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
@@ -54,6 +54,9 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.hospital:
             response_object['hospital'] = HospitalSerializer(
                 instance.hospital).data
+
+        if instance.department:
+            response_object['department_code'] = Department.objects.filter(id=instance.department.id).first().code
 
         if instance.reason:
             response_object["reason"] = CancellationReasonSerializer(
