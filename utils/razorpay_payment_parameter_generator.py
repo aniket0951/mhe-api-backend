@@ -16,7 +16,8 @@ def get_payment_param_for_razorpay(data=None):
     token,data=set_account_info(token,data)
 
     token["auth"] = {}
-    token["auth"]["key"] = hospital_key_info.secret_key
+    token["auth"]["old_key"] = hospital_key_info.secret_key
+    token["auth"]["key"] = settings.RAZOR_KEY_ID
 
     # token["auth"]["user"] = settings.SALUCRO_AUTH_USER
     # token["auth"]["key"] = settings.SALUCRO_AUTH_KEY
