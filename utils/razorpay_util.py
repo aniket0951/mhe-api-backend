@@ -7,6 +7,7 @@ KEY_SECRET = settings.RAZOR_KEY_SECRET
 APP_TITLE = settings.RAZOR_APP_TITLE
 APP_VERSION = settings.RAZOR_APP_VERSION
 PAYMENT_CURRENCY = settings.RAZOR_PAYMENT_CURRENCY
+AMOUNT_OFFSET = settings.RAZOR_AMOUNT_OFFSET
 
 class RazorPayUtil:
 
@@ -55,6 +56,8 @@ class RazorPayUtil:
         description:str="",
         currency:str=PAYMENT_CURRENCY
     ):
+        if AMOUNT_OFFSET:
+            amount *= int(AMOUNT_OFFSET)
         create_order_data = {
             "amount":amount,
             "currency": currency,
@@ -88,11 +91,15 @@ class RazorPayUtil:
     def capture_payment(self,amount):
         if not amount or not self.payment_id:
             return None
+        if AMOUNT_OFFSET:
+            amount *= int(AMOUNT_OFFSET)
         return self.client.payment.capture(self.payment_id,amount)
 
     def initiate_refunt(self,amount_to_be_refunded):
-        if not self.payment_id:
+        if not amount_to_be_refunded or not self.payment_id:
             return None
+        if AMOUNT_OFFSET:
+            amount_to_be_refunded *= int(AMOUNT_OFFSET)
         return self.client.payment.refund(self.payment_id,amount_to_be_refunded)
 
     def fetch_refund(self):
