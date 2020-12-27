@@ -229,40 +229,6 @@ class RazorPaymentResponse(APIView):
             PaymentUtils.payment_for_uhid_creation(payment_instance,uhid_info)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,payment)
             PaymentUtils.payment_for_health_package(payment_instance,payment_response)
-
-class RazorPaymentResponse(APIView):
-    permission_classes = (AllowAny,)
-    parser_classes = [FormParser, MultiPartParser, JSONParser]
-
-    def post(self, request, format=None):
-        
-        logger.info(request.data)
-        response_token = request.data["responseToken"]
-        response_token_json = json.loads(response_token)
-        status_code = response_token_json["status_code"]
-        payment_response = response_token_json["payment_response"]
-        processing_id = response_token_json["processing_id"]
-        payment_account = response_token_json["accounts"]
-
-        try:
-            payment_instance = Payment.objects.get(
-                processing_id=processing_id)
-        except Exception:
-            raise ProcessingIdDoesNotExistsValidationException
-        uhid = "-1"
-        payment_instance.raw_info_from_salucro_response = response_token_json
-        payment_instance.save()
-        
-        if status_code == 1200:
-
-
-            
-                
-                
-                
-            
-
-            
         else:
             payment_instance.status = "failure"
             payment_instance.uhid_number = payment_account["account_number"]
@@ -272,8 +238,8 @@ class RazorPaymentResponse(APIView):
         txnid = payment_response["txnid"]
         param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
             txnid, txnstatus, txnamount, uhid)
+            
         return HttpResponseRedirect(settings.REDIRECT_URL + param)
-
 
 class RazorPaymentReturn(APIView):
     permission_classes = (AllowAny,)
