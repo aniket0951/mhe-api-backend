@@ -16,31 +16,19 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
-from apps.appointments.serializers import (
-    AppointmentSerializer, HealthPackageAppointmentDetailSerializer,
-    HealthPackageAppointmentSerializer)
-from apps.health_packages.serializers import HealthPackageSerializer
+from apps.appointments.serializers import (HealthPackageAppointmentDetailSerializer,)
 from apps.manipal_admin.models import ManipalAdmin
-from apps.master_data.exceptions import \
-    HospitalDoesNotExistsValidationException
-from apps.master_data.models import Hospital
-from apps.patients.exceptions import PatientDoesNotExistsValidationException
-from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import (FamilyMemberSpecificSerializer,
-                                       PatientSpecificSerializer)
+from apps.patients.models import Patient
 from django_filters.rest_framework import DjangoFilterBackend
-from proxy.custom_serializables import \
-    EpisodeItems as serializable_EpisodeItems
+from proxy.custom_serializables import EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializables import CorporateRegistration as serializable_CorporateRegistration
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,
-                                       permission_classes)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIClient
@@ -204,6 +192,41 @@ class RazorPaymentResponse(APIView):
         razor_order_id = request.data.get("order_id")
         payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance,razor_order_id)
+        payment_instance.raw_info_from_salucro_response = order_details
+        payment_instance.save()
+
+        uhid = "-1"
+        payment_response = {}
+        
+        if order_details.get("status")=="created":
+            payment_update_response = PaymentUtils.update_payment_details_with_manipal(payment_instance,razor_order_id)
+            if payment_update_response.status_code==200 and payment_update_response.data and payment_update_response.data.get("data"):
+                payment_response = payment_update_response.data.get("data")
+                payment = PaymentUtils.initialize_payment_details(payment_response)
+                payment = PaymentUtils.set_payment_details_for_appointment_health_package(payment_instance,payment_response,payment)
+                payment = PaymentUtils.set_payment_details_for_uhid_with_appointment_health_package(payment_instance,payment_response,payment)
+                PaymentUtils.payment_for_health_package(payment_instance,payment_response)
+                uhid_info = PaymentUtils.initialize_uhid_info(payment)
+                if uhid_info.get("uhid_number"):
+                    uhid = uhid_info.get("uhid_number")
+                PaymentUtils.payment_for_uhid_creation(payment_instance,uhid_info)
+        else:
+            payment_instance.status = order_details.get("status")
+            if payment_response.get("account_number"):
+                payment_instance.uhid_number = payment_response.get("account_number")
+            payment_instance.save()
+
+        return Response(data=payment_response, status=status.HTTP_200_OK)
+      
+class OldRazorPaymentResponse(APIView):
+    permission_classes = (IsPatientUser,)
+
+    def post(self, request, format=None):
+
+        processing_id = request.data.get("processing_id")
+        razor_order_id = request.data.get("order_id")
+        payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
+        order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance,razor_order_id)
         
         uhid = "-1"
         payment_instance.raw_info_from_salucro_response = order_details
@@ -217,7 +240,7 @@ class RazorPaymentResponse(APIView):
         
         if status_code == 1200:
             payment = PaymentUtils.initialize_payment_details(payment_account)
-            payment = PaymentUtils.set_payment_details_for_health_package(payment_instance,payment_response,payment)
+            payment = PaymentUtils.set_payment_details_for_appointment_health_package(payment_instance,payment_response,payment)
             payment = PaymentUtils.set_payment_details_for_uhid_with_appointment_health_package(payment_instance,payment_response,payment)
             payment = PaymentUtils.set_payment_details_for_op_billing(payment_instance,payment_response,payment)
             payment = PaymentUtils.set_payment_details_for_ip_deposit(payment_instance,payment_response,payment)

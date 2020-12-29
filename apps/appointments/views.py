@@ -1315,6 +1315,8 @@ class AppointmentPaymentView(ProxyView):
         data = dict()
         if status == '1':
             bill_detail = root.find("BillDetail").text
+            data["payDetailAPIResponse"] = dict()
+            data["payDetailAPIResponse"]["BillDetail"] = bill_detail
             if bill_detail:
                 app_id = self.request.data.get("app_id")
                 aap_list = ast.literal_eval(bill_detail)
