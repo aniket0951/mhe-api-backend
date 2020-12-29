@@ -1,4 +1,3 @@
-
 import hashlib
 import random
 import time
@@ -51,30 +50,40 @@ def get_transaction_id(*args):
     processing_id = hashlib.md5(processing_id.encode('utf-8')).hexdigest()
     return processing_id
 
-def get_user_name(feedback_serializer):
+def get_user_name(patient_instance):
     user_name = ""
-    if feedback_serializer.data.get("user_id"):
-        patient_instance = Patient.objects.filter(id=feedback_serializer.data.get("user_id")).first()
-        if patient_instance.first_name:
-            user_name += patient_instance.first_name
-        if patient_instance.middle_name:
-            user_name += " "+patient_instance.middle_name
-        if patient_instance.last_name:
-            user_name += " "+patient_instance.last_name
+    if patient_instance.first_name:
+        user_name += patient_instance.first_name
+    if patient_instance.middle_name:
+        user_name += " "+patient_instance.middle_name
+    if patient_instance.last_name:
+        user_name += " "+patient_instance.last_name
     return user_name
 
 def send_feedback_received_mail(feedback_serializer):
 
-    user_name = get_user_name(feedback_serializer)
+    user_name = ""
+    user_email = ""
+    user_mobile = ""
+    if feedback_serializer.data.get("user_id"):
+        patient_instance = Patient.objects.filter(id=feedback_serializer.data.get("user_id")).first()
+        if patient_instance:        
+            user_name = get_user_name(patient_instance)
+            user_email = patient_instance.email
+            user_mobile = patient_instance.mobile
+
     user_rating = feedback_serializer.data.get("rating") or ""
     user_feedback = feedback_serializer.data.get("feedback") or ""
     user_platform = feedback_serializer.data.get("platform") or ""
     user_version = feedback_serializer.data.get("version") or ""
 
     recipients = settings.FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
-    subject = settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT
-    text_content = settings.FEEDBACK_NOTIFICATION_EMAIL_BODY.format(
+    subject = settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT.format(user_name)
+
+    text_content = 'Hello,\nPlease find below the feedback received from a user. \n\nUser: {}\nMobile No.: {}\nEmail: {}\nRating: {}\nFeedback: {}\nPlatform: {}\nApp Version:{}\n\nThank you!'.format(
         user_name,
+        user_mobile,
+        user_email,
         user_rating,
         user_feedback,
         user_platform,
