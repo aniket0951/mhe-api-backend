@@ -62,25 +62,17 @@ def get_user_name(patient_instance):
 
 def send_feedback_received_mail(feedback_serializer):
 
-    
     recipients = settings.FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
-    if not recipients or not settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT:
+    if not recipients or not settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT or not feedback_serializer.data.get("user_id"):
         return
 
-    user_name = ""
-    user_email = ""
-    user_mobile = ""
-    user_favorite_hospital_name = ""
-    user_favorite_hospital_code = ""
-    if feedback_serializer.data.get("user_id"):
-        patient_instance = Patient.objects.filter(id=feedback_serializer.data.get("user_id")).first()
-        if patient_instance:        
-            user_name = get_user_name(patient_instance)
-            user_email = patient_instance.email
-            user_mobile = patient_instance.mobile
-            user_favorite_hospital_name = patient_instance.favorite_hospital.description if patient_instance.favorite_hospital and patient_instance.favorite_hospital.description else ""
-            user_favorite_hospital_code = patient_instance.favorite_hospital.code if patient_instance.favorite_hospital and patient_instance.favorite_hospital.code else ""
+    patient_instance = Patient.objects.filter(id=feedback_serializer.data.get("user_id")).first()
     
+    user_name = get_user_name(patient_instance) if patient_instance else ""
+    user_email = patient_instance.email if patient_instance else ""
+    user_mobile = patient_instance.mobile if patient_instance else ""
+    user_favorite_hospital_name = patient_instance.favorite_hospital.description if patient_instance and patient_instance.favorite_hospital and patient_instance.favorite_hospital.description else ""
+    user_favorite_hospital_code = patient_instance.favorite_hospital.code if patient_instance and patient_instance.favorite_hospital and patient_instance.favorite_hospital.code else ""
     user_rating = feedback_serializer.data.get("rating") or ""
     user_feedback = feedback_serializer.data.get("feedback") or ""
     user_platform = feedback_serializer.data.get("platform") or ""

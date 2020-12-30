@@ -513,6 +513,34 @@ class PaymentUpdate:
         serializer.add_property('PlanCode', self.plan_code)
         serializer.add_property('IsFollowUp', self.is_followup)
 
+class UHIDPaymentUpdate:
+    def __init__(self, param):
+        self.location_code = param.get("location_code", None)
+        self.temp_id = param.get("temp_id", None)
+        self.gateway_id = param.get("gateway_id", "")
+        self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
+        self.amt = param.get("amt", "0")
+        self.app_date = param.get("app_date", "")
+        self.mobile = param.get("mobile", None)
+        self.appiontment_identifier = param.get("appiontment_identifier", "")
+        self.discount_amt = param.get("discount_amt", "")
+        self.discount_reason = param.get("discount_reason", "")
+        self.pay_mode = param.get("pay_mode", "")
+        
+    def serialize(self, serializer):
+        serializer.start_object('RegPayementParam')
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('fcrId', self.temp_id)
+        serializer.add_property('gatewayId', self.gateway_id)
+        serializer.add_property('transactionReferenceId', self.transaction_number)
+        serializer.add_property('amount', self.amt)
+        serializer.add_property('dateTimeOfTranaction', self.app_date)
+        serializer.add_property('mobileno', self.mobile)
+        serializer.add_property('appiontmentIdentifier',self.appiontment_identifier)
+        serializer.add_property('discountAmount',self.discount_amt)
+        serializer.add_property('discountReason',self.discount_reason)
+        serializer.add_property('payMode',self.pay_mode)
+        
 
 class CorporateRegistration:
     def __init__(self, temp_id=None, location_code=None, transaction_id="Infosys", amount=0, discount_reason="Infosys"):

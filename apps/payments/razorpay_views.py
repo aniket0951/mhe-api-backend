@@ -1,3 +1,4 @@
+from apps.payments.constants import PaymentConstants
 import base64
 import hashlib
 import json
@@ -168,15 +169,12 @@ class RazorIPDepositPayment(APIView):
     permission_classes = (IsPatientUser,)
 
     def post(self, request, format=None):
-        
         family_member = request.data.get("user_id", None)
         location_code = request.data.get("location_code", None)
-
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         param = get_payment_param_for_razorpay(request.data)
         param = PaymentUtils.set_param_for_ip_deposit(param,location_code)
         payment_data = PaymentUtils.set_payment_data_for_ip_deposit(request,param,hospital,family_member)
-
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
@@ -192,30 +190,19 @@ class RazorPaymentResponse(APIView):
         razor_order_id = request.data.get("order_id")
         payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance,razor_order_id)
+        order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance,razor_order_id)
         payment_instance.raw_info_from_salucro_response = order_details
         payment_instance.save()
-
-        uhid = "-1"
         payment_response = {}
-        
-        if order_details.get("status")=="created":
-            payment_update_response = PaymentUtils.update_payment_details_with_manipal(payment_instance,razor_order_id)
-            if payment_update_response.status_code==200 and payment_update_response.data and payment_update_response.data.get("data"):
-                payment_response = payment_update_response.data.get("data")
-                payment = PaymentUtils.initialize_payment_details(payment_response)
-                payment = PaymentUtils.set_payment_details_for_appointment_health_package(payment_instance,payment_response,payment)
-                payment = PaymentUtils.set_payment_details_for_uhid_with_appointment_health_package(payment_instance,payment_response,payment)
-                PaymentUtils.payment_for_health_package(payment_instance,payment_response)
-                uhid_info = PaymentUtils.initialize_uhid_info(payment)
-                if uhid_info.get("uhid_number"):
-                    uhid = uhid_info.get("uhid_number")
-                PaymentUtils.payment_for_uhid_creation(payment_instance,uhid_info)
+        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID:
+            payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,razor_order_id)
+            PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
+            PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
+            PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response)
+            PaymentUtils.payment_for_health_package(payment_instance,payment_response)
         else:
             payment_instance.status = order_details.get("status")
-            if payment_response.get("account_number"):
-                payment_instance.uhid_number = payment_response.get("account_number")
             payment_instance.save()
-
         return Response(data=payment_response, status=status.HTTP_200_OK)
       
 class OldRazorPaymentResponse(APIView):

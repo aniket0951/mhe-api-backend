@@ -12,7 +12,7 @@ from apps.master_data.models import Hospital
 from apps.master_data.exceptions import HospitalDoesNotExistsValidationException
 from apps.appointments.models import Appointment,HealthPackageAppointment
 from apps.appointments.serializers import AppointmentSerializer,HealthPackageAppointmentSerializer
-from apps.appointments.views import AppointmentPaymentView
+from apps.appointments.views import AppointmentPaymentView,UHIDPaymentView
 from apps.appointments.utils import cancel_and_refund_parameters
 from apps.payments.models import Payment
 from apps.payments.exceptions import (
@@ -45,7 +45,10 @@ class PaymentUtils:
         razor_pay = RazorPayUtil(key_id=hospital_secret,order_id=order_id)
         return razor_pay.fetch_order()
 
-
+    @staticmethod
+    def get_razorpay_fetch_order_payment_details(hospital_secret,order_id):
+        razor_pay = RazorPayUtil(key_id=hospital_secret,order_id=order_id)
+        return razor_pay.fetch_payments_of_order()
 
     @staticmethod
     def get_hospital_from_location_code(location_code):
@@ -94,6 +97,19 @@ class PaymentUtils:
         hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
         hospital_secret = settings.RAZOR_KEY_ID or hospital_key_info.secret_key
         return PaymentUtils.get_razorpay_order_details(hospital_secret,razor_order_id)
+
+    @staticmethod
+    def get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance,razor_order_id):
+        hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
+        hospital_secret = settings.RAZOR_KEY_ID or hospital_key_info.secret_key
+        order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_secret,razor_order_id)
+        order_payment_data_item = dict()
+        if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
+            order_payment_data_item = order_payment_data.get("items")[-1]
+            for item in order_payment_data.get("items"):
+                if item.get("amount")==order_details.get("amount") and item.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CAPTURED:
+                    order_payment_data_item = item
+        return order_payment_data_item
 
 
 
@@ -461,69 +477,61 @@ class PaymentUtils:
         payment_data["amount"] = amount
         return param,payment_data
 
-
     @staticmethod
-    def initialize_payment_details(payment_response):
-        payment = {}
-        payment["uhid_number"] = payment_response.get("account_number").upper() if payment_response.get("account_number") else None
-        return payment
-    
-    @staticmethod
-    def get_new_appointment_id(payment_response):
-        new_appointment_id = None
-        payment_paydetail = payment_response.get("payDetailAPIResponse")
-        if payment_paydetail and payment_paydetail.get("BillDetail"):
-            bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
-            new_appointment_id = bill_detail["AppointmentId"]
+    def get_new_appointment_id(bill_details):
+        new_appointment_id = ""
+        if bill_details and bill_details.get("AppointmentId"):
+            new_appointment_id = bill_details.get("AppointmentId")
         return new_appointment_id
 
     @staticmethod
-    def set_payment_details_for_appointment_health_package(payment_instance,payment_response,payment):
-        if payment_instance.appointment or payment_instance.payment_for_health_package:
-            payment_paydetail = payment_response["payDetailAPIResponse"]
-            if payment_paydetail["BillDetail"]:
-                bill_detail = json.loads(
-                    payment_paydetail["BillDetail"])[0]
-                new_appointment_id = bill_detail["AppointmentId"]
-                payment["receipt_number"] = bill_detail["ReceiptNo"]
-        return payment
+    def get_bill_details(payment_response,bill_detail_label,api_type):
+        payment_paydetail = payment_response[api_type]
+        bill_detail = {}
+        if payment_paydetail[bill_detail_label]:
+            bill_detail = json.loads(payment_paydetail[bill_detail_label])[0]
+        return bill_detail
 
     @staticmethod
-    def set_payment_details_for_uhid_with_appointment_health_package(payment_instance,payment_response,payment):
-        if payment_instance.payment_for_uhid_creation:
-            if payment_instance.appointment or payment_instance.payment_for_health_package:
-                payment = PaymentUtils.set_payment_details_for_appointment_health_package(payment_instance,payment_response,payment)
-            else:
-                payment_paydetail = payment_response["payDetailAPIResponse"]
-                payment["receipt_number"] = payment_paydetail["receiptNo"]
+    def set_receipt_number(payment_instance,bill_details,payment):
+        if payment_instance.appointment or payment_instance.payment_for_health_package or payment_instance.payment_for_uhid_creation:
+            payment["receipt_number"] = bill_details.get("ReceiptNo") or ""
         return payment
 
     @staticmethod
     def set_payment_details_for_op_billing(payment_instance,payment_response,payment):
         if payment_instance.payment_for_op_billing:
-            payment_paydetail = payment_response["opPatientBilling"]
-            if payment_paydetail["BillDetail"]:
-                bill_detail = json.loads(payment_paydetail["BillDetail"])[0]
-                payment["receipt_number"] = bill_detail["BillNo"]
-                payment["episode_number"] = bill_detail["EpisodeNo"]
+            bill_detail = PaymentUtils.get_bill_details(payment_response,"BillDetail","opPatientBilling")
+            payment["receipt_number"] = bill_detail["BillNo"]
+            payment["episode_number"] = bill_detail["EpisodeNo"]
         return payment
 
     @staticmethod
     def set_payment_details_for_ip_deposit(payment_instance,payment_response,payment):
         if payment_instance.payment_for_ip_deposit:
-            payment_paydetail = payment_response["onlinePatientDeposit"]
-            if payment_paydetail["RecieptNumber"]:
-                bill_detail = json.loads(payment_paydetail["RecieptNumber"])[0]
-                payment["receipt_number"] = bill_detail["ReceiptNo"]
+            bill_detail = PaymentUtils.get_bill_details(payment_response,"RecieptNumber","onlinePatientDeposit")
+            payment["receipt_number"] = bill_detail["ReceiptNo"]
         return payment
 
     @staticmethod
-    def update_payment_details(payment_instance,payment_response,payment):
-        payment["status"] = payment_response["status"]
-        payment["payment_method"] = payment_response["card_type"] + \
-            "-" + payment_response["mode"]
-        payment["transaction_id"] = payment_response["txnid"]
-        payment["amount"] = payment_response["net_amount_debit"]
+    def get_payment_method_from_order_payment_details(order_payment_details):
+        payment_method = ""
+        if order_payment_details.get("bank"):
+            payment_method = order_payment_details.get("bank")
+        elif order_payment_details.get("wallet"):
+            payment_method = order_payment_details.get("wallet")
+        elif order_payment_details.get("vpa"):
+            payment_method = order_payment_details.get("vpa")
+        return payment_method
+
+    @staticmethod
+    def update_payment_details(payment_instance,payment_response,order_details,order_payment_details):
+        payment = {}
+        payment = PaymentUtils.set_receipt_number(payment_instance,payment_response,payment)
+        payment["status"] = order_details.get("status")
+        payment["payment_method"] = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
+        payment["transaction_id"] = order_details.get("id")
+        payment["amount"] = order_details.get("amount_paid")
         payment_serializer = PaymentSerializer(payment_instance, data=payment, partial=True)
         payment_serializer.is_valid(raise_exception=True)
         payment_serializer.save()
@@ -559,14 +567,15 @@ class PaymentUtils:
             patient_serializer.save()
 
     @staticmethod
-    def payment_for_uhid_creation(payment_instance,uhid_info):
+    def payment_for_uhid_creation(payment_instance,payment_response):
+        uhid_info = {"uhid_number":payment_response.get("uhid_number")}
         if payment_instance and payment_instance.payment_for_uhid_creation:
             PaymentUtils.payment_for_uhid_creation_appointment(payment_instance)
             PaymentUtils.payment_for_uhid_creation_payment_done_for_patient(payment_instance,uhid_info)
             PaymentUtils.payment_for_uhid_creation_payment_done_for_family_member(payment_instance,uhid_info)
     
     @staticmethod
-    def payment_for_scheduling_appointment(payment_instance,payment_response,payment):
+    def payment_for_scheduling_appointment(payment_instance,payment_response):
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(
                 id=payment_instance.appointment.id).first()
@@ -575,7 +584,7 @@ class PaymentUtils:
             if payment_instance.payment_for_uhid_creation:
                 update_data["appointment_identifier"] = PaymentUtils.get_new_appointment_id(payment_response)
                 update_data["status"] = 1
-                update_data["uhid"] = payment["uhid_number"]
+                update_data["uhid"] = payment_response["uhid_number"]
             appointment_serializer = AppointmentSerializer(
                 appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
@@ -593,45 +602,88 @@ class PaymentUtils:
         return package_name
 
     @staticmethod
-    def payment_for_health_package(payment_instance,payment_response):
+    def payment_for_health_package(payment_instance,bill_details):
         if payment_instance.payment_for_health_package:
             appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
             update_data = {}
             update_data["payment"] = payment_instance.id
-            package_name = PaymentUtils.get_health_package_name(appointment_instance)
-            if payment_instance.payment_done_for_patient:
-                patient = Patient.objects.filter(id=payment_instance.payment_done_for_patient.id).first()
-            if payment_instance.payment_done_for_family_member:
-                family_member = FamilyMember.objects.filter(id=payment_instance.payment_done_for_family_member.id).first()
+            # package_name = PaymentUtils.get_health_package_name(appointment_instance)
+            # if payment_instance.payment_done_for_patient:
+            #     patient = Patient.objects.filter(id=payment_instance.payment_done_for_patient.id).first()
+            # if payment_instance.payment_done_for_family_member:
+            #     family_member = FamilyMember.objects.filter(id=payment_instance.payment_done_for_family_member.id).first()
             if payment_instance.payment_for_uhid_creation:
-                update_data["appointment_identifier"] = PaymentUtils.get_new_appointment_id(payment_response)
+                update_data["appointment_identifier"] = PaymentUtils.get_new_appointment_id(bill_details)
             appointment_serializer = HealthPackageAppointmentSerializer(appointment_instance, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
-
+    
+    @staticmethod
+    def get_patients_mobile_number(payment_instance):
+        mobile_no = ""
+        if payment_instance.payment_done_for_patient:
+            patient = Patient.objects.filter(id=payment_instance.payment_done_for_patient.id).first()
+            mobile_no = str(patient.mobile) if patient else ""
+        elif payment_instance.payment_done_for_family_member:
+            family_member = FamilyMember.objects.filter(id=payment_instance.payment_done_for_family_member.id).first()
+            mobile_no = str(family_member.mobile)
+        return mobile_no
 
     @staticmethod
-    def update_payment_details_with_manipal(payment_instance,razor_order_id):
+    def update_uhid_payment_details_with_manipal(payment_instance,razor_order_id):
+        payment_update_request = {
+            "location_code":payment_instance.location.code,
+            "temp_id":PaymentConstants.UHID_PAYMENT_FRC_ID,
+            "transaction_number":razor_order_id,
+            "amt":str(payment_instance.amount),
+            "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
+        }
+        print("payment_update_request",payment_update_request)
+        payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        payment_response ={}
+        if payment_update_response.status_code==200 and payment_update_response.data and payment_update_response.data.get("data"):
+            payment_response = payment_update_response.data.get("data")
+        return payment_response
+
+    @staticmethod
+    def get_appointment_type(payment_instance):
+        appointment_type = ""
+        if payment_instance.payment_for_health_package:
+            appointment_type = "H"
+        elif payment_instance.appointment:
+            appointment_type = "A"
+        return appointment_type
+    
+    @staticmethod
+    def get_payment_appointment_date(payment_instance):
         date_time = None
         if payment_instance.appointment and payment_instance.appointment.appointment_date and payment_instance.appointment.appointment_slot:
             datetime_object = datetime.combine(payment_instance.appointment.appointment_date,payment_instance.appointment.appointment_slot)
             date_time = datetime_object.strftime("%Y%m%d")
+        return date_time
 
-        appointment_type = ""
-        if payment_instance.payment_for_health_package:
-            appointment_type = "H"
-        if payment_instance.appointment:
-            appointment_type = "A"
-
+    @staticmethod
+    def update_payment_details_with_manipal(payment_instance,razor_order_id):
         payment_update_request = {
             "uhid":payment_instance.patient.uhid_number if payment_instance and payment_instance.patient and payment_instance.patient.uhid_number else None,
             "transaction_number":razor_order_id,
             "processing_id":payment_instance.processing_id,
             "amt":str(payment_instance.amount),
             "location_code":payment_instance.location.code,
-            "app_date":date_time,
-            "type":appointment_type,
+            "app_date":PaymentUtils.get_payment_appointment_date(payment_instance),
+            "type":PaymentUtils.get_appointment_type(payment_instance),
             "app_id":payment_instance.appointment.appointment_identifier if payment_instance and payment_instance.appointment and payment_instance.appointment.appointment_identifier else None
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
-        return payment_update_response
+        payment_response ={}
+        if payment_update_response.status_code==200 and payment_update_response.data and payment_update_response.data.get("data"):
+            payment_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"BillDetail","payDetailAPIResponse")
+        return payment_response
+
+    @staticmethod
+    def update_manipal_on_payment(payment_instance,razor_order_id):
+        if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
+            return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,razor_order_id)
+        else:
+            return PaymentUtils.update_payment_details_with_manipal(payment_instance,razor_order_id)
+        

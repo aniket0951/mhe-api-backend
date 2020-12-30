@@ -43,6 +43,8 @@ from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
 from proxy.custom_serializables import \
     PaymentUpdate as serializable_PaymentUpdate
+from proxy.custom_serializables import \
+    UHIDPaymentUpdate as serializable_UHIDPaymentUpdate
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -1330,5 +1332,69 @@ class AppointmentPaymentView(ProxyView):
                         if appointment_identifier:
                             appointment_instance.appointment_identifier = appointment_identifier
                         appointment_instance.save()
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+class AppointmentPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'OnlinePayment'
+
+    def get_request_data(self, request):
+        request_xml = serializable_PaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            bill_detail = root.find("BillDetail").text
+            data["payDetailAPIResponse"] = dict()
+            data["payDetailAPIResponse"]["BillDetail"] = bill_detail
+            if bill_detail:
+                app_id = self.request.data.get("app_id")
+                aap_list = ast.literal_eval(bill_detail)
+                if aap_list:
+                    appointment_identifier = aap_list[0].get("AppointmentId")
+                    appointment_instance = Appointment.objects.filter(
+                        appointment_identifier=app_id).first()
+                    if appointment_instance:
+                        success_status = True
+                        appointment_instance.payment_status = "success"
+                        if appointment_identifier:
+                            appointment_instance.appointment_identifier = appointment_identifier
+                        appointment_instance.save()
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+
+
+class UHIDPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'PaymentForRegistration'
+
+    def get_request_data(self, request):
+        request_xml = serializable_UHIDPaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            data["uhid_number"] = root.find("UID").text 
+            data["receipt_no"] = root.find("ReceiptNo").text 
         return self.custom_success_response(message=message,
                                             success=success_status, data=data)
