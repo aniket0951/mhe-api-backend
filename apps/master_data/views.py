@@ -335,6 +335,7 @@ class DoctorsView(ProxyView):
             'specialisation_description',
             'vc_consultation_charges',
         ]
+        today_date = datetime.now().date()
         for each_doctor in response_content:
             doctor_details = dict()
             doctor_details["is_active"] = True
@@ -373,15 +374,27 @@ class DoctorsView(ProxyView):
             if specialisation_code:
                 specialisation_obj = Specialisation.objects.filter(
                     code=specialisation_code).first()
+
+            is_doctor_updated = Doctor.objects.filter(
+                             code=doctor_kwargs['code'],
+                             hospital__code=hospital_code,
+                             updated_at__date__gte=today_date,
+                         )
+            
             doctor, doctor_created = Doctor.objects.update_or_create(
                 **doctor_kwargs, defaults=doctor_details)
             doctor_details['doctor_created'] = doctor_created
+            
+            if not is_doctor_updated:
+                doctor.hospital_departments.clear()
+                doctor.specialisations.clear()
+
             if hospital_department_obj:
                 doctor.hospital_departments.add(hospital_department_obj)
             if specialisation_obj:
                 doctor.specialisations.add(specialisation_obj)
             all_doctors.append(doctor_details)
-        today_date = datetime.now().date()
+        
         previous_date = datetime.now() - timedelta(days=1)
         Doctor.objects.filter(hospital__code=hospital_code,
                               updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
