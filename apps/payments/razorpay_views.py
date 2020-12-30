@@ -194,7 +194,6 @@ class RazorPaymentResponse(APIView):
         payment_instance.raw_info_from_salucro_response = order_details
         payment_instance.save()
         payment_response = {}
-        import pdb; pdb.set_trace()
         if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID:
             payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,razor_order_id)
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)

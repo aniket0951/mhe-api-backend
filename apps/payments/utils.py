@@ -638,7 +638,6 @@ class PaymentUtils:
             "amt":str(payment_instance.amount),
             "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
         }
-        print("payment_update_request",payment_update_request)
         payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         payment_response ={}
         if payment_update_response.status_code==200 and payment_update_response.data and payment_update_response.data.get("data"):
