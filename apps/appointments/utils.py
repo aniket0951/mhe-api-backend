@@ -62,6 +62,11 @@ def get_user_name(patient_instance):
 
 def send_feedback_received_mail(feedback_serializer):
 
+    
+    recipients = settings.FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
+    if not recipients or not settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT:
+        return
+
     user_name = ""
     user_email = ""
     user_mobile = ""
@@ -81,7 +86,6 @@ def send_feedback_received_mail(feedback_serializer):
     user_platform = feedback_serializer.data.get("platform") or ""
     user_version = feedback_serializer.data.get("version") or ""
 
-    recipients = settings.FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
     subject = settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT.format(user_name)
     
     text_content = 'Hello,\nPlease find below the feedback received from a user. \n\nUser: {}\nMobile No.: {}\nEmail: {}\nPreferred Hospital: {} ({})\nRating: {}\nFeedback: {}\nPlatform: {}\nApp Version:{}\n\nThank you!'.format(
@@ -95,6 +99,7 @@ def send_feedback_received_mail(feedback_serializer):
         user_platform,
         user_version
     )
+
     email = EmailMultiAlternatives(subject, text_content, settings.EMAIL_FROM_USER, recipients)
     email_sent = email.send()
 
