@@ -377,9 +377,8 @@ class DoctorsView(ProxyView):
 
             is_doctor_updated = Doctor.objects.filter(
                              code=doctor_kwargs['code'],
-                             hospital__code=hospital_code,
-                             updated_at__date__gte=today_date,
-                         )
+                             hospital__code=hospital_code
+                         ).exclude(updated_at__date__lt=today_date).first()
             
             doctor, doctor_created = Doctor.objects.update_or_create(
                 **doctor_kwargs, defaults=doctor_details)
