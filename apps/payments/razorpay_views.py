@@ -191,16 +191,20 @@ class RazorPaymentResponse(APIView):
         payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance,razor_order_id)
         order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance,razor_order_id)
-        payment_instance.raw_info_from_salucro_response = order_details
+        payment_instance.raw_info_from_salucro_response = order_payment_details
         payment_instance.save()
         payment_response = {}
-        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID:
+        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CREATED:
             payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,razor_order_id)
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
             PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response)
             PaymentUtils.payment_for_health_package(payment_instance,payment_response)
         else:
+            if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CREATED:
+                payment_response.update({
+                    "message":PaymentConstants.ERROR_MESSAGE_PAYMENT_PENDING
+                })
             payment_instance.status = order_details.get("status")
             payment_instance.save()
         return Response(data=payment_response, status=status.HTTP_200_OK)

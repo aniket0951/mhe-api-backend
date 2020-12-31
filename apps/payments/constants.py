@@ -26,6 +26,7 @@ class PaymentConstants:
     MANIPAL_PR_CONS_CHARGES = "PRConsCharges"
 
     ERROR_MESSAGE_PRICE_UPDATED = "Price is Updated"
+    ERROR_MESSAGE_PAYMENT_PENDING = "Please complete the payment first!"
 
     RAZORPAY_PAYMENT_CURRENCY = "INR"
 
