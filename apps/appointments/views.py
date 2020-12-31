@@ -1189,6 +1189,7 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
             feedback_serializer = FeedbacksSerializer(data=request.data)
         feedback_serializer.is_valid(raise_exception=True)
         feedback_serializer.save()
+        send_feedback_received_mail(feedback_serializer)
         return Response(data={"message": "Feedback Submitted"}, status=status.HTTP_200_OK)
 
 
