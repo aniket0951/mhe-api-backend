@@ -69,7 +69,7 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
-from .utils import cancel_and_refund_parameters, rebook_parameters
+from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail
 from rest_framework.test import APIClient
 
 client = APIClient()
