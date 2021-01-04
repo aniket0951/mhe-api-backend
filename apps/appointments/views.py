@@ -1355,6 +1355,6 @@ class UHIDPaymentView(ProxyView):
         data = dict()
         if status == '1':
             data["uhid_number"] = root.find("UID").text 
-            data["receipt_no"] = root.find("ReceiptNo").text 
+            data["ReceiptNo"] = root.find("ReceiptNo").text 
         return self.custom_success_response(message=message,
                                             success=success_status, data=data)
