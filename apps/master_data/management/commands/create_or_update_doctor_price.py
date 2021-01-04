@@ -9,6 +9,7 @@ from apps.master_data.models import Department, Hospital
 from apps.master_data.resources import BillingGroupResource
 from rest_framework.test import APIClient
 from tablib import Dataset
+from datetime import datetime
 
 client = APIClient()
 
@@ -19,7 +20,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             all_doctors = Doctor.objects.all()
-            print(all_doctors)
+            
             for each_doctor in all_doctors:
                 all_departments = each_doctor.hospital_departments.all()
                 for each_department in all_departments:
@@ -44,7 +45,11 @@ class Command(BaseCommand):
                             serializer = DoctorChargesSerializer(data=data)
                         serializer.is_valid(raise_exception=True)
                         serializer.save()
-
+            
+            today_date = datetime.now().date()
+            DoctorCharges.objects.filter(
+                            updated_at__date__lt=today_date
+                        ).delete()
         except Exception as e:
             print(
                 "Unexpected error occurred while loading doctors- {0}".format(e))
