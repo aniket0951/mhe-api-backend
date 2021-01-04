@@ -34,6 +34,7 @@ from .constants import PaymentConstants
 from .serializers import PaymentSerializer
 
 client = APIClient()
+AMOUNT_OFFSET = settings.RAZOR_AMOUNT_OFFSET
 
 class PaymentUtils:
 
@@ -114,7 +115,11 @@ class PaymentUtils:
                     order_payment_data_item = item
         return order_payment_data_item
 
-
+    @staticmethod
+    def get_payment_amount(order_details):
+        if order_details.get("amount") and AMOUNT_OFFSET:
+            return int(order_details.get("amount"))/int(AMOUNT_OFFSET)
+        return order_details.get("amount")
 
 
     @staticmethod
@@ -533,7 +538,7 @@ class PaymentUtils:
         payment["razor_invoice_id"] = order_payment_details.get("invoice_id")
         payment["payment_method"] = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
         payment["transaction_id"] = order_details.get("id")
-        payment["amount"] = order_details.get("amount_paid")
+        payment["amount"] = PaymentUtils.get_payment_amount(order_details)
         payment_serializer = PaymentSerializer(payment_instance, data=payment, partial=True)
         payment_serializer.is_valid(raise_exception=True)
         payment_serializer.save()
@@ -576,12 +581,12 @@ class PaymentUtils:
 
 
     @staticmethod
-    def payment_for_scheduling_appointment(payment_instance,payment_response):
+    def payment_for_scheduling_appointment(payment_instance,payment_response,order_details):
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
             update_data = {
                 "payment_status": payment_instance.status,
-                "consultation_amount":payment_instance.amount,
+                "consultation_amount":PaymentUtils.get_payment_amount(order_details),
                 "appointment_identifier":payment_response.get("appointment_identifier"),
                 "status":1,
                 "uhid":payment_response.get("uhid_number")
@@ -636,12 +641,12 @@ class PaymentUtils:
         return mobile_no
 
     @staticmethod
-    def update_uhid_payment_details_with_manipal(payment_instance,razor_order_id):
+    def update_uhid_payment_details_with_manipal(payment_instance,order_details):
         payment_update_request = {
             "location_code":payment_instance.location.code,
             "temp_id":PaymentConstants.UHID_PAYMENT_FRC_ID,
-            "transaction_number":razor_order_id,
-            "amt":str(payment_instance.amount),
+            "transaction_number":order_details.get("id"),
+            "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
         }
         payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
@@ -692,13 +697,13 @@ class PaymentUtils:
 
 
     @staticmethod
-    def update_payment_details_with_manipal(payment_instance,razor_order_id):
+    def update_payment_details_with_manipal(payment_instance,order_details):
 
         payment_update_request = {
             "uhid":payment_instance.patient.uhid_number if payment_instance and payment_instance.patient and payment_instance.patient.uhid_number else None,
-            "transaction_number":razor_order_id,
+            "transaction_number":order_details.get("id"),
             "processing_id":payment_instance.processing_id,
-            "amt":str(payment_instance.amount),
+            "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
             "app_date":PaymentUtils.get_payment_appointment_date(payment_instance),
             "type":PaymentUtils.get_appointment_type(payment_instance),
@@ -717,8 +722,8 @@ class PaymentUtils:
         return PaymentUtils.serialize_payment_response(bill_details_response)
 
     @staticmethod
-    def update_manipal_on_payment(payment_instance,razor_order_id):
+    def update_manipal_on_payment(payment_instance,order_details):
         if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
-            return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,razor_order_id)
+            return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details)
         else:
-            return PaymentUtils.update_payment_details_with_manipal(payment_instance,razor_order_id)
+            return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details)

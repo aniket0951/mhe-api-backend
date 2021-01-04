@@ -199,16 +199,16 @@ class RazorPaymentResponse(APIView):
             payment_instance.save()
             raise NoResponseFromRazorPayException
 
-        payment_instance.status = order_details.get("status")
+        payment_instance.status = PaymentConstants.PAYMENT_STATUS_MAPPING.get(order_details.get("status"))
         payment_instance.save()
 
         if order_details.get("status") != PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID:
             raise UnsuccessfulPaymentException
 
-        payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,razor_order_id)
+        payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,order_details)
         PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
         PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
-        PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response)
+        PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
         PaymentUtils.payment_for_health_package(payment_instance,payment_response)
             
         return Response(data=payment_response, status=status.HTTP_200_OK)
