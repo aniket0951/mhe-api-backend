@@ -694,13 +694,20 @@ class PaymentUtils:
         })
         return payment_response
         
-
+    @staticmethod
+    def get_uhid_number(payment_instance):
+        uhid_number = None
+        if payment_instance.payment_done_for_patient:
+            uhid_number = payment_instance.payment_done_for_patient.uhid_number
+        elif payment_instance.payment_done_for_family_member:
+            uhid_number = payment_instance.payment_done_for_family_member.uhid_number
+        return uhid_number
 
     @staticmethod
     def update_payment_details_with_manipal(payment_instance,order_details):
 
         payment_update_request = {
-            "uhid":payment_instance.patient.uhid_number if payment_instance and payment_instance.patient and payment_instance.patient.uhid_number else None,
+            "uhid":PaymentUtils.get_uhid_number(payment_instance),
             "transaction_number":order_details.get("id"),
             "processing_id":payment_instance.processing_id,
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
