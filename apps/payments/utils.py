@@ -73,6 +73,15 @@ class PaymentUtils:
         return appointment_instance
 
     @staticmethod
+    def get_health_package_appointment(appointment):
+        if not appointment:
+            raise ValidationError("Please provide appointment id!")
+        appointment_instance = HealthPackageAppointment.objects.filter(appointment_identifier=appointment).first()
+        if not appointment_instance:
+            raise ValidationError("Appointment is not available")
+        return appointment_instance
+
+    @staticmethod
     def get_payment_instance(processing_id,razor_order_id):
         if not processing_id:
             raise MandatoryProcessingIdException
@@ -537,7 +546,7 @@ class PaymentUtils:
         payment["razor_payment_id"] = order_payment_details.get("id")
         payment["razor_invoice_id"] = order_payment_details.get("invoice_id")
         payment["payment_method"] = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
-        payment["transaction_id"] = order_details.get("id")
+        payment["transaction_id"] = order_payment_details.get("id")
         payment["amount"] = PaymentUtils.get_payment_amount(order_details)
         payment_serializer = PaymentSerializer(payment_instance, data=payment, partial=True)
         payment_serializer.is_valid(raise_exception=True)

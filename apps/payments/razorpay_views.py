@@ -97,7 +97,7 @@ class RazorHealthPackagePayment(APIView):
         family_member = request.data.get("user_id", None)
 
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
-        appointment_instance = PaymentUtils.get_appointment_instance(appointment)
+        appointment_instance = PaymentUtils.get_health_package_appointment(appointment)
         package_code,package_code_list = PaymentUtils.get_health_package_code(request)
         param = PaymentUtils.set_param_for_health_package(param,package_code,appointment)
         payment_data = PaymentUtils.set_payment_data_for_health_package(request,param,hospital,appointment_instance,registration_payment,family_member)
