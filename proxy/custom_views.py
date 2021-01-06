@@ -165,8 +165,6 @@ class ProxyView(BaseProxyView):
         data = self.get_request_data(request)
         headers = self.get_headers(request)
         verify_ssl = self.get_verify_ssl(request)
-        print("request url",url)
-        print("request data",data)
         try:
             response = requests.request(request.method, url,
                                         data=data,
@@ -174,7 +172,6 @@ class ProxyView(BaseProxyView):
                                         timeout=self.proxy_settings['TIMEOUT'],
                                         verify=verify_ssl,
                                         )
-            print("response",response)
         except (ConnectionError, SSLError):
             status = requests.status_codes.codes.bad_gateway
             return self.create_error_response({

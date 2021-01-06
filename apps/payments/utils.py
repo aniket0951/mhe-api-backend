@@ -682,6 +682,9 @@ class PaymentUtils:
         if payment_instance.appointment and payment_instance.appointment.appointment_date and payment_instance.appointment.appointment_slot:
             datetime_object = datetime.combine(payment_instance.appointment.appointment_date,payment_instance.appointment.appointment_slot)
             date_time = datetime_object.strftime("%Y%m%d")
+        if payment_instance.health_package_appointment and payment_instance.health_package_appointment.created_at:
+            datetime_object = payment_instance.health_package_appointment.created_at
+            date_time = datetime_object.strftime("%Y%m%d")
         return date_time
 
     @staticmethod
@@ -713,6 +716,17 @@ class PaymentUtils:
         return uhid_number
 
     @staticmethod
+    def get_appointment_id_from_payment_instance(payment_instance):
+        appointment_id = None
+        if payment_instance:
+            if payment_instance.appointment and payment_instance.appointment.appointment_identifier:
+                appointment_id = payment_instance.appointment.appointment_identifier
+            elif payment_instance.health_package_appointment and payment_instance.health_package_appointment.appointment_identifier:
+                appointment_id = payment_instance.health_package_appointment.appointment_identifier
+        return appointment_id
+
+
+    @staticmethod
     def update_payment_details_with_manipal(payment_instance,order_details):
 
         payment_update_request = {
@@ -723,7 +737,7 @@ class PaymentUtils:
             "location_code":payment_instance.location.code,
             "app_date":PaymentUtils.get_payment_appointment_date(payment_instance),
             "type":PaymentUtils.get_appointment_type(payment_instance),
-            "app_id":payment_instance.appointment.appointment_identifier if payment_instance and payment_instance.appointment and payment_instance.appointment.appointment_identifier else None
+            "app_id":PaymentUtils.get_appointment_id_from_payment_instance(payment_instance)
         }
 
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
