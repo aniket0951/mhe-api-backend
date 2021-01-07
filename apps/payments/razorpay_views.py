@@ -203,8 +203,6 @@ class RazorPaymentResponse(APIView):
             raise UnsuccessfulPaymentException
 
         payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,order_details)
-        payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS
-        payment_instance.save()
         PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
         PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
         PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)

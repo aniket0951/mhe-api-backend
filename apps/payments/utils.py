@@ -547,6 +547,7 @@ class PaymentUtils:
         payment["razor_invoice_id"] = order_payment_details.get("invoice_id")
         payment["payment_method"] = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
         payment["transaction_id"] = order_payment_details.get("id")
+        payment["status"] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS
         payment["amount"] = PaymentUtils.get_payment_amount(order_details)
         payment_serializer = PaymentSerializer(payment_instance, data=payment, partial=True)
         payment_serializer.is_valid(raise_exception=True)
