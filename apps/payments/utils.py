@@ -637,6 +637,19 @@ class PaymentUtils:
             appointment_serializer = HealthPackageAppointmentSerializer(appointment_instance, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
+
+    @staticmethod
+    def get_pre_registration_number(payment_instance):
+        pre_registration_number = ""
+        if payment_instance.payment_done_for_patient:
+            patient = Patient.objects.filter(id=payment_instance.payment_done_for_patient.id).first()
+            if patient and patient.pre_registration_number:
+                pre_registration_number = str(patient.pre_registration_number)
+        elif payment_instance.payment_done_for_family_member:
+            family_member = FamilyMember.objects.filter(id=payment_instance.payment_done_for_family_member.id).first()
+            if family_member and family_member.pre_registration_number:
+                pre_registration_number = str(family_member.pre_registration_number)
+        return pre_registration_number
     
     @staticmethod
     def get_patients_mobile_number(payment_instance):
@@ -653,7 +666,7 @@ class PaymentUtils:
     def update_uhid_payment_details_with_manipal(payment_instance,order_details):
         payment_update_request = {
             "location_code":payment_instance.location.code,
-            "temp_id":PaymentConstants.UHID_PAYMENT_FRC_ID,
+            "temp_id":PaymentUtils.get_pre_registration_number(payment_instance),
             "transaction_number":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
