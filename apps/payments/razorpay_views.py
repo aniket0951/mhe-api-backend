@@ -203,14 +203,13 @@ class RazorPaymentResponse(APIView):
             raise UnsuccessfulPaymentException
 
         payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,order_details)
+        payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS
+        payment_instance.save()
         PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
         PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
         PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
         PaymentUtils.payment_for_health_package(payment_instance,payment_response)
 
-        payment_instance.status = PaymentConstants.PAYMENT_STATUS_MAPPING.get(order_details.get("status"))
-        payment_instance.save()
-            
         return Response(data=payment_response, status=status.HTTP_200_OK)
       
 class OldRazorPaymentResponse(APIView):
