@@ -646,7 +646,7 @@ class PaymentUtils:
             mobile_no = str(patient.mobile) if patient else ""
         elif payment_instance.payment_done_for_family_member:
             family_member = FamilyMember.objects.filter(id=payment_instance.payment_done_for_family_member.id).first()
-            mobile_no = str(family_member.mobile)
+            mobile_no = str(family_member.mobile) if family_member else ""
         return mobile_no
 
     @staticmethod
@@ -708,11 +708,21 @@ class PaymentUtils:
         
     @staticmethod
     def get_uhid_number(payment_instance):
-        uhid_number = None
+        uhid_number = ""
         if payment_instance.payment_done_for_patient:
-            uhid_number = payment_instance.payment_done_for_patient.uhid_number
+            patient = Patient.objects.filter(id=payment_instance.payment_done_for_patient.id).first()
+            if patient:
+                if patient.uhid_number:
+                    uhid_number = str(patient.uhid_number)
+                elif patient.pre_registration_number:
+                    uhid_number = str(patient.pre_registration_number)
         elif payment_instance.payment_done_for_family_member:
-            uhid_number = payment_instance.payment_done_for_family_member.uhid_number
+            family_member = FamilyMember.objects.filter(id=payment_instance.payment_done_for_family_member.id).first()
+            if family_member:
+                if family_member.uhid_number:
+                    uhid_number = str(family_member.uhid_number)
+                elif family_member.pre_registration_number:
+                    uhid_number = str(family_member.pre_registration_number)
         return uhid_number
 
     @staticmethod
