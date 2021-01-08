@@ -515,9 +515,6 @@ class HealthPackagesView(ProxyView):
 
             health_package_kwargs['code'] = health_package_details['code']
 
-            if health_package_details['gender']:
-                health_package_kwargs['gender'] = health_package_details['gender']
-
             specialisation_name = health_package_details.pop(
                 'specialisation_name')
             if specialisation_name:
