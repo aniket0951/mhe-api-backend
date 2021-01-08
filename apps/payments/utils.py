@@ -730,10 +730,12 @@ class PaymentUtils:
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
         }
+        logger.info("payment_update_request : %s"%(str(payment_update_request)))
         payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
+            logger.info("payment_update_response : %s"%(str(payment_update_response.data)))
             raise UHIDRegistrationFailedException
         payment_response = payment_update_response.data.get("data")
         PaymentUtils.validate_uhid_number(payment_response.get("uhid_number"))
@@ -841,7 +843,7 @@ class PaymentUtils:
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
-            logger.info("payment_update_response : %s"%(str(payment_update_response)))
+            logger.info("payment_update_response : %s"%(str(payment_update_response.data)))
             raise TransactionFailedException
 
         bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"BillDetail","payDetailAPIResponse")
