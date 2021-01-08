@@ -71,7 +71,7 @@ class Payment(MyBaseModel):
                                                    on_delete=models.PROTECT,
                                                    blank=True, null=True)
 
-    payment_method = models.CharField(max_length=10,
+    payment_method = models.CharField(max_length=70,
                                       blank=True,
                                       null=True)
 
