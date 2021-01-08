@@ -560,9 +560,8 @@ class PaymentUtils:
     @staticmethod
     def set_receipt_number(payment_instance,bill_details,payment):
         if payment_instance.appointment or payment_instance.payment_for_health_package or payment_instance.payment_for_uhid_creation:
-            if not bill_details.get("ReceiptNo"):
-                raise ReceiptGenerationFailedException
-            payment["receipt_number"] = bill_details.get("ReceiptNo")
+            if bill_details.get("ReceiptNo"):
+                payment["receipt_number"] = bill_details.get("ReceiptNo")
         return payment
 
     @staticmethod
