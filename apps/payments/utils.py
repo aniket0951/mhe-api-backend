@@ -732,11 +732,12 @@ class PaymentUtils:
         }
         logger.info("payment_update_request : %s"%(str(payment_update_request)))
         payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        logger.info("payment_update_response : %s"%(str(payment_update_response.data)))
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
-            logger.info("payment_update_response : %s"%(str(payment_update_response.data)))
             raise UHIDRegistrationFailedException
+        
         payment_response = payment_update_response.data.get("data")
         PaymentUtils.validate_uhid_number(payment_response.get("uhid_number"))
         return payment_response
