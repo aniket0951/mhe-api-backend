@@ -182,7 +182,7 @@ class RazorIPDepositPayment(APIView):
         return Response(data=param, status=status.HTTP_200_OK)
 
 class RazorPaymentResponse(APIView):
-    permission_classes = (IsPatientUser,)
+    permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
 
