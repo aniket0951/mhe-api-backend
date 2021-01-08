@@ -543,8 +543,9 @@ class HealthPackagesView(ProxyView):
 
                 all_health_packages.append(health_package_details)
 
-            except:
-                print(each_health_package)
+            except Exception as e:
+                logger.error("Exception while syncing health packages : %s"%(str(e)))
+                logger.error("Exception Data : %s"%(str(each_health_package)))
 
         today_date = datetime.now().date()
         previous_date = datetime.now() - timedelta(days=1)
