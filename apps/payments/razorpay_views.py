@@ -41,7 +41,7 @@ from utils.custom_sms import send_sms
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
-from .exceptions import ProcessingIdDoesNotExistsValidationException,NoResponseFromRazorPayException, UnsuccessfulPaymentException
+from .exceptions import ProcessingIdDoesNotExistsValidationException,NoResponseFromRazorPayException, UnsuccessfulPaymentException,PaymentRecordNotAvailable
 from .models import Payment, PaymentReceipts, PaymentRefund
 from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer,
                           PaymentSerializer)
@@ -186,21 +186,13 @@ class RazorPaymentResponse(APIView):
 
     def post(self, request, format=None):
 
-        processing_id = request.data.get("processing_id")
-        razor_order_id = request.data.get("order_id")
+        payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
+        order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
+        order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance)
+        PaymentUtils.validate_order_details_status(order_details)
         
-        payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
-        order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance,razor_order_id)
-        order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance,razor_order_id)
-
-        payment_instance.raw_info_from_salucro_response = order_payment_details or order_details 
-        
-        if not order_details.get("status"):
-            payment_instance.save()
-            raise NoResponseFromRazorPayException
-
-        if order_details.get("status") != PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID:
-            raise UnsuccessfulPaymentException
+        if payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS:
+            return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
         payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,order_details)
         PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)

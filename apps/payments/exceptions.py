@@ -45,3 +45,13 @@ class UnsuccessfulPaymentException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_payment_status'
     default_detail = 'The payment was unsuccessful'
+
+class ReceiptGenerationFailedException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_receipt_number'
+    default_detail = 'Receipt generation failed.'
+
+class PaymentRecordNotAvailable(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_payment_number'
+    default_detail = 'Payment record not available'
