@@ -1,4 +1,5 @@
 import json
+import logging
 from os import stat
 from datetime import date, datetime, timedelta
 
@@ -778,6 +779,7 @@ class PaymentUtils:
         if not PaymentUtils.validate_uhid_number(bill_details_response.get("HospitalNo")):
             raise InvalidGeneratedUHIDException
         if not bill_details_response.get("ReceiptNo"):
+            logging.info("bill_details_response : %s"%(str(bill_details_response)))
             raise TransactionFailedException
         if not bill_details_response.get("AppointmentId"):
             raise AppointmentCreationFailedException
@@ -832,12 +834,13 @@ class PaymentUtils:
             "type":PaymentUtils.get_appointment_type(payment_instance),
             "app_id":PaymentUtils.get_appointment_id_from_payment_instance(payment_instance)
         }
-
+        logging.info("payment_update_request : %s"%(str(payment_update_request)))
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
 
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
+            logging.info("payment_update_response : %s"%(str(payment_update_response)))
             raise TransactionFailedException
 
         bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"BillDetail","payDetailAPIResponse")
