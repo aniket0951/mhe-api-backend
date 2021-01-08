@@ -115,14 +115,25 @@ class PaymentUtils:
         return payment_instance
 
     @staticmethod
+    def get_order_id_from_webhook_request(request_data):
+        razor_order_id = ""
+        if  request_data and \
+            request_data.get("payload") and \
+            request_data.get("payload").get("payment") and \
+            request_data.get("payload").get("payment").get("entity") and \
+            request_data.get("payload").get("payment").get("entity").get("order_id"):
+            razor_order_id = request_data.get("payload").get("payment").get("entity").get("order_id")
+        return razor_order_id
+                
+    @staticmethod
     def validate_request_get_payment_instance(request):
         payment_instance = None
         if request.data.get("order_id"):
             processing_id = request.data.get("processing_id")
             razor_order_id = request.data.get("order_id")
             payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
-        if request.data.get("razorpay_order_id "):
-            razor_order_id = request.data.get("razorpay_order_id ")
+        if request.data.get("event") and request.data.get("event")==PaymentConstants.RAZORPAY_ORDER_PAID_EVENT:
+            razor_order_id = PaymentUtils.get_order_id_from_webhook_request(request.data)
             payment_instance = PaymentUtils.get_razorpay_payment_instance(razor_order_id)
         if not payment_instance:
             raise PaymentRecordNotAvailable
