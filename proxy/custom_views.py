@@ -1,5 +1,5 @@
 import json
-
+import logging
 import requests
 import six
 from django.conf import settings
@@ -15,6 +15,7 @@ from proxy.custom_serializables import \
     SyncAPIRequest as serializable_SyncAPIRequest
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 
+logger = logging.getLogger('django')
 
 class BaseProxyView(APIView):
     proxy_settings = settings.REST_PROXY
@@ -165,6 +166,8 @@ class ProxyView(BaseProxyView):
         data = self.get_request_data(request)
         headers = self.get_headers(request)
         verify_ssl = self.get_verify_ssl(request)
+        logger.info("MANIPAL URL : %s"%(str(url)))
+        logger.info("MANIPAL DATA : %s"%(str(data)))
         try:
             response = requests.request(request.method, url,
                                         data=data,
@@ -174,6 +177,7 @@ class ProxyView(BaseProxyView):
                                         )
         except (ConnectionError, SSLError):
             status = requests.status_codes.codes.bad_gateway
+            logger.error("MANIPAL ERROR : Unable to reach our servers")
             return self.create_error_response({
                 'success': False,
                 'code': status,
@@ -182,13 +186,15 @@ class ProxyView(BaseProxyView):
 
         except (Timeout):
             status = requests.status_codes.codes.gateway_timeout
+            logger.error("MANIPAL ERROR : Gateway timed out")
             return self.create_error_response({
                 'success': False,
                 'code': status,
                 'message': 'Gateway timed out, please contact our helpdesk.',
             }, status)
-
-        return self.create_response(response)
+        http_response = self.create_response(response)
+        logger.info("MANIPAL DATA : %s"%(str(http_response.data)))
+        return http_response
 
     def get(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
