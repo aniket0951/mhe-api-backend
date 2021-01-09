@@ -22,9 +22,9 @@ from apps.payments.exceptions import (
                         MandatoryOrderIdException,
                         MandatoryProcessingIdException,
                         UHIDRegistrationFailedException,
-                        TransactionFailedException,
                         AppointmentCreationFailedException,
                         ReceiptGenerationFailedException,
+                        InvalidResponseFromManipalServers,
                         PaymentRecordNotAvailable,
                         NoResponseFromRazorPayException,
                         UnsuccessfulPaymentException,
@@ -765,7 +765,7 @@ class PaymentUtils:
         if not PaymentUtils.validate_uhid_number(bill_details_response.get("HospitalNo")):
             raise InvalidGeneratedUHIDException
         if not bill_details_response.get("ReceiptNo"):
-            raise TransactionFailedException
+            raise ReceiptGenerationFailedException
         if not bill_details_response.get("AppointmentId"):
             raise AppointmentCreationFailedException
 
@@ -804,7 +804,7 @@ class PaymentUtils:
         if not PaymentUtils.validate_uhid_number(bill_details_response.get("HospitalNo")):
             raise InvalidGeneratedUHIDException
         if not bill_details_response.get("ReceiptNo"):
-            raise TransactionFailedException
+            raise ReceiptGenerationFailedException
 
         if bill_details_response.get("Hosp"):
             payment_response.update({"hospital_code" :bill_details_response.get("Hosp")})
@@ -832,7 +832,7 @@ class PaymentUtils:
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
-            raise UHIDRegistrationFailedException
+            raise InvalidResponseFromManipalServers
         
         payment_response = payment_update_response.data.get("data")
         PaymentUtils.validate_uhid_number(payment_response.get("uhid_number"))
@@ -854,7 +854,7 @@ class PaymentUtils:
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
-            raise TransactionFailedException
+            raise InvalidResponseFromManipalServers
         bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"BillDetail","payDetailAPIResponse")
         return PaymentUtils.serialize_payment_response(bill_details_response)
 
@@ -871,7 +871,7 @@ class PaymentUtils:
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
-            raise TransactionFailedException
+            raise InvalidResponseFromManipalServers
         bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"BillDetail","payDetailAPIResponse")
         return PaymentUtils.serialize_opbill_payment_response(bill_details_response)
     
@@ -887,7 +887,7 @@ class PaymentUtils:
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
-            raise TransactionFailedException
+            raise InvalidResponseFromManipalServers
         bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"RecieptNumber","payDetailAPIResponse")
         return PaymentUtils.serialize_ipdeposit_payment_response(bill_details_response)
 

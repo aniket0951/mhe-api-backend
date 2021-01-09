@@ -60,3 +60,8 @@ class BillNoNotGeneratedAvailable(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_bill_number'
     default_detail = 'Bill number generation failed.'
+
+class InvalidResponseFromManipalServers(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_bill_number'
+    default_detail = 'Payment could not be processed'
