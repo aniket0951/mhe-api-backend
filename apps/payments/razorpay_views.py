@@ -92,15 +92,13 @@ class RazorHealthPackagePayment(APIView):
         param = get_payment_param_for_razorpay(request.data)
 
         location_code = request.data.get("location_code", None)
-        registration_payment = request.data.get("registration_payment", False)
         appointment = request.data.get("appointment_id", None)
-        family_member = request.data.get("user_id", None)
-
+        
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         appointment_instance = PaymentUtils.get_health_package_appointment(appointment)
         package_code,package_code_list = PaymentUtils.get_health_package_code(request)
         param = PaymentUtils.set_param_for_health_package(param,package_code,appointment)
-        payment_data = PaymentUtils.set_payment_data_for_health_package(request,param,hospital,appointment_instance,registration_payment,family_member)
+        payment_data = PaymentUtils.set_payment_data_for_health_package(request,param,hospital,appointment_instance)
 
         PaymentUtils.validate_order_amount_for_health_package(param,location_code,package_code_list)
 
@@ -118,13 +116,12 @@ class RazorUHIDPayment(APIView):
 
     def post(self, request, format=None):
         
-        family_member = request.data.get("user_id", None)
         location_code = request.data.get("location_code", None)
 
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         param = get_payment_param_for_razorpay(request.data)
         param = PaymentUtils.set_param_for_uhid(param,location_code)
-        payment_data = PaymentUtils.set_payment_data_for_uhid(request,param,hospital,family_member)
+        payment_data = PaymentUtils.set_payment_data_for_uhid(request,param,hospital)
 
         PaymentUtils.validate_order_amount_for_uhid(param,location_code)
 
@@ -145,16 +142,15 @@ class RazorOPBillPayment(APIView):
 
     def post(self, request, format=None):
         
-        family_member = request.data.get("user_id", None)
         location_code = request.data.get("location_code", None)
         episode_no = request.data.get("episode_no", None)
 
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         param = get_payment_param_for_razorpay(request.data)
         param = PaymentUtils.set_param_for_op_bill(param,location_code,episode_no)
-        payment_data = PaymentUtils.set_payment_data_for_op_bill(request,param,hospital,family_member,episode_no)
+        payment_data = PaymentUtils.set_payment_data_for_op_bill(request,param,hospital,episode_no)
 
-        PaymentUtils.validate_order_amount_for_op_bill()
+        PaymentUtils.validate_order_amount_for_op_bill(param,location_code,episode_no)
 
         param,payment_data = PaymentUtils.set_order_id_for_op_bill(param,payment_data)
 
@@ -169,12 +165,12 @@ class RazorIPDepositPayment(APIView):
     permission_classes = (IsPatientUser,)
 
     def post(self, request, format=None):
-        family_member = request.data.get("user_id", None)
         location_code = request.data.get("location_code", None)
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         param = get_payment_param_for_razorpay(request.data)
         param = PaymentUtils.set_param_for_ip_deposit(param,location_code)
-        payment_data = PaymentUtils.set_payment_data_for_ip_deposit(request,param,hospital,family_member)
+        payment_data = PaymentUtils.set_payment_data_for_ip_deposit(request,param,hospital)
+        param,payment_data = PaymentUtils.set_order_id_for_ip_deposit(param,payment_data)
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()

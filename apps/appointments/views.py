@@ -45,6 +45,10 @@ from proxy.custom_serializables import \
     PaymentUpdate as serializable_PaymentUpdate
 from proxy.custom_serializables import \
     UHIDPaymentUpdate as serializable_UHIDPaymentUpdate
+from proxy.custom_serializables import \
+    OPBillingPaymentUpdate as serializable_OPBillingPaymentUpdate
+from proxy.custom_serializables import \
+    IPDepositPaymentUpdate as serializable_IPDepositPaymentUpdate
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, generics, status, viewsets
@@ -1354,7 +1358,61 @@ class UHIDPaymentView(ProxyView):
         success_status = False
         data = dict()
         if status == '1':
+            success_status = True
             data["uhid_number"] = root.find("UID").text 
             data["ReceiptNo"] = root.find("ReceiptNo").text 
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+
+class OPBillingPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'OPBilling'
+
+    def get_request_data(self, request):
+        request_xml = serializable_OPBillingPaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            bill_detail = root.find("BillDetail").text
+            success_status = True
+            data["payDetailAPIResponse"] = dict()
+            data["payDetailAPIResponse"]["BillDetail"] = bill_detail
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+class IPDepositPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'InsertOnlinePatientDeposit'
+
+    def get_request_data(self, request):
+        request_xml = serializable_IPDepositPaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            reciept_number = root.find("RecieptNumber").text
+            success_status = True
+            data["payDetailAPIResponse"] = dict()
+            data["payDetailAPIResponse"]["RecieptNumber"] = reciept_number
         return self.custom_success_response(message=message,
                                             success=success_status, data=data)

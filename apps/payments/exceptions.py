@@ -55,3 +55,8 @@ class PaymentRecordNotAvailable(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_payment_number'
     default_detail = 'Payment record not available'
+
+class BillNoNotGeneratedAvailable(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_bill_number'
+    default_detail = 'Bill number generation failed.'

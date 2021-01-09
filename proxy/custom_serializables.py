@@ -540,7 +540,49 @@ class UHIDPaymentUpdate:
         serializer.add_property('discountAmount',self.discount_amt)
         serializer.add_property('discountReason',self.discount_reason)
         serializer.add_property('payMode',self.pay_mode)
+
+
+class OPBillingPaymentUpdate:
+    def __init__(self, param):
+        self.uhid = param.get("uhid", None)
+        self.transaction_number = param.get("transaction_number", "NA")
+        self.auth_code = param.get("auth_code", "9999")
+        self.branch = param.get("branch", "Manipal")
+        self.drawer = param.get("drawer", "Payment Gateway")
+        self.amt = param.get("amt", "0")
+        self.location_code = param.get("location_code", None)
+        self.episode_number = param.get("episode_number", "")
         
+    def serialize(self, serializer):
+        serializer.start_object('OPBillingParam')
+        serializer.add_property('hospitalno', self.uhid)
+        serializer.add_property('tranno', self.transaction_number)
+        serializer.add_property('authcode', self.auth_code)
+        serializer.add_property('branch', self.branch)
+        serializer.add_property('drawer', self.drawer)
+        serializer.add_property('amount', str(self.amt))
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('admno', self.episode_number)
+
+class IPDepositPaymentUpdate:
+    def __init__(self, param):
+        self.uhid = param.get("uhid", None)
+        self.transaction_number = param.get("transaction_number", "NA")
+        self.auth_code = param.get("auth_code", "9999")
+        self.branch = param.get("branch", "Manipal")
+        self.drawer = param.get("drawer", "Payment Gateway")
+        self.amt = param.get("amt", "0")
+        self.location_code = param.get("location_code", None)
+        
+    def serialize(self, serializer):
+        serializer.start_object('InsertOnlinePatientDepositParam')
+        serializer.add_property('hospitalno', self.uhid)
+        serializer.add_property('tranno', self.transaction_number)
+        serializer.add_property('authcode', self.auth_code)
+        serializer.add_property('branch', self.branch)
+        serializer.add_property('drawer', self.drawer)
+        serializer.add_property('amount', self.amt)
+        serializer.add_property('locationCode', self.location_code)
 
 class CorporateRegistration:
     def __init__(self, temp_id=None, location_code=None, transaction_id="Infosys", amount=0, discount_reason="Infosys"):
