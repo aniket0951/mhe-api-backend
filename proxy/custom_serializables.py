@@ -548,7 +548,7 @@ class OPBillingPaymentUpdate:
         self.transaction_number = param.get("transaction_number", "NA")
         self.auth_code = param.get("auth_code", "9999")
         self.branch = param.get("branch", "Manipal")
-        self.drawer = param.get("drawer", "Payment Gateway")
+        self.drawer = param.get("drawer", "PatientApp")
         self.amt = param.get("amt", "0")
         self.location_code = param.get("location_code", None)
         self.episode_number = param.get("episode_number", "")
