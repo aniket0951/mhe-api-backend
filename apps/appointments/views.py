@@ -63,8 +63,7 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 
-from .exceptions import (AppointmentAlreadyExistsException,
-                         AppointmentDoesNotExistsValidationException)
+from .exceptions import (AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
@@ -75,7 +74,7 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
-from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail
+from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
 from rest_framework.test import APIClient
 
 client = APIClient()
@@ -302,21 +301,23 @@ class CreateMyAppointment(ProxyView):
                 response_data["appointment_identifier"] = appointment_identifier
                 if consultation_response.status_code == 200 and consultation_response.data and consultation_response.data['data']:
                     response_data['consultation_object'] = consultation_response.data['data']
-                    if consultation_response.data['data'].get('IsFollowUp'):
-                        if consultation_response.data['data'].get('IsFollowUp') != "N":
-                            hv_charges = consultation_response.data['data'].get("OPDConsCharges")
-                            vc_charges = consultation_response.data['data'].get("VCConsCharges")
-                            pr_charges = consultation_response.data['data'].get("PRConsCharges")
-                            if (appointment_instance.appointment_mode == "HV" and hv_charges == "0") or (appointment_instance.appointment_mode == "VC" and vc_charges == "0") or (appointment_instance.appointment_mode == "PR" and pr_charges == "0"):
-                                corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
-                                corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
-                                followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
-                                appointment_instance.consultation_amount = 0
-                                response = AppointmentPaymentView.as_view()(followup_payment_param)
-                                appointment_instance.payment_status = "success"
-                            appointment_instance.is_follow_up = True
-                            appointment_instance.save()
-                            
+                    if  consultation_response.data['data'].get('IsFollowUp') and \
+                        consultation_response.data['data'].get('IsFollowUp') != "N":
+                        hv_charges = consultation_response.data['data'].get("OPDConsCharges")
+                        vc_charges = consultation_response.data['data'].get("VCConsCharges")
+                        pr_charges = consultation_response.data['data'].get("PRConsCharges")
+                        if (appointment_instance.appointment_mode == "HV" and hv_charges == "0") or (appointment_instance.appointment_mode == "VC" and vc_charges == "0") or (appointment_instance.appointment_mode == "PR" and pr_charges == "0"):
+                            corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
+                            corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
+                            corporate_appointment["processing_id"] = get_processing_id()
+                            corporate_appointment["transaction_number"] = "F"+appointment_identifier
+                            followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
+                            appointment_instance.consultation_amount = 0
+                            response = AppointmentPaymentView.as_view()(followup_payment_param)
+                            appointment_instance.payment_status = "success"
+                        appointment_instance.is_follow_up = True
+                        appointment_instance.save()
+                        
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
