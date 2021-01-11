@@ -666,7 +666,7 @@ class PaymentUtils:
         elif payment_instance.payment_for_op_billing:
             payment["receipt_number"] = bill_details.get("BillNo")
             if bill_details.get("EpisodeNo"):
-                payment["episode_number"] = bill_details.get("BillNo")
+                payment["episode_number"] = bill_details.get("EpisodeNo")
 
         return payment
 
