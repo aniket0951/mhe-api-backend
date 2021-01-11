@@ -1,20 +1,14 @@
 from apps.payments.constants import PaymentConstants
-import base64
-import hashlib
 import json
 import logging
-from utils.razorpay_util import RazorPayUtil
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
 from random import randint
 
 import requests
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.core import serializers
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import redirect, render
+from django.http import HttpResponseRedirect
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (HealthPackageAppointmentDetailSerializer,)
@@ -41,8 +35,8 @@ from utils.custom_sms import send_sms
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
-from .exceptions import ProcessingIdDoesNotExistsValidationException,NoResponseFromRazorPayException, UnsuccessfulPaymentException,PaymentRecordNotAvailable
-from .models import Payment, PaymentReceipts, PaymentRefund
+from .exceptions import ProcessingIdDoesNotExistsValidationException
+from .models import Payment, PaymentReceipts
 from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer,
                           PaymentSerializer)
 

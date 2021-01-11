@@ -1,10 +1,9 @@
-from apps.payments.views import IPDepositPayment
+
 import json
 import logging
 from os import stat
-from datetime import date, datetime, timedelta
+from datetime import datetime
 
-from django.db import models
 from django.conf import settings
 
 from rest_framework.test import APIClient
@@ -677,6 +676,7 @@ class PaymentUtils:
     def update_payment_details(payment_instance,payment_response,order_details,order_payment_details):
         payment = {}
         payment = PaymentUtils.set_receipt_number(payment_instance,payment_response,payment)
+        payment["uhid_number"] = payment_response.get("uhid_number")
         payment["razor_payment_id"] = order_payment_details.get("id")
         payment["razor_invoice_id"] = order_payment_details.get("invoice_id")
         payment["payment_method"] = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
@@ -742,7 +742,8 @@ class PaymentUtils:
             appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
             update_data = {
                 "payment" : payment_instance.id,
-                "appointment_identifier" : payment_response.get("appointment_identifier")
+                "appointment_identifier" : payment_response.get("appointment_identifier"),
+                "appointment_status":PaymentConstants.HEALTH_PACKAGE_APPOINTMENT_STATUS_BOOKED
             }
             # package_name = PaymentUtils.get_health_package_name(appointment_instance)
             # if payment_instance.payment_done_for_patient:
