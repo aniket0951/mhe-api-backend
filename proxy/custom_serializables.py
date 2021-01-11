@@ -483,8 +483,7 @@ class PatientAppStatus:
 class PaymentUpdate:
     def __init__(self, param):
         self.uhid = param.get("uhid", None)
-        self.transaction_number = param.get(
-            "transaction_number", "CORPORATE_INFOSYS")
+        self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
         self.processing_id = param.get("processing_id", "CORPORATE")
         self.source = param.get("source", "PatientApp")
         self.drawer = param.get("drawer", "NA")

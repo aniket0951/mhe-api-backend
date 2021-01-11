@@ -183,7 +183,8 @@ class PaymentUtils:
             order_payment_details.get("status") and\
             order_payment_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED:
             payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
-        
+
+        payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.payment_status = payment_status
         payment_instance.save()
 
