@@ -34,8 +34,6 @@ def get_refund_param_for_razorpay(data=None):
     if instance:
         param["transaction_id"] = instance.processing_id
     
-    param["check_sum_hash"] = get_checksum(param, secret_key)
-
     return param
 
 def set_refund_amount(appointment_instance,param):
@@ -97,14 +95,3 @@ def get_processing_id(*args):
     processing_id = str(t)+' '+str(r)+' '+str(a)+' '+str(args)
     processing_id = hashlib.md5(processing_id.encode('utf-8')).hexdigest()
     return processing_id
-
-
-def get_checksum(param, secret_key):
-    hash_string = param["processing_id"] + '|' + param["mid"] + '|' + \
-        param["auth_user"] + '|' + param["auth_key"] + '|' + param["username"] + '|' + \
-        param["paymode"] + '|' + param["patient_name"] + '|' + param["account_number"] + '|' + \
-        str(param["amount"]) + '|' + param["transaction_id"] + '|' + secret_key
-
-    sha_signature = hashlib.sha256(hash_string.encode()).hexdigest()
-    checksum = base64.b64encode(sha_signature.encode('ascii'))
-    return checksum
