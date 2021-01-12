@@ -220,6 +220,7 @@ class PaymentUtils:
             payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
 
         payment_instance.status = payment_status
+        payment_instance.payment_method = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.amount = PaymentUtils.get_payment_amount(order_details)
         payment_instance.transaction_id = order_payment_details.get("id")
