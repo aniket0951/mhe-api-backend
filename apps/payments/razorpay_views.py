@@ -451,7 +451,6 @@ class RazorRefundView(APIView):
                 appointment_instance.payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
                 appointment_instance.save()
 
-                payment_instance.payment_refund = refund_instance
                 payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
                 payment_instance.save()
 
