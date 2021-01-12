@@ -421,7 +421,7 @@ class RazorRefundView(APIView):
             refunded_payment_details = PaymentUtils.initiate_refund(
                                             hospital_secret=param.get("auth_key"),
                                             payment_id=razor_payment_id,
-                                            amount_to_be_refunded=param.get("amount")
+                                            amount_to_be_refunded=float(param.get("amount"))
                                         )
 
             logger.info("REFUNDED : %s"%str(refunded_payment_details))
