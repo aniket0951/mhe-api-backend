@@ -51,7 +51,7 @@ class DashboardAPIView(ListAPIView):
                 if version_number:
                     dashboard_details["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
                     current_version = settings.IOS_VERSION
-                    if DashboardUtils.compare_versions(version_number,current_version)==1:
+                    if DashboardUtils.compare_versions(version_number,current_version)!=-1:
                         dashboard_details["force_update_required"] = False
                     else:
                         dashboard_details["force_update_required"] = True
