@@ -103,7 +103,7 @@ class RazorPayUtil:
             return None
         if AMOUNT_OFFSET:
             amount_to_be_refunded *= int(AMOUNT_OFFSET)
-        refund_data = self.client.payment.refund(self.payment_id,amount_to_be_refunded)
+        refund_data = self.client.payment.refund(self.payment_id,int(amount_to_be_refunded))
         self.refund_id = refund_data.get("id")
         return refund_data
 
