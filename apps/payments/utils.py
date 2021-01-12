@@ -31,14 +31,13 @@ from apps.payments.exceptions import (
                         BillNoNotGeneratedAvailable
                     )
 from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import (FamilyMemberSpecificSerializer,
-                                       PatientSpecificSerializer)
+from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
 
 from utils.razorpay_util import RazorPayUtil
 from utils.razorpay_payment_parameter_generator import get_hospital_key_info
 
 from .constants import PaymentConstants
-from .serializers import PaymentSerializer
+from .serializers import PaymentSerializer,PaymentRefundSerializer
 
 client = APIClient()
 AMOUNT_OFFSET = settings.RAZOR_AMOUNT_OFFSET
@@ -228,10 +227,39 @@ class PaymentUtils:
         
     
     @staticmethod
-    def update_failed_payment_response(payment_instance):
+    def update_refund_payment_response(refunded_payment_details,payment_instance,amount):
+        refund_param = dict()
+        refund_param["status"] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS if refunded_payment_details.get("status") == PaymentConstants.RAZORPAY_PAYMENT_STATUS_PROCESSED else PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+        refund_param["payment"] = payment_instance.id
+        refund_param["uhid_number"] = payment_instance.uhid_number
+        refund_param["processing_id"] = payment_instance.processing_id
+        refund_param["transaction_id"] = payment_instance.transaction_id
+        refund_param["amount"] = amount
+        refund_param["refund_id"] = refunded_payment_details.get("id")
+        refund_param["receipt_number"] = refunded_payment_details.get("id")
+        refund_param["razor_payment_id"] = refunded_payment_details.get("payment_id")
+        refund_param["request_id"] = refunded_payment_details.get("payment_id")
+        refund_instance = PaymentRefundSerializer(data=refund_param)
+        refund_instance.is_valid(raise_exception=True)
+        refund_instance.save()
+    
+    @staticmethod
+    def update_failed_payment_response(payment_instance,order_details):
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
         payment_instance.save()
+
+        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0:
+            hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
+            hospital_secret = settings.RAZOR_KEY_ID or hospital_key_info.secret_key
+            refunded_payment_details = PaymentUtils.initiate_refund(
+                hospital_secret=hospital_secret,
+                payment_id=payment_instance.razor_payment_id,
+                amount_to_be_refunded=int(payment_instance.amount)
+            )
+            PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
+            payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
+            payment_instance.save()
 
     @staticmethod
     def get_payment_amount(order_details):

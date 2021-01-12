@@ -40,7 +40,7 @@ from utils.razorpay_refund_parameter_generator import get_refund_param_for_razor
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException,IncompletePaymentCannotProcessRefund
 from .models import Payment, PaymentReceipts
-from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer, PaymentSerializer)
+from .serializers import (PaymentReceiptsSerializer, PaymentSerializer)
 from .utils import PaymentUtils
 
 from apps.payments.constants import PaymentConstants
@@ -193,10 +193,10 @@ class RazorPaymentResponse(APIView):
             PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
             PaymentUtils.payment_for_health_package(payment_instance,payment_response)
-        except Exception as e:
-            PaymentUtils.update_failed_payment_response(payment_instance)
-            raise Exception(str(e))
 
+        except Exception as e:
+            PaymentUtils.update_failed_payment_response(payment_instance,order_details)
+            
         return Response(data=payment_response, status=status.HTTP_200_OK)
       
 class RazorPaymentReturn(APIView):
@@ -417,24 +417,10 @@ class RazorRefundView(APIView):
                                             hospital_secret=param.get("auth_key"),
                                             payment_id=razor_payment_id,
                                             amount_to_be_refunded=int(param.get("amount"))
-                                        )            
+                                        )
             if refunded_payment_details:
-                refund_param = dict()
-                
-                refund_param["status"] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS if refunded_payment_details.get("status") == PaymentConstants.RAZORPAY_PAYMENT_STATUS_PROCESSED else PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
-                refund_param["payment"] = payment_instance.id
-                refund_param["uhid_number"] = payment_instance.uhid_number
-                refund_param["processing_id"] = payment_instance.processing_id
-                refund_param["transaction_id"] = payment_instance.transaction_id
-                refund_param["amount"] = param.get("amount")
-                refund_param["refund_id"] = refunded_payment_details.get("id")
-                refund_param["receipt_number"] = refunded_payment_details.get("id")
-                refund_param["razor_payment_id"] = refunded_payment_details.get("payment_id")
-                refund_param["request_id"] = refunded_payment_details.get("payment_id")
-                
-                refund_instance = PaymentRefundSerializer(data=refund_param)
-                refund_instance.is_valid(raise_exception=True)
-                refund_instance.save()
+                amount = param.get("amount")
+                PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,amount)
 
                 appointment_instance.payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
                 appointment_instance.save()
