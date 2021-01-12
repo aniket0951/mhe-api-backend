@@ -420,12 +420,12 @@ class RazorRefundView(APIView):
                 raise IncompletePaymentCannotProcessRefund
 
             refunded_payment_details = dict()
-            
-            if param.get("amount") and float(param.get("amount"))>0:
+
+            if param.get("amount") and int(param.get("amount"))>0:
                 refunded_payment_details = PaymentUtils.initiate_refund(
                                             hospital_secret=param.get("auth_key"),
                                             payment_id=razor_payment_id,
-                                            amount_to_be_refunded=float(param.get("amount"))
+                                            amount_to_be_refunded=int(param.get("amount"))
                                         )
 
             logger.info("REFUNDED : %s"%str(refunded_payment_details))
