@@ -76,8 +76,6 @@ class RazorAppointmentPayment(APIView):
         payment.is_valid(raise_exception=True)
         payment.save()
 
-        logger.info(param)
-
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -104,7 +102,6 @@ class RazorHealthPackagePayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -129,8 +126,6 @@ class RazorUHIDPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        logger.info(param)
-
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -154,7 +149,6 @@ class RazorOPBillPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 
@@ -171,16 +165,12 @@ class RazorIPDepositPayment(APIView):
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment.save()
-        logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
 
 class RazorPaymentResponse(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
-
-        logger.info("request : %s"%str(request))
-        logger.info("request data: %s"%str(request.data))
         
         payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
@@ -403,18 +393,15 @@ class RazorRefundView(APIView):
         if appointment_instance.payment_appointment.exists():
             param = get_refund_param_for_razorpay(request.data)
             payment_instance = appointment_instance.payment_appointment.filter(status=PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS).first()
-            logger.info("payment_instance %s"%(str(payment_instance)))
+            
             if not payment_instance:
                 raise IncompletePaymentCannotProcessRefund
-            logger.info("payment_instance.razor_payment_id %s"%(str(payment_instance.razor_payment_id)))
             razor_payment_id = None
             if payment_instance.razor_payment_id:
                 razor_payment_id = payment_instance.razor_payment_id
             elif payment_instance.razor_order_id:
                 razor_payment_data = PaymentUtils.get_razorpay_payment_data_from_order_id(param.get("auth_key"),payment_instance.razor_order_id)
-                logger.info("razor_payment_data %s"%(str(razor_payment_data)))
                 razor_payment_id = razor_payment_data.get("id")
-            logger.info("razor_payment_id %s"%(str(razor_payment_id)))
             
             if not razor_payment_id:
                 raise IncompletePaymentCannotProcessRefund
@@ -426,10 +413,7 @@ class RazorRefundView(APIView):
                                             hospital_secret=param.get("auth_key"),
                                             payment_id=razor_payment_id,
                                             amount_to_be_refunded=int(param.get("amount"))
-                                        )
-
-            logger.info("REFUNDED : %s"%str(refunded_payment_details))
-            
+                                        )            
             if refunded_payment_details:
                 refund_param = dict()
                 
