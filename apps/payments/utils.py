@@ -677,12 +677,14 @@ class PaymentUtils:
     @staticmethod
     def get_payment_method_from_order_payment_details(order_payment_details):
         payment_method = ""
+        if order_payment_details.get('method'):
+            payment_method += order_payment_details.get('method')
         if order_payment_details.get("bank"):
-            payment_method = order_payment_details.get("bank")
-        elif order_payment_details.get("wallet"):
-            payment_method = order_payment_details.get("wallet")
-        elif order_payment_details.get("vpa"):
-            payment_method = order_payment_details.get("vpa")
+            payment_method += " "+order_payment_details.get("bank")
+        if order_payment_details.get("wallet"):
+            payment_method += " "+order_payment_details.get("wallet")
+        if order_payment_details.get("vpa"):
+            payment_method += " "+order_payment_details.get("vpa")
         return payment_method
 
     @staticmethod
