@@ -487,8 +487,9 @@ class CheckAppointmentPaymentStatus:
         
     def serialize(self, serializer):
         serializer.start_object('checkAppPaymentStatusParam')
-        serializer.add_property('LocationCode', self.location_code)
         serializer.add_property('AppointmentId', self.appointment_id)
+        serializer.add_property('LocationCode', self.location_code)
+        
 
 class PaymentUpdate:
     def __init__(self, param):
