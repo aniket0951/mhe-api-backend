@@ -173,8 +173,8 @@ class PaymentUtils:
         order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_secret,razor_order_id)
         order_payment_data_item = dict()
         if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
-            for item in order_payment_data.get("items"):
-                if order_payment_data_item.get("amount")==order_details.get("amount") and item.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CAPTURED:
+            for item in order_payment_data.get("items"):        
+                if float(order_payment_data.get("amount"))==float(order_details.get("amount")) and item.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CAPTURED:
                     order_payment_data_item = item
         return order_payment_data_item
 
