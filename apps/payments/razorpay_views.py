@@ -171,6 +171,9 @@ class RazorPaymentResponse(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
+
+        logger.info("request : %s"%str(request))
+        logger.info("request data: %s"%str(request.data))
         
         payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
