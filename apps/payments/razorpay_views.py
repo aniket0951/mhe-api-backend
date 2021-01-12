@@ -401,10 +401,12 @@ class RazorRefundView(APIView):
         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
 
         if appointment_instance.payment_appointment.exists():
-
             param = get_refund_param_for_razorpay(request.data)
-            payment_instance = Payment.objects.get(id=appointment_instance.payment_appointment.id)
-            
+            payment_instance = appointment_instance.payment_appointment.filter(status=PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS).first()
+
+            if not payment_instance:
+                raise IncompletePaymentCannotProcessRefund
+
             razor_payment_id = None
             if payment_instance.razor_payment_id:
                 razor_payment_id = payment_instance.razor_payment_id
@@ -420,6 +422,9 @@ class RazorRefundView(APIView):
                                             payment_id=razor_payment_id,
                                             amount_to_be_refunded=param.get("amount")
                                         )
+
+            logger.info("REFUNDED : %s"%str(refunded_payment_details))
+            
             if refunded_payment_details:
                 refund_param = dict()
                 

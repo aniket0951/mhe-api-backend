@@ -27,7 +27,7 @@ def get_refund_param_for_razorpay(data=None):
     param["auth_key"] = secret_key
     # param["paymode"] = "payment-refund"
 
-    param = set_patient(appointment_instance,param)
+    # param = set_patient(appointment_instance,param)
     param = set_refund_amount(appointment_instance,param)
 
     instance = appointment_instance.payment_appointment.filter(status="success").first()
