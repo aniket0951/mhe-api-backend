@@ -136,6 +136,17 @@ class PaymentUtils:
             request_data.get("payload").get("payment").get("entity").get("order_id"):
             razor_order_id = request_data.get("payload").get("payment").get("entity").get("order_id")
         return razor_order_id
+
+    @staticmethod
+    def get_payment_details_from_webhook_request(request_data):
+        razor_payment_details = {}
+        if  request_data and \
+            request_data.get("payload") and \
+            request_data.get("payload").get("payment") and \
+            request_data.get("payload").get("payment").get("entity") and \
+            request_data.get("payload").get("payment").get("entity").get("id"):
+            razor_payment_details = request_data.get("payload").get("payment").get("entity")
+        return razor_payment_details
                 
     @staticmethod
     def validate_request_get_payment_instance(request):
@@ -189,6 +200,15 @@ class PaymentUtils:
         return order_payment_data_item
 
     @staticmethod
+    def get_razorpay_order_payment_response(request,order_details,payment_instance):
+        order_payment_details = dict()
+        if request.data.get("event") and request.data.get("event") in [PaymentConstants.RAZORPAY_ORDER_PAID_EVENT,PaymentConstants.RAZORPAY_ORDER_PAYMENT_FAILED_EVENT]:
+            order_payment_details = PaymentUtils.get_payment_details_from_webhook_request(request.data)
+        else:
+            order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance)
+        return order_payment_details
+
+    @staticmethod
     def validate_order_details_status(order_details,order_payment_details,payment_instance):
         if not order_details.get("status"):
             raise NoResponseFromRazorPayException
@@ -199,12 +219,12 @@ class PaymentUtils:
             order_payment_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED:
             payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
 
-        payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.payment_status = payment_status
+        payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
+        payment_instance.amount = PaymentUtils.get_payment_amount(order_details)
+        payment_instance.transaction_id = order_payment_details.get("id")
         payment_instance.save()
-
-        if order_details.get("status") != PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID:
-            raise UnsuccessfulPaymentException
+        
     
     @staticmethod
     def update_failed_payment_response(payment_instance):
