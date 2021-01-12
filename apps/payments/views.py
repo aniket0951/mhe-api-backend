@@ -885,7 +885,7 @@ class CheckAppointmentPaymentStatusView(ProxyView):
         check_app_payment_status_response = root.find("checkAppPaymentStatusResponse").text
         data = dict()
         if check_app_payment_status_response:
-            data.update(json.loads(check_app_payment_status_response))
+            data = json.loads(check_app_payment_status_response)
         return self.custom_success_response(
                                 message="checkAppPaymentStatus",
                                 success=True,

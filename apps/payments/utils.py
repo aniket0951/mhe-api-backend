@@ -911,17 +911,20 @@ class PaymentUtils:
     @staticmethod
     def serialize_check_appointment_payment_status_response(payment_check_response,appointment_id):
         payment_response = dict()
+        logger.info("payment_check_response 2.5 %s"%(str(payment_check_response)))
         if  not payment_check_response or \
             not payment_check_response.get("Status") or \
             not payment_check_response.get("Status")==PaymentConstants.CHECK_APPOINTMENT_PAYMENT_STATUS_FAILED:
             return payment_response
+        logger.info("payment_check_response 3 %s"%(str(payment_check_response)))
         if payment_check_response.get("Status")==PaymentConstants.CHECK_APPOINTMENT_PAYMENT_STATUS_SUCCESS:
             payment_response.update({
                 "uhid_number"           : payment_check_response.get("APPOLPPatHospNo"),
                 "ReceiptNo"             : payment_check_response.get("APPOLPReceiptNo"),
                 "appointment_identifier": appointment_id,
                 "StatusMessage"         : PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,
-            })       
+            })
+        logger.info("payment_response 4 %s"%(str(payment_response)))
         return payment_response
 
 
@@ -933,11 +936,13 @@ class PaymentUtils:
             "location_code":payment_instance.location.code
         }
         payment_check_response = CheckAppointmentPaymentStatusView.as_view()(cancel_and_refund_parameters(payment_check_request))
+        logger.info("payment_check_response 1 %s"%(str(payment_check_response)))
         if  not payment_check_response.status_code==200 or \
             not payment_check_response.data or \
             not payment_check_response.data.get("data"):
             raise InvalidResponseFromManipalServers
         payment_response = payment_check_response.data.get("data")
+        logger.info("payment_response 2 %s"%(str(payment_response)))
         return PaymentUtils.serialize_check_appointment_payment_status_response(payment_response,appointment_id)
 
     @staticmethod
@@ -972,6 +977,7 @@ class PaymentUtils:
             "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        logger.info("payment_update_response %s"%str(payment_update_response))
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
