@@ -423,7 +423,7 @@ class RazorRefundView(APIView):
             if refunded_payment_details:
                 refund_param = dict()
                 
-                refund_param["status"] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS if refunded_payment_details.get("status") == PaymentConstants.RAZORPAY_PAYMENT_STATUS_PROCESSED else PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILEDPaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+                refund_param["status"] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS if refunded_payment_details.get("status") == PaymentConstants.RAZORPAY_PAYMENT_STATUS_PROCESSED else PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
                 refund_param["payment"] = payment_instance.id
                 refund_param["uhid_number"] = payment_instance.uhid_number
                 refund_param["processing_id"] = payment_instance.processing_id
