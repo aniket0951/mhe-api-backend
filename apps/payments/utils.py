@@ -144,7 +144,7 @@ class PaymentUtils:
             processing_id = request.data.get("processing_id")
             razor_order_id = request.data.get("order_id")
             payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
-        if request.data.get("event") and request.data.get("event")==PaymentConstants.RAZORPAY_ORDER_PAID_EVENT:
+        elif request.data.get("event") and request.data.get("event") in [PaymentConstants.RAZORPAY_ORDER_PAID_EVENT,PaymentConstants.RAZORPAY_ORDER_PAYMENT_FAILED_EVENT]:
             razor_order_id = PaymentUtils.get_order_id_from_webhook_request(request.data)
             payment_instance = PaymentUtils.get_razorpay_payment_instance(razor_order_id)
         if not payment_instance:
