@@ -403,17 +403,18 @@ class RazorRefundView(APIView):
         if appointment_instance.payment_appointment.exists():
             param = get_refund_param_for_razorpay(request.data)
             payment_instance = appointment_instance.payment_appointment.filter(status=PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS).first()
-
+            logger.info("payment_instance %s"%(str(payment_instance)))
             if not payment_instance:
                 raise IncompletePaymentCannotProcessRefund
-
+            logger.info("payment_instance.razor_payment_id %s"%(str(payment_instance.razor_payment_id)))
             razor_payment_id = None
             if payment_instance.razor_payment_id:
                 razor_payment_id = payment_instance.razor_payment_id
             elif payment_instance.razor_order_id:
                 razor_payment_data = PaymentUtils.get_razorpay_payment_data_from_order_id(param.get("auth_key"),payment_instance.razor_order_id)
+                logger.info("razor_payment_data %s"%(str(razor_payment_data)))
                 razor_payment_id = razor_payment_data.get("id")
-
+            logger.info("razor_payment_id %s"%(str(razor_payment_id)))
             if not razor_payment_id:
                 raise IncompletePaymentCannotProcessRefund
 
