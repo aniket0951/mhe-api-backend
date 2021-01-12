@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 import xml.etree.ElementTree as ET
@@ -27,6 +28,12 @@ from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializables import CorporateRegistration as serializable_CorporateRegistration
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+
+from proxy.custom_serializables import PaymentUpdate as serializable_PaymentUpdate
+from proxy.custom_serializables import UHIDPaymentUpdate as serializable_UHIDPaymentUpdate
+from proxy.custom_serializables import OPBillingPaymentUpdate as serializable_OPBillingPaymentUpdate
+from proxy.custom_serializables import IPDepositPaymentUpdate as serializable_IPDepositPaymentUpdate
+from proxy.custom_serializables import CheckAppointmentPaymentStatus as serializable_CheckAppointmentPaymentStatus
 
 from rest_framework import filters, status
 from rest_framework.decorators import (api_view, parser_classes,permission_classes)
