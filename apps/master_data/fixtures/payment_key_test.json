@@ -8,7 +8,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8205",
             "secret_key":"rzp_test_ceA4U4ZFQ48Il1",
             "secret_secret":"qbcCzeV2bGi3emfHuGNlZmiT"
-        }//MHW
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -19,7 +19,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8206",
             "secret_key":"rzp_test_BFtXzx60rVNkK0",
             "secret_secret":"nrHcgtoxNEvsBktfliyhxV3F"
-        }//MHD
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -30,7 +30,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8207",
             "secret_key":"rzp_test_5tWEww9PVvFU71",
             "secret_secret":"JZGIx7vnuiZUY2xMDNmo9GHr"
-        }//MHJ
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -41,7 +41,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8208",
             "secret_key":"rzp_test_20yenhfJONctIm",
             "secret_secret":"C9Lwh6TxI2tX1U9GfTj98ANI"
-        }//MHV
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -52,7 +52,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8209",
             "secret_key":"rzp_test_I7QYedMwfDPBd4",
             "secret_secret":"39k19kEl76vCEANzzT7EOi2E"
-        }//MHG
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -63,7 +63,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8210",
             "secret_key":"rzp_test_H4Ew4B8efSTKIK",
             "secret_secret":"0vIV6jlBCP5fNFJ9QFs5x5GL"
-        }//MHS
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -74,7 +74,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8211",
             "secret_key":"rzp_test_5F2jxuWTSx6oSy",
             "secret_secret":"MAVYViZ1ZKYKBSZQ2qfph0tH"
-        }//KMC
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -85,7 +85,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
             "secret_key":"rzp_test_uRMGYbNQuM4Sqb",
             "secret_secret":"REE8QyNfI7MgsV7gErovu5vZ"
-        }//MHB
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -96,7 +96,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
             "secret_key":"rzp_test_aiba6vN9ypIPla",
             "secret_secret":"APYxZ32e4F7CgjsldKzJkwEH"
-        }//MHN
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -107,7 +107,7 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8204",
             "secret_key":"rzp_test_D4Hws1XyYvq1dH",
             "secret_secret":"1jXtPjx3CpbPZcalGtzGlFOe"
-        }//MMH
+        }
     },
     {
         "model": "payments.paymenthospitalkey",
@@ -116,7 +116,7 @@
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8212"
-        }//MCB
+        }
     }
 
 ]
