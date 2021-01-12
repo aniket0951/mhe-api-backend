@@ -25,7 +25,8 @@ from apps.notifications.utils import (cancel_parameters,
                                       doctor_rebook_parameters)
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
-from apps.payments.views import RefundView
+from apps.payments.razorpay_views import RazorRefundView
+from apps.payments.views import AppointmentPaymentView
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
@@ -41,16 +42,9 @@ from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
 from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
-from proxy.custom_serializables import \
-    PaymentUpdate as serializable_PaymentUpdate
-from proxy.custom_serializables import \
-    UHIDPaymentUpdate as serializable_UHIDPaymentUpdate
-from proxy.custom_serializables import \
-    OPBillingPaymentUpdate as serializable_OPBillingPaymentUpdate
-from proxy.custom_serializables import \
-    IPDepositPaymentUpdate as serializable_IPDepositPaymentUpdate
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import OrderingFilter
@@ -59,6 +53,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from utils import custom_viewsets
+
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
@@ -372,7 +367,7 @@ class CancelMyAppointment(ProxyView):
                 instance.save()
                 refund_param = cancel_and_refund_parameters(
                     {"appointment_identifier": instance.appointment_identifier})
-                response = RefundView.as_view()(refund_param)
+                response = RazorRefundView.as_view()(refund_param)
                 param = dict()
                 param["app_id"] = instance.appointment_identifier
                 param["cancel_remark"] = instance.reason.reason
@@ -387,12 +382,9 @@ class CancelMyAppointment(ProxyView):
                             if refund_instance:
                                 param["refund_status"] = "Y"
                                 param["refund_trans_id"] = refund_instance.transaction_id
-                                param["refund_amount"] = str(
-                                    (int(refund_instance.amount)))
-                                param["refund_time"] = refund_instance.created_at.time().strftime(
-                                    "%H:%M")
-                                param["refund_date"] = refund_instance.created_at.date().strftime(
-                                    "%d/%m/%Y")
+                                param["refund_amount"] = str((int(refund_instance.amount)))
+                                param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
+                                param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
                 success_status = True
@@ -1301,119 +1293,3 @@ class CurrentAppointmentListView(ProxyView):
         return self.custom_success_response(message=message,
                                             success=True, data={"appointment_list": appointment_list, "today_count": today_count, "tomorrow_count": tomorrow_count})
 
-
-class AppointmentPaymentView(ProxyView):
-    permission_classes = [AllowAny]
-    source = 'OnlinePayment'
-
-    def get_request_data(self, request):
-        request_xml = serializable_PaymentUpdate(request.data)
-        request_data = custom_serializer().serialize(request_xml, 'XML')
-        return request_data
-
-    def post(self, request, *args, **kwargs):
-        return self.proxy(request, *args, **kwargs)
-
-    def parse_proxy_response(self, response):
-        root = ET.fromstring(response.content)
-        status = root.find("Status").text
-        message = root.find("Message").text
-        success_status = False
-        data = dict()
-        if status == '1':
-            bill_detail = root.find("BillDetail").text
-            data["payDetailAPIResponse"] = dict()
-            data["payDetailAPIResponse"]["BillDetail"] = bill_detail
-            if bill_detail:
-                app_id = self.request.data.get("app_id")
-                aap_list = ast.literal_eval(bill_detail)
-                if aap_list:
-                    appointment_identifier = aap_list[0].get("AppointmentId")
-                    appointment_instance = Appointment.objects.filter(
-                        appointment_identifier=app_id).first()
-                    if appointment_instance:
-                        success_status = True
-                        appointment_instance.payment_status = "success"
-                        if appointment_identifier:
-                            appointment_instance.appointment_identifier = appointment_identifier
-                        appointment_instance.save()
-        return self.custom_success_response(message=message,
-                                            success=success_status, data=data)
-
-class UHIDPaymentView(ProxyView):
-    permission_classes = [AllowAny]
-    source = 'PaymentForRegistration'
-
-    def get_request_data(self, request):
-        request_xml = serializable_UHIDPaymentUpdate(request.data)
-        request_data = custom_serializer().serialize(request_xml, 'XML')
-        return request_data
-
-    def post(self, request, *args, **kwargs):
-        return self.proxy(request, *args, **kwargs)
-
-    def parse_proxy_response(self, response):
-        root = ET.fromstring(response.content)
-        status = root.find("Status").text
-        message = root.find("Message").text
-        success_status = False
-        data = dict()
-        if status == '1':
-            success_status = True
-            data["uhid_number"] = root.find("UID").text 
-            data["ReceiptNo"] = root.find("ReceiptNo").text 
-        return self.custom_success_response(message=message,
-                                            success=success_status, data=data)
-
-
-class OPBillingPaymentView(ProxyView):
-    permission_classes = [AllowAny]
-    source = 'OPBilling'
-
-    def get_request_data(self, request):
-        request_xml = serializable_OPBillingPaymentUpdate(request.data)
-        request_data = custom_serializer().serialize(request_xml, 'XML')
-        return request_data
-
-    def post(self, request, *args, **kwargs):
-        return self.proxy(request, *args, **kwargs)
-
-    def parse_proxy_response(self, response):
-        root = ET.fromstring(response.content)
-        status = root.find("Status").text
-        message = root.find("Message").text
-        success_status = False
-        data = dict()
-        if status == '1':
-            bill_detail = root.find("BillDetail").text
-            success_status = True
-            data["payDetailAPIResponse"] = dict()
-            data["payDetailAPIResponse"]["BillDetail"] = bill_detail
-        return self.custom_success_response(message=message,
-                                            success=success_status, data=data)
-
-class IPDepositPaymentView(ProxyView):
-    permission_classes = [AllowAny]
-    source = 'InsertOnlinePatientDeposit'
-
-    def get_request_data(self, request):
-        request_xml = serializable_IPDepositPaymentUpdate(request.data)
-        request_data = custom_serializer().serialize(request_xml, 'XML')
-        return request_data
-
-    def post(self, request, *args, **kwargs):
-        return self.proxy(request, *args, **kwargs)
-
-    def parse_proxy_response(self, response):
-        root = ET.fromstring(response.content)
-        status = root.find("Status").text
-        message = root.find("Message").text
-        success_status = False
-        data = dict()
-        if status == '1':
-            reciept_number = root.find("RecieptNumber").text
-            success_status = True
-            data["payDetailAPIResponse"] = dict()
-            data["payDetailAPIResponse"]["RecieptNumber"] = reciept_number
-        return self.custom_success_response(message=message,
-                                            success=success_status, data=data)

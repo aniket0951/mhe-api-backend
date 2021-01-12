@@ -479,6 +479,16 @@ class PatientAppStatus:
         serializer.add_property('PrefHospitalUserCount',
                                 self.preferred_hospital_count)
 
+class CheckAppointmentPaymentStatus:
+
+    def __init__(self, param):
+        self.appointment_id = param.get("appointment_id", None)
+        self.location_code = param.get("location_code", None)
+        
+    def serialize(self, serializer):
+        serializer.start_object('checkAppPaymentStatusParam')
+        serializer.add_property('LocationCode', self.location_code)
+        serializer.add_property('AppointmentId', self.appointment_id)
 
 class PaymentUpdate:
     def __init__(self, param):

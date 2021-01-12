@@ -88,6 +88,9 @@ class RazorPayUtil:
         self.set_invoice_status(invoice_data.get("status"))
         return invoice_data
 
+    def fetch_payment(self):
+        return self.client.payment.fetch(self.payment_id)
+
     def capture_payment(self,amount):
         if not amount or not self.payment_id:
             return None
@@ -100,7 +103,9 @@ class RazorPayUtil:
             return None
         if AMOUNT_OFFSET:
             amount_to_be_refunded *= int(AMOUNT_OFFSET)
-        return self.client.payment.refund(self.payment_id,amount_to_be_refunded)
+        refund_data = self.client.payment.refund(self.payment_id,amount_to_be_refunded)
+        self.refund_id = refund_data.get("id")
+        return refund_data
 
     def fetch_refund(self):
         if not self.refund_id:

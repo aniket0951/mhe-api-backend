@@ -13,11 +13,12 @@ from apps.master_data.models import Hospital
 from apps.master_data.exceptions import HospitalDoesNotExistsValidationException
 from apps.appointments.models import Appointment,HealthPackageAppointment
 from apps.appointments.serializers import AppointmentSerializer,HealthPackageAppointmentSerializer
-from apps.appointments.views import AppointmentPaymentView,UHIDPaymentView,OPBillingPaymentView,IPDepositPaymentView
 from apps.appointments.utils import cancel_and_refund_parameters
 from apps.payments.models import Payment
+from apps.payments.views import AppointmentPaymentView,UHIDPaymentView,OPBillingPaymentView,IPDepositPaymentView,CheckAppointmentPaymentStatusView
 from apps.payments.exceptions import (
-                        InvalidGeneratedUHIDException, ProcessingIdDoesNotExistsValidationException,
+                        InvalidGeneratedUHIDException, 
+                        ProcessingIdDoesNotExistsValidationException,
                         MandatoryOrderIdException,
                         MandatoryProcessingIdException,
                         UHIDRegistrationFailedException,
@@ -60,6 +61,13 @@ class PaymentUtils:
     def get_razorpay_fetch_order_payment_details(hospital_secret,order_id):
         razor_pay = RazorPayUtil(key_id=hospital_secret,order_id=order_id)
         return razor_pay.fetch_payments_of_order()
+
+    @staticmethod
+    def initiate_refund(hospital_secret,payment_id,amount_to_be_refunded):
+        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
+        razor_pay = RazorPayUtil(key_id=hospital_secret,payment_id=payment_id)
+        refund_data = razor_pay.initiate_refunt(amount_to_be_refunded=amount_to_be_refunded)
+        return refund_data
 
     @staticmethod
     def get_hospital_from_location_code(location_code):
@@ -110,9 +118,7 @@ class PaymentUtils:
             raise MandatoryOrderIdException
         payment_instance = None
         try:
-            payment_instance = Payment.objects.get(
-                                        razor_order_id=razor_order_id
-                                    )
+            payment_instance = Payment.objects.get(razor_order_id=razor_order_id)
         except Exception:
             raise ProcessingIdDoesNotExistsValidationException
         return payment_instance
@@ -158,17 +164,23 @@ class PaymentUtils:
         return PaymentUtils.get_razorpay_order_details(hospital_secret,razor_order_id)
 
     @staticmethod
+    def get_razorpay_payment_data_from_order_id(hospital_secret,razor_order_id,order_details=None):
+        if not order_details:
+            order_details = PaymentUtils.get_razorpay_order_details(hospital_secret,razor_order_id)
+        order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_secret,razor_order_id)
+        order_payment_data_item = dict()
+        if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
+            for item in order_payment_data.get("items"):
+                if order_payment_data_item.get("amount")==order_details.get("amount") and item.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CAPTURED:
+                    order_payment_data_item = item
+        return order_payment_data_item
+
+    @staticmethod
     def get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance):
         razor_order_id = payment_instance.razor_order_id
         hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
         hospital_secret = settings.RAZOR_KEY_ID or hospital_key_info.secret_key
-        order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_secret,razor_order_id)
-        order_payment_data_item = dict()
-        if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
-            order_payment_data_item = order_payment_data.get("items")[-1]
-            for item in order_payment_data.get("items"):
-                if item.get("amount")==order_details.get("amount") and item.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CAPTURED:
-                    order_payment_data_item = item
+        order_payment_data_item = PaymentUtils.get_razorpay_payment_data_from_order_id(hospital_secret,razor_order_id,order_details)
         payment_instance.raw_info_from_salucro_response = order_payment_data_item or order_details 
         payment_instance.save()
         return order_payment_data_item
@@ -190,6 +202,12 @@ class PaymentUtils:
 
         if order_details.get("status") != PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID:
             raise UnsuccessfulPaymentException
+    
+    @staticmethod
+    def update_failed_payment_response(payment_instance):
+        payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
+        payment_instance.payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+        payment_instance.save()
 
     @staticmethod
     def get_payment_amount(order_details):
@@ -823,12 +841,42 @@ class PaymentUtils:
             payment_response.update({"DepositAmount" :bill_details_response.get("DepositAmount")})
             
         payment_response.update({
-            "uhid_number":bill_details_response.get("HospitalNo"),
-            "ReceiptNo":bill_details_response.get("ReceiptNo")
+            "uhid_number"   : bill_details_response.get("HospitalNo"),
+            "ReceiptNo"     : bill_details_response.get("ReceiptNo")
         })
         return payment_response
 
+    @staticmethod
+    def serialize_check_appointment_payment_status_response(payment_check_response,appointment_id):
+        payment_response = dict()
+        if  not payment_check_response or \
+            not payment_check_response.get("Status") or \
+            not payment_check_response.get("Status")==PaymentConstants.CHECK_APPOINTMENT_PAYMENT_STATUS_FAILED:
+            return payment_response
+        if payment_check_response.get("Status")==PaymentConstants.CHECK_APPOINTMENT_PAYMENT_STATUS_SUCCESS:
+            payment_response.update({
+                "uhid_number"           : payment_check_response.get("APPOLPPatHospNo"),
+                "ReceiptNo"             : payment_check_response.get("APPOLPReceiptNo"),
+                "appointment_identifier": appointment_id,
+                "StatusMessage"         : PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,
+            })       
+        return payment_response
 
+
+    @staticmethod
+    def check_appointment_payment_status(payment_instance):
+        appointment_id = PaymentUtils.get_appointment_identifier(payment_instance)
+        payment_check_request = {
+            "appointment_id":appointment_id,
+            "location_code":payment_instance.location.code
+        }
+        payment_check_response = CheckAppointmentPaymentStatusView.as_view()(cancel_and_refund_parameters(payment_check_request))
+        if  not payment_check_response.status_code==200 or \
+            not payment_check_response.data or \
+            not payment_check_response.data.get("data"):
+            raise InvalidResponseFromManipalServers
+        payment_response = payment_check_response.data.get("data")
+        return PaymentUtils.serialize_check_appointment_payment_status_response(payment_response,appointment_id)
 
     @staticmethod
     def update_uhid_payment_details_with_manipal(payment_instance,order_details):
@@ -914,6 +962,9 @@ class PaymentUtils:
         if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
             return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details)
         elif payment_instance.appointment or payment_instance.payment_for_health_package:
+            payment_check_response = PaymentUtils.check_appointment_payment_status(payment_instance)
+            if payment_check_response:
+                return payment_check_response
             return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details)
         elif payment_instance.payment_for_op_billing:
             return PaymentUtils.update_op_bill_payment_details_with_manipal(payment_instance,order_details)

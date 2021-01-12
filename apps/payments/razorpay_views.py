@@ -1,4 +1,4 @@
-from apps.payments.constants import PaymentConstants
+import ast
 import json
 import logging
 import xml.etree.ElementTree as ET
@@ -15,12 +15,19 @@ from apps.appointments.serializers import (HealthPackageAppointmentDetailSeriali
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import Patient
 from django_filters.rest_framework import DjangoFilterBackend
+
+from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_serializables import EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializables import CorporateRegistration as serializable_CorporateRegistration
-from proxy.custom_serializers import ObjectSerializer as custom_serializer
+from proxy.custom_serializables import PaymentUpdate as serializable_PaymentUpdate
+from proxy.custom_serializables import UHIDPaymentUpdate as serializable_UHIDPaymentUpdate
+from proxy.custom_serializables import OPBillingPaymentUpdate as serializable_OPBillingPaymentUpdate
+from proxy.custom_serializables import IPDepositPaymentUpdate as serializable_IPDepositPaymentUpdate
+from proxy.custom_serializables import CheckAppointmentPaymentStatus as serializable_CheckAppointmentPaymentStatus
 from proxy.custom_views import ProxyView
+
 from rest_framework import filters, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
@@ -28,19 +35,20 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
+from rest_framework.exceptions import APIException
 from utils import custom_viewsets
-from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
-                                      IsSelfUserOrFamilyMember)
+
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
 from utils.custom_sms import send_sms
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
-from .exceptions import ProcessingIdDoesNotExistsValidationException
+from .exceptions import ProcessingIdDoesNotExistsValidationException,IncompletePaymentCannotProcessRefund
 from .models import Payment, PaymentReceipts
-from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer,
-                          PaymentSerializer)
-
+from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer, PaymentSerializer)
 from .utils import PaymentUtils
+
+from apps.payments.constants import PaymentConstants
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -186,61 +194,22 @@ class RazorPaymentResponse(APIView):
         
         if payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
+        
+        payment_response = dict()
+        
+        try:
+            payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,order_details)
+            PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
+            PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
+            PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
+            PaymentUtils.payment_for_health_package(payment_instance,payment_response)
 
-        payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,order_details)
-        PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
-        PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
-        PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
-        PaymentUtils.payment_for_health_package(payment_instance,payment_response)
+        except Exception as e:
+            PaymentUtils.update_failed_payment_response(payment_instance)
+            raise Exception(str(e))
 
         return Response(data=payment_response, status=status.HTTP_200_OK)
       
-class OldRazorPaymentResponse(APIView):
-    permission_classes = (IsPatientUser,)
-
-    def post(self, request, format=None):
-
-        processing_id = request.data.get("processing_id")
-        razor_order_id = request.data.get("order_id")
-        payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
-        order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance,razor_order_id)
-        
-        uhid = "-1"
-        payment_instance.raw_info_from_salucro_response = order_details
-        payment_instance.save()
-
-        response_token = request.data["responseToken"]
-        response_token_json = json.loads(response_token)
-        status_code = response_token_json["status_code"]
-        payment_response = response_token_json["payment_response"]
-        payment_account = response_token_json["accounts"]
-        
-        if status_code == 1200:
-            payment = PaymentUtils.initialize_payment_details(payment_account)
-            payment = PaymentUtils.set_payment_details_for_appointment_health_package(payment_instance,payment_response,payment)
-            payment = PaymentUtils.set_payment_details_for_uhid_with_appointment_health_package(payment_instance,payment_response,payment)
-            payment = PaymentUtils.set_payment_details_for_op_billing(payment_instance,payment_response,payment)
-            payment = PaymentUtils.set_payment_details_for_ip_deposit(payment_instance,payment_response,payment)
-            PaymentUtils.update_payment_details(payment_instance,payment_response,payment)
-        
-            uhid_info = PaymentUtils.initialize_uhid_info(payment)
-            if uhid_info.get("uhid_number"):
-                uhid = uhid_info.get("uhid_number")
-            PaymentUtils.payment_for_uhid_creation(payment_instance,uhid_info)
-            PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,payment)
-            PaymentUtils.payment_for_health_package(payment_instance,payment_response)
-        else:
-            payment_instance.status = "failure"
-            payment_instance.uhid_number = payment_account["account_number"]
-            payment_instance.save()
-        txnstatus = response_token_json["status_code"]
-        txnamount = payment_response["net_amount_debit"]
-        txnid = payment_response["txnid"]
-        param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
-            txnid, txnstatus, txnamount, uhid)
-            
-        return HttpResponseRedirect(settings.REDIRECT_URL + param)
-
 class RazorPaymentReturn(APIView):
     permission_classes = (AllowAny,)
     parser_classes = [FormParser, MultiPartParser, JSONParser]
@@ -433,37 +402,54 @@ class RazorRefundView(APIView):
 
     def post(self, request, format=None):
 
-        appointment_identifier = request.data.get(
-            "appointment_identifier", None)
-        appointment_instance = Appointment.objects.filter(
-            appointment_identifier=appointment_identifier).first()
+        appointment_identifier = request.data.get("appointment_identifier", None)
+        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+
         if appointment_instance.payment_appointment.exists():
+
             param = get_refund_param_for_razorpay(request.data)
-            url = settings.REFUND_URL
-            response = requests.post(url, data=param)
-            data = json.loads(response.text)
-            if data["status_code"] == 1200:
-                payment_instance = appointment_instance.payment_appointment.filter(
-                    status="success").first()
-                if payment_instance:
-                    refund_param = dict()
-                    refund_param["payment"] = payment_instance.id
-                    refund_param["uhid_number"] = data["accounts"]["account_number"]
-                    refund_param["processing_id"] = data["processing_id"]
-                    refund_param["transaction_id"] = data["transaction_id"]
-                    if data["status_message"] == "Request processed successfully":
-                        refund_param["status"] = "success"
-                    refund_param["amount"] = data["accounts"]["amount"]
-                    refund_param["receipt_number"] = data["payment_response"]["mihpayid"]
-                    refund_param["request_id"] = data["payment_response"]["request_id"]
-                    refund_instance = PaymentRefundSerializer(
-                        data=refund_param)
-                    refund_instance.is_valid(raise_exception=True)
-                    refund_instance.save()
-                    payment_instance.status = "Refunded"
-                    appointment_instance.payment_status = "Refunded"
-                    appointment_instance.save()
-                    payment_instance.save()
+            payment_instance = Payment.objects.get(id=appointment_instance.payment_appointment.id)
+            
+            razor_payment_id = None
+            if payment_instance.razor_payment_id:
+                razor_payment_id = payment_instance.razor_payment_id
+            elif payment_instance.razor_order_id:
+                razor_payment_data = PaymentUtils.get_razorpay_payment_data_from_order_id(param.get("auth_key"),payment_instance.razor_order_id)
+                razor_payment_id = razor_payment_data.get("id")
+
+            if not razor_payment_id:
+                raise IncompletePaymentCannotProcessRefund
+
+            refunded_payment_details = PaymentUtils.initiate_refund(
+                                            hospital_secret=param.get("auth_key"),
+                                            payment_id=razor_payment_id,
+                                            amount_to_be_refunded=param.get("amount")
+                                        )
+            if refunded_payment_details:
+                refund_param = dict()
+                
+                refund_param["status"] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS if refunded_payment_details.get("status") == PaymentConstants.RAZORPAY_PAYMENT_STATUS_PROCESSED else PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILEDPaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+                refund_param["payment"] = payment_instance.id
+                refund_param["uhid_number"] = payment_instance.uhid_number
+                refund_param["processing_id"] = payment_instance.processing_id
+                refund_param["transaction_id"] = payment_instance.transaction_id
+                refund_param["amount"] = param.get("amount")
+                refund_param["refund_id"] = refunded_payment_details.get("id")
+                refund_param["receipt_number"] = refunded_payment_details.get("id")
+                refund_param["razor_payment_id"] = refunded_payment_details.get("payment_id")
+                refund_param["request_id"] = refunded_payment_details.get("payment_id")
+                
+                refund_instance = PaymentRefundSerializer(data=refund_param)
+                refund_instance.is_valid(raise_exception=True)
+                refund_instance.save()
+
+                appointment_instance.payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
+                appointment_instance.save()
+
+                payment_instance.payment_refund = refund_instance
+                payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
+                payment_instance.save()
+
         return Response(status=status.HTTP_200_OK)
 
 

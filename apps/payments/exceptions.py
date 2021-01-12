@@ -65,3 +65,8 @@ class InvalidResponseFromManipalServers(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_bill_number'
     default_detail = 'Payment could not be processed'
+
+class IncompletePaymentCannotProcessRefund(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_payment'
+    default_detail = 'Payment is incomplete! Refund could not be processed!'

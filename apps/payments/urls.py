@@ -16,7 +16,8 @@ from .razorpay_views import (
                         RazorUHIDPayment,
                         RazorOPBillPayment,
                         RazorIPDepositPayment,
-                        RazorPaymentResponse
+                        RazorPaymentResponse,
+                        RazorRefundView
                     )
 
 router = DefaultRouter(trailing_slash=False)
@@ -38,6 +39,7 @@ urlpatterns = [
     path('razor_op_bill_payment', RazorOPBillPayment.as_view()),
     path('razor_ip_deposit_payment', RazorIPDepositPayment.as_view()),
     path('razor_payment_response', RazorPaymentResponse.as_view()),
+    path('razor_refund', RazorRefundView.as_view()),
 
     path('payment_response', PaymentResponse.as_view()),
     path('payment_return', PaymentReturn.as_view()),

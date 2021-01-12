@@ -24,7 +24,7 @@ def get_refund_param_for_razorpay(data=None):
     param["mid"] = mid
 
     # param["auth_user"] = settings.SALUCRO_AUTH_USER
-    # param["auth_key"] = settings.SALUCRO_AUTH_KEY
+    param["auth_key"] = secret_key
     # param["paymode"] = "payment-refund"
 
     param = set_patient(appointment_instance,param)
