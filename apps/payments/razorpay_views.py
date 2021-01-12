@@ -414,7 +414,8 @@ class RazorRefundView(APIView):
 
             if param.get("amount") and int(param.get("amount"))>0:
                 refunded_payment_details = PaymentUtils.initiate_refund(
-                                            hospital_secret=param.get("auth_key"),
+                                            hospital_key=param.get("key"),
+                                            hospital_secret=param.get("secret"),
                                             payment_id=razor_payment_id,
                                             amount_to_be_refunded=int(param.get("amount"))
                                         )

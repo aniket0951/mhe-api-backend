@@ -2,8 +2,6 @@ from typing import Any
 import razorpay
 from django.conf import settings
 
-KEY_ID = settings.RAZOR_KEY_ID
-KEY_SECRET = settings.RAZOR_KEY_SECRET
 APP_TITLE = settings.RAZOR_APP_TITLE
 APP_VERSION = settings.RAZOR_APP_VERSION
 PAYMENT_CURRENCY = settings.RAZOR_PAYMENT_CURRENCY
@@ -12,8 +10,8 @@ AMOUNT_OFFSET = settings.RAZOR_AMOUNT_OFFSET
 class RazorPayUtil:
 
     def __init__(self,
-        key_id=KEY_ID,
-        key_secret=KEY_SECRET,
+        key_id,
+        key_secret,
         app_title=APP_TITLE,
         app_version=APP_VERSION,
         invoice_id=None,

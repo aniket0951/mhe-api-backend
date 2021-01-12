@@ -46,28 +46,24 @@ logger = logging.getLogger('django')
 class PaymentUtils:
 
     @staticmethod
-    def create_razorpay_order_id(hospital_secret,amount,description,currency):
-        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
-        razor_pay = RazorPayUtil(key_id=hospital_secret) if hospital_secret else RazorPayUtil()
+    def create_razorpay_order_id(hospital_key,hospital_secret,amount,description,currency):
+        razor_pay = RazorPayUtil(key_id=hospital_key,key_secret=hospital_secret) if hospital_key and hospital_secret else RazorPayUtil()
         razor_pay.create_order(amount=amount,description=description,currency=currency)
         return razor_pay.order_id
 
     @staticmethod
-    def get_razorpay_order_details(hospital_secret,order_id):
-        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
-        razor_pay = RazorPayUtil(key_id=hospital_secret,order_id=order_id)
+    def get_razorpay_order_details(hospital_key,hospital_secret,order_id):
+        razor_pay = RazorPayUtil(key_id=hospital_key,key_secret=hospital_secret,order_id=order_id)
         return razor_pay.fetch_order()
 
     @staticmethod
-    def get_razorpay_fetch_order_payment_details(hospital_secret,order_id):
-        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
-        razor_pay = RazorPayUtil(key_id=hospital_secret,order_id=order_id)
+    def get_razorpay_fetch_order_payment_details(hospital_key,hospital_secret,order_id):
+        razor_pay = RazorPayUtil(key_id=hospital_key,key_secret=hospital_secret,order_id=order_id)
         return razor_pay.fetch_payments_of_order()
 
     @staticmethod
-    def initiate_refund(hospital_secret,payment_id,amount_to_be_refunded):
-        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
-        razor_pay = RazorPayUtil(key_id=hospital_secret,payment_id=payment_id)
+    def initiate_refund(hospital_key,hospital_secret,payment_id,amount_to_be_refunded):
+        razor_pay = RazorPayUtil(key_id=hospital_key,key_secret=hospital_secret,payment_id=payment_id)
         refund_data = razor_pay.initiate_refunt(amount_to_be_refunded=amount_to_be_refunded)
         return refund_data
 
@@ -173,14 +169,15 @@ class PaymentUtils:
     def get_razorpay_order_details_payment_instance(payment_instance):
         razor_order_id = payment_instance.razor_order_id
         hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
-        hospital_secret = settings.RAZOR_KEY_ID or hospital_key_info.secret_key
-        return PaymentUtils.get_razorpay_order_details(hospital_secret,razor_order_id)
+        hospital_key = hospital_key_info.secret_key
+        hospital_secret = hospital_key_info.secret_secret
+        return PaymentUtils.get_razorpay_order_details(hospital_key,hospital_secret,razor_order_id)
 
     @staticmethod
-    def get_razorpay_payment_data_from_order_id(hospital_secret,razor_order_id,order_details=None):
+    def get_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,razor_order_id,order_details=None):
         if not order_details:
-            order_details = PaymentUtils.get_razorpay_order_details(hospital_secret,razor_order_id)
-        order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_secret,razor_order_id)
+            order_details = PaymentUtils.get_razorpay_order_details(hospital_key,hospital_secret,razor_order_id)
+        order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_key,hospital_secret,razor_order_id)
         order_payment_data_item = dict()
         if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
             for item in order_payment_data.get("items"):        
@@ -192,8 +189,9 @@ class PaymentUtils:
     def get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance):
         razor_order_id = payment_instance.razor_order_id
         hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
-        hospital_secret = settings.RAZOR_KEY_ID or hospital_key_info.secret_key
-        order_payment_data_item = PaymentUtils.get_razorpay_payment_data_from_order_id(hospital_secret,razor_order_id,order_details)
+        hospital_key = hospital_key_info.secret_key
+        hospital_secret = hospital_key_info.secret_secret
+        order_payment_data_item = PaymentUtils.get_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,razor_order_id,order_details)
         payment_instance.raw_info_from_salucro_response = order_payment_data_item or order_details 
         payment_instance.save()
         return order_payment_data_item
@@ -251,8 +249,10 @@ class PaymentUtils:
 
         if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0:
             hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
-            hospital_secret = settings.RAZOR_KEY_ID or hospital_key_info.secret_key
+            hospital_key = hospital_key_info.secret_key
+            hospital_secret = hospital_key_info.secret_secret
             refunded_payment_details = PaymentUtils.initiate_refund(
+                hospital_key=hospital_key,
                 hospital_secret=hospital_secret,
                 payment_id=payment_instance.razor_payment_id,
                 amount_to_be_refunded=int(payment_instance.amount)
@@ -364,11 +364,13 @@ class PaymentUtils:
 
     @staticmethod
     def set_order_id_for_appointments(param,payment_data):
-        hospital_secret = param["token"]["auth"]["key"]
+        hospital_key = param["token"]["auth"]["key"]
+        hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
         description = PaymentConstants.RAZORPAY_APPOINTMENT_PAYMENT_DESCRIPTION
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
+                                    hospital_key=hospital_key,
                                     hospital_secret=hospital_secret,
                                     amount=amount,
                                     description=description,
@@ -437,11 +439,13 @@ class PaymentUtils:
 
     @staticmethod
     def set_order_id_for_health_package(param,payment_data):
-        hospital_secret = param["token"]["auth"]["key"]
+        hospital_key = param["token"]["auth"]["key"]
+        hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
         description = PaymentConstants.RAZORPAY_HEALTH_PACKAGE_PURCHASE_DESCRIPTION
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
+                                    hospital_key=hospital_key,
                                     hospital_secret=hospital_secret,
                                     amount=amount,
                                     description=description,
@@ -499,11 +503,13 @@ class PaymentUtils:
 
     @staticmethod
     def set_order_id_for_uhid(param,payment_data):
-        hospital_secret = param["token"]["auth"]["key"]
+        hospital_key = param["token"]["auth"]["key"]
+        hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
         description = PaymentConstants.RAZORPAY_UHID_PURCHASE_DESCRIPTION
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
+                                    hospital_key=hospital_key,
                                     hospital_secret=hospital_secret,
                                     amount=amount,
                                     description=description,
@@ -569,19 +575,21 @@ class PaymentUtils:
 
     @staticmethod
     def set_order_id_for_op_bill(param,payment_data):
-            hospital_secret = param["token"]["auth"]["key"]
-            amount = int(float(param["token"]["accounts"][0]["amount"]))
-            description = PaymentConstants.RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION
-            currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
-            order_id = PaymentUtils.create_razorpay_order_id(
-                                        hospital_secret=hospital_secret,
-                                        amount=amount,
-                                        description=description,
-                                        currency=currency
-                                    )
-            param["token"]["order_id"] = order_id
-            payment_data["razor_order_id"] = order_id
-            return param,payment_data
+        hospital_key = param["token"]["auth"]["key"]
+        hospital_secret = param["token"]["auth"].pop("secret")
+        amount = int(float(param["token"]["accounts"][0]["amount"]))
+        description = PaymentConstants.RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION
+        currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
+        order_id = PaymentUtils.create_razorpay_order_id(
+                                    hospital_key=hospital_key,
+                                    hospital_secret=hospital_secret,
+                                    amount=amount,
+                                    description=description,
+                                    currency=currency
+                                )
+        param["token"]["order_id"] = order_id
+        payment_data["razor_order_id"] = order_id
+        return param,payment_data
     
 
 
@@ -613,11 +621,13 @@ class PaymentUtils:
 
     @staticmethod
     def set_order_id_for_ip_deposit(param,payment_data):
-        hospital_secret = param["token"]["auth"]["key"]
+        hospital_key = param["token"]["auth"]["key"]
+        hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
         description = PaymentConstants.RAZORPAY_IP_DEPOSIT_PAYMENT_DESCRIPTION
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
+                                    hospital_key=hospital_key,
                                     hospital_secret=hospital_secret,
                                     amount=amount,
                                     description=description,

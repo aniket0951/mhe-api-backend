@@ -158,6 +158,7 @@ class PaymentHospitalKey(MyBaseModel):
     mid = EncryptedTextField(blank=True, null=True)
 
     secret_key = EncryptedTextField(blank=True, null=True)
+    secret_secret = EncryptedTextField(blank=True, null=True)
 
 
 class PaymentReceipts(MyBaseModel):
