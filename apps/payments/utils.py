@@ -219,7 +219,7 @@ class PaymentUtils:
             order_payment_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED:
             payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
 
-        payment_instance.payment_status = payment_status
+        payment_instance.status = payment_status
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.amount = PaymentUtils.get_payment_amount(order_details)
         payment_instance.transaction_id = order_payment_details.get("id")
@@ -229,7 +229,7 @@ class PaymentUtils:
     @staticmethod
     def update_failed_payment_response(payment_instance):
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
-        payment_instance.payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+        payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
         payment_instance.save()
 
     @staticmethod
