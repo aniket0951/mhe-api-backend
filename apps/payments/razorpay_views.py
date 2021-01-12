@@ -404,7 +404,7 @@ class RazorRefundView(APIView):
             if payment_instance.razor_payment_id:
                 razor_payment_id = payment_instance.razor_payment_id
             elif payment_instance.razor_order_id:
-                razor_payment_data = PaymentUtils.get_razorpay_payment_data_from_order_id(param.get("auth_key"),payment_instance.razor_order_id)
+                razor_payment_data = PaymentUtils.get_razorpay_payment_data_from_order_id(param.get("key"),param.get("secret"),payment_instance.razor_order_id)
                 razor_payment_id = razor_payment_data.get("id")
             
             if not razor_payment_id:
