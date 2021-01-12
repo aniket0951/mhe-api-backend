@@ -174,6 +174,10 @@ class RazorPaymentResponse(APIView):
 
         logger.info("request : %s"%str(request))
         logger.info("request data: %s"%str(request.data))
+
+        is_requested_from_mobile = False
+        if request.data.get("order_id"):
+            is_requested_from_mobile = True
         
         payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
@@ -188,7 +192,7 @@ class RazorPaymentResponse(APIView):
         
         payment_response = dict()
         try:
-            payment_response = PaymentUtils.update_manipal_on_payment(payment_instance,order_details)
+            payment_response = PaymentUtils.update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details)
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
             PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)

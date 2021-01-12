@@ -1,4 +1,4 @@
-
+import time
 import json
 import logging
 from os import stat
@@ -1014,19 +1014,29 @@ class PaymentUtils:
         return PaymentUtils.serialize_ipdeposit_payment_response(bill_details_response)
 
 
-
+    @staticmethod
+    def wait_for_manipal_response(payment_instance):
+        payment_check_response = dict()
+        retry_count = 0
+        while retry_count<3 and not payment_check_response:
+            payment_check_response = PaymentUtils.check_appointment_payment_status(payment_instance)
+            if not payment_check_response:
+                time.sleep(5)
+            retry_count += 1
+        return payment_check_response
 
 
 
 
     @staticmethod
-    def update_manipal_on_payment(payment_instance,order_details):
+    def update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details):
         if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
             return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details)
         elif payment_instance.appointment or payment_instance.payment_for_health_package:
-            payment_check_response = PaymentUtils.check_appointment_payment_status(payment_instance)
-            if payment_check_response:
-                return payment_check_response
+            if is_requested_from_mobile:
+                payment_check_response = PaymentUtils.wait_for_manipal_response(payment_instance)
+                if payment_check_response:
+                    return payment_check_response
             return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details)
         elif payment_instance.payment_for_op_billing:
             return PaymentUtils.update_op_bill_payment_details_with_manipal(payment_instance,order_details)
