@@ -48,17 +48,20 @@ class PaymentUtils:
 
     @staticmethod
     def create_razorpay_order_id(hospital_secret,amount,description,currency):
+        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
         razor_pay = RazorPayUtil(key_id=hospital_secret) if hospital_secret else RazorPayUtil()
         razor_pay.create_order(amount=amount,description=description,currency=currency)
         return razor_pay.order_id
 
     @staticmethod
     def get_razorpay_order_details(hospital_secret,order_id):
+        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
         razor_pay = RazorPayUtil(key_id=hospital_secret,order_id=order_id)
         return razor_pay.fetch_order()
 
     @staticmethod
     def get_razorpay_fetch_order_payment_details(hospital_secret,order_id):
+        hospital_secret = settings.RAZOR_KEY_ID or hospital_secret
         razor_pay = RazorPayUtil(key_id=hospital_secret,order_id=order_id)
         return razor_pay.fetch_payments_of_order()
 
