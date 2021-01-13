@@ -775,10 +775,10 @@ class AppointmentPaymentView(ProxyView):
             bill_detail = root.find("BillDetail").text
             data["payDetailAPIResponse"] = dict()
             data["payDetailAPIResponse"]["BillDetail"] = bill_detail
-            if bill_detail:
+            if bill_detail and self.request.data:
                 app_id = self.request.data.get("app_id")
                 aap_list = ast.literal_eval(bill_detail)
-                if aap_list:
+                if aap_list and len(aap_list)>0:
                     appointment_identifier = aap_list[0].get("AppointmentId")
                     appointment_instance = Appointment.objects.filter(
                         appointment_identifier=app_id).first()

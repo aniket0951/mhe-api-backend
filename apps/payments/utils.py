@@ -668,6 +668,8 @@ class PaymentUtils:
 
     @staticmethod
     def get_bill_details(payment_response,bill_detail_label,api_type):
+        if not payment_response:
+            return payment_response
         payment_paydetail = payment_response[api_type]
         bill_detail = {}
         if payment_paydetail[bill_detail_label]:
@@ -979,6 +981,7 @@ class PaymentUtils:
             "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        logger.info("payment_update_response %s"%(str(payment_update_response)))
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
