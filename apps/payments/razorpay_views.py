@@ -12,6 +12,7 @@ from django.http import HttpResponseRedirect
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (HealthPackageAppointmentDetailSerializer,)
+from apps.appointments.utils import cancel_and_refund_parameters
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import Patient
 from django_filters.rest_framework import DjangoFilterBackend
@@ -44,6 +45,7 @@ from .serializers import (PaymentReceiptsSerializer, PaymentSerializer)
 from .utils import PaymentUtils
 
 from apps.payments.constants import PaymentConstants
+from apps.payments.views import RefundView
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -409,6 +411,11 @@ class RazorRefundView(APIView):
             elif payment_instance.razor_order_id:
                 razor_payment_data = PaymentUtils.get_razorpay_payment_data_from_order_id(param.get("key"),param.get("secret"),payment_instance.razor_order_id)
                 razor_payment_id = razor_payment_data.get("id")
+            else:
+                refund_param = cancel_and_refund_parameters(
+                    {"appointment_identifier": appointment_identifier})
+                response = RefundView.as_view()(refund_param)
+                return Response(status=status.HTTP_200_OK)
             
             if not razor_payment_id:
                 raise IncompletePaymentCannotProcessRefund
