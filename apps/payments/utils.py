@@ -718,6 +718,17 @@ class PaymentUtils:
         elif payment_instance.appointment:
             appointment_type = "A"
         return appointment_type
+
+    @staticmethod
+    def get_health_package_appointment_code(payment_instance):
+        hp_codes = []
+        if payment_instance.health_package_appointment:
+            appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
+            if appointment_instance and appointment_instance.health_package:
+                for health_package in appointment_instance.health_package.all():
+                    if health_package.code:
+                        hp_codes.append(health_package.code)
+        return "||".join(hp_codes) if hp_codes else None
         
     @staticmethod
     def get_uhid_number(payment_instance):
@@ -977,11 +988,11 @@ class PaymentUtils:
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
             "app_date":PaymentUtils.get_payment_appointment_date(payment_instance),
+            "package_code":PaymentUtils.get_health_package_appointment_code(payment_instance),
             "type":PaymentUtils.get_appointment_type(payment_instance),
             "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
-        logger.info("payment_update_response %s"%(str(payment_update_response)))
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
