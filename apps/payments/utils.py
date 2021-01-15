@@ -728,7 +728,7 @@ class PaymentUtils:
                 for health_package in appointment_instance.health_package.all():
                     if health_package.code:
                         hp_codes.append(health_package.code)
-        return "||".join(hp_codes) if hp_codes else None
+        return "||".join(hp_codes) if hp_codes else "NA"
         
     @staticmethod
     def get_uhid_number(payment_instance):
