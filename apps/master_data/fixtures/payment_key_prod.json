@@ -5,7 +5,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8205"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8205",
+            "secret_key":"rzp_live_fP6vAKxBSbXlG4",
+            "secret_secret":"L9jA7anGBJOqpWD40sJOGemt"
         }
     },
     {
@@ -14,7 +16,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8206"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8206",
+            "secret_key":"rzp_live_DbrE7Tl2pc4ArL",
+            "secret_secret":"9veXbblN09aIKIgd6ttmRM2R"
         }
     },
     {
@@ -23,7 +27,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8207"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8207",
+            "secret_key":"rzp_live_44W8cKeWrPcBr9",
+            "secret_secret":"7GrM2pl5sxo7CGDYN1Hj6RpF"
         }
     },
     {
@@ -32,7 +38,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8208"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8208",
+            "secret_key":"rzp_live_iNoEKRR8h7lMVV",
+            "secret_secret":"UPcVC78y2r0P2UN4RpacsBV7"
         }
     },
     {
@@ -41,7 +49,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8209"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8209",
+            "secret_key":"rzp_live_4CBcWNn9rG3wIx",
+            "secret_secret":"BZTuNVXNpj4gwFlOTNQHyzd0"
         }
     },
     {
@@ -50,7 +60,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8210"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8210",
+            "secret_key":"rzp_live_jbMnpDc7EVGD59",
+            "secret_secret":"SBvZ2VUDma4fyqNDQgEA0IFQ"
         }
     },
     {
@@ -59,7 +71,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8211"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8211",
+            "secret_key":"rzp_live_OA8XO6APix0OgA",
+            "secret_secret":"i8cvQrDdO2V6NkaPM3T3uotH"
         }
     },
     {
@@ -68,7 +82,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8202"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "secret_key":"rzp_live_1CnLcmKHKbNgC5",
+            "secret_secret":"CjFVicVv09PuxdeaDXSc2BYV"
         }
     },
     {
@@ -77,7 +93,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8203"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
+            "secret_key":"rzp_live_i0EMBAx7MIC0RW",
+            "secret_secret":"sEgkoAFjai3hNkhRQFKkCtnJ"
         }
     },
     {
@@ -86,7 +104,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8204"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8204",
+            "secret_key":"rzp_live_uXnFP2ZET8IZQx",
+            "secret_secret":"MSJQ343iJvfMJ9kMOn8uKNyD"
         }
     },
     {

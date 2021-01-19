@@ -1,61 +1,58 @@
-import base64
-import hashlib
+import ast
 import json
 import logging
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
-from random import randint
 
 import requests
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.core import serializers
+
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import redirect, render
+from django.http import HttpResponseRedirect
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import (
-    AppointmentSerializer, HealthPackageAppointmentDetailSerializer,
-    HealthPackageAppointmentSerializer)
-from apps.health_packages.models import HealthPackage
-from apps.health_packages.serializers import HealthPackageSerializer
+                        AppointmentSerializer, 
+                        HealthPackageAppointmentDetailSerializer,
+                        HealthPackageAppointmentSerializer
+                    )
 from apps.manipal_admin.models import ManipalAdmin
-from apps.master_data.exceptions import \
-    HospitalDoesNotExistsValidationException
+from apps.master_data.exceptions import HospitalDoesNotExistsValidationException
 from apps.master_data.models import Hospital
-from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
-from apps.patients.serializers import (FamilyMemberSpecificSerializer,
-                                       PatientSpecificSerializer)
-from django_filters.rest_framework import DjangoFilterBackend
-from proxy.custom_serializables import \
-    EpisodeItems as serializable_EpisodeItems
+from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
+from proxy.custom_serializables import EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
 from proxy.custom_serializables import CorporateRegistration as serializable_CorporateRegistration
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+
+from proxy.custom_serializables import PaymentUpdate as serializable_PaymentUpdate
+from proxy.custom_serializables import UHIDPaymentUpdate as serializable_UHIDPaymentUpdate
+from proxy.custom_serializables import OPBillingPaymentUpdate as serializable_OPBillingPaymentUpdate
+from proxy.custom_serializables import IPDepositPaymentUpdate as serializable_IPDepositPaymentUpdate
+from proxy.custom_serializables import CheckAppointmentPaymentStatus as serializable_CheckAppointmentPaymentStatus
+
 from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,
-                                       permission_classes)
+from rest_framework.decorators import (api_view, parser_classes,permission_classes)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend
+
 from utils import custom_viewsets
-from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
-                                      IsSelfUserOrFamilyMember)
-from utils.custom_sms import send_sms
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
 from utils.payment_parameter_generator import get_payment_param
 from utils.refund_parameter_generator import get_refund_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
 from .models import Payment, PaymentReceipts, PaymentRefund
-from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer,
-                          PaymentSerializer)
+from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer, PaymentSerializer)
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -754,3 +751,143 @@ class CorporateUhidRegistration(ProxyView):
 
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
+
+
+class AppointmentPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'OnlinePayment'
+
+    def get_request_data(self, request):
+        request_xml = serializable_PaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            bill_detail = root.find("BillDetail").text
+            data["payDetailAPIResponse"] = dict()
+            data["payDetailAPIResponse"]["BillDetail"] = bill_detail
+            if bill_detail and self.request.data:
+                app_id = self.request.data.get("app_id")
+                aap_list = ast.literal_eval(bill_detail)
+                if aap_list and len(aap_list)>0:
+                    appointment_identifier = aap_list[0].get("AppointmentId")
+                    appointment_instance = Appointment.objects.filter(
+                        appointment_identifier=app_id).first()
+                    if appointment_instance:
+                        success_status = True
+                        appointment_instance.payment_status = "success"
+                        if appointment_identifier:
+                            appointment_instance.appointment_identifier = appointment_identifier
+                        appointment_instance.save()
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+class UHIDPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'PaymentForRegistration'
+
+    def get_request_data(self, request):
+        request_xml = serializable_UHIDPaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            success_status = True
+            data["uhid_number"] = root.find("UID").text 
+            data["ReceiptNo"] = root.find("ReceiptNo").text 
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+class OPBillingPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'OPBilling'
+
+    def get_request_data(self, request):
+        request_xml = serializable_OPBillingPaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            bill_detail = root.find("BillDetail").text
+            success_status = True
+            data["payDetailAPIResponse"] = dict()
+            data["payDetailAPIResponse"]["BillDetail"] = bill_detail
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+class IPDepositPaymentView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'InsertOnlinePatientDeposit'
+
+    def get_request_data(self, request):
+        request_xml = serializable_IPDepositPaymentUpdate(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        success_status = False
+        data = dict()
+        if status == '1':
+            reciept_number = root.find("RecieptNumber").text
+            success_status = True
+            data["payDetailAPIResponse"] = dict()
+            data["payDetailAPIResponse"]["RecieptNumber"] = reciept_number
+        return self.custom_success_response(message=message,
+                                            success=success_status, data=data)
+
+class CheckAppointmentPaymentStatusView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'checkAppPaymentStatus'
+
+    def get_request_data(self, request):
+        request_xml = serializable_CheckAppointmentPaymentStatus(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        check_app_payment_status_response = root.find("checkAppPaymentStatusResponse").text
+        data = dict()
+        if check_app_payment_status_response:
+            data = json.loads(check_app_payment_status_response)
+        return self.custom_success_response(
+                                message="checkAppPaymentStatus",
+                                success=True,
+                                data=data
+                            )

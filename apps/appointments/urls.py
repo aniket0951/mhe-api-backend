@@ -2,8 +2,8 @@ from django.urls import include, path
 
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
-
-from .views import (AppointmentDocumentsViewSet, AppointmentPaymentView,
+from apps.payments.views import AppointmentPaymentView
+from .views import (AppointmentDocumentsViewSet,
                     AppointmentPrescriptionViewSet, AppointmentsAPIView,
                     AppointmentVitalViewSet, CancelAndRefundView,
                     CancelHealthPackageAppointment, CancellationReasonlistView,

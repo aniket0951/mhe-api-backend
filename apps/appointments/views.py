@@ -25,7 +25,8 @@ from apps.notifications.utils import (cancel_parameters,
                                       doctor_rebook_parameters)
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
-from apps.payments.views import RefundView
+from apps.payments.razorpay_views import RazorRefundView
+from apps.payments.views import AppointmentPaymentView
 from apps.users.models import BaseUser
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
@@ -41,10 +42,9 @@ from proxy.custom_serializables import \
     UpdateCancelAndRefund as serializable_UpdateCancelAndRefund
 from proxy.custom_serializables import \
     UpdateRebookStatus as serializable_UpdateRebookStatus
-from proxy.custom_serializables import \
-    PaymentUpdate as serializable_PaymentUpdate
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.filters import OrderingFilter
@@ -53,12 +53,12 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from utils import custom_viewsets
+
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
 
-from .exceptions import (AppointmentAlreadyExistsException,
-                         AppointmentDoesNotExistsValidationException)
+from .exceptions import (AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
@@ -69,7 +69,7 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
-from .utils import cancel_and_refund_parameters, rebook_parameters
+from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
 from rest_framework.test import APIClient
 
 client = APIClient()
@@ -296,21 +296,23 @@ class CreateMyAppointment(ProxyView):
                 response_data["appointment_identifier"] = appointment_identifier
                 if consultation_response.status_code == 200 and consultation_response.data and consultation_response.data['data']:
                     response_data['consultation_object'] = consultation_response.data['data']
-                    if consultation_response.data['data'].get('IsFollowUp'):
-                        if consultation_response.data['data'].get('IsFollowUp') != "N":
-                            hv_charges = consultation_response.data['data'].get("OPDConsCharges")
-                            vc_charges = consultation_response.data['data'].get("VCConsCharges")
-                            pr_charges = consultation_response.data['data'].get("PRConsCharges")
-                            if (appointment_instance.appointment_mode == "HV" and hv_charges == "0") or (appointment_instance.appointment_mode == "VC" and vc_charges == "0") or (appointment_instance.appointment_mode == "PR" and pr_charges == "0"):
-                                corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
-                                corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
-                                followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
-                                appointment_instance.consultation_amount = 0
-                                response = AppointmentPaymentView.as_view()(followup_payment_param)
-                                appointment_instance.payment_status = "success"
-                            appointment_instance.is_follow_up = True
-                            appointment_instance.save()
-                            
+                    if  consultation_response.data['data'].get('IsFollowUp') and \
+                        consultation_response.data['data'].get('IsFollowUp') != "N":
+                        hv_charges = consultation_response.data['data'].get("OPDConsCharges")
+                        vc_charges = consultation_response.data['data'].get("VCConsCharges")
+                        pr_charges = consultation_response.data['data'].get("PRConsCharges")
+                        if (appointment_instance.appointment_mode == "HV" and hv_charges == "0") or (appointment_instance.appointment_mode == "VC" and vc_charges == "0") or (appointment_instance.appointment_mode == "PR" and pr_charges == "0"):
+                            corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
+                            corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
+                            corporate_appointment["processing_id"] = get_processing_id()
+                            corporate_appointment["transaction_number"] = "F"+appointment_identifier
+                            followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
+                            appointment_instance.consultation_amount = 0
+                            response = AppointmentPaymentView.as_view()(followup_payment_param)
+                            appointment_instance.payment_status = "success"
+                        appointment_instance.is_follow_up = True
+                        appointment_instance.save()
+                        
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
@@ -365,7 +367,7 @@ class CancelMyAppointment(ProxyView):
                 instance.save()
                 refund_param = cancel_and_refund_parameters(
                     {"appointment_identifier": instance.appointment_identifier})
-                response = RefundView.as_view()(refund_param)
+                response = RazorRefundView.as_view()(refund_param)
                 param = dict()
                 param["app_id"] = instance.appointment_identifier
                 param["cancel_remark"] = instance.reason.reason
@@ -380,12 +382,9 @@ class CancelMyAppointment(ProxyView):
                             if refund_instance:
                                 param["refund_status"] = "Y"
                                 param["refund_trans_id"] = refund_instance.transaction_id
-                                param["refund_amount"] = str(
-                                    (int(refund_instance.amount)))
-                                param["refund_time"] = refund_instance.created_at.time().strftime(
-                                    "%H:%M")
-                                param["refund_date"] = refund_instance.created_at.date().strftime(
-                                    "%d/%m/%Y")
+                                param["refund_amount"] = str((int(refund_instance.amount)))
+                                param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
+                                param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
                 request_param = cancel_and_refund_parameters(param)
                 response = CancelAndRefundView.as_view()(request_param)
                 success_status = True
@@ -1189,6 +1188,7 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
             feedback_serializer = FeedbacksSerializer(data=request.data)
         feedback_serializer.is_valid(raise_exception=True)
         feedback_serializer.save()
+        send_feedback_received_mail(feedback_serializer)
         return Response(data={"message": "Feedback Submitted"}, status=status.HTTP_200_OK)
 
 
@@ -1293,39 +1293,3 @@ class CurrentAppointmentListView(ProxyView):
         return self.custom_success_response(message=message,
                                             success=True, data={"appointment_list": appointment_list, "today_count": today_count, "tomorrow_count": tomorrow_count})
 
-
-class AppointmentPaymentView(ProxyView):
-    permission_classes = [AllowAny]
-    source = 'OnlinePayment'
-
-    def get_request_data(self, request):
-        request_xml = serializable_PaymentUpdate(request.data)
-        request_data = custom_serializer().serialize(request_xml, 'XML')
-        return request_data
-
-    def post(self, request, *args, **kwargs):
-        return self.proxy(request, *args, **kwargs)
-
-    def parse_proxy_response(self, response):
-        root = ET.fromstring(response.content)
-        status = root.find("Status").text
-        message = root.find("Message").text
-        success_status = False
-        data = dict()
-        if status == '1':
-            bill_detail = root.find("BillDetail").text
-            if bill_detail:
-                app_id = self.request.data.get("app_id")
-                aap_list = ast.literal_eval(bill_detail)
-                if aap_list:
-                    appointment_identifier = aap_list[0].get("AppointmentId")
-                    appointment_instance = Appointment.objects.filter(
-                        appointment_identifier=app_id).first()
-                    if appointment_instance:
-                        success_status = True
-                        appointment_instance.payment_status = "success"
-                        if appointment_identifier:
-                            appointment_instance.appointment_identifier = appointment_identifier
-                        appointment_instance.save()
-        return self.custom_success_response(message=message,
-                                            success=success_status, data=data)

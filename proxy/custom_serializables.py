@@ -479,12 +479,22 @@ class PatientAppStatus:
         serializer.add_property('PrefHospitalUserCount',
                                 self.preferred_hospital_count)
 
+class CheckAppointmentPaymentStatus:
+
+    def __init__(self, param):
+        self.appointment_id = param.get("appointment_id", None)
+        self.location_code = param.get("location_code", None)
+        
+    def serialize(self, serializer):
+        serializer.start_object('checkAppPaymentStatusParam')
+        serializer.add_property('AppointmentId', self.appointment_id)
+        serializer.add_property('LocationCode', self.location_code)
+        
 
 class PaymentUpdate:
     def __init__(self, param):
         self.uhid = param.get("uhid", None)
-        self.transaction_number = param.get(
-            "transaction_number", "CORPORATE_INFOSYS")
+        self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
         self.processing_id = param.get("processing_id", "CORPORATE")
         self.source = param.get("source", "PatientApp")
         self.drawer = param.get("drawer", "NA")
@@ -513,6 +523,76 @@ class PaymentUpdate:
         serializer.add_property('PlanCode', self.plan_code)
         serializer.add_property('IsFollowUp', self.is_followup)
 
+class UHIDPaymentUpdate:
+    def __init__(self, param):
+        self.location_code = param.get("location_code", None)
+        self.temp_id = param.get("temp_id", None)
+        self.gateway_id = param.get("gateway_id", "")
+        self.transaction_number = param.get("transaction_number", "CORPORATE_INFOSYS")
+        self.amt = param.get("amt", "0")
+        self.app_date = param.get("app_date", "")
+        self.mobile = param.get("mobile", None)
+        self.appiontment_identifier = param.get("appiontment_identifier", "")
+        self.discount_amt = param.get("discount_amt", "")
+        self.discount_reason = param.get("discount_reason", "")
+        self.pay_mode = param.get("pay_mode", "")
+        
+    def serialize(self, serializer):
+        serializer.start_object('RegPayementParam')
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('fcrId', self.temp_id)
+        serializer.add_property('gatewayId', self.gateway_id)
+        serializer.add_property('transactionReferenceId', self.transaction_number)
+        serializer.add_property('amount', self.amt)
+        serializer.add_property('dateTimeOfTranaction', self.app_date)
+        serializer.add_property('mobileno', self.mobile)
+        serializer.add_property('appiontmentIdentifier',self.appiontment_identifier)
+        serializer.add_property('discountAmount',self.discount_amt)
+        serializer.add_property('discountReason',self.discount_reason)
+        serializer.add_property('payMode',self.pay_mode)
+
+
+class OPBillingPaymentUpdate:
+    def __init__(self, param):
+        self.uhid = param.get("uhid", None)
+        self.transaction_number = param.get("transaction_number", "NA")
+        self.auth_code = param.get("auth_code", "9999")
+        self.branch = param.get("branch", "PatientApp")
+        self.drawer = param.get("drawer", "NA")
+        self.amt = param.get("amt", "0")
+        self.location_code = param.get("location_code", None)
+        self.episode_number = param.get("episode_number", "")
+        
+    def serialize(self, serializer):
+        serializer.start_object('OPBillingParam')
+        serializer.add_property('hospitalno', self.uhid)
+        serializer.add_property('tranno', self.transaction_number)
+        serializer.add_property('authcode', self.auth_code)
+        serializer.add_property('branch', self.branch)
+        serializer.add_property('drawer', self.drawer)
+        serializer.add_property('amount', str(self.amt))
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('admno', self.episode_number)
+
+class IPDepositPaymentUpdate:
+    def __init__(self, param):
+        self.uhid = param.get("uhid", None)
+        self.transaction_number = param.get("transaction_number", "NA")
+        self.auth_code = param.get("auth_code", "9999")
+        self.branch = param.get("branch", "PatientApp")
+        self.drawer = param.get("drawer", "NA")
+        self.amt = param.get("amt", "0")
+        self.location_code = param.get("location_code", None)
+        
+    def serialize(self, serializer):
+        serializer.start_object('InsertOnlinePatientDepositParam')
+        serializer.add_property('hospitalno', self.uhid)
+        serializer.add_property('tranno', self.transaction_number)
+        serializer.add_property('authcode', self.auth_code)
+        serializer.add_property('branch', self.branch)
+        serializer.add_property('drawer', self.drawer)
+        serializer.add_property('amount', self.amt)
+        serializer.add_property('locationCode', self.location_code)
 
 class CorporateRegistration:
     def __init__(self, temp_id=None, location_code=None, transaction_id="Infosys", amount=0, discount_reason="Infosys"):

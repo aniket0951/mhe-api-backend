@@ -22,6 +22,12 @@ def generate_receipt_file_path(self, filename):
 
 class Payment(MyBaseModel):
 
+    razor_invoice_id = models.CharField(max_length=50, null=True, blank=True, default="0")
+
+    razor_order_id = models.CharField(max_length=50, null=False, blank=False, default="0")
+
+    razor_payment_id = models.CharField(max_length=50, null=True, blank=True)
+
     processing_id = models.CharField(max_length=50,
                                      null=False,
                                      blank=False,
@@ -65,7 +71,7 @@ class Payment(MyBaseModel):
                                                    on_delete=models.PROTECT,
                                                    blank=True, null=True)
 
-    payment_method = models.CharField(max_length=10,
+    payment_method = models.CharField(max_length=70,
                                       blank=True,
                                       null=True)
 
@@ -102,6 +108,13 @@ class Payment(MyBaseModel):
 
 
 class PaymentRefund(MyBaseModel):
+
+    
+    refund_id = models.CharField(max_length=50, null=False, blank=False, default="0")
+
+    razor_payment_id = models.CharField(max_length=50, null=False, blank=False, default="0")
+
+
     payment = models.ForeignKey(Payment,
                                 on_delete=models.PROTECT,
                                 blank=True,
@@ -145,6 +158,7 @@ class PaymentHospitalKey(MyBaseModel):
     mid = EncryptedTextField(blank=True, null=True)
 
     secret_key = EncryptedTextField(blank=True, null=True)
+    secret_secret = EncryptedTextField(blank=True, null=True)
 
 
 class PaymentReceipts(MyBaseModel):
