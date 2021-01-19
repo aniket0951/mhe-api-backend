@@ -102,6 +102,10 @@ class Payment(MyBaseModel):
                                       blank=True,
                                       null=True)
 
+    bill_row_id = models.CharField(max_length=20,
+                                      blank=True,
+                                      null=True)
+
     raw_info_from_salucro_response = JSONField(blank=True,
                                                null=True
                                                )
