@@ -7,6 +7,9 @@ Pipfile.lock
 celerybeat-schedule.bak
 celerybeat-schedule.dat
 celerybeat-schedule.dir
-/env/
 /.project
+/env/
 /sonar-project.properties
+.env*
+/.scannerwork/
+

@@ -226,6 +226,9 @@ class PaymentUtils:
         if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CREATED:
             raise UnsuccessfulPaymentException
 
+        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CREATED:
+            raise UnsuccessfulPaymentException
+        
         payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_PENDING
         if  order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_ATTEMPTED and \
             order_payment_details.get("status") and \

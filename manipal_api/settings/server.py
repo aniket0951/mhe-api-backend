@@ -24,6 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
+API_SECRET_KEY = env('API_SECRET_KEY')
 APNS_USE_SANDBOX=False
 APNS_CERT_PATH=os.path.join(BASE_DIR, "ManipalPush_default.pem")
 AWS_ACCESS_KEY_ID = None  # Set to None to use IAM role
@@ -96,9 +97,8 @@ CUSTOM_APPS = [
     'apps.dashboard',
     'apps.video_conferences',
     'apps.notifications.apps.NotificationsConfig',
-    'apps.discharge_summaries'
-
-
+    'apps.discharge_summaries',
+    'apps.middleware'
 ]
 
 THIRD_PARTY_APPS = [
@@ -135,6 +135,8 @@ DEFAULT_MIDDLEWARES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'axes.middleware.AxesMiddleware',
+    'apps.middleware.cipherMiddleware.CipherRequestMiddleware',
+    'apps.middleware.cipherMiddleware.CipherResponseMiddleware'
 ]
 
 
