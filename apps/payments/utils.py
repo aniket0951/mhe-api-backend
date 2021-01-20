@@ -186,6 +186,18 @@ class PaymentUtils:
         return order_payment_data_item
 
     @staticmethod
+    def get_refunded_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,razor_order_id,order_details=None):
+        if not order_details:
+            order_details = PaymentUtils.get_razorpay_order_details(hospital_key,hospital_secret,razor_order_id)
+        order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_key,hospital_secret,razor_order_id)
+        order_payment_data_item = dict()
+        if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
+            for item in order_payment_data.get("items"):        
+                if float(item.get("amount"))==float(order_details.get("amount")) and item.get("refund_status")==PaymentConstants.RAZORPAY_PAYMENT_REFUND_STATUS_FULL:
+                    order_payment_data_item = item
+        return order_payment_data_item
+
+    @staticmethod
     def get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance):
         razor_order_id = payment_instance.razor_order_id
         hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
@@ -252,21 +264,22 @@ class PaymentUtils:
         payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
         payment_instance.save()
 
-        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0 and payment_instance.status!=PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED:
+        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0:
             hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
             hospital_key = hospital_key_info.secret_key
             hospital_secret = hospital_key_info.secret_secret
-            refunded_payment_details = PaymentUtils.initiate_refund(
-                hospital_key=hospital_key,
-                hospital_secret=hospital_secret,
-                payment_id=order_payment_details.get("id"),
-                amount_to_be_refunded=int(payment_instance.amount)
-            )
-            if refunded_payment_details:
-                logger.info("refunded_payment_details: %s"%(str(refunded_payment_details)))
-                PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
-                payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
-                payment_instance.save()
+            refunded_payment_details = PaymentUtils.get_refunded_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,order_details.get("id"),order_details)
+            if not refunded_payment_details:
+                refunded_payment_details = PaymentUtils.initiate_refund(
+                    hospital_key=hospital_key,
+                    hospital_secret=hospital_secret,
+                    payment_id=order_payment_details.get("id"),
+                    amount_to_be_refunded=int(payment_instance.amount)
+                )
+                if refunded_payment_details:
+                    PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
+            payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
+            payment_instance.save()
 
     @staticmethod
     def get_payment_amount(order_details):
