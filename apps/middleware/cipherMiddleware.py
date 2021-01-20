@@ -34,7 +34,8 @@ class CipherRequestMiddleware(object):
         # Logic executed before a call to view
         # Gives access to the view itself & arguments
 
-        if request.GET.get('is_encryption_enabled'):
+        request_logger.info("\n\nREQUEST request.headers: %s"%(request.headers))
+        if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
             request_data = getattr(request, '_body', request.body)
             # request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
             if request_data:
@@ -105,7 +106,7 @@ class CipherResponseMiddleware(object):
 
         # request_logger.info("\n\nRESPONSE BODY PLAIN: %s"%(log_data))
 
-        if request.GET.get('is_encryption_enabled'):
+        if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
 
             str_conv_response_data = json.dumps(response.data.copy(), ensure_ascii=False, cls=None)
             response.data = { 'encrypted_data': AESCipher.encrypt(str_conv_response_data) }
