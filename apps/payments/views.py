@@ -760,13 +760,13 @@ class AppointmentPaymentView(ProxyView):
     def get_request_data(self, request):
         request_xml = serializable_PaymentUpdate(request.data)
         request_data = custom_serializer().serialize(request_xml, 'XML')
-        import pdb; pdb.set_trace()
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        import pdb; pdb.set_trace()
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
