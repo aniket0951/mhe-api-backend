@@ -766,6 +766,7 @@ class AppointmentPaymentView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        import pdb; pdb.set_trace()
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
