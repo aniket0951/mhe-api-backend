@@ -183,16 +183,17 @@ class RazorPaymentResponse(APIView):
             is_requested_from_mobile = True
         
         payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
+
+        if payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS]:
+            return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
+
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
         order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
         PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
 
-        if payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED:
+        if payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED]:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
-        if payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS:
-            return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
-        
         payment_response = dict()
         try:
             payment_response = PaymentUtils.update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details)
@@ -200,7 +201,8 @@ class RazorPaymentResponse(APIView):
             PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
             PaymentUtils.payment_for_health_package(payment_instance,payment_response)
-        except:
+        except Exception as e:
+            logger.error("Error while processing payment : %s"%str(e))
             PaymentUtils.update_failed_payment_response(payment_instance,order_details)
             
         return Response(data=payment_response, status=status.HTTP_200_OK)

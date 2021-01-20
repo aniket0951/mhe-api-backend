@@ -207,12 +207,16 @@ class PaymentUtils:
 
     @staticmethod
     def validate_order_details_status(order_details,order_payment_details,payment_instance):
+        
         if not order_details.get("status"):
             raise NoResponseFromRazorPayException
+    
+        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CREATED:
+            raise UnsuccessfulPaymentException
 
         payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_PENDING
         if  order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_ATTEMPTED and \
-            order_payment_details.get("status") and\
+            order_payment_details.get("status") and \
             order_payment_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED:
             payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
 
