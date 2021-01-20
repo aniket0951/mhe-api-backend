@@ -203,7 +203,7 @@ class RazorPaymentResponse(APIView):
             PaymentUtils.payment_for_health_package(payment_instance,payment_response)
         except Exception as e:
             logger.error("Error while processing payment : %s"%str(e))
-            PaymentUtils.update_failed_payment_response(payment_instance,order_details)
+            PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details)
             
         return Response(data=payment_response, status=status.HTTP_200_OK)
 

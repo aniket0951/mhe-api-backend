@@ -246,7 +246,7 @@ class PaymentUtils:
         refund_instance.save()
     
     @staticmethod
-    def update_failed_payment_response(payment_instance,order_details):
+    def update_failed_payment_response(payment_instance,order_details,order_payment_details):
         import pdb; pdb.set_trace()
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
@@ -259,13 +259,14 @@ class PaymentUtils:
             refunded_payment_details = PaymentUtils.initiate_refund(
                 hospital_key=hospital_key,
                 hospital_secret=hospital_secret,
-                payment_id=payment_instance.razor_payment_id,
+                payment_id=order_payment_details.get("id"),
                 amount_to_be_refunded=int(payment_instance.amount)
             )
-            logger.info("refunded_payment_details: %s"%(str(refunded_payment_details)))
-            PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
-            payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
-            payment_instance.save()
+            if refunded_payment_details:
+                logger.info("refunded_payment_details: %s"%(str(refunded_payment_details)))
+                PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
+                payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
+                payment_instance.save()
 
     @staticmethod
     def get_payment_amount(order_details):
