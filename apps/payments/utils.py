@@ -262,6 +262,7 @@ class PaymentUtils:
                 payment_id=payment_instance.razor_payment_id,
                 amount_to_be_refunded=int(payment_instance.amount)
             )
+            logger.info("refunded_payment_details: %s"%(str(refunded_payment_details)))
             PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
             payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
             payment_instance.save()
