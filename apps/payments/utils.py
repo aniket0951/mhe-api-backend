@@ -247,6 +247,7 @@ class PaymentUtils:
     
     @staticmethod
     def update_failed_payment_response(payment_instance,order_details):
+        import pdb; pdb.set_trace()
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
         payment_instance.save()
