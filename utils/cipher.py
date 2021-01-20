@@ -1,9 +1,6 @@
-import base64
-import hashlib
+from AesEverywhere import aes256
 from django.conf import settings
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-from Crypto import Random
+
 import logging
 
 _logger = logging.getLogger('django.AESCipher')
@@ -25,23 +22,13 @@ _logger = logging.getLogger('django.AESCipher')
 
 class AESCipher:
 
-    def __init__(self):
-        self.key = None
+    @staticmethod
+    def encrypt(raw):
+        return aes256.encrypt(raw, settings.API_SECRET_KEY)
 
-    bs = 16
-    key = hashlib.sha256(settings.API_SECRET_KEY.encode("utf8")).hexdigest()
-    cipher = AES.new(key[:32].encode(), AES.MODE_ECB)
-
-    @classmethod
-    def encrypt(cls, raw):
-        raw = pad(raw.encode("utf8"), cls.bs)
-        iv = Random.new().read(AES.block_size)
-        return base64.b64encode(iv + cls.cipher.encrypt(raw)).decode('utf-8')
-
-    @classmethod
-    def decrypt(cls, enc):
-        enc = base64.b64decode(enc)
-        return unpad(cls.cipher.decrypt(enc[AES.block_size:]), cls.bs).decode('utf-8')
+    @staticmethod
+    def decrypt(enc):
+        return aes256.decrypt(enc, settings.API_SECRET_KEY)
 
     # def encrypt( self, raw ):
     #     raw = pad(raw)
