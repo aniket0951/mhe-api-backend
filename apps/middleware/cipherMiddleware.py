@@ -108,7 +108,7 @@ class CipherResponseMiddleware(object):
         if request.GET.get('is_encryption_enabled'):
 
             str_conv_response_data = json.dumps(response.data.copy(), ensure_ascii=False, cls=None)
-            response.data = { 'encrypted_data': AESCipher().encrypt(str_conv_response_data) }
+            response.data = { 'encrypted_data': AESCipher.encrypt(str_conv_response_data) }
         
         # request_logger.info("\n\nRESPONSE BODY ENCODED: %s"%(response.data))
         return response
