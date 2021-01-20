@@ -247,12 +247,12 @@ class PaymentUtils:
     
     @staticmethod
     def update_failed_payment_response(payment_instance,order_details,order_payment_details):
-        import pdb; pdb.set_trace()
+        
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
         payment_instance.save()
 
-        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0:
+        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0 and payment_instance.status!=PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED:
             hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
             hospital_key = hospital_key_info.secret_key
             hospital_secret = hospital_key_info.secret_secret
