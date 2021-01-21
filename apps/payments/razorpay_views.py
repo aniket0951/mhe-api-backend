@@ -39,7 +39,7 @@ from utils.custom_sms import send_sms
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
-from .exceptions import ProcessingIdDoesNotExistsValidationException,IncompletePaymentCannotProcessRefund
+from .exceptions import ProcessingIdDoesNotExistsValidationException,IncompletePaymentCannotProcessRefund, UnsuccessfulPaymentException
 from .models import Payment, PaymentReceipts
 from .serializers import (PaymentReceiptsSerializer, PaymentSerializer)
 from .utils import PaymentUtils
@@ -192,6 +192,8 @@ class RazorPaymentResponse(APIView):
         PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
 
         if payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED]:
+            if is_requested_from_mobile:
+                raise UnsuccessfulPaymentException
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
         payment_response = dict()
