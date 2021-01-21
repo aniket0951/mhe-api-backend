@@ -1063,7 +1063,7 @@ class PaymentUtils:
             if not payment_check_response:
                 time.sleep(5)
             retry_count += 1
-        order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance):
+        order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance)
         if order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_REFUNDED]:
             raise PaymentProcessingFailedRefundProcessed
         return payment_check_response
