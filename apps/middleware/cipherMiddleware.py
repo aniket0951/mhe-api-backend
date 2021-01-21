@@ -41,7 +41,7 @@ class CipherRequestMiddleware(object):
             if request_data:
                 encrypted_request_body = json.loads(request_data)
                 if encrypted_request_body.get("encrypted_data"):
-                    request._body = AESCipher.decrypt(encrypted_request_body.get("encrypted_data")).encode('utf-8')
+                    request._body = AESCipher.decrypt(encrypted_request_body.get("encrypted_data"))
                     
         # log_data = {
         #     'remote_address': request.META['REMOTE_ADDR'],
