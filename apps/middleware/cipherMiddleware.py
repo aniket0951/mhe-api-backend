@@ -41,9 +41,12 @@ class CipherRequestMiddleware(object):
             request_data = getattr(request, '_body', request.body)
             request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
             if request_data:
-                encrypted_request_body = json.loads(request_data)
-                if encrypted_request_body.get("encrypted_data"):
-                    request._body = AESCipher.decrypt(encrypted_request_body.get("encrypted_data"))
+                try:
+                    encrypted_request_body = json.loads(request_data)
+                    if encrypted_request_body.get("encrypted_data"):
+                        request._body = AESCipher.decrypt(encrypted_request_body.get("encrypted_data"))
+                except Exception as e:
+                    request_logger.info("\n\nREQUEST BODY cannot be parsed: %s"%(str(e)))
                     
         # log_data = {
         #     'remote_address': request.META['REMOTE_ADDR'],
