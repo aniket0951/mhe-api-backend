@@ -37,9 +37,12 @@ class CipherRequestMiddleware(object):
             if isinstance(v, dict):
                 v = self.dict_replace_value(v)
             elif isinstance(v, list):
-                v = self._replace_value(v)
+                v = self.list_replace_value(v)
             elif isinstance(v, UUID):
                 v = v.hex
+            elif isinstance(v, QuerySet):
+                v = list(v.values())
+                v = self.list_replace_value(v)
             x[k] = v
         return x
 
@@ -50,8 +53,11 @@ class CipherRequestMiddleware(object):
                 e = self.list_replace_value(e)
             elif isinstance(e, dict):
                 e = self.dict_replace_value(e)
-            elif isinstance(e, str):
+            elif isinstance(e, UUID):
                 e = e.hex
+            elif isinstance(e, QuerySet):
+                e = list(e.values())
+                e = self.list_replace_value(e)
             x.append(e)
         return x
 
