@@ -221,11 +221,9 @@ class PaymentUtils:
         payment_instance.transaction_id = order_payment_details.get("id")
         payment_instance.save()
 
-        if  order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_ATTEMPTED and \
-            order_payment_details.get("status") and \
+        if  order_payment_details.get("status") and \
             order_payment_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED:
-            payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
-            payment_instance.status = payment_status
+            payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
             payment_instance.save()
         
     
@@ -269,8 +267,6 @@ class PaymentUtils:
                     PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
             payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
             payment_instance.save()
-            
-        raise PaymentProcessingFailedRefundProcessed
 
     @staticmethod
     def get_payment_amount(order_details):
@@ -1059,7 +1055,7 @@ class PaymentUtils:
 
 
     @staticmethod
-    def wait_for_manipal_response(payment_instance):
+    def wait_for_manipal_response(payment_instance,order_details):
         payment_check_response = dict()
         retry_count = 0
         while retry_count<3 and not payment_check_response:
@@ -1067,6 +1063,9 @@ class PaymentUtils:
             if not payment_check_response:
                 time.sleep(5)
             retry_count += 1
+        order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance):
+        if order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_REFUNDED]:
+            raise PaymentProcessingFailedRefundProcessed
         return payment_check_response
 
 
@@ -1075,10 +1074,7 @@ class PaymentUtils:
         if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
             return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details)
         elif payment_instance.appointment or payment_instance.payment_for_health_package:
-            payment_check_response = PaymentUtils.wait_for_manipal_response(payment_instance) if is_requested_from_mobile else PaymentUtils.check_appointment_payment_status(payment_instance)
-            order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance):
-            if order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_REFUNDED]:
-                raise PaymentProcessingFailedRefundProcessed
+            payment_check_response = PaymentUtils.wait_for_manipal_response(payment_instance,order_details) if is_requested_from_mobile else PaymentUtils.check_appointment_payment_status(payment_instance)
             if payment_check_response:
                 return payment_check_response
             return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details)
