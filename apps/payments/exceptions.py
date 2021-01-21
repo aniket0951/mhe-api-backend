@@ -75,3 +75,8 @@ class PaymentProcessingFailedRefundProcessed(APIException):
     status_code = status.HTTP_200_OK
     default_code = 'payment_processing_failed_refund_successful'
     default_detail = 'Payment processing failed! Refund is processed successfully!'
+
+class PaymentProcessingFailedRefundProcessedException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'payment_processing_failed_refund_successful'
+    default_detail = 'Payment processing failed! Refund is processed successfully!'

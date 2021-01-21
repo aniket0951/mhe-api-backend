@@ -29,7 +29,8 @@ from apps.payments.exceptions import (
                         NoResponseFromRazorPayException,
                         UnsuccessfulPaymentException,
                         BillNoNotGeneratedAvailable,
-                        PaymentProcessingFailedRefundProcessed
+                        PaymentProcessingFailedRefundProcessed,
+                        PaymentProcessingFailedRefundProcessedException
                     )
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
@@ -245,7 +246,7 @@ class PaymentUtils:
         refund_instance.save()
     
     @staticmethod
-    def update_failed_payment_response(payment_instance,order_details,order_payment_details):
+    def update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
         
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
@@ -268,7 +269,10 @@ class PaymentUtils:
             payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
             payment_instance.save()
 
-        raise PaymentProcessingFailedRefundProcessed
+        if is_requested_from_mobile:
+            raise PaymentProcessingFailedRefundProcessedException
+        else:
+            raise PaymentProcessingFailedRefundProcessed
 
     @staticmethod
     def get_payment_amount(order_details):
