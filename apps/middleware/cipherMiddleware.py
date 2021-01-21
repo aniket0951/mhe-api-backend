@@ -31,35 +31,6 @@ class CipherRequestMiddleware(object):
         # Return response to finish middleware sequence
         return response
 
-    def dict_replace_value(self,d):
-        x = {}
-        for k, v in d.items():
-            if isinstance(v, dict):
-                v = self.dict_replace_value(v)
-            elif isinstance(v, list):
-                v = self.list_replace_value(v)
-            elif isinstance(v, UUID):
-                v = v.hex
-            elif isinstance(v, QuerySet):
-                v = list(v.values())
-                v = self.list_replace_value(v)
-            x[k] = v
-        return x
-
-    def list_replace_value(self,l):
-        x = []
-        for e in l:
-            if isinstance(e, list):
-                e = self.list_replace_value(e)
-            elif isinstance(e, dict):
-                e = self.dict_replace_value(e)
-            elif isinstance(e, UUID):
-                e = e.hex
-            elif isinstance(e, QuerySet):
-                e = list(e.values())
-                e = self.list_replace_value(e)
-            x.append(e)
-        return x
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         # Logic executed before a call to view
@@ -68,10 +39,6 @@ class CipherRequestMiddleware(object):
         request_logger.info("\n\nREQUEST request.headers: %s"%(request.headers))
         if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
             request_data = getattr(request, '_body', request.body)
-            if isinstance(request_data, dict):
-                request_data = self.dict_replace_value(request_data)
-            elif isinstance(request_data, list):
-                request_data = self.list_replace_value(request_data)
             # request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
             if request_data:
                 encrypted_request_body = json.loads(request_data)
@@ -122,6 +89,37 @@ class CipherResponseMiddleware(object):
         # Logic executed if an exception/error occurs in the view
         pass
 
+    
+    def dict_replace_value(self,d):
+        x = {}
+        for k, v in d.items():
+            if isinstance(v, dict):
+                v = self.dict_replace_value(v)
+            elif isinstance(v, list):
+                v = self.list_replace_value(v)
+            elif isinstance(v, UUID):
+                v = v.hex
+            elif isinstance(v, QuerySet):
+                v = list(v.values())
+                v = self.list_replace_value(v)
+            x[k] = v
+        return x
+
+    def list_replace_value(self,l):
+        x = []
+        for e in l:
+            if isinstance(e, list):
+                e = self.list_replace_value(e)
+            elif isinstance(e, dict):
+                e = self.dict_replace_value(e)
+            elif isinstance(e, UUID):
+                e = e.hex
+            elif isinstance(e, QuerySet):
+                e = list(e.values())
+                e = self.list_replace_value(e)
+            x.append(e)
+        return x
+
     def process_template_response(self, request, response):
         # Logic executed after the view is called,
         # ONLY IF view response is TemplateResponse, see listing 2-24
@@ -142,8 +140,12 @@ class CipherResponseMiddleware(object):
         # request_logger.info("\n\nRESPONSE BODY PLAIN: %s"%(log_data))
 
         if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
-
-            str_conv_response_data = json.dumps(response.data.copy(), ensure_ascii=False, cls=None)
+            response_data = response.data.copy()
+            if isinstance(response_data, dict):
+                response_data = self.dict_replace_value(response_data)
+            elif isinstance(response_data, list):
+                response_data = self.list_replace_value(response_data)
+            str_conv_response_data = json.dumps(response_data, ensure_ascii=False, cls=None)
             response.data = { 'encrypted_data': AESCipher.encrypt(str_conv_response_data) }
         
         # request_logger.info("\n\nRESPONSE BODY ENCODED: %s"%(response.data))
