@@ -28,7 +28,8 @@ from apps.payments.exceptions import (
                         PaymentRecordNotAvailable,
                         NoResponseFromRazorPayException,
                         UnsuccessfulPaymentException,
-                        BillNoNotGeneratedAvailable
+                        BillNoNotGeneratedAvailable,
+                        PaymentProcessingFailedRefundProcessed
                     )
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
@@ -181,19 +182,7 @@ class PaymentUtils:
         order_payment_data_item = dict()
         if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
             for item in order_payment_data.get("items"):        
-                if float(item.get("amount"))==float(order_details.get("amount")) and item.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CAPTURED:
-                    order_payment_data_item = item
-        return order_payment_data_item
-
-    @staticmethod
-    def get_refunded_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,razor_order_id,order_details=None):
-        if not order_details:
-            order_details = PaymentUtils.get_razorpay_order_details(hospital_key,hospital_secret,razor_order_id)
-        order_payment_data = PaymentUtils.get_razorpay_fetch_order_payment_details(hospital_key,hospital_secret,razor_order_id)
-        order_payment_data_item = dict()
-        if order_payment_data.get("items") and len(order_payment_data.get("items"))>0:
-            for item in order_payment_data.get("items"):        
-                if float(item.get("amount"))==float(order_details.get("amount")) and item.get("refund_status")==PaymentConstants.RAZORPAY_PAYMENT_REFUND_STATUS_FULL:
+                if float(item.get("amount"))==float(order_details.get("amount")) and item.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_CAPTURED,PaymentConstants.RAZORPAY_PAYMENT_STATUS_REFUNDED]:
                     order_payment_data_item = item
         return order_payment_data_item
 
@@ -225,22 +214,19 @@ class PaymentUtils:
     
         if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CREATED:
             raise UnsuccessfulPaymentException
-
-        if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_CREATED:
-            raise UnsuccessfulPaymentException
         
-        payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_PENDING
-        if  order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_ATTEMPTED and \
-            order_payment_details.get("status") and \
-            order_payment_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED:
-            payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
-
-        payment_instance.status = payment_status
         payment_instance.payment_method = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
         payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
         payment_instance.amount = PaymentUtils.get_payment_amount(order_details)
         payment_instance.transaction_id = order_payment_details.get("id")
         payment_instance.save()
+
+        if  order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_ATTEMPTED and \
+            order_payment_details.get("status") and \
+            order_payment_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED:
+            payment_status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+            payment_instance.status = payment_status
+            payment_instance.save()
         
     
     @staticmethod
@@ -271,8 +257,8 @@ class PaymentUtils:
             hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
             hospital_key = hospital_key_info.secret_key
             hospital_secret = hospital_key_info.secret_secret
-            refunded_payment_details = PaymentUtils.get_refunded_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,order_details.get("id"),order_details)
-            if not refunded_payment_details:
+            refunded_payment_details = PaymentUtils.get_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,order_details.get("id"),order_details)
+            if not refunded_payment_details or refunded_payment_details.get("status") not in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_REFUNDED]:
                 refunded_payment_details = PaymentUtils.initiate_refund(
                     hospital_key=hospital_key,
                     hospital_secret=hospital_secret,
@@ -283,6 +269,8 @@ class PaymentUtils:
                     PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
             payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
             payment_instance.save()
+            
+        raise PaymentProcessingFailedRefundProcessed
 
     @staticmethod
     def get_payment_amount(order_details):
@@ -1088,6 +1076,9 @@ class PaymentUtils:
             return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details)
         elif payment_instance.appointment or payment_instance.payment_for_health_package:
             payment_check_response = PaymentUtils.wait_for_manipal_response(payment_instance) if is_requested_from_mobile else PaymentUtils.check_appointment_payment_status(payment_instance)
+            order_payment_details = PaymentUtils.get_razorpay_fetch_order_payments_payment_instance(order_details,payment_instance):
+            if order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_REFUNDED]:
+                raise PaymentProcessingFailedRefundProcessed
             if payment_check_response:
                 return payment_check_response
             return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details)

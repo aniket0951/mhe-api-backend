@@ -38,9 +38,7 @@ from .models import VideoConference
 from .serializers import VideoConferenceSerializer
 from .utils import create_room_parameters
 
-client = None
-# client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_AUTH_KEY)
-
+client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_AUTH_KEY)
 
 class RoomCreationView(APIView):
     permission_classes = (AllowAny,)

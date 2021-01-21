@@ -205,7 +205,7 @@ class RazorPaymentResponse(APIView):
             logger.error("Error while processing payment : %s"%str(e))
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details)
             
-        return Response(data=payment_response, status=status.HTTP_200_OK)
+        return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
 class RazorRefundView(APIView):
     permission_classes = (AllowAny,)
