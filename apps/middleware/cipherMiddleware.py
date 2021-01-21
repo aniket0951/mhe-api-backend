@@ -1,3 +1,4 @@
+import uuid
 import ast
 import json
 import logging
@@ -6,7 +7,7 @@ import time
 
 from django.utils.deprecation import MiddlewareMixin
 from django.db.models.query import QuerySet
-
+from uuid import UUID
 
 from utils.cipher import AESCipher
 
@@ -30,6 +31,30 @@ class CipherRequestMiddleware(object):
         # Return response to finish middleware sequence
         return response
 
+    def dict_replace_value(self,d):
+        x = {}
+        for k, v in d.items():
+            if isinstance(v, dict):
+                v = self.dict_replace_value(v)
+            elif isinstance(v, list):
+                v = self._replace_value(v)
+            elif isinstance(v, UUID):
+                v = v.hex
+            x[k] = v
+        return x
+
+    def list_replace_value(self,l):
+        x = []
+        for e in l:
+            if isinstance(e, list):
+                e = self.list_replace_value(e)
+            elif isinstance(e, dict):
+                e = self.dict_replace_value(e)
+            elif isinstance(e, str):
+                e = e.hex
+            x.append(e)
+        return x
+
     def process_view(self, request, view_func, view_args, view_kwargs):
         # Logic executed before a call to view
         # Gives access to the view itself & arguments
@@ -37,6 +62,10 @@ class CipherRequestMiddleware(object):
         request_logger.info("\n\nREQUEST request.headers: %s"%(request.headers))
         if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
             request_data = getattr(request, '_body', request.body)
+            if isinstance(request_data, dict):
+                request_data = self.dict_replace_value(request_data)
+            elif isinstance(request_data, list):
+                request_data = self.list_replace_value(request_data)
             # request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
             if request_data:
                 encrypted_request_body = json.loads(request_data)
