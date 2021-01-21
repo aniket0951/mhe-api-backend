@@ -268,6 +268,8 @@ class PaymentUtils:
             payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
             payment_instance.save()
 
+        raise PaymentProcessingFailedRefundProcessed
+
     @staticmethod
     def get_payment_amount(order_details):
         if order_details.get("amount") and AMOUNT_OFFSET:
