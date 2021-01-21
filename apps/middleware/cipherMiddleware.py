@@ -39,7 +39,7 @@ class CipherRequestMiddleware(object):
         request_logger.info("\n\nREQUEST request.headers: %s"%(request.headers))
         if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
             request_data = getattr(request, '_body', request.body)
-            # request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
+            request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
             if request_data:
                 encrypted_request_body = json.loads(request_data)
                 if encrypted_request_body.get("encrypted_data"):
