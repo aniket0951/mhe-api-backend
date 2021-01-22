@@ -760,12 +760,20 @@ class PaymentUtils:
 
     @staticmethod
     def get_episode_number_for_op_bill(payment_instance):
-        episode_numbers = []
+        episode_numbers = ""
         if payment_instance.episode_number:
-            episode_numbers.append(payment_instance.episode_number)
+            episode_numbers = payment_instance.episode_number
+        return episode_numbers
+        # if payment_instance.bill_row_id:
+        #     episode_numbers.append(payment_instance.bill_row_id)
+        # return "||".join(episode_numbers) if episode_numbers else payment_instance.episode_number
+
+    @staticmethod
+    def get_bill_row_id_for_op_bill(payment_instance):
+        bill_row_id = ""
         if payment_instance.bill_row_id:
-            episode_numbers.append(payment_instance.bill_row_id)
-        return "||".join(episode_numbers) if episode_numbers else payment_instance.episode_number
+            bill_row_id = payment_instance.bill_row_id
+        return bill_row_id
 
     @staticmethod
     def get_uhid_number(payment_instance):
@@ -1050,7 +1058,8 @@ class PaymentUtils:
             "auth_code":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
-            "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance)
+            "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance),
+            "drawer":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
         }
         payment_update_response = OPBillingPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         payment_instance.raw_info_from_manipal_response = payment_update_response
