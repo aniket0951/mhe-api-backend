@@ -109,6 +109,9 @@ class Payment(MyBaseModel):
     raw_info_from_salucro_response = JSONField(blank=True,
                                                null=True
                                                )
+    raw_info_from_manipal_response = JSONField(blank=True,
+                                               null=True
+                                               )
 
 
 class PaymentRefund(MyBaseModel):

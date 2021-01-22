@@ -393,7 +393,6 @@ class PaymentUtils:
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        account_number = param["token"]["accounts"][0]["account_number"]
         description = PaymentConstants.RAZORPAY_APPOINTMENT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
@@ -469,7 +468,6 @@ class PaymentUtils:
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        account_number = param["token"]["accounts"][0]["account_number"]
         description = PaymentConstants.RAZORPAY_HEALTH_PACKAGE_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
@@ -534,7 +532,6 @@ class PaymentUtils:
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        account_number = param["token"]["accounts"][0]["account_number"]
         description = PaymentConstants.RAZORPAY_UHID_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
@@ -609,7 +606,6 @@ class PaymentUtils:
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        account_number = param["token"]["accounts"][0]["account_number"]
         description = PaymentConstants.RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
@@ -656,7 +652,6 @@ class PaymentUtils:
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        account_number = param["token"]["accounts"][0]["account_number"]
         description = PaymentConstants.RAZORPAY_IP_DEPOSIT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
@@ -1003,15 +998,18 @@ class PaymentUtils:
         return PaymentUtils.serialize_check_appointment_payment_status_response(payment_response,appointment_id)
 
     @staticmethod
-    def update_uhid_payment_details_with_manipal(payment_instance,order_details):
+    def update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
         payment_update_request = {
             "location_code":payment_instance.location.code,
             "temp_id":PaymentUtils.get_pre_registration_number(payment_instance),
             "transaction_number":order_details.get("id"),
+            "gateway_id":order_payment_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
         }
         payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        payment_instance.raw_info_from_manipal_response = payment_update_response
+        payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
@@ -1022,11 +1020,11 @@ class PaymentUtils:
         return payment_response
 
     @staticmethod
-    def update_payment_details_with_manipal(payment_instance,order_details):
+    def update_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
         payment_update_request = {
             "uhid":PaymentUtils.get_uhid_number(payment_instance),
-            "transaction_number":order_details.get("id"),
-            "processing_id":payment_instance.processing_id,
+            "transaction_number":order_payment_details.get('id'),
+            "processing_id":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
             "app_date":PaymentUtils.get_payment_appointment_date(payment_instance),
@@ -1035,6 +1033,8 @@ class PaymentUtils:
             "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        payment_instance.raw_info_from_manipal_response = payment_update_response
+        payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
@@ -1043,16 +1043,18 @@ class PaymentUtils:
         return PaymentUtils.serialize_payment_response(bill_details_response)
 
     @staticmethod
-    def update_op_bill_payment_details_with_manipal(payment_instance,order_details):
+    def update_op_bill_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
         payment_update_request = {
             "uhid":PaymentUtils.get_uhid_number(payment_instance),
-            "transaction_number":order_details.get("id"),
-            "auth_code":payment_instance.processing_id,
+            "transaction_number":order_payment_details.get('id'),
+            "auth_code":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
             "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance)
         }
         payment_update_response = OPBillingPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        payment_instance.raw_info_from_manipal_response = payment_update_response
+        payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
@@ -1061,15 +1063,17 @@ class PaymentUtils:
         return PaymentUtils.serialize_opbill_payment_response(bill_details_response)
     
     @staticmethod
-    def update_ip_deposit_payment_details_with_manipal(payment_instance,order_details):
+    def update_ip_deposit_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
         payment_update_request = {
             "uhid":PaymentUtils.get_uhid_number(payment_instance),
-            "transaction_number":order_details.get("id"),
-            "auth_code":payment_instance.processing_id,
+            "transaction_number":order_payment_details.get('id'),
+            "auth_code":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code
         }
         payment_update_response = IPDepositPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        payment_instance.raw_info_from_manipal_response = payment_update_response
+        payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
@@ -1094,18 +1098,18 @@ class PaymentUtils:
 
 
     @staticmethod
-    def update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details):
+    def update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details,order_payment_details):
         if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
-            return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details)
+            return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.appointment or payment_instance.payment_for_health_package:
             payment_check_response = PaymentUtils.wait_for_manipal_response(payment_instance,order_details) if is_requested_from_mobile else PaymentUtils.check_appointment_payment_status(payment_instance)
             if payment_check_response:
                 return payment_check_response
-            return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details)
+            return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.payment_for_op_billing:
-            return PaymentUtils.update_op_bill_payment_details_with_manipal(payment_instance,order_details)
+            return PaymentUtils.update_op_bill_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.payment_for_ip_deposit:
-            return PaymentUtils.update_ip_deposit_payment_details_with_manipal(payment_instance,order_details)
+            return PaymentUtils.update_ip_deposit_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         
 
 
