@@ -387,6 +387,9 @@ AXES_FAILURE_LIMIT=3
 AXES_COOLOFF_TIME = datetime.timedelta(minutes=10)
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 
+ENCRYPTION_KEYWORD = "Encryption"
+ENCRYPTION_KEYWORD_VALUE = "True"
+ENCRYPTION_BODY_KEY = "encrypted_data"
 
 # Logger configuration
 LOGGING = {

@@ -1,21 +1,18 @@
-import uuid
-import ast
 import json
 import logging
-import socket
-import time
 
-from django.utils.deprecation import MiddlewareMixin
 from django.db.models.query import QuerySet
+from django.conf import settings
 from uuid import UUID
 
 from utils.cipher import AESCipher
 
-# from .utils import CustomDatetimeUUIDEncoder
-
 request_logger = logging.getLogger('django.request')
 response_logger = logging.getLogger('django.response')
 
+ENCRYPTION_KEYWORD = settings.ENCRYPTION_KEYWORD
+ENCRYPTION_KEYWORD_VALUE = settings.ENCRYPTION_KEYWORD_VALUE
+ENCRYPTION_BODY_KEY = settings.ENCRYPTION_BODY_KEY
 
 class CipherRequestMiddleware(object):
 
@@ -37,25 +34,16 @@ class CipherRequestMiddleware(object):
         # Gives access to the view itself & arguments
 
         request_logger.info("\n\nREQUEST request.headers: %s"%(request.headers))
-        if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
+        if request.headers.get(ENCRYPTION_KEYWORD) and request.headers.get(ENCRYPTION_KEYWORD)==ENCRYPTION_KEYWORD_VALUE:
             request_data = getattr(request, '_body', request.body)
             request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
             if request_data:
-                encrypted_request_body = json.loads(request_data)
-                if encrypted_request_body.get("encrypted_data"):
-                    request._body = AESCipher.decrypt(encrypted_request_body.get("encrypted_data"))
-                    
-        # log_data = {
-        #     'remote_address': request.META['REMOTE_ADDR'],
-        #     'server_hostname': socket.gethostname(),
-        #     'request_method': request.method,
-        #     'request_path': request.get_full_path(),
-        # }
-
-        # if hasattr(request, 'headers') and request.headers:
-        #     log_data['request_headers'] = request.headers
-        # if request.content_type == 'application/json' and hasattr(request, 'body') and request.body:
-        #     log_data['request_body'] = str(request.body)
+                try:
+                    encrypted_request_body = json.loads(request_data)
+                    if encrypted_request_body.get(ENCRYPTION_BODY_KEY):
+                        request._body = AESCipher.decrypt(encrypted_request_body.get(ENCRYPTION_BODY_KEY))
+                except Exception as e:
+                    request_logger.error("\n\nREQUEST BODY Parsing Failed: %s"%(e))
 
         # request_logger.info("\n\nREQUEST BODY PLAIN: %s"%(log_data))
 
@@ -124,29 +112,19 @@ class CipherResponseMiddleware(object):
         # Logic executed after the view is called,
         # ONLY IF view response is TemplateResponse, see listing 2-24
 
-        # log_data = {
-        #     'remote_address': request.META['REMOTE_ADDR'],
-        #     'server_hostname': socket.gethostname(),
-        #     'request_method': request.method,
-        #     'request_path': request.get_full_path(),
-        # }
-        # if request.content_type == 'application/json' and hasattr(request, 'body') and request.body:
-        #     log_data['request_body'] = str(request.body)
-        # if hasattr(request, 'headers') and request.headers:
-        #     log_data['request_headers'] = request.headers
-        # if hasattr(response, 'data') and response.data and type(response.data) == dict:
-        #     log_data['response_data'] = response.data
+        request_logger.info("\n\nRESPONSE BODY ENCRYPTED: %s"%(response.data))
 
-        # request_logger.info("\n\nRESPONSE BODY PLAIN: %s"%(log_data))
-
-        if request.headers.get('is_encryption_enabled') and request.headers.get('is_encryption_enabled')=="True":
-            response_data = response.data.copy()
-            if isinstance(response_data, dict):
-                response_data = self.dict_replace_value(response_data)
-            elif isinstance(response_data, list):
-                response_data = self.list_replace_value(response_data)
-            str_conv_response_data = json.dumps(response_data, ensure_ascii=False, cls=None)
-            response.data = { 'encrypted_data': AESCipher.encrypt(str_conv_response_data) }
+        if request.headers.get(ENCRYPTION_KEYWORD) and request.headers.get(ENCRYPTION_KEYWORD)==ENCRYPTION_KEYWORD_VALUE and response.data:
+            try:
+                response_data = response.data.copy()
+                if isinstance(response_data, dict):
+                    response_data = self.dict_replace_value(response_data)
+                elif isinstance(response_data, list):
+                    response_data = self.list_replace_value(response_data)    
+                str_conv_response_data = json.dumps(response_data, ensure_ascii=False, cls=None)
+                response.data = { ENCRYPTION_BODY_KEY: AESCipher.encrypt(str_conv_response_data) }
+            except Exception as e:
+                request_logger.error("\n\nRESPONSE BODY Parsing Failed: %s"%(e))
         
         # request_logger.info("\n\nRESPONSE BODY ENCODED: %s"%(response.data))
         return response
