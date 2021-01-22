@@ -7,6 +7,7 @@ from django.utils.log import DEFAULT_LOGGING
 
 import boto3
 from boto3 import session as boto3_session
+from corsheaders.defaults import default_headers
 
 root = environ.Path(__file__) - 2
 # set default values and casting
@@ -133,6 +134,7 @@ DEFAULT_MIDDLEWARES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'axes.middleware.AxesMiddleware',
+    'apps.middleware.cipherMiddleware.CipherRequestMiddleware'
 ]
 
 
@@ -268,7 +270,9 @@ STATIC_URL = '/static/'
 
 #  Created setting, hosts that are allowed to do cross-site requests
 CORS_ORIGIN_ALLOW_ALL = True
-
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'is_encryption_enabled',
+]
 
 # Manipal Proxy API settings
 MANIPAL_API_URL = env('MANIPAL_API_URL')
