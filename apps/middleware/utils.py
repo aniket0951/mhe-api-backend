@@ -17,11 +17,13 @@ class MiddlewareUtils:
     @staticmethod
     def authenticate_encryption(request):
         jwt_token = request.META.get(JWT_AUTHORIZATION_KEY)
-        if not jwt_token or len(jwt_token)<64:
+        if not jwt_token or len(jwt_token)<ENCRYPTION_KEYWORD_LENGTH:
             return False
         try:
             if ENCRYPTION_KEYWORD==AESCipher.decrypt(jwt_token[-ENCRYPTION_KEYWORD_LENGTH:]).decode("utf-8"):
-                request.META["HTTP_AUTHORIZATION"] = jwt_token[:-ENCRYPTION_KEYWORD_LENGTH]
+                request.META["HTTP_AUTHORIZATION"] = ""
+                if len(jwt_token)>ENCRYPTION_KEYWORD_LENGTH+4:
+                    request.META["HTTP_AUTHORIZATION"] = jwt_token[:-ENCRYPTION_KEYWORD_LENGTH]
                 request.META[ENCRYPTION_FLAG] = True
                 return True
         except Exception as e:
