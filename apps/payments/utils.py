@@ -563,7 +563,7 @@ class PaymentUtils:
         return param
 
     @staticmethod
-    def set_payment_data_for_op_bill(request,param,hospital,episode_no,bill_row_id):
+    def set_payment_data_for_op_bill(request,param,hospital,episode_no):
         payment_data = {}
         payment_data["processing_id"] = param["token"]["processing_id"]
         payment_data["patient"] = request.user.id
@@ -575,12 +575,12 @@ class PaymentUtils:
             payment_data["payment_done_for_patient"] = request.user.id
         payment_data["payment_for_op_billing"] = True
         payment_data["episode_number"] = episode_no
-        payment_data["bill_row_id"] = bill_row_id
+        # payment_data["bill_row_id"] = bill_row_id
         
         return payment_data
 
     @staticmethod
-    def validate_order_amount_for_op_bill(param,location_code,episode_no,bill_row_id):
+    def validate_order_amount_for_op_bill(param,location_code,episode_no):
         calculated_amount = 0
         response = client.post(
                         PaymentConstants.URL_OP_BILL_DETAILS,
@@ -809,9 +809,10 @@ class PaymentUtils:
             payment_instance.payment_for_uhid_creation or \
             payment_instance.payment_for_ip_deposit:
 
-            if not bill_details.get("ReceiptNo"):
+            if not bill_details.get("ReceiptNo") and not payment_instance.payment_for_uhid_creation:
                 raise ReceiptGenerationFailedException
-            payment["receipt_number"] = bill_details.get("ReceiptNo")
+            if bill_details.get("ReceiptNo"):
+                payment["receipt_number"] = bill_details.get("ReceiptNo")
 
         elif payment_instance.payment_for_op_billing:
             if not bill_details.get("BillNo"):
@@ -1063,8 +1064,8 @@ class PaymentUtils:
             "auth_code":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
-            "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance),
-            "drawer":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
+            "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance)
+            # "drawer":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
         }
         payment_update_response = OPBillingPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if payment_update_response and payment_update_response.data:
