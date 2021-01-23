@@ -1019,8 +1019,9 @@ class PaymentUtils:
             "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
         }
         payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
-        payment_instance.raw_info_from_manipal_response = payment_update_response
-        payment_instance.save()
+        if payment_update_response and payment_update_response.data:
+            payment_instance.raw_info_from_manipal_response = payment_update_response.data
+            payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
@@ -1044,8 +1045,9 @@ class PaymentUtils:
             "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
-        payment_instance.raw_info_from_manipal_response = payment_update_response
-        payment_instance.save()
+        if payment_update_response and payment_update_response.data:
+            payment_instance.raw_info_from_manipal_response = payment_update_response.data
+            payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
@@ -1065,8 +1067,9 @@ class PaymentUtils:
             "drawer":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
         }
         payment_update_response = OPBillingPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
-        payment_instance.raw_info_from_manipal_response = payment_update_response
-        payment_instance.save()
+        if payment_update_response and payment_update_response.data:
+            payment_instance.raw_info_from_manipal_response = payment_update_response.data
+            payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
@@ -1084,8 +1087,9 @@ class PaymentUtils:
             "location_code":payment_instance.location.code
         }
         payment_update_response = IPDepositPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
-        payment_instance.raw_info_from_manipal_response = payment_update_response
-        payment_instance.save()
+        if payment_update_response and payment_update_response.data:
+            payment_instance.raw_info_from_manipal_response = payment_update_response.data
+            payment_instance.save()
         if  not payment_update_response.status_code==200 or \
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
