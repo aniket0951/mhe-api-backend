@@ -801,20 +801,35 @@ class PaymentUtils:
             datetime_object = payment_instance.health_package_appointment.created_at
             date_time = datetime_object.strftime("%Y%m%d")
         return date_time
-    
+
     @staticmethod
-    def set_receipt_number(payment_instance,bill_details,payment):
+    def set_receipt_number_for_only_uhid(payment_instance,bill_details,payment):
+        if  payment_instance.payment_for_uhid_creation and \
+            not payment_instance.appointment and \
+            not payment_instance.payment_for_health_package and \
+            bill_details.get("ReceiptNo"):
+
+            payment["receipt_number"] = bill_details.get("ReceiptNo")
+
+        return payment
+
+    @staticmethod
+    def set_receipt_number_for_app_hp_ip(payment_instance,bill_details,payment,is_requested_from_mobile):
         if  payment_instance.appointment or \
             payment_instance.payment_for_health_package or \
-            payment_instance.payment_for_uhid_creation or \
             payment_instance.payment_for_ip_deposit:
 
-            if not bill_details.get("ReceiptNo") and (payment_instance.payment_for_health_package or payment_instance.appointment or payment_instance.payment_for_ip_deposit):
+            if not bill_details.get("ReceiptNo") and not is_requested_from_mobile:
                 raise ReceiptGenerationFailedException
+
             if bill_details.get("ReceiptNo"):
                 payment["receipt_number"] = bill_details.get("ReceiptNo")
 
-        elif payment_instance.payment_for_op_billing:
+        return payment
+
+    @staticmethod
+    def set_receipt_number_for_op(payment_instance,bill_details,payment):
+        if payment_instance.payment_for_op_billing:
             if not bill_details.get("BillNo"):
                 raise ReceiptGenerationFailedException
             payment["receipt_number"] = bill_details.get("BillNo")
@@ -822,14 +837,23 @@ class PaymentUtils:
                 payment["episode_number"] = bill_details.get("EpisodeNo")
 
         return payment
+    
+    @staticmethod
+    def set_receipt_number(payment_instance,bill_details,payment,is_requested_from_mobile):
+
+        payment = PaymentUtils.set_receipt_number_for_only_UHID(payment_instance,bill_details,payment)
+        payment = PaymentUtils.set_receipt_number_for_app_hp_ip(payment_instance,bill_details,payment,is_requested_from_mobile)
+        payment = PaymentUtils.set_receipt_number_for_op(payment_instance,bill_details,payment)
+
+        return payment
 
 
 
     
     @staticmethod
-    def update_payment_details(payment_instance,payment_response,order_details,order_payment_details):
+    def update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile):
         payment = {}
-        payment = PaymentUtils.set_receipt_number(payment_instance,payment_response,payment)
+        payment = PaymentUtils.set_receipt_number(payment_instance,payment_response,payment,is_requested_from_mobile)
         payment["uhid_number"] = payment_response.get("uhid_number")
         payment["razor_payment_id"] = order_payment_details.get("id")
         payment["razor_invoice_id"] = order_payment_details.get("invoice_id")
