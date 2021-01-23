@@ -809,7 +809,7 @@ class PaymentUtils:
             payment_instance.payment_for_uhid_creation or \
             payment_instance.payment_for_ip_deposit:
 
-            if not bill_details.get("ReceiptNo") and not payment_instance.payment_for_uhid_creation:
+            if not bill_details.get("ReceiptNo") and (payment_instance.payment_for_health_package or payment_instance.appointment or payment_instance.payment_for_ip_deposit):
                 raise ReceiptGenerationFailedException
             if bill_details.get("ReceiptNo"):
                 payment["receipt_number"] = bill_details.get("ReceiptNo")
