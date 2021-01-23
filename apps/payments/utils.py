@@ -1047,7 +1047,7 @@ class PaymentUtils:
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         logger.info("payment_update_response.data %s"%(str(payment_update_response.data)))
         if payment_update_response and payment_update_response.data:
-            payment_instance.raw_info_from_manipal_response = json.dump(payment_update_response.data)
+            payment_instance.raw_info_from_manipal_response = json.dumps(payment_update_response.data)
             payment_instance.save()
         logger.info("payment_instance.raw_info_from_manipal_response %s"%(str(payment_instance.raw_info_from_manipal_response)))
         if  not payment_update_response.status_code==200 or \
