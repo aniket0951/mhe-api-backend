@@ -1045,6 +1045,7 @@ class PaymentUtils:
             "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        logger.info("payment_update_response.data %s"%(str(payment_update_response.data)))
         if payment_update_response and payment_update_response.data:
             payment_instance.raw_info_from_manipal_response = payment_update_response.data
             payment_instance.save()
