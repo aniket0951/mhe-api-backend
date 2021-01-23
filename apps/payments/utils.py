@@ -841,7 +841,7 @@ class PaymentUtils:
     @staticmethod
     def set_receipt_number(payment_instance,bill_details,payment,is_requested_from_mobile):
 
-        payment = PaymentUtils.set_receipt_number_for_only_UHID(payment_instance,bill_details,payment)
+        payment = PaymentUtils.set_receipt_number_for_only_uhid(payment_instance,bill_details,payment)
         payment = PaymentUtils.set_receipt_number_for_app_hp_ip(payment_instance,bill_details,payment,is_requested_from_mobile)
         payment = PaymentUtils.set_receipt_number_for_op(payment_instance,bill_details,payment)
 
