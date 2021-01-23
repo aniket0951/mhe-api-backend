@@ -814,6 +814,8 @@ class PaymentUtils:
             payment["receipt_number"] = bill_details.get("ReceiptNo")
 
         elif payment_instance.payment_for_op_billing:
+            if not bill_details.get("BillNo"):
+                raise ReceiptGenerationFailedException
             payment["receipt_number"] = bill_details.get("BillNo")
             if bill_details.get("EpisodeNo"):
                 payment["episode_number"] = bill_details.get("EpisodeNo")

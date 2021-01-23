@@ -4,14 +4,13 @@ import logging
 from django.db.models.query import QuerySet
 from django.conf import settings
 from uuid import UUID
-
+from .utils import MiddlewareUtils
 from utils.cipher import AESCipher
 
 request_logger = logging.getLogger('django.request')
 response_logger = logging.getLogger('django.response')
 
-ENCRYPTION_KEYWORD = settings.ENCRYPTION_KEYWORD
-ENCRYPTION_KEYWORD_VALUE = settings.ENCRYPTION_KEYWORD_VALUE
+ENCRYPTION_FLAG = settings.ENCRYPTION_FLAG
 ENCRYPTION_BODY_KEY = settings.ENCRYPTION_BODY_KEY
 
 class CipherRequestMiddleware(object):
@@ -33,10 +32,8 @@ class CipherRequestMiddleware(object):
         # Logic executed before a call to view
         # Gives access to the view itself & arguments
 
-        request_logger.info("\n\nREQUEST request.headers: %s"%(request.headers))
-        if request.headers.get(ENCRYPTION_KEYWORD) and request.headers.get(ENCRYPTION_KEYWORD)==ENCRYPTION_KEYWORD_VALUE:
+        if MiddlewareUtils.authenticate_encryption(request):
             request_data = getattr(request, '_body', request.body)
-            request_logger.info("\n\nREQUEST BODY ENCRYPTED: %s"%(request_data))
             if request_data:
                 try:
                     encrypted_request_body = json.loads(request_data)
@@ -112,9 +109,7 @@ class CipherResponseMiddleware(object):
         # Logic executed after the view is called,
         # ONLY IF view response is TemplateResponse, see listing 2-24
 
-        request_logger.info("\n\nRESPONSE BODY ENCRYPTED: %s"%(response.data))
-
-        if request.headers.get(ENCRYPTION_KEYWORD) and request.headers.get(ENCRYPTION_KEYWORD)==ENCRYPTION_KEYWORD_VALUE and response.data:
+        if request.META.get(ENCRYPTION_FLAG) and request.META.get(ENCRYPTION_FLAG)==True and response.data:
             try:
                 response_data = response.data.copy()
                 if isinstance(response_data, dict):
@@ -124,7 +119,6 @@ class CipherResponseMiddleware(object):
                 str_conv_response_data = json.dumps(response_data, ensure_ascii=False, cls=None)
                 response.data = { ENCRYPTION_BODY_KEY: AESCipher.encrypt(str_conv_response_data) }
             except Exception as e:
-                request_logger.error("\n\nRESPONSE BODY Parsing Failed: %s"%(e))
+                response_logger.error("\n\nRESPONSE BODY Parsing Failed: %s"%(e))
         
-        # request_logger.info("\n\nRESPONSE BODY ENCODED: %s"%(response.data))
         return response
