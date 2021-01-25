@@ -305,7 +305,7 @@ class CreateMyAppointment(ProxyView):
 
                     if  (consultation_response.data['data'].get('IsFollowUp') and \
                         consultation_response.data['data'].get('IsFollowUp') != "N") or \
-                        consultation_response.data['data'].get("PlanCode") in settings.APPOINTMENT_PLAN_CODES:
+                        consultation_response.data['data'].get("PlanCode"):
 
                         hv_charges = consultation_response.data['data'].get("OPDConsCharges")
                         vc_charges = consultation_response.data['data'].get("VCConsCharges")
