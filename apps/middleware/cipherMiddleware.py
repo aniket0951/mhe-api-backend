@@ -133,5 +133,6 @@ class CipherResponseMiddleware(object):
                 response.data = { ENCRYPTION_BODY_KEY: AESCipher.encrypt(str_conv_response_data) }
             except Exception as e:
                 response_logger.error("\n\nRESPONSE BODY Parsing Failed: %s"%(e))
-        
+        request_logger.info("\n\nRESPONSE BODY ENCRYPTED: %s"%(response.data))
+
         return response
