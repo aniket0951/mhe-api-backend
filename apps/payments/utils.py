@@ -668,7 +668,15 @@ class PaymentUtils:
 
 
 
-
+    @staticmethod
+    def get_appointment_plan_code(payment_instance):
+        plan_code = ""
+        if payment_instance.appointment:
+            appointment_instance = Appointment.objects.filter(id=payment_instance.appointment.id).first()
+            plan_code = appointment_instance.plan_code
+        # elif payment_instance.payment_for_health_package:
+        #     appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
+        return plan_code
     
     @staticmethod
     def get_appointment_instance_from_payment_instance(payment_instance):
@@ -1066,6 +1074,7 @@ class PaymentUtils:
             "location_code":payment_instance.location.code,
             "app_date":PaymentUtils.get_payment_appointment_date(payment_instance),
             "package_code":PaymentUtils.get_health_package_appointment_code(payment_instance),
+            "plan_code":PaymentUtils.get_appointment_plan_code(payment_instance),
             "type":PaymentUtils.get_appointment_type(payment_instance),
             "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
         }

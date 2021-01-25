@@ -106,12 +106,14 @@ class Appointment(models.Model):
     episode_number = models.CharField(max_length=30,
                                       blank=True,
                                       null=True)
-
+    
     episode_date_time = models.DateTimeField(auto_now=True)
 
     corporate_appointment = models.BooleanField(default=False)
 
     is_follow_up = models.BooleanField(default=False)
+
+    plan_code = models.CharField(max_length=30,blank=True,null=True)
 
     @property
     def is_cancellable(self):

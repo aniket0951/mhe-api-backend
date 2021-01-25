@@ -32,6 +32,8 @@ class CipherRequestMiddleware(object):
         # Logic executed before a call to view
         # Gives access to the view itself & arguments
 
+        request_logger.info("\n\nREQUEST BODY: %s"%(getattr(request, '_body', request.body)))
+        request_logger.info("\n\nREQUEST HEADERS: %s"%(request.headers))
         if MiddlewareUtils.authenticate_encryption(request):
             request_data = getattr(request, '_body', request.body)
             if request_data:
