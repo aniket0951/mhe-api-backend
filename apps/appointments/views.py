@@ -315,7 +315,10 @@ class CreateMyAppointment(ProxyView):
                             corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                             corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
                             corporate_appointment["processing_id"] = get_processing_id()
-                            corporate_appointment["transaction_number"] = "F"+appointment_identifier
+                            if consultation_response.data['data'].get('IsFollowUp') != "N":
+                                corporate_appointment["transaction_number"] = "F"+appointment_identifier
+                            else:
+                                corporate_appointment["transaction_number"] = consultation_response.data['data'].get("PlanCode")+appointment_identifier
                             followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
                             appointment_instance.consultation_amount = 0
                             response = AppointmentPaymentView.as_view()(followup_payment_param)
