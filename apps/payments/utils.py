@@ -554,16 +554,17 @@ class PaymentUtils:
     
 
     @staticmethod
-    def set_param_for_op_bill(param,location_code,episode_no):
+    def set_param_for_op_bill(param,location_code,episode_no,bill_row_id):
         if "token" not in param:
             param["token"] = {}
         param["token"]["transaction_type"] = PaymentConstants.OP_BILL_TRANSACTION_TYPE
         param["token"]["appointment_id"] = episode_no
         param["token"]["payment_location"] = location_code
+        param["token"]["bill_row_id"] = bill_row_id
         return param
 
     @staticmethod
-    def set_payment_data_for_op_bill(request,param,hospital,episode_no):
+    def set_payment_data_for_op_bill(request,param,hospital,episode_no,bill_row_id):
         payment_data = {}
         payment_data["processing_id"] = param["token"]["processing_id"]
         payment_data["patient"] = request.user.id
@@ -575,12 +576,12 @@ class PaymentUtils:
             payment_data["payment_done_for_patient"] = request.user.id
         payment_data["payment_for_op_billing"] = True
         payment_data["episode_number"] = episode_no
-        # payment_data["bill_row_id"] = bill_row_id
+        payment_data["bill_row_id"] = bill_row_id
         
         return payment_data
 
     @staticmethod
-    def validate_order_amount_for_op_bill(param,location_code,episode_no):
+    def validate_order_amount_for_op_bill(param,location_code,episode_no,bill_row_id):
         calculated_amount = 0
         response = client.post(
                         PaymentConstants.URL_OP_BILL_DETAILS,
@@ -596,7 +597,7 @@ class PaymentUtils:
             response.data.get("data"):
             episode_list = response.data.get("data")
             for episode in episode_list:
-                if episode.get("EpisodeNo") == episode_no: #and episode.get("BillRowId") == bill_row_id:
+                if episode.get("EpisodeNo") == episode_no and episode.get("BillRowId") == bill_row_id:
                     calculated_amount += int(float(episode["OutStandingAmt"]))
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
@@ -1099,8 +1100,8 @@ class PaymentUtils:
             "auth_code":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
-            "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance)
-            # "drawer":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
+            "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance),
+            "drawer":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
         }
         payment_update_response = OPBillingPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if payment_update_response and payment_update_response.data:

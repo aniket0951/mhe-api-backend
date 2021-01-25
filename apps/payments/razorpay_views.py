@@ -138,13 +138,14 @@ class RazorOPBillPayment(APIView):
         
         location_code = request.data.get("location_code", None)
         episode_no = request.data.get("episode_no", None)
+        bill_row_id = request.data.get("bill_row_id", None)
 
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         param = get_payment_param_for_razorpay(request.data)
-        param = PaymentUtils.set_param_for_op_bill(param,location_code,episode_no)
-        payment_data = PaymentUtils.set_payment_data_for_op_bill(request,param,hospital,episode_no)
+        param = PaymentUtils.set_param_for_op_bill(param,location_code,episode_no,bill_row_id)
+        payment_data = PaymentUtils.set_payment_data_for_op_bill(request,param,hospital,episode_no,bill_row_id)
 
-        PaymentUtils.validate_order_amount_for_op_bill(param,location_code,episode_no)
+        PaymentUtils.validate_order_amount_for_op_bill(param,location_code,episode_no,bill_row_id)
 
         param,payment_data = PaymentUtils.set_order_id_for_op_bill(param,payment_data)
 
