@@ -1101,7 +1101,7 @@ class PaymentUtils:
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
             "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance),
-            "drawer":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
+            "gateway_id":PaymentUtils.get_bill_row_id_for_op_bill(payment_instance)
         }
         payment_update_response = OPBillingPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if payment_update_response and payment_update_response.data:
