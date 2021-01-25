@@ -111,6 +111,7 @@ class CipherResponseMiddleware(object):
         # Logic executed after the view is called,
         # ONLY IF view response is TemplateResponse, see listing 2-24
 
+        request_logger.info("\n\nRESPONSE BODY: %s"%(response.data.copy()))
         if request.META.get(ENCRYPTION_FLAG) and request.META.get(ENCRYPTION_FLAG)==True and response.data:
             try:
                 response_data = response.data.copy()
