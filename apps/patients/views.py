@@ -191,7 +191,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             otp_expiration_time = datetime.now(
             ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
-            send_email_activation_otp(str(patient_object.id), random_email_otp)
+            # send_email_activation_otp(str(patient_object.id), random_email_otp)
 
             patient_object.email_otp = random_email_otp
             patient_object.email_otp_expiration_time = otp_expiration_time
@@ -900,8 +900,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             family_member_object.email_otp_expiration_time=otp_expiration_time
             family_member_object.save()
 
-            send_family_member_email_activation_otp(
-                str(family_member_object.id), random_email_otp)
+            # send_family_member_email_activation_otp(
+            #     str(family_member_object.id), random_email_otp)
 
         if is_mobile_to_be_verified:
             random_mobile_password=get_random_string(
