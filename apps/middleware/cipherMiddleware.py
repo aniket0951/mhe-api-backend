@@ -6,6 +6,8 @@ from django.conf import settings
 from uuid import UUID
 from .utils import MiddlewareUtils
 from utils.cipher import AESCipher
+from collections import OrderedDict
+
 
 request_logger = logging.getLogger('django.request')
 response_logger = logging.getLogger('django.response')
@@ -86,6 +88,8 @@ class CipherResponseMiddleware(object):
                 v = self.list_replace_value(v)
             elif isinstance(v, UUID):
                 v = v.hex
+            elif isinstance(v, OrderedDict):
+                v = dict(v)
             elif isinstance(v, bytes):
                 v = v.decode('utf-8')
             elif isinstance(v, QuerySet):
@@ -103,6 +107,8 @@ class CipherResponseMiddleware(object):
                 e = self.dict_replace_value(e)
             elif isinstance(e, UUID):
                 e = e.hex
+            elif isinstance(e, OrderedDict):
+                e = dict(e)
             elif isinstance(e, bytes):
                 e = e.decode('utf-8')
             elif isinstance(e, QuerySet):
