@@ -1097,7 +1097,7 @@ class PaymentUtils:
         payment_update_request = {
             "uhid":PaymentUtils.get_uhid_number(payment_instance),
             "transaction_number":order_payment_details.get('id'),
-            "auth_code":order_details.get("id"),
+            "processing_id":order_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
             "location_code":payment_instance.location.code,
             "episode_number":PaymentUtils.get_episode_number_for_op_bill(payment_instance),

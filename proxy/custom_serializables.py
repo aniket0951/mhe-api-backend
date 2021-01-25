@@ -556,7 +556,7 @@ class OPBillingPaymentUpdate:
     def __init__(self, param):
         self.uhid = param.get("uhid", None)
         self.transaction_number = param.get("transaction_number", "NA")
-        self.auth_code = param.get("auth_code", "9999")
+        self.processing_id = param.get("processing_id", "NA")
         self.source = param.get("source", "PatientApp")
         self.gateway_id = param.get("gateway_id", "")
         self.amt = param.get("amt", "0")
@@ -567,7 +567,7 @@ class OPBillingPaymentUpdate:
         serializer.start_object('OPBillingParam')
         serializer.add_property('hospitalno', self.uhid)
         serializer.add_property('tranno', self.transaction_number)
-        serializer.add_property('authcode', self.auth_code)
+        serializer.add_property('processingId', self.processing_id)
         serializer.add_property('source', self.source)
         serializer.add_property('gatewayid', self.gateway_id)
         serializer.add_property('amount', str(self.amt))
