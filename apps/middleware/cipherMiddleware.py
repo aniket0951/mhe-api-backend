@@ -86,6 +86,8 @@ class CipherResponseMiddleware(object):
                 v = self.list_replace_value(v)
             elif isinstance(v, UUID):
                 v = v.hex
+            elif isinstance(v, bytes):
+                v = v.decode('utf-8')
             elif isinstance(v, QuerySet):
                 v = list(v.values())
                 v = self.list_replace_value(v)
@@ -101,6 +103,8 @@ class CipherResponseMiddleware(object):
                 e = self.dict_replace_value(e)
             elif isinstance(e, UUID):
                 e = e.hex
+            elif isinstance(e, bytes):
+                e = e.decode('utf-8')
             elif isinstance(e, QuerySet):
                 e = list(e.values())
                 e = self.list_replace_value(e)
