@@ -281,7 +281,31 @@ class CreateMyAppointment(ProxyView):
                 if patient and patient.active_view == 'Corporate':
                     corporate_param = cancel_and_refund_parameters(
                         corporate_appointment)
-                    response = AppointmentPaymentView.as_view()(corporate_param)
+                    payment_update_response = AppointmentPaymentView.as_view()(corporate_param)
+                    try:
+                        if  payment_update_response.status_code==200 and \
+                            payment_update_response.data and \
+                            payment_update_response.data.get("data") and \
+                            payment_update_response.data.get("data").get("payDetailAPIResponse") and \
+                            payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"):
+                            bill_detail = json.loads(payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"))[0]
+                            if bill_detail.get("AppointmentId") and "||" in bill_detail.get("AppointmentId"):
+                                appointment_instance.uhid = bill_detail.get("HospitalNo")
+                                appointment_instance.appointment_identifier = bill_detail.get("AppointmentId")
+                                appointment_instance.payment_status = "success"
+                                appointment_instance.save()
+                                new_appointment["uhid"] = bill_detail.get("HospitalNo")
+                                if family_member:
+                                    family_member_instance = FamilyMember.objects.filter(id=family_member.id).first()
+                                    family_member_instance.uhid_number = bill_detail.get("HospitalNo")
+                                    family_member_instance.save()
+                                else:
+                                    patient_instance = Patient.objects.filter(id=data.get("patient").id).first()
+                                    patient_instance.uhid_number = bill_detail.get("HospitalNo")
+                                    patient_instance.save()
+                    except Exception as e:
+                        logger.error("Error parsing response while booking appointment for corporate user %s"%(str(e)))
+                        
                 
                 uhid = new_appointment["uhid"] or "None"
                 location_code = data.get("hospital").code
