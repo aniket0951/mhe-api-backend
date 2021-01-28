@@ -115,7 +115,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MH Brookefield",
+            "hospital_code":"MCB",
             "name":"Suneetha M",
             "contact":"7899910834",
             "type":"TO",
@@ -128,7 +128,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MH Brookefield",
+            "hospital_code":"MCB",
             "name":"Dr Sumeetha S",
             "type":"TO",
             "email":"sumeetha.s@manipalhospitals.com"
@@ -140,7 +140,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MH Brookefield",
+            "hospital_code":"MCB",
             "name":"Dr Ashwini P R",
             "type":"TO",
             "email":"ashwinip@manipalhospitals.com"
@@ -152,7 +152,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MH Brookefield",
+            "hospital_code":"MCB",
             "name":"Mr Arnab Mondal",
             "type":"CC",
             "email":"arnab.mondal@manipalhospitals.com"
@@ -349,7 +349,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MNSH",
+            "hospital_code":"MHN",
             "name":"Asha M",
             "contact":"9686811338",
             "type":"TO",
@@ -362,7 +362,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MNSH",
+            "hospital_code":"MHN",
             "name":"Indrani Y",
             "type":"TO",
             "email":"indrani.y@manipalhospitals.com"
@@ -374,7 +374,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MNSH",
+            "hospital_code":"MHN",
             "name":"Mr Pramod Kunder",
             "type":"CC",
             "email":"pramod.kunder@manipalhospitals.com"
@@ -533,7 +533,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"All",
+            "hospital_code":"ALL",
             "name":"Kanchan Karkal",
             "type":"CC",
             "email":"kanchan.karkal@manipalhospitals.com"
@@ -545,7 +545,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"All",
+            "hospital_code":"ALL",
             "name":"Devayani Raje",
             "type":"CC",
             "email":"devayani.raje@manipalhospitals.com"
@@ -557,7 +557,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"All",
+            "hospital_code":"ALL",
             "name":"Dr Samrin GM",
             "type":"CC",
             "email":"samrin.gm@manipalhospitals.com"
@@ -569,7 +569,7 @@
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"All",
+            "hospital_code":"ALL",
             "name":"Amit K",
             "type":"CC",
             "email":"amit.k@manipalhospitals.com"
