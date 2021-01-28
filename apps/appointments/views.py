@@ -281,7 +281,31 @@ class CreateMyAppointment(ProxyView):
                 if patient and patient.active_view == 'Corporate':
                     corporate_param = cancel_and_refund_parameters(
                         corporate_appointment)
-                    response = AppointmentPaymentView.as_view()(corporate_param)
+                    payment_update_response = AppointmentPaymentView.as_view()(corporate_param)
+                    try:
+                        if  payment_update_response.status_code==200 and \
+                            payment_update_response.data and \
+                            payment_update_response.data.get("data") and \
+                            payment_update_response.data.get("data").get("payDetailAPIResponse") and \
+                            payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"):
+                            bill_detail = json.loads(payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"))[0]
+                            if bill_detail.get("AppointmentId") and "||" in bill_detail.get("AppointmentId"):
+                                appointment_instance.uhid = bill_detail.get("HospitalNo")
+                                appointment_instance.appointment_identifier = bill_detail.get("AppointmentId")
+                                appointment_instance.payment_status = "success"
+                                appointment_instance.save()
+                                new_appointment["uhid"] = bill_detail.get("HospitalNo")
+                                if family_member:
+                                    family_member_instance = FamilyMember.objects.filter(id=family_member.id).first()
+                                    family_member_instance.uhid_number = bill_detail.get("HospitalNo")
+                                    family_member_instance.save()
+                                else:
+                                    patient_instance = Patient.objects.filter(id=data.get("patient").id).first()
+                                    patient_instance.uhid_number = bill_detail.get("HospitalNo")
+                                    patient_instance.save()
+                    except Exception as e:
+                        logger.error("Error parsing response while booking appointment for corporate user %s"%(str(e)))
+                        
                 
                 uhid = new_appointment["uhid"] or "None"
                 location_code = data.get("hospital").code
@@ -294,25 +318,39 @@ class CreateMyAppointment(ProxyView):
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
-                if consultation_response.status_code == 200 and consultation_response.data and consultation_response.data['data']:
+
+                if  consultation_response.status_code == 200 and \
+                    consultation_response.data and \
+                    consultation_response.data['data']:
+
                     response_data['consultation_object'] = consultation_response.data['data']
-                    if  consultation_response.data['data'].get('IsFollowUp') and \
-                        consultation_response.data['data'].get('IsFollowUp') != "N":
+                    if consultation_response.data['data'].get("PlanCode"):
+                        appointment_instance.plan_code = consultation_response.data['data'].get("PlanCode")
+
+                    if  (consultation_response.data['data'].get('IsFollowUp') and \
+                        consultation_response.data['data'].get('IsFollowUp') != "N") or \
+                        consultation_response.data['data'].get("PlanCode"):
+
                         hv_charges = consultation_response.data['data'].get("OPDConsCharges")
                         vc_charges = consultation_response.data['data'].get("VCConsCharges")
                         pr_charges = consultation_response.data['data'].get("PRConsCharges")
-                        if (appointment_instance.appointment_mode == "HV" and hv_charges == "0") or (appointment_instance.appointment_mode == "VC" and vc_charges == "0") or (appointment_instance.appointment_mode == "PR" and pr_charges == "0"):
+
+                        if (appointment_instance.appointment_mode == "HV" and str(hv_charges) == "0") or (appointment_instance.appointment_mode == "VC" and str(vc_charges) == "0") or (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
                             corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                             corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
                             corporate_appointment["processing_id"] = get_processing_id()
-                            corporate_appointment["transaction_number"] = "F"+appointment_identifier
+                            if consultation_response.data['data'].get('IsFollowUp') != "N":
+                                corporate_appointment["transaction_number"] = "F"+appointment_identifier
+                            else:
+                                corporate_appointment["transaction_number"] = consultation_response.data['data'].get("PlanCode")+appointment_identifier
                             followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
                             appointment_instance.consultation_amount = 0
                             response = AppointmentPaymentView.as_view()(followup_payment_param)
                             appointment_instance.payment_status = "success"
-                        appointment_instance.is_follow_up = True
-                        appointment_instance.save()
-                        
+
+                        appointment_instance.is_follow_up = True if consultation_response.data['data'].get('IsFollowUp') != "N" else False
+
+                    appointment_instance.save()
 
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
@@ -1188,7 +1226,7 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
             feedback_serializer = FeedbacksSerializer(data=request.data)
         feedback_serializer.is_valid(raise_exception=True)
         feedback_serializer.save()
-        send_feedback_received_mail(feedback_serializer)
+        send_feedback_received_mail(feedback_serializer,patient)
         return Response(data={"message": "Feedback Submitted"}, status=status.HTTP_200_OK)
 
 

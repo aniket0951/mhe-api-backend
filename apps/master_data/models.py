@@ -275,3 +275,41 @@ class EmergencyContact(MyBaseModel):
     class Meta:
         verbose_name = "Emergency Contact"
         verbose_name_plural = "Emergency Contacts"
+
+class FeedbackRecipients(MyBaseModel):
+
+    RECIPIENTS_TYPE = (
+        ("TO", 'TO'),
+        ("CC", 'CC'),
+        ("BCC", 'BCC')
+    )
+
+    hospital_code = models.SlugField(
+                                    unique=False,
+                                    blank=False,
+                                    null=False
+                                )
+    name = models.CharField(
+                            max_length=50,
+                            blank=True,
+                            null=True
+                        )
+    contact = models.CharField(
+                            max_length=20,
+                            blank=True,
+                            null=True
+                        )
+    type = models.CharField(
+                            max_length=20,
+                            choices=RECIPIENTS_TYPE,
+                            blank=True,
+                            null=True
+                        )
+    email = models.CharField(
+                            max_length=50,
+                            blank=True,
+                            null=True
+                        )
+    class Meta:
+        verbose_name = "Feedback recipient"
+        verbose_name_plural = "Feedback recipients"

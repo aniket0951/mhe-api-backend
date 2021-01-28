@@ -142,7 +142,7 @@ class RazorOPBillPayment(APIView):
 
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         param = get_payment_param_for_razorpay(request.data)
-        param = PaymentUtils.set_param_for_op_bill(param,location_code,episode_no)
+        param = PaymentUtils.set_param_for_op_bill(param,location_code,episode_no,bill_row_id)
         payment_data = PaymentUtils.set_payment_data_for_op_bill(request,param,hospital,episode_no,bill_row_id)
 
         PaymentUtils.validate_order_amount_for_op_bill(param,location_code,episode_no,bill_row_id)
@@ -191,13 +191,13 @@ class RazorPaymentResponse(APIView):
         order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
         PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
 
-        if order_payment_details.get("status") in [PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED]:
+        if order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED]:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
         payment_response = dict()
         try:
-            payment_response = PaymentUtils.update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details)
-            PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details)
+            payment_response = PaymentUtils.update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details,order_payment_details)
+            PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)
             PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
             PaymentUtils.payment_for_health_package(payment_instance,payment_response)
