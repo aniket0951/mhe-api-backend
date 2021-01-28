@@ -101,24 +101,22 @@ def get_feedback_recipients(patient_instance):
             feedback_recipients_data[feedback_recipient.type].append(feedback_recipient.email)
     return feedback_recipients_data
 
-def send_feedback_received_mail(feedback_serializer):
+def send_feedback_received_mail(feedback_serializer,patient_instance):
     try:
-        recipients = settings.FEEDBACK_NOTIFICATION_EMAIL_RECIPIENTS
-        if not recipients or not settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT or not feedback_serializer.data.get("user_id"):
-            raise UnablToSendEmailException
-        
-        patient_instance = Patient.objects.filter(id=feedback_serializer.data.get("user_id")).first()
-        if not patient_instance:
+        if not settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT:
             raise UnablToSendEmailException
         
         feedback_recipients_data = get_feedback_recipients(patient_instance)
         if not feedback_recipients_data.get(TO) and not feedback_recipients_data.get(CC):
             raise UnablToSendEmailException
         
-        print("feedback_recipients_data",feedback_recipients_data)
-        subject = settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT
-        text_content = get_email_body(patient_instance,feedback_serializer)
-        email = EmailMultiAlternatives(subject=subject,body=text_content,from_email=settings.EMAIL_FROM_USER,to=feedback_recipients_data.get(TO),cc=feedback_recipients_data.get(CC))
+        email = EmailMultiAlternatives(
+                            subject=settings.FEEDBACK_NOTIFICATION_EMAIL_SUBJECT,
+                            body=get_email_body(patient_instance,feedback_serializer),
+                            from_email=settings.EMAIL_FROM_USER,
+                            to=feedback_recipients_data.get(TO),
+                            cc=feedback_recipients_data.get(CC)
+                        )
         email_sent = email.send()
 
         if not email_sent:
