@@ -598,11 +598,11 @@ class PaymentUtils:
             episode_list = response.data.get("data")
             for episode in episode_list:
                 if episode.get("EpisodeNo") == episode_no:
-                    if episode.get("BillRowId"):
-                        if episode.get("BillRowId") == bill_row_id:
-                            calculated_amount += int(float(episode["OutStandingAmt"]))
-                    else:
-                        calculated_amount += int(float(episode["OutStandingAmt"]))
+                    # if episode.get("BillRowId"):
+                    #     if episode.get("BillRowId") == bill_row_id:
+                    #         calculated_amount += int(float(episode["OutStandingAmt"]))
+                    # else:
+                    calculated_amount += int(float(episode["OutStandingAmt"]))
 
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
