@@ -12,6 +12,7 @@ from collections import OrderedDict
 request_logger = logging.getLogger('django.request')
 response_logger = logging.getLogger('django.response')
 
+ENCRYPTION_ENABLED = settings.ENCRYPTION_ENABLED
 ENCRYPTION_FLAG = settings.ENCRYPTION_FLAG
 ENCRYPTION_BODY_KEY = settings.ENCRYPTION_BODY_KEY
 
@@ -34,9 +35,7 @@ class CipherRequestMiddleware(object):
         # Logic executed before a call to view
         # Gives access to the view itself & arguments
 
-        request_logger.info("\n\nREQUEST BODY: %s"%(getattr(request, '_body', request.body)))
-        request_logger.info("\n\nREQUEST HEADERS: %s"%(request.headers))
-        if MiddlewareUtils.authenticate_encryption(request):
+        if ENCRYPTION_ENABLED and MiddlewareUtils.authenticate_encryption(request):
             request_data = getattr(request, '_body', request.body)
             if request_data:
                 try:
@@ -121,8 +120,7 @@ class CipherResponseMiddleware(object):
         # Logic executed after the view is called,
         # ONLY IF view response is TemplateResponse, see listing 2-24
         
-        request_logger.info("\n\nRESPONSE BODY: %s"%(response.data))
-        if request.META.get(ENCRYPTION_FLAG) and request.META.get(ENCRYPTION_FLAG)==True and response.data:
+        if ENCRYPTION_ENABLED and request.META.get(ENCRYPTION_FLAG) and request.META.get(ENCRYPTION_FLAG)==True and response.data:
             try:
                 response_data = response.data.copy()
                 if isinstance(response_data, dict):
@@ -133,6 +131,5 @@ class CipherResponseMiddleware(object):
                 response.data = { ENCRYPTION_BODY_KEY: AESCipher.encrypt(str_conv_response_data) }
             except Exception as e:
                 response_logger.error("\n\nRESPONSE BODY Parsing Failed: %s"%(e))
-        request_logger.info("\n\nRESPONSE BODY ENCRYPTED: %s"%(response.data))
-
+        
         return response
