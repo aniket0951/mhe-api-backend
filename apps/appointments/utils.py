@@ -1,6 +1,7 @@
 import hashlib
 import random
 import time
+import logging
 
 from rest_framework.test import APIRequestFactory
 from apps.health_packages.models import HealthPackage
@@ -13,6 +14,8 @@ from apps.patients.exceptions import UnablToSendEmailException
 TO = "TO"
 CC = "CC"
 ALL = "ALL"
+
+logger = logging.getLogger('django')
 
 def cancel_and_refund_parameters(param, factory=APIRequestFactory()):
     return factory.post(
@@ -122,4 +125,4 @@ def send_feedback_received_mail(feedback_serializer,patient_instance):
         if not email_sent:
             raise UnablToSendEmailException
     except Exception as e:
-        print("Exception while sending feedback email: %s"%str(e))
+        logger.info("Exception while sending feedback email: %s"%str(e))
