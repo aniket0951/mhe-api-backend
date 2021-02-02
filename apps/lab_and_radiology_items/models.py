@@ -1,3 +1,4 @@
+from apps.lab_and_radiology_items.constants import LabAndRadiologyItemsConstants
 import os
 from datetime import datetime, timedelta
 
@@ -98,7 +99,7 @@ class PatientServiceAppointment(MyBaseModel):
     SERVICE_APPOINTMENT_STATUS_CHOICES = (
         ('Pending', 'Pending'),
         ('Completed', 'Completed'),
-        ('In Progress', 'In Progress'),
+        (LabAndRadiologyItemsConstants.IN_PROGRESS_CHOICE, LabAndRadiologyItemsConstants.IN_PROGRESS_CHOICE),
         ('Cancelled', 'Cancelled')
 
 
@@ -154,9 +155,8 @@ class PatientServiceAppointment(MyBaseModel):
 
     @property
     def is_cancellable(self):
-        if self.appointment_date:
-            if ((self.appointment_date > datetime.now().date()) and (self.status != "Cancelled")):
-                return True
+        if self.appointment_date and ((self.appointment_date > datetime.now().date()) and (self.status != "Cancelled")):
+            return True
         return False
 
     class Meta:
@@ -196,7 +196,7 @@ class HomeCollectionAppointment(MyBaseModel):
     HOME_COLLECTION_APPOINTMENT_STATUS_CHOICES = (
         ('Pending', 'Pending'),
         ('Completed', 'Completed'),
-        ('In Progress', 'In Progress'),
+        (LabAndRadiologyItemsConstants.IN_PROGRESS_CHOICE, LabAndRadiologyItemsConstants.IN_PROGRESS_CHOICE),
         ('Cancelled', 'Cancelled')
     )
     appointment_date = models.DateField()
@@ -248,9 +248,8 @@ class HomeCollectionAppointment(MyBaseModel):
 
     @property
     def is_cancellable(self):
-        if self.appointment_date:
-            if ((self.appointment_date > datetime.now().date()) and (self.status != "Cancelled")):
-                return True
+        if self.appointment_date and ((self.appointment_date > datetime.now().date()) and (self.status != "Cancelled")):
+            return True
         return False
 
     class Meta:

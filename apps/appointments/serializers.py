@@ -1,18 +1,8 @@
-import json
-from datetime import datetime
-
-from django.db import transaction
-
-from apps.doctors.models import Doctor
+import logging
 from apps.doctors.serializers import (DoctorSerializer,
-                                      DoctorSpecificSerializer,
                                       HospitalSerializer)
-from apps.health_packages.models import HealthPackagePricing
-from apps.health_packages.serializers import (HealthPackageDetailSerializer,
-                                              HealthPackagePricingSerializer,
-                                              HealthPackageSpecificSerializer)
-from apps.master_data.models import Hospital, Department
-from apps.patients.models import FamilyMember, Patient
+from apps.health_packages.serializers import (HealthPackageSpecificSerializer)
+from apps.master_data.models import Department
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
@@ -23,6 +13,7 @@ from .models import (Appointment, AppointmentDocuments,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
                      PrescriptionDocuments)
 
+logger = logging.getLogger('django.serializers')
 
 class CancellationReasonSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -148,6 +139,7 @@ class AppointmentDocumentsSerializer(DynamicFieldsModelSerializer):
                 response_object['document'] = generate_pre_signed_url(
                     instance.document.url)
         except Exception as error:
+            logger.error("Exception in PrescriptionDocumentsSerializer %s"%(str(error)))
             response_object['document'] = None
 
         return response_object
@@ -177,6 +169,7 @@ class PrescriptionDocumentsSerializer(DynamicFieldsModelSerializer):
                 response_object['prescription'] = generate_pre_signed_url(
                     instance.prescription.url)
         except Exception as error:
+            logger.error("Exception in PrescriptionDocumentsSerializer %s"%(str(error)))
             response_object['prescription'] = None
 
         return response_object

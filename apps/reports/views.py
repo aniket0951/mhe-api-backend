@@ -154,7 +154,8 @@ class ReportsSyncAPIView(CreateAPIView):
             try:
                 report_response = ReportViewSet.as_view(
                     {'post': 'create'})(proxy_request)
-            except:
+            except Exception as error:
+                logger.error("Exception in ReportsSyncAPIView %s"%(str(error)))
                 return Response({"data": report_response.data, "consumed": False},
                                 status=status.HTTP_200_OK)
             visit_id = report_response.data["data"]["visit_id"]
@@ -207,7 +208,8 @@ class ReportsSyncAPIView(CreateAPIView):
 
                 return Response({"data": None, "consumed": True},
                                 status=status.HTTP_201_CREATED)
-        except:
+        except Exception as error:
+            logger.error("Exception in ReportsSyncAPIView %s"%(str(error)))
             return Response({"data": "Parameters are not sufficient", "consumed": False},
                         status=status.HTTP_200_OK)
 

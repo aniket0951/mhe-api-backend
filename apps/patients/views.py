@@ -1,3 +1,4 @@
+import logging
 import base64
 import hashlib
 from datetime import datetime, timedelta
@@ -44,7 +45,9 @@ from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
                           PatientSerializer)
 from .utils import fetch_uhid_user_details, link_uhid
+from .constants import PatientsConstants
 
+logger = logging.getLogger('django')
 
 class PatientViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -147,7 +150,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
 
     def perform_update(self, serializer):
-        is_new_mobile_to_be_verified = False
         patient_object = self.get_object()
 
         if 'new_mobile' in serializer.validated_data and\
@@ -198,7 +200,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.save()
             self.update_success_message = "You email is changed, please enter the OTP to verify."
         else:
-            patient_object = serializer.save()
+            serializer.save()
 
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
@@ -288,7 +290,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         patient_obj = patient_user_object(request)
 
         if not patient_obj.new_mobile_verification_otp == new_mobile_otp:
-            raise ValidationError("Invalid OTP is entered!")
+            raise ValidationError(PatientsConstants.INVALID_OTP)
 
         if datetime.now().timestamp() > \
                 patient_obj.new_mobile_otp_expiration_time.timestamp():
@@ -320,7 +322,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         patient_obj = patient_user_object(request)
 
         if not patient_obj.new_mobile or patient_obj.mobile == patient_obj.new_mobile:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_mobile_change_password = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -384,7 +386,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient = patient_user_object(request)
 
         if authenticated_patient.email_verified:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -400,7 +402,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": {"email": str(authenticated_patient.email), },
-            "message": "OTP to verify you email is sent successfully!",
+            "message": PatientsConstants.OTP_EMAIL_SENT,
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -522,8 +524,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         uhid_number = request.data.get('uhid_number')
         
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info = patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
@@ -537,8 +538,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if FamilyMember.objects.filter(patient_info=patient_info,
                                        uhid_number=uhid_number,
                                        is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
         uhid_user_info = fetch_uhid_user_details(request)
 
         patient_user_obj = self.get_object()
@@ -617,7 +617,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": {"email": str(authenticated_patient.corporate_email), },
-            "message": "OTP to verify you email is sent successfully!",
+            "message": PatientsConstants.OTP_EMAIL_SENT,
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -662,7 +662,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": serialize_data.data,
-            "message": "OTP to verify you email is sent successfully!",
+            "message": PatientsConstants.OTP_EMAIL_SENT,
         }
         return Response(data, status=status.HTTP_200_OK)
         
@@ -706,12 +706,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError("Family Member not Available")
 
             if patient.uhid_number == uhid_number:
-                raise ValidationError(
-                    "Your cannnot associate your UHID number to your family member.")
+                raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
             if family_member.filter(uhid_number=uhid_number).exists():
-                raise ValidationError(
-                    "You have an existing family member with this UHID.")
+                raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
 
             member.uhid_number = uhid_number
             member.first_name = request.data.get("first_name", None)
@@ -735,7 +733,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError("There is an exisiting user  on our platform with this UHID.")
             
             if FamilyMember.objects.filter(patient_info=patient,uhid_number=uhid_number,is_visible=True).exists():
-                raise ValidationError("You have an existing family member with this UHID.")
+                raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
 
             patient.uhid_number = uhid_number
             patient.first_name = request.data.get("first_name", None)
@@ -801,14 +799,14 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         qs=super().get_queryset().filter(patient_info__id=self.request.user.id,
                                            is_visible=True)
         if manipal_admin_object(self.request):
+            request_patient_info = None
             try:
                 request_patient_info=Patient.objects.get(
                     id=self.request.query_params.get('patient_id'))
-            except:
+            except Exception as error:
+                logger.error("Exception in FamilyMemberViewSet %s"%(str(error)))
                 if not request_patient_info:
-                    raise ValidationError(
-                        "Invalid patient information.")
-
+                    raise ValidationError("Invalid patient information.")
             qs=FamilyMember.objects.filter(
                 patient_info__id=request_patient_info.id,
                 is_visible=True)
@@ -816,8 +814,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError(
-                "You have reached limit, you cannot add family members!")
+            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
 
         if not 'email' in serializer.validated_data or not serializer.validated_data['email']:
             raise ValidationError("Email is not mentioned!")
@@ -934,23 +931,19 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError(
-                "You have reached limit, you cannot add family members!")
+            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
 
         uhid_number=request.data.get('uhid_number')
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info=patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError(
-                "Your cannnot associate your UHID number to your family member.")
+            raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number, is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
         uhid_user_info=fetch_uhid_user_details(request)
         uhid_user_info['mobile_verified']=True
         uhid_user_info['is_visible']=True
@@ -974,18 +967,15 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_number=request.data.get('uhid_number')
 
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info=patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError(
-                "Your cannnot associate your UHID number to your family member.")
+            raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number, is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
 
         uhid_user_info=fetch_uhid_user_details(request)
 
@@ -1020,11 +1010,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         try:
             # TODO: self.get_object() doesn't seem to work
             family_member=self.model.objects.get(pk=pk)
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in verify_family_member_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if not family_member.mobile_verification_otp == mobile_otp:
-            raise ValidationError("Invalid OTP is entered!")
+            raise ValidationError(PatientsConstants.INVALID_OTP)
 
         if datetime.now().timestamp() > \
                 family_member.mobile_otp_expiration_time.timestamp():
@@ -1057,11 +1048,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Enter OTP to verify family member!")
         try:
             family_member=self.model.objects.get(pk=pk)
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in verify_family_member_email_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if not family_member.email_verification_otp == email_otp:
-            raise ValidationError("Invalid OTP is entered!")
+            raise ValidationError(PatientsConstants.INVALID_OTP)
 
         if datetime.now().timestamp() > \
                 family_member.email_otp_expiration_time.timestamp():
@@ -1085,11 +1077,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     def generate_family_member_email_verification_otp(self, request, pk=None):
         try:
             family_member_object=self.get_object()
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in generate_family_member_email_verification_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if family_member_object.email_verified:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_email_otp=get_random_string(
             length=4, allowed_chars='0123456789')
@@ -1113,11 +1106,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     def generate_family_member_mobile_verification_otp(self, request, pk=None):
         try:
             family_member=self.model.objects.get(pk=pk)
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in generate_family_member_mobile_verification_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if family_member.mobile_verified and not family_member.new_mobile:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         mobile_number=str(family_member.mobile.raw_input)
         if family_member.mobile_verified:
@@ -1158,23 +1152,19 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def add_new_family_member_using_mobile(self, request):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError(
-                "You have reached limit, you cannot add family members!")
+            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
 
         uhid_number=request.data.get('uhid_number')
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info=patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError(
-                "Your cannnot associate your UHID number to your family member.")
+            raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number, is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
                 
         uhid_user_info=dict()
         uhid_user_info['first_name'] = request.data.get("first_name")

@@ -1,3 +1,4 @@
+from apps.health_packages.constants import HealthPackagesConstants
 from django.db import models
 
 from apps.health_tests.models import HealthTest
@@ -10,7 +11,7 @@ class HealthPackage(MyBaseModel):
     GENDER_CHOICES = (
         ('Male', 'Male'),
         ('Female', 'Female'),
-        ('Male and Female', 'Male and Female')
+        (HealthPackagesConstants.MALE_AND_FEMALE_CHOICE, HealthPackagesConstants.MALE_AND_FEMALE_CHOICE)
     )
 
     code = models.SlugField(unique=True,
@@ -31,7 +32,7 @@ class HealthPackage(MyBaseModel):
     age_to = models.IntegerField(default=120)
 
     gender = models.CharField(choices=GENDER_CHOICES,
-                              default='Male and Female',
+                              default=HealthPackagesConstants.MALE_AND_FEMALE_CHOICE,
                               max_length=15,
                               verbose_name='Gender')
 

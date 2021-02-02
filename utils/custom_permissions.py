@@ -3,6 +3,7 @@ from rest_framework import permissions
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import FamilyMember, Patient
 
+DO_NOT_HAVE_PERMISSION = "You do not have permission to do this action."
 
 class IsManipalAdminUser(permissions.BasePermission):
     """
@@ -53,7 +54,7 @@ class BlacklistUpdateMethodPermission(permissions.BasePermission):
     """
     Global permission check for blacklisted UPDATE method.
     """
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_permission(self, request, view):
         return request.method != 'PUT'
@@ -66,7 +67,7 @@ class BlacklistDestroyMethodPermission(permissions.BasePermission):
     """
     Global permission check for blacklisted UPDATE method.
     """
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_permission(self, request, view):
         return request.method != 'DELETE'
@@ -77,7 +78,7 @@ class BlacklistDestroyMethodPermission(permissions.BasePermission):
 
 class IsSelfUserOrFamilyMember(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_permission(self, request, view):
         patient_id = None
@@ -94,7 +95,7 @@ class IsSelfUserOrFamilyMember(permissions.BasePermission):
 
 class IsSelfFamilyMember(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.patient_info.id
@@ -102,7 +103,7 @@ class IsSelfFamilyMember(permissions.BasePermission):
 
 class IsSelfAddress(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.patient_info.id
@@ -110,7 +111,7 @@ class IsSelfAddress(permissions.BasePermission):
 
 class IsSelfDocument(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.patient_info.id
@@ -118,7 +119,7 @@ class IsSelfDocument(permissions.BasePermission):
 
 class IsSelfHealthPackageCartItem(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.patient_info.id
@@ -126,21 +127,21 @@ class IsSelfHealthPackageCartItem(permissions.BasePermission):
 
 class IsSelfHomeCollectionCartItem(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.patient_info.id
 
 class InternalAPICall(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_permission(self, request, view):
         return request.get_host() == 'testserver'
 
 class IsDoctor(permissions.BasePermission):
 
-    message = 'You do not have permission to do this action.'
+    message = DO_NOT_HAVE_PERMISSION
 
     def has_object_permission(self, request, view, obj):
         doctor_id = request.user.id

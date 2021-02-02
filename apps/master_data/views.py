@@ -1,3 +1,4 @@
+from apps.master_data.constants import MasterDataConstants
 import json
 import logging
 import xml.etree.ElementTree as ET
@@ -126,8 +127,8 @@ class HospitalViewSet(custom_viewsets.ModelViewSet):
         try:
             contact, contact_created = AmbulanceContact.objects.update_or_create(
                 **ambulance_data, defaults=ambulance_data)
-        except:
-            pass
+        except Exception as error:
+            logger.error("Exception in HospitalViewSet: %s"%(str(error)))
         return Response(data=hospital_serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['POST'])
@@ -226,7 +227,7 @@ class DepartmentsView(ProxyView):
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
 
-        if item.text.startswith('Request Parameter'):
+        if item.text.startswith(MasterDataConstants.REQUEST_PARAM):
             raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text)
@@ -248,7 +249,7 @@ class DepartmentsView(ProxyView):
 
                 if key in ['DateFrom', 'DateTo'] and each_department[key]:
                     each_department[key] = datetime.strptime(
-                        each_department[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+                        each_department[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
 
                 department_details[department_sorted_keys[index]
                                    ] = each_department[key]
@@ -303,13 +304,13 @@ class DoctorsView(ProxyView):
         logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
-        if item.text.startswith('Request Parameter'):
+        if item.text.startswith(MasterDataConstants.REQUEST_PARAM):
             raise DoctorHospitalCodeMissingValidationException
 
         try:
             response_content = json.loads(item.text)
-        except Exception:
-            print("------------------------\nFailed!\n----------------")
+        except Exception as error:
+            logger.error("Exception in DoctorsView: %s"%(str(error)))
             raise DoctorDoesNotExistsValidationException
 
         if not response_content:
@@ -348,7 +349,7 @@ class DoctorsView(ProxyView):
 
                 if key in ['DateFrom', 'DateTo'] and each_doctor[key]:
                     each_doctor[key] = datetime.strptime(
-                        each_doctor[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+                        each_doctor[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
 
                 if key == "DocName" and each_doctor[key]:
                     each_doctor[key] = each_doctor[key].title()
@@ -418,7 +419,7 @@ class HealthPackagesView(ProxyView):
         logger.info(response.content)
         root = ET.fromstring(response._content)
         item = root.find('SyncResponse')
-        if item.text.startswith('Request Parameter'):
+        if item.text.startswith(MasterDataConstants.REQUEST_PARAM):
             raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text, strict=False)
@@ -464,7 +465,7 @@ class HealthPackagesView(ProxyView):
 
                 if key in ['DateFrom', 'DateTo', 'DiscDateFrom', 'DiscDateTo'] and each_health_package[key]:
                     each_health_package[key] = datetime.strptime(
-                        each_health_package[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+                        each_health_package[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
 
                 if key == 'PackageName' and each_health_package[key]:
                     each_health_package[key] = each_health_package[key].title()
@@ -567,7 +568,7 @@ class LabRadiologyItemsView(ProxyView):
     def parse_proxy_response(self, response):
         logger.info(response.content)
         item = ET.fromstring(response._content).find('SyncResponse')
-        if item.text.startswith('Request Parameter'):
+        if item.text.startswith(MasterDataConstants.REQUEST_PARAM):
             raise HospitalCodeMissingValidationException
         try:
             response_content = json.loads(item.text)
@@ -592,7 +593,7 @@ class LabRadiologyItemsView(ProxyView):
 
                 if key in ['DateFrom', 'DateTo'] and each_lab_radiology_item[key]:
                     each_lab_radiology_item[key] = datetime.strptime(
-                        each_lab_radiology_item[key], '%d/%m/%Y').strftime('%Y-%m-%d')
+                        each_lab_radiology_item[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
 
                 if key == 'ItemDesc' and each_lab_radiology_item[key]:
                     each_lab_radiology_item[key] = each_lab_radiology_item[key].title(

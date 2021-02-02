@@ -7,6 +7,8 @@ class PaymentConstants:
     URL_HEALTH_PACKAGE_PRICE = '/api/health_packages/health_package_price'
     URL_OP_BILL_DETAILS = '/api/payments/op_bill_details'
 
+    APPLICATION_JSON = "application/json"
+
     APPOINTMENT_PACKAGE_CODE = "NA"
     APPOINTMENT_TRANSACTION_TYPE = "APP"
     APPOINTMENT_MODE_HV = "HV"
@@ -28,6 +30,8 @@ class PaymentConstants:
 
     ERROR_MESSAGE_PRICE_UPDATED = "Price is Updated"
     ERROR_MESSAGE_PAYMENT_PENDING = "Please complete the payment first!"
+
+    BILL_INFORMATION_RETURNED = "Returned Bill Information Successfully"
 
     RAZORPAY_PAYMENT_CURRENCY = "INR"
 

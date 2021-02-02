@@ -1,28 +1,23 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime
 import os 
+import logging
 
-from django.db.models import Q
-
-from apps.master_data.models import Hospital
-from apps.patients.models import FamilyMember
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser,FileUploadParser
-from rest_framework import filters, generics, status, viewsets
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework import status
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from rest_framework.test import APIRequestFactory
 from utils import custom_viewsets
-from utils.custom_permissions import InternalAPICall, IsPatientUser
+from utils.custom_permissions import InternalAPICall
 from utils.pdf_generator import get_discharge_summary
-from utils.utils import patient_user_object
 
 from .models import DischargeSummary
 from .serializers import DischargeSummarysSerializer
 from apps.doctors.models import Doctor
-from apps.master_data.models import Department, Hospital
 
+logger = logging.getLogger('django')
 
 class DischargeViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [AllowAny, ]
@@ -80,7 +75,7 @@ class DischargeSummarySyncAPIView(CreateAPIView):
         file_name = get_discharge_summary(discharge_info, discharge_details)
         try:
             os.remove(file_name)
-        except:
-            pass
+        except Exception as error:
+            logger.error("Exception in DischargeSummarySyncAPIView %s"%(str(error)))
         return Response({"data": None, "consumed": True},
                         status=status.HTTP_201_CREATED)

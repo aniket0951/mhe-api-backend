@@ -1,3 +1,4 @@
+from apps.payments.constants import PaymentConstants
 import ast
 import json
 import logging
@@ -94,13 +95,13 @@ class AppointmentPayment(APIView):
             uhid = "None"
             payment_data["payment_for_uhid_creation"] = True
             response = client.post('/api/master_data/items_tariff_price',
-                                   json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type='application/json')
+                                   json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type=PaymentConstants.APPLICATION_JSON)
 
             if response.status_code == 200 and response.data["success"] == True:
                 calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
         response_doctor_charges = client.post('/api/master_data/consultation_charges',
-                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid, 'order_date': order_date}), content_type='application/json')
+                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid, 'order_date': order_date}), content_type=PaymentConstants.APPLICATION_JSON)
 
 
         if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
@@ -118,7 +119,7 @@ class AppointmentPayment(APIView):
                     int(float(response_doctor_charges.data["data"]["PRConsCharges"]))
 
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
-            raise ValidationError("Price is Updated")
+            raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
@@ -166,13 +167,13 @@ class HealthPackagePayment(APIView):
         calculated_amount = 0
         for package in package_code_list:
             response = client.post('/api/health_packages/health_package_price',
-                                   json.dumps({'location_code': location_code, 'package_code': package}), content_type='application/json')
+                                   json.dumps({'location_code': location_code, 'package_code': package}), content_type=PaymentConstants.APPLICATION_JSON)
 
             if response.status_code == 200 and response.data["success"] == True:
                 calculated_amount += int(float(response.data["message"]))
 
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
-            raise ValidationError("Price is Updated")
+            raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
         if family_member is not None:
             payment_data["payment_done_for_family_member"] = family_member
@@ -210,13 +211,13 @@ class UHIDPayment(APIView):
 
         calculated_amount = 0
         response = client.post('/api/master_data/items_tariff_price',
-                               json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type='application/json')
+                               json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type=PaymentConstants.APPLICATION_JSON)
 
         if response.status_code == 200 and response.data["success"] == True:
             calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
-            raise ValidationError("Price is Updated")
+            raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
         payment_data["payment_for_uhid_creation"] = True
         payment = PaymentSerializer(data=payment_data)
@@ -255,7 +256,7 @@ class OPBillPayment(APIView):
         payment_data["episode_number"] = episode_no
 
         response = client.post('/api/payments/op_bill_details',
-                               json.dumps({"uhid": param["token"]["accounts"][0]["account_number"], 'location_code': location_code}), content_type='application/json')
+                               json.dumps({"uhid": param["token"]["accounts"][0]["account_number"], 'location_code': location_code}), content_type=PaymentConstants.APPLICATION_JSON)
         calculated_amount = 0
         if response.status_code == 200 and response.data["success"] == True:
             if response.data["data"]:
@@ -265,7 +266,7 @@ class OPBillPayment(APIView):
                         calculated_amount += int(float(episode["OutStandingAmt"]))
 
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
-            raise ValidationError("Price is Updated")
+            raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
@@ -571,7 +572,7 @@ class PayBillView(ProxyView):
             status = root.find("Status").text
             if status == "1":
                 success_status = True
-                response_message = "Returned Bill Information Successfully"
+                response_message = PaymentConstants.BILL_INFORMATION_RETURNED
                 bill_response = root.find("BillDetail")
                 response_data = json.loads(bill_response.text)
 
@@ -600,7 +601,7 @@ class PayBillOpView(ProxyView):
             status = root.find("Status").text
             if status == "1":
                 success_status = True
-                response_message = "Returned Bill Information Successfully"
+                response_message = PaymentConstants.BILL_INFORMATION_RETURNED
                 bill_response = root.find("BillDetail")
                 response_data = json.loads(bill_response.text)
 
@@ -629,7 +630,7 @@ class EpisodeItemView(ProxyView):
             status = root.find("Status").text
             if status == "1":
                 success_status = True
-                response_message = "Returned Bill Information Successfully"
+                response_message = PaymentConstants.BILL_INFORMATION_RETURNED
                 episode_response = root.find("EpisodeList").text
                 response_data = json.loads(episode_response)
 

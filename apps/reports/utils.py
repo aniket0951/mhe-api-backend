@@ -1,3 +1,4 @@
+import logging
 import base64
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -10,6 +11,7 @@ from .exceptions import ReportExistsException
 from .models import Report, VisitReport
 from .serializers import VisitReportsSerializer
 
+logger = logging.getLogger('django')
 
 def report_handler(report_info, factory=APIRequestFactory()):
 
@@ -155,7 +157,8 @@ def numeric_report_hanlder(report_detail, report_id, factory=APIRequestFactory()
             try:
                 numeric_report_request_data['observation_unit'] = base64.b64decode(
                     report_detail['ObxUnit']).decode('utf-8')
-            except:
+            except Exception as error:
+                logger.error("Exception in numeric_report_hanlder %s"%(str(error)))
                 numeric_report_request_data['observation_unit'] = report_detail['ObxUnit']
 
         numeric_report_request_data['report'] = report_id
