@@ -268,6 +268,12 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # Manipal Proxy API settings
 MANIPAL_API_URL = env('MANIPAL_API_URL')
+MANIPAL_API_TIMEOUT = None
+
+try:
+    MANIPAL_API_TIMEOUT = int(env('MANIPAL_API_TIMEOUT'))
+except Exception as error:
+    pass
 
 REST_PROXY = {
 
@@ -278,7 +284,7 @@ REST_PROXY = {
     #     # Or alternatively:
     #     'token': '',
     # },
-    'TIMEOUT': None,
+    'TIMEOUT': MANIPAL_API_TIMEOUT if MANIPAL_API_TIMEOUT and MANIPAL_API_TIMEOUT>0 else None,
     'DEFAULT_HTTP_ACCEPT': 'application/json',
     'DEFAULT_HTTP_ACCEPT_LANGUAGE': 'en-US,en;q=0.8',
     'DEFAULT_CONTENT_TYPE': 'application/xml',
