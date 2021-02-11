@@ -1,9 +1,12 @@
+import logging
 from rest_framework import permissions
 
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import FamilyMember, Patient
 
 DO_NOT_HAVE_PERMISSION = "You do not have permission to do this action."
+
+logger = logging.getLogger("django")
 
 class IsManipalAdminUser(permissions.BasePermission):
     """
@@ -19,7 +22,7 @@ class IsManipalAdminUser(permissions.BasePermission):
             if ManipalAdmin.objects.filter(id=request.user.id).exists():
                 return True
         except Exception as e:
-            pass
+            logger.error("Error while IsManipalAdminUser : %s"%str(e))
         self.message = 'Manipal Administrator has the permission to perform this action.'
         return False
 

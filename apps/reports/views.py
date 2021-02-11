@@ -58,8 +58,6 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
         filter_by = self.request.query_params.get("filter_by", None)
         request_patient_obj = patient_user_object(self.request)
 
-        qs = Report.objects.none()
-
         if family_member_id:
             family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,
                                                         id=family_member_id).first()

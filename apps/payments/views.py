@@ -258,12 +258,11 @@ class OPBillPayment(APIView):
         response = client.post('/api/payments/op_bill_details',
                                json.dumps({"uhid": param["token"]["accounts"][0]["account_number"], 'location_code': location_code}), content_type=PaymentConstants.APPLICATION_JSON)
         calculated_amount = 0
-        if response.status_code == 200 and response.data["success"] == True:
-            if response.data["data"]:
-                episode_list = response.data["data"]
-                for episode in episode_list:
-                    if episode["EpisodeNo"] == episode_no:
-                        calculated_amount += int(float(episode["OutStandingAmt"]))
+        if response.status_code == 200 and response.data["success"] == True and response.data["data"]:
+            episode_list = response.data["data"]
+            for episode in episode_list:
+                if episode["EpisodeNo"] == episode_no:
+                    calculated_amount += int(float(episode["OutStandingAmt"]))
 
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
@@ -325,7 +324,7 @@ class PaymentResponse(APIView):
         uhid = "-1"
         payment_instance.raw_info_from_salucro_response = response_token_json
         payment_instance.save()
-        
+        new_appointment_id = None
         if status_code == 1200:
             payment = {}
             payment["uhid_number"] = payment_account["account_number"]
@@ -465,7 +464,7 @@ class PaymentReturn(APIView):
         except Exception:
             raise ProcessingIdDoesNotExistsValidationException
         payment_response = response_token_json["payment_response"]
-        payment_account = response_token_json["accounts"]
+        response_token_json["accounts"]
         txnstatus = response_token_json["status_code"]
         txnamount = payment_response["net_amount_debit"]
         txnid = payment_response["txnid"]

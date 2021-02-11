@@ -31,10 +31,11 @@ def get_discharge_summary(discharge_info, discharge_details):
     department = Department.objects.filter(code=department_code).first()
     admission_date_message = root.find(
         'PV1').find('PV1.44').find('PV1.44.1').text
+    admission_date = None
     if admission_date_message:
         admission_date = datetime.strptime(
             admission_date_message, '%Y%m%d%H%M%S')
-    dob = root.find('PID').find('PID.7')[0].text
+    root.find('PID').find('PID.7')[0].text
     sex = root.find('PID').find('PID.8')[0].text
 
     title = "DEPARMENT OF "
@@ -60,7 +61,7 @@ def get_discharge_summary(discharge_info, discharge_details):
         'small',
         fontSize=10, fontName='Helvetica-Bold', alignment=TA_CENTER
     )
-    style = styles["Normal"]
+    styles["Normal"]
     flowables = []
     paragraph_0 = Paragraph(title, y)
     flowables.append(paragraph_0)
@@ -71,12 +72,16 @@ def get_discharge_summary(discharge_info, discharge_details):
     )
     flowables.append(paragraph_00)
     flowables.append(Spacer(1, 0.1*inch))
-    data = [['Name : ' + name, 'Hospital NO : ' + uhid],
-            ['Age/Sex : ' + sex, 'IP NO : ' + visit_id],
-            ['Admission Date : ' + admission_date.strftime("%m/%d/%Y"),
-                'Medical Discharge Date : ' + admission_date.strftime("%m/%d/%Y")],
-            ['Consultant : ' + doctor_name, 'Department : ' + department_code],
-            ['PayorName : ' + name, 'Ward/Bed : ']]
+    data = [
+        ['Name : ' + name, 'Hospital NO : ' + uhid],
+        ['Age/Sex : ' + sex, 'IP NO : ' + visit_id],
+        [
+            'Admission Date : ' + admission_date.strftime("%m/%d/%Y") if admission_date else "",
+            'Medical Discharge Date : ' + admission_date.strftime("%m/%d/%Y") if admission_date else ""
+        ],
+        ['Consultant : ' + doctor_name, 'Department : ' + department_code],
+        ['PayorName : ' + name, 'Ward/Bed : ']
+    ]
     colwidths = [4*inch]
 
     t = Table(data, colwidths, style=[
@@ -128,9 +133,8 @@ def get_discharge_summary(discharge_info, discharge_details):
     )
     paragraph_19 = Paragraph(doctor_name, z)
     degree = "MBBS"
-    if doctor:
-        if doctor.qualification:
-            degree = doctor.qualification
+    if doctor and doctor.qualification:
+        degree = doctor.qualification
     paragraph_20 = Paragraph(
         degree,
         styles['BodyText']
@@ -184,7 +188,7 @@ def get_discharge_summary(discharge_info, discharge_details):
     data["time"] = admission_date_message
     f = open(pdf_name,'rb')
     data["discharge_document"] = f
-    response = client.post('/api/discharge_summaries/all_disharge_summary',
+    client.post('/api/discharge_summaries/all_disharge_summary',
                                     data, format='multipart')
 
     return pdf_name

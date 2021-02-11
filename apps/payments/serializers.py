@@ -1,3 +1,4 @@
+import logging
 from apps.appointments.models import Appointment
 from apps.appointments.serializers import (AppointmentSerializer,
                                            HealthPackageAppointmentSerializer)
@@ -13,6 +14,7 @@ from utils.utils import generate_pre_signed_url
 
 from .models import Payment, PaymentReceipts, PaymentRefund
 
+logger = logging.getLogger("django")
 
 class PaymentSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -99,5 +101,6 @@ class PaymentReceiptsSerializer(DynamicFieldsModelSerializer):
                 response_object['receipt'] = generate_pre_signed_url(
                     instance.receipt.url)
         except Exception as error:
+            logger.info("Exception in PaymentReceiptsSerializer: %s"%(str(error)))
             response_object['receipt'] = None
         return response_object

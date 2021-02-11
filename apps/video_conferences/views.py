@@ -195,7 +195,7 @@ class CloseRoomView(APIView):
         channel_sid = room_instance.channel_sid
         room_status = client.video.rooms(room_sid).fetch().status
         if room_status == "in-progress":
-            room = client.video.rooms(room_sid).update(status="completed")
+            client.video.rooms(room_sid).update(status="completed")
         notification_data = {
             "patient": PatientSerializer(appointment.patient).data,
             "appointment_id": appointment.appointment_identifier
@@ -205,7 +205,7 @@ class CloseRoomView(APIView):
         param["location_code"] = appointment.hospital.code
         param["set_status"] = "DEPARTED"
         status_param = create_room_parameters(param)
-        response = SendStatus.as_view()(status_param)
+        SendStatus.as_view()(status_param)
         send_silent_push_notification.delay(
             notification_data=notification_data)
         client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).delete()
@@ -301,13 +301,13 @@ class HoldAppointmentView(APIView):
         room_sid = room_instance.room_sid
         room_status = client.video.rooms(room_sid).fetch().status
         if room_status == "in-progress":
-            room = client.video.rooms(room_sid).update(status="completed")
+            client.video.rooms(room_sid).update(status="completed")
         param = dict()
         param["app_id"] = appointment.appointment_identifier
         param["location_code"] = appointment.hospital.code
         param["set_status"] = "DEPARTED"
         status_param = create_room_parameters(param)
-        response = SendStatus.as_view()(status_param)
+        SendStatus.as_view()(status_param)
 
         notification_data = {}
         notification_data["title"] = "Consultation On Hold"

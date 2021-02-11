@@ -1,3 +1,4 @@
+import logging
 from apps.doctors.serializers import DoctorSerializer
 from apps.master_data.serializers import HospitalSerializer
 from apps.patients.models import FamilyMember, Patient
@@ -9,6 +10,7 @@ from .models import (FreeTextReportDetails, NumericReportDetails, Report,
                      ReportDocuments, StringReportDetails, TextReportDetails,
                      VisitReport)
 
+logger = logging.getLogger("django")
 
 class NumericReportDetailsSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -145,6 +147,7 @@ class ReportDocumentsSerializer(DynamicFieldsModelSerializer):
                     instance.radiology_report.url)
 
         except Exception as error:
+            logger.error("Error while ReportDocumentsSerializer : %s"%str(error))
             response_object['lab_report'] = None
             response_object['radiology_report'] = None
 

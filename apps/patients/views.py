@@ -110,9 +110,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if patient_obj:
 
-            if not (facebook_id or google_id or apple_id):
-                if patient_obj.mobile_verified == True:
-                    raise PatientMobileExistsValidationException
+            if not (facebook_id or google_id or apple_id) and patient_obj.mobile_verified == True:
+                raise PatientMobileExistsValidationException
 
             if patient_obj.mobile_verified == False:
                 patient_obj.delete()
@@ -457,9 +456,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not request_patient:
             raise PatientDoesNotExistsValidationException
 
-        if request_patient.mobile_verified == False:
-            if not sign_up:
-                raise PatientMobileDoesNotExistsValidationException
+        if request_patient.mobile_verified == False and not sign_up:
+            raise PatientMobileDoesNotExistsValidationException
 
         if (facebook_id or google_id or apple_id):
             serializer = self.get_serializer(request_patient)
@@ -1229,9 +1227,6 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
         request_data=self.request.data
         longitude=float(request_data.get("longitude", 0))
         latitude=float(request_data.get("latitude", 0))
-        # if not (longitude and latitude):
-        #     raise ValidationError(
-        #         "Missing information about longitude and latitude!")
         serializer.save(location=Point(longitude, latitude, srid=4326))
 
     def perform_update(self, serializer):

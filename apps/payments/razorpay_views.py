@@ -230,7 +230,7 @@ class RazorRefundView(APIView):
             else:
                 refund_param = cancel_and_refund_parameters(
                     {"appointment_identifier": appointment_identifier})
-                response = RefundView.as_view()(refund_param)
+                RefundView.as_view()(refund_param)
                 return Response(status=status.HTTP_200_OK)
             
             if not razor_payment_id:

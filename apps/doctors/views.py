@@ -1,10 +1,7 @@
 import ast
-import base64
-import json
-import webbrowser
+import logging
 import xml.etree.ElementTree as ET
 
-import requests
 from django.conf import settings
 from django.db.models import Q
 from django.utils.timezone import datetime
@@ -37,6 +34,7 @@ from utils.exceptions import InvalidRequest
 from utils.utils import manipal_admin_object
 from .constants import DoctorsConstants
 
+logger = logging.getLogger("django")
 
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
@@ -76,6 +74,7 @@ class DoctorSlotAvailability(ProxyView):
             doctor = Doctor.objects.filter(id=data.pop("doctor_id"), hospital_departments__hospital__id=data.get("hospital_id"), hospital_departments__department__id=data.get("department_id")).filter(
                 Q(end_date__gte=date) | Q(end_date__isnull=True))
         except Exception as e:
+            logger.info("Exception in DoctorSlotAvailability: %s"%(str(e)))
             raise InvalidRequest
 
         if not doctor:
@@ -192,7 +191,6 @@ class NextSlotAvailable(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        root = ET.fromstring(response.content)
         response_message = "We are unable to cancel the appointment. Please Try again"
         response_success = False
         response_data = {}
@@ -228,8 +226,6 @@ class DoctorloginView(ProxyView):
     def parse_proxy_response(self, response):
         root = ET.fromstring(response.content)
         status = root.find("Status").text
-        data = dict()
-        message = "login is unsuccessful. Please try again"
         success = False
         if status == "1":
             login_response = root.find("loginresp").text
@@ -240,7 +236,7 @@ class DoctorloginView(ProxyView):
                 login_status = login_response_json["Status"]
                 if login_status == "Success":
                     doctor_code = login_response_json["CTPCP_Code"]
-                    location_code = login_response_json["Hosp"]
+                    login_response_json["Hosp"]
                     doctor = Doctor.objects.filter(
                         code=doctor_code).first()
                     payload = jwt_payload_handler(doctor)

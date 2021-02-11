@@ -381,8 +381,6 @@ class CancelMyAppointment(ProxyView):
     def parse_proxy_response(self, response):
         appointment_id = self.request.data.get("appointment_identifier")
         root = ET.fromstring(response.content)
-        response_message = AppointmentsConstants.UNABLE_TO_CANCEL
-        success_status = False
         if response.status_code == 200:
             status = root.find("Status").text
             root.find("Message").text
@@ -495,7 +493,6 @@ class HealthPackageAppointmentView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
-        response_message = AppointmentsConstants.UNABLE_TO_BOOK
         response_data = {}
         response_success = False
         instance = self.request.data["appointment_instance"]
@@ -507,31 +504,31 @@ class HealthPackageAppointmentView(ProxyView):
                 instance.delete()
                 message = root.find("Message").text
                 raise ValidationError(message)
-            else:
-                datetime_object = datetime.strptime(
-                    self.request.data["appointment_date_time"], '%Y%m%d%H%M%S')
-                new_appointment = dict()
-                new_appointment["appointment_date"] = datetime_object
-                new_appointment["appointment_status"] = "Booked"
-                new_appointment["appointment_identifier"] = appointment_identifier
-                appointment = HealthPackageAppointmentSerializer(
-                    instance, data=new_appointment, partial=True)
-                appointment.is_valid(raise_exception=True)
-                appointment.save()
-                if self.request.data.get("previous_appointment"):
-                    payment_obj = instance.payment
-                    payment_obj.health_package_appointment = instance
-                    payment_obj.save()
-                    request_param = rebook_parameters(instance)
-                    ReBookView.as_view()(request_param)
-                response_success = True
-                response_message = "Health Package Appointment has been created"
-                response_data["appointment_identifier"] = appointment_identifier
-            return self.custom_success_response(message=response_message,
-                                                success=response_success, data=response_data)
+            
+            datetime_object = datetime.strptime(self.request.data["appointment_date_time"], '%Y%m%d%H%M%S')
+            new_appointment = dict()
+            new_appointment["appointment_date"] = datetime_object
+            new_appointment["appointment_status"] = "Booked"
+            new_appointment["appointment_identifier"] = appointment_identifier
+            appointment = HealthPackageAppointmentSerializer(instance, data=new_appointment, partial=True)
+            appointment.is_valid(raise_exception=True)
+            appointment.save()
+            if self.request.data.get("previous_appointment"):
+                payment_obj = instance.payment
+                payment_obj.health_package_appointment = instance
+                payment_obj.save()
+                request_param = rebook_parameters(instance)
+                ReBookView.as_view()(request_param)
+            response_success = True
+            response_message = "Health Package Appointment has been created"
+            response_data["appointment_identifier"] = appointment_identifier
+            return self.custom_success_response(
+                                            message=response_message,
+                                            success=response_success, 
+                                            data=response_data
+                                        )
         instance.delete()
-        raise ValidationError(
-            "Could not process your request. Please try again")
+        raise ValidationError("Could not process your request. Please try again")
 
 
 class OfflineAppointment(APIView):
@@ -659,13 +656,12 @@ class CancelHealthPackageAppointment(ProxyView):
 
     def parse_proxy_response(self, response):
         appointment_id = self.request.data.get("appointment_identifier")
-        response_message = AppointmentsConstants.UNABLE_TO_CANCEL
-        success_status = False
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             status = root.find("Status").text
             root.find("Message").text
             response_message = status
+            success_status = False
             if status == "SUCCESS":
                 instance = HealthPackageAppointment.objects.filter(
                     appointment_identifier=appointment_id).first()

@@ -1,3 +1,4 @@
+import logging
 from django.db.models import Q
 from django.utils.timezone import datetime
 from rest_framework import serializers
@@ -17,6 +18,7 @@ from .models import (HomeCollectionAppointment, LabRadiologyItem,
                      LabRadiologyItemPricing, PatientServiceAppointment,
                      UploadPrescription)
 
+logger = logging.getLogger("django")
 
 class LabRadiologyItemPricingSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -67,6 +69,7 @@ class HomeCareServiceSerializer(DynamicFieldsModelSerializer):
                 response_object['image'] = generate_pre_signed_url(
                     instance.image.url)
         except Exception as error:
+            logger.info("Exception in HomeCareServiceSerializer: %s"%(str(error)))
             response_object['image'] = None
 
         return response_object
@@ -96,6 +99,7 @@ class PatientServiceAppointmentSerializer(DynamicFieldsModelSerializer):
                 response_object['document'] = generate_pre_signed_url(
                     instance.document.url)
         except Exception as error:
+            logger.info("Exception in PatientServiceAppointmentSerializer: %s"%(str(error)))
             response_object['display_picture'] = None
 
         if instance.hospital:
@@ -156,6 +160,7 @@ class HomeCollectionAppointmentSerializer(DynamicFieldsModelSerializer):
                 response_object['document'] = generate_pre_signed_url(
                     instance.document.url)
         except Exception as error:
+            logger.info("Exception in HomeCollectionAppointmentSerializer: %s"%(str(error)))
             response_object['display_picture'] = None
 
         if instance.reason:

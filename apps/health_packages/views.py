@@ -211,13 +211,12 @@ class HealthPackagePrice(ProxyView):
         success_status = False
         response_message = {}
         if response.status_code == 200:
-            status = root.find("Status").text
+            root.find("Status").text
             message = root.find("Message").text
             if message == "Success":
                 package_detail = root.find("packagepricedetails").text
                 if package_detail:
                     success_status = True
-                    response_message = "Price details"
                     total_package_info = ast.literal_eval(package_detail)
                     discounted_price = total_package_info['TotalPackagePrice']
                     response_message = total_package_info

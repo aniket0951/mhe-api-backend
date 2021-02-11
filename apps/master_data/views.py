@@ -106,7 +106,7 @@ class HospitalViewSet(custom_viewsets.ModelViewSet):
                 qs = qs.filter(corporate_only=False)
                 return qs.annotate(calculated_distance=Django_Distance('location', user_location)).order_by('calculated_distance')
         except Exception as e:
-            pass
+            logger.info("Exception in HospitalViewSet: %s"%(str(e)))
         return super().get_queryset()
 
     def post(self, request, format=None):
@@ -747,7 +747,7 @@ class AmbulanceContactViewSet(custom_viewsets.ModelViewSet):
                 return self.get_queryset().annotate(calculated_distance=Django_Distance('hospital__location',
                                                                                         user_location)).order_by('calculated_distance')
         except Exception as e:
-            pass
+            logger.info("Exception in AmbulanceContactViewSet: %s"%(str(e)))
         return super().get_queryset().order_by('hospital__code')
 
 

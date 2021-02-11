@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from phonenumber_field.serializerfields import PhoneNumberField
@@ -11,6 +12,7 @@ from utils.utils import generate_pre_signed_url, patient_user_object
 
 from .models import FamilyMember, Patient, PatientAddress
 
+logger = logging.getLogger("django")
 
 class PatientSerializer(DynamicFieldsModelSerializer):
     mobile = PhoneNumberField()
@@ -60,6 +62,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = generate_pre_signed_url(
                 instance.display_picture.url)
         except Exception as error:
+            logger.info("Exception in PatientSerializer: %s"%(str(error)))
             response_object['display_picture'] = None
 
         if instance.company_info:
@@ -132,6 +135,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             response_object['display_picture'] = generate_pre_signed_url(
                 instance.display_picture.url)
         except Exception as error:
+            logger.info("Exception in FamilyMemberSerializer: %s"%(str(error)))
             response_object['display_picture'] = None
 
         return response_object
