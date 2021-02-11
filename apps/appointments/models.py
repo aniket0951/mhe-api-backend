@@ -323,7 +323,7 @@ class Feedbacks(MyBaseModel):
 
     feedback = models.TextField(blank=False,
                                 null=False,
-                                max_length=100)
+                                max_length=500)
 
     rating = models.IntegerField(default="1")
 
