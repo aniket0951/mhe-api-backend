@@ -20,7 +20,8 @@ from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.exceptions import InvalidCredentialsException
 from utils.custom_permissions import IsManipalAdminUser
 from utils.utils import manipal_admin_object
-
+from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
+from utils.custom_jwt_authentication import JSONWebTokenAuthentication
 from .emails import send_reset_password_email
 from .exceptions import (ManipalAdminDoesNotExistsValidationException,
                          ManipalAdminPasswordURLExipirationValidationException,
@@ -43,19 +44,31 @@ def login(request):
     match_password = check_password(password, hash_password)
     if not match_password:
         raise InvalidCredentialsException
+    
     payload = jwt_payload_handler(admin)
     payload['mobile'] = payload['mobile'].raw_input
     payload['username'] = payload['username'].raw_input
     token = jwt_encode_handler(payload)
-    expiration = datetime.utcnow(
-    ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+    expiration = datetime.utcnow() + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
     expiration_epoch = expiration.timestamp()
+
+    WhiteListedJWTTokenUtil.create_token(admin,token)
+
     serializer = ManipalAdminSerializer(admin)
     data = {
         "data": serializer.data,
         "message":  "Login successful!",
         "token": token,
         "token_expiration": expiration_epoch
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def logout(request):
+    JSONWebTokenAuthentication().logout_user(request)
+    data = {
+        "message":  "Logout successful!"
     }
     return Response(data, status=status.HTTP_200_OK)
 

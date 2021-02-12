@@ -7,7 +7,6 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.contrib.gis.geos import Point
-from django.shortcuts import render
 from django.utils.crypto import get_random_string
 
 from apps.master_data.models import Company
@@ -24,28 +23,38 @@ from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from utils import custom_viewsets
-from utils.custom_permissions import (BlacklistDestroyMethodPermission,
-                                      BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser, IsPatientUser,
-                                      IsSelfAddress, IsSelfFamilyMember,
-                                      SelfUserAccess)
+from utils.custom_permissions import (
+                                BlacklistDestroyMethodPermission,
+                                BlacklistUpdateMethodPermission,
+                                IsManipalAdminUser, IsPatientUser,
+                                IsSelfAddress, IsSelfFamilyMember,
+                                SelfUserAccess
+                            )
 from utils.custom_sms import send_sms
 from utils.utils import manipal_admin_object, patient_user_object
 
-from .emails import (send_corporate_email_activation_otp,
-                     send_email_activation_otp,
-                     send_family_member_email_activation_otp)
-from .exceptions import (InvalidCredentialsException, InvalidEmailOTPException,
-                         InvalidUHID, OTPExpiredException,
-                         PatientDoesNotExistsValidationException,
-                         PatientMobileDoesNotExistsValidationException,
-                         PatientMobileExistsValidationException,
-                         PatientOTPExceededLimitException)
+from .emails import (
+                send_corporate_email_activation_otp,
+                send_email_activation_otp,
+                send_family_member_email_activation_otp
+            )
+from .exceptions import (
+                    InvalidCredentialsException, 
+                    InvalidEmailOTPException,
+                    OTPExpiredException,
+                    PatientDoesNotExistsValidationException,
+                    PatientMobileDoesNotExistsValidationException,
+                    PatientMobileExistsValidationException
+                )
 from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
-from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
-                          PatientSerializer)
+from .serializers import (  
+                    FamilyMemberSerializer, 
+                    PatientAddressSerializer,
+                    PatientSerializer
+                )
 from .utils import fetch_uhid_user_details, link_uhid
 from .constants import PatientsConstants
+from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 
 logger = logging.getLogger('django')
 
@@ -258,20 +267,21 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             length=4, allowed_chars='0123456789')
         authenticated_patient.set_password(random_password)
         authenticated_patient.save()
+        
         serializer = self.get_serializer(authenticated_patient)
         payload = jwt_payload_handler(authenticated_patient)
         payload['username'] = payload['username'].raw_input
         payload['mobile'] = payload['mobile'].raw_input
         token = jwt_encode_handler(payload)
-        expiration = datetime.utcnow(
-        ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+        expiration = datetime.utcnow() + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
         expiration_epoch = expiration.timestamp()
 
-        otp_instance = OtpGenerationCount.objects.filter(
-            mobile=authenticated_patient.mobile).first()
+        otp_instance = OtpGenerationCount.objects.filter(mobile=authenticated_patient.mobile).first()
         if otp_instance:
             otp_instance.otp_generation_count = 0
             otp_instance.save()
+
+        WhiteListedJWTTokenUtil.create_token(authenticated_patient,token)
 
         data = {
             "data": serializer.data,
@@ -460,17 +470,21 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             raise PatientMobileDoesNotExistsValidationException
 
         if (facebook_id or google_id or apple_id):
+
             serializer = self.get_serializer(request_patient)
             if apple_email:
                 request_patient.apple_email = apple_email
                 request_patient.save()
+
             payload = jwt_payload_handler(request_patient)
             payload['username'] = payload['username'].raw_input
             payload['mobile'] = payload['mobile'].raw_input
             token = jwt_encode_handler(payload)
-            expiration = datetime.utcnow(
-            ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+            expiration = datetime.utcnow() + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
             expiration_epoch = expiration.timestamp()
+
+            WhiteListedJWTTokenUtil.create_token(request_patient,token)
+
             message = "Login successful!"
             data = {
                 "data": serializer.data,

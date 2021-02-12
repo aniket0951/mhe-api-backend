@@ -39,6 +39,7 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
 from .utils import create_room_parameters
+from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 
 client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_AUTH_KEY)
 logger = logging.getLogger('django')
@@ -227,14 +228,19 @@ class InitiateTrackerAppointment(APIView):
         if not (encoded_string == encoded_string_generated):
             raise ValidationError("Invalid Parameter")
         doctor = Doctor.objects.filter(code=doctor_code).first()
+
         payload = jwt_payload_handler(doctor)
         payload["username"] = doctor.code
         token = jwt_encode_handler(payload)
+
+        WhiteListedJWTTokenUtil.create_token(doctor,token)
+
         redirect_data = dict()
         redirect_data["token"] = token
         redirect_data["appointment_identifier"] = appointment_identifier
         redirect_data_string = json.dumps(redirect_data)
         encoded_string = base64.b64encode(redirect_data_string.encode("utf-8"))
+
         param = str(encoded_string)[2:-1]
         result = settings.VC_URL_REDIRECTION + param
         param = create_room_parameters({"appointment_id": appointment_identifier})

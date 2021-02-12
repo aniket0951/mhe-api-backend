@@ -10,7 +10,7 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
 
-from .models import FamilyMember, Patient, PatientAddress
+from .models import FamilyMember, Patient, PatientAddress, WhiteListedToken
 
 logger = logging.getLogger("django")
 
@@ -187,3 +187,8 @@ class FamilyMemberSpecificSerializer(DynamicFieldsModelSerializer):
         exclude = ('raw_info_from_manipal_API', 'mobile_verification_otp',
                    'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
                    'created_at', 'updated_at')
+
+class WhiteListedTokenSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = WhiteListedToken
+        fields = '__all__'

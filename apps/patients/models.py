@@ -358,6 +358,13 @@ class OtpGenerationCount(MyBaseModel):
         verbose_name = "Patient Otp Count"
         verbose_name_plural = "Patient Otp Counts"
 
+class WhiteListedToken(models.Model):
+    token = models.CharField(max_length=500)
+    user = models.ForeignKey(BaseUser, related_name="token_user", on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("token", "user")
 
 
 
