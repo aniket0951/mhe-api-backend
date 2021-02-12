@@ -8,7 +8,7 @@ class WhiteListedJWTTokenUtil:
         user_id = user.id
         is_allowed_user = False
         try:
-            if WhiteListedToken.objects.get(user=user_id, token=jwt_value.decode("UTF-8")):
+            if WhiteListedToken.objects.get(user=user_id, token=WhiteListedJWTTokenUtil.decoded_token(jwt_value)):
                 is_allowed_user = True
         except WhiteListedToken.DoesNotExist:
             is_allowed_user = False
@@ -16,7 +16,7 @@ class WhiteListedJWTTokenUtil:
 
     @staticmethod
     def decoded_token(jwt_value):
-        if type(jwt_value)==bytes:
+        if type(jwt_value)!=str:
             jwt_value = jwt_value.decode("UTF-8")
         return jwt_value
 
