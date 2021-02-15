@@ -7,7 +7,8 @@ class ValidationUtil:
     @staticmethod
     def refine_text_only(string):
         new_string = ""
-        for i in string:
-            if ValidationUtil.validate_text_only(i):
-                new_string+=i 
+        if string:
+            for i in string:
+                if i and ValidationUtil.validate_text_only(i):
+                    new_string+=i 
         return new_string
