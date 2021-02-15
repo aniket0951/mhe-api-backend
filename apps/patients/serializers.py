@@ -119,7 +119,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         validate_fields = ["first_name","last_name","middle_name"]
-        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
             raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
         return super().create(validated_data)
@@ -142,7 +142,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         validate_fields = ["first_name","last_name","middle_name"]
-        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
             raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
         
@@ -181,7 +181,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         validate_fields = ["first_name","last_name","middle_name"]
-        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
             raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
         return super().create(validated_data)
@@ -201,7 +201,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         validate_fields = ["first_name","last_name","middle_name"]
-        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
             raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
         return super().update(instance, validated_data)
