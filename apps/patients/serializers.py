@@ -31,10 +31,10 @@ class PatientSerializer(DynamicFieldsModelSerializer):
             # 'password': {'write_only': True,
             #                          "error_messages": {"required": "Enter your password."}},
             # 'mobile': {"error_messages": {"required": "Mobile number is mandatory to create your account."}},
-            'facebook_id'   : {'write_only': True, },
-            'google_id'     : {'write_only': True, },
-            'first_name'    : {"error_messages": {"required": "First name is mandatory to create your account."}},
-            'email'         : {"error_messages": {"required": "Email is mandatory to create your account."}}
+            'facebook_id': {'write_only': True, },
+            'google_id': {'write_only': True, },
+            'first_name': {"error_messages": {"required": "First name is mandatory to create your account."}},
+            'email': {"error_messages": {"required": "Email is mandatory to create your account."}}
         }
 
     def get_family_members_count(self, instance):
@@ -70,7 +70,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         return response_object
 
     def create(self, validated_data):
-        restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified','is_corporate']
+        restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().create(validated_data)
