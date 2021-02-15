@@ -159,10 +159,9 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         model = FamilyMember
         exclude = (
                 'raw_info_from_manipal_API', 
-
                 'mobile_verification_otp',
                 'mobile_otp_expiration_time', 
-
+        )
         extra_kwargs = {
             'relation_name': {"error_messages":
                               {"required": "Enter your relationship with the person whom you are linking."}}}
