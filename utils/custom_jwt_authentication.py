@@ -13,6 +13,7 @@ from apps.doctors.models import Doctor
 from rest_framework_jwt.settings import api_settings
 from .custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 
+
 jwt_decode_handler = api_settings.JWT_DECODE_HANDLER
 jwt_get_username_from_payload = api_settings.JWT_PAYLOAD_GET_USERNAME_HANDLER
 INVALID_SIGNATURE = "Invalid signature."

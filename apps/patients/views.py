@@ -206,7 +206,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.save()
             self.update_success_message = "You email is changed, please enter the OTP to verify."
         else:
-            serializer.save()
+            patient_object = serializer.save()
 
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
