@@ -20,34 +20,12 @@ class PatientSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Patient
-        exclude = (
-                'is_staff', 
-                'is_superuser', 
-                'user_permissions', 
-                'groups', 
+        exclude = ('is_staff', 'is_superuser', 'otp_expiration_time',
+                   'user_permissions', 'groups', 'password', 'email_otp')
 
-                'password',
-                'otp_expiration_time',
-
-                'email_otp',
-                "email_otp_expiration_time",
-                
-                "new_mobile_verification_otp",
-                "new_mobile_otp_expiration_time",
-
-                'corporate_email_otp',
-                'corporate_email_otp_expiration_time'
-            )
-
-        read_only_fields = (
-                    'id',
-                    'last_login',
-                    'created_at',
-                    'updated_at',
-                    'is_active',
-                    'mobile_verified',
-                    'is_corporate'
-                )
+        read_only_fields = ('id', 'last_login', 'created_at', 'updated_at',
+                            'is_active', 'mobile_verified','is_corporate'
+                            )
 
         extra_kwargs = {
             # 'password': {'write_only': True,
@@ -64,32 +42,11 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                                            is_visible=True).count()
 
     def to_internal_value(self, data):
-        restriced_fields = [
-                            'groups', 
-                            'user_permissions', 
-
-                            'pre_registration_number',
-
-                            'is_staff',
-                            'is_visible', 
-                            'is_superuser',
-                            'raw_info_from_manipal_API', 
-
-                            'password',
-                            'otp_expiration_time',
-                            
-                            'email_otp',
-                            'email_verified',
-                            'email_otp_expiration_time',
-
-                            'mobile_verified',
-
-                            "new_mobile_verification_otp",
-                            "new_mobile_otp_expiration_time",
-
-                            'corporate_email_otp',
-                            'corporate_email_otp_expiration_time'
-                        ]
+        restriced_fields = ['mobile_verified', 'email_verified', 'pre_registration_number',
+                            'is_visible', 'raw_info_from_manipal_API', 'mobile_verification_otp',
+                            'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
+                            'is_staff', 'is_superuser', 'otp_expiration_time',
+                            'user_permissions', 'groups', 'password']
         data = {
             k: v for k, v in data.items() if not k in restriced_fields}
         return super().to_internal_value(data)
@@ -119,20 +76,8 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        restriced_fields = [
-                    'is_active',
-                    'is_corporate',
-
-                    'mobile',
-                    'mobile_verified',
-
-                    'uhid_number',
-
-                    'otp_expiration_time',
-                    'email_otp_expiration_time',
-                    "new_mobile_otp_expiration_time",
-                    'corporate_email_otp_expiration_time',
-                ]
+        restriced_fields = ['uhid_number','is_corporate', 'mobile', 'mobile_verified',
+                            'otp_expiration_time', 'email_otp_expiration_time', 'is_active']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
@@ -170,12 +115,8 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             )
 
         extra_kwargs = {
-            'relation_name': {
-                "error_messages": {
-                        "required": "Enter your relationship with the person whom you are linking."
-                }
-            }
-        }
+            'relation_name': {"error_messages":
+                              {"required": "Enter your relationship with the person whom you are linking."}}}
 
     def create(self, validated_data):
         restriced_fields = ['uhid_number']
