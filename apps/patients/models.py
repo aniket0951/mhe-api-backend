@@ -5,8 +5,11 @@ from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
 from django.contrib.postgres.fields import JSONField
-from django.core.validators import (FileExtensionValidator, MaxValueValidator,
-                                    MinValueValidator)
+from django.core.validators import (
+                                FileExtensionValidator, 
+                                MaxValueValidator,
+                                MinValueValidator
+                            )
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -14,7 +17,7 @@ from apps.master_data.models import Hospital, Company
 from apps.meta_app.models import MyBaseModel
 from apps.patient_registration.models import Relation
 from apps.users.models import BaseUser
-from utils.custom_storage import LocalFileStorage, MediaStorage
+from utils.custom_storage import MediaStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 
 
@@ -95,14 +98,14 @@ class Patient(BaseUser):
                                  blank=True)
 
     otp_expiration_time = models.DateTimeField(
-        blank=True,
-        null=True,
-        verbose_name='OTP Key Expiration DateTime')
+                                        blank=True,
+                                        null=True,
+                                        verbose_name='OTP Key Expiration DateTime')
 
     email_otp_expiration_time = models.DateTimeField(
-        blank=True,
-        null=True,
-        verbose_name='Email OTP Key Expiration DateTime')
+                                            blank=True,
+                                            null=True,
+                                            verbose_name='Email OTP Key Expiration DateTime')
 
     gender = models.CharField(choices=GENDER_CHOICES,
                               blank=True,

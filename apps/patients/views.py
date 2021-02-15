@@ -8,21 +8,23 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.contrib.gis.geos import Point
 from django.utils.crypto import get_random_string
-
+from django.utils.decorators import method_decorator
 from apps.master_data.models import Company
 from apps.master_data.views import ValidateMobileView, ValidateUHIDView
-from axes.models import AccessAttempt, AccessLog
+from axes.models import AccessAttempt
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, serializers, status, viewsets
+from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+from ratelimit.decorators import ratelimit
 from utils import custom_viewsets
+from utils.custom_sms import send_sms
 from utils.custom_permissions import (
                                 BlacklistDestroyMethodPermission,
                                 BlacklistUpdateMethodPermission,
@@ -30,9 +32,8 @@ from utils.custom_permissions import (
                                 IsSelfAddress, IsSelfFamilyMember,
                                 SelfUserAccess
                             )
-from utils.custom_sms import send_sms
+from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 from utils.utils import manipal_admin_object, patient_user_object
-
 from .emails import (
                 send_corporate_email_activation_otp,
                 send_email_activation_otp,
@@ -46,15 +47,14 @@ from .exceptions import (
                     PatientMobileDoesNotExistsValidationException,
                     PatientMobileExistsValidationException
                 )
-from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .serializers import (  
                     FamilyMemberSerializer, 
                     PatientAddressSerializer,
                     PatientSerializer
                 )
 from .utils import fetch_uhid_user_details, link_uhid
+from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .constants import PatientsConstants
-from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 
 logger = logging.getLogger('django')
 
@@ -108,6 +108,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     def perform_create(self, serializer):
 
         facebook_id = self.request.data.get('facebook_id')
@@ -126,10 +127,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 patient_obj.delete()
                 patient_obj = None
 
-        random_password = get_random_string(
-            length=4, allowed_chars='0123456789')
-        otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+        random_password = get_random_string(length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         if patient_obj:
             patient_obj.set_password(random_password)
@@ -157,6 +156,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         else:
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     def perform_update(self, serializer):
         patient_object = self.get_object()
 
@@ -167,10 +167,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError(
                     "This mobile number is already registered with us, please try with another number!")
 
-            random_mobile_change_password = get_random_string(
-                length=4, allowed_chars='0123456789')
-            otp_expiration_time = datetime.now(
-            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+            random_mobile_change_password = get_random_string(length=4, allowed_chars='0123456789')
+            otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             patient_object = serializer.save()
             patient_object.new_mobile_verification_otp = random_mobile_change_password
@@ -210,10 +208,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         else:
             serializer.save()
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
         username = request.data.get('mobile')
-        password = request.data.get('password')
+        password = request.data.get('otp')
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
@@ -242,8 +241,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if access_log:
             access_log.delete()
 
-        if datetime.now().timestamp() > \
-                authenticated_patient.otp_expiration_time.timestamp():
+        if datetime.now().timestamp() > authenticated_patient.otp_expiration_time.timestamp():
             raise OTPExpiredException
         message = "Login successful!"
 
@@ -291,6 +289,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['PATCH'])
     def verify_new_mobile_otp(self, request):
         new_mobile_otp = request.data.get('new_mobile_otp')
@@ -326,6 +325,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['GET'])
     def generate_new_mobile_verification_otp(self, request):
         patient_obj = patient_user_object(request)
@@ -349,8 +349,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if self.request.query_params.get('is_android', True):
             message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
-        is_message_sent = send_sms(
-            mobile_number=mobile_number, message=message)
+        is_message_sent = send_sms(mobile_number=mobile_number, message=message)
         if is_message_sent:
             response_message = 'Enter the OTP which we have sent to your new mobile number to activate.'
         else:
@@ -362,6 +361,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def verify_email_otp(self, request):
         email_otp = request.data.get('email_otp')
@@ -390,6 +390,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['GET'])
     def generate_email_verification_otp(self, request):
         authenticated_patient = patient_user_object(request)
@@ -415,6 +416,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_login_otp(self, request):
         mobile = request.data.get('mobile')
@@ -530,7 +532,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": response_message,
         }
         return Response(data, status=status.HTTP_200_OK)
-
+    
     @action(detail=True, methods=['PATCH'])
     def update_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
@@ -572,6 +574,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         link_uhid(request)
         return Response(data, status=status.HTTP_201_CREATED)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_uhid_otp(self, request):
         uhid_number = request.data.get('uhid_number')
@@ -591,6 +594,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def validate_uhid_otp(self, request):
         uhid_user_info = fetch_uhid_user_details(request)
@@ -601,6 +605,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         link_uhid(request)
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_corporate_email_verification_otp(self, request):
         authenticated_patient = patient_user_object(request)
@@ -611,13 +616,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             company_instance = Company.objects.filter(
                 name=company_name).first()
 
-        random_email_otp = get_random_string(
-            length=4, allowed_chars='0123456789')
+        random_email_otp = get_random_string(length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
-        send_corporate_email_activation_otp(
-            str(authenticated_patient.id), corporate_email, random_email_otp)
+        send_corporate_email_activation_otp(str(authenticated_patient.id), corporate_email, random_email_otp)
 
         if company_instance:
             authenticated_patient.company_info = company_instance
@@ -633,6 +636,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def verify_corporate_email_otp(self, request):
         email_otp = request.data.get('email_otp')
@@ -677,8 +681,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": PatientsConstants.OTP_EMAIL_SENT,
         }
         return Response(data, status=status.HTTP_200_OK)
-        
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_mobile_uhid_otp(self, request):
         mobile = request.data.get('mobile')
@@ -824,6 +828,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 is_visible=True)
         return qs
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     def perform_create(self, serializer):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
             raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
@@ -874,6 +879,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             else:
                 self.create_success_message='We are unable to send OTP to your family member. Please try after sometime.'
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     def perform_update(self, serializer):
         request_patient=patient_user_object(self.request)
         family_member_object=self.get_object()
@@ -1014,6 +1020,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['PATCH'])
     def verify_family_member_otp(self, request, pk=None):
         mobile_otp=request.data.get('mobile_otp')
@@ -1053,6 +1060,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['PATCH'])
     def verify_family_member_email_otp(self, request, pk=None):
         email_otp=request.data.get('email_otp')
@@ -1085,6 +1093,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['GET'])
     def generate_family_member_email_verification_otp(self, request, pk=None):
         try:
@@ -1114,6 +1123,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['GET'])
     def generate_family_member_mobile_verification_otp(self, request, pk=None):
         try:
@@ -1159,7 +1169,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             "message": response_message,
         }
         return Response(data, status=status.HTTP_200_OK)
-
 
     @action(detail=False, methods=['POST'])
     def add_new_family_member_using_mobile(self, request):

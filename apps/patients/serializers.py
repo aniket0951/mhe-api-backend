@@ -20,21 +20,47 @@ class PatientSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Patient
-        exclude = ('is_staff', 'is_superuser', 'otp_expiration_time',
-                   'user_permissions', 'groups', 'password', 'email_otp')
+        exclude = (
+                'is_staff', 
+                'is_superuser', 
+                'user_permissions', 
+                'groups', 
 
-        read_only_fields = ('id', 'last_login', 'created_at', 'updated_at',
-                            'is_active', 'mobile_verified',
-                            )
+                'password',
+                'otp_expiration_time',
+
+                'email_otp',
+                'email_verification_otp',
+                "email_otp_expiration_time",
+                
+                "new_mobile_verification_otp",
+                "new_mobile_otp_expiration_time",
+
+                "mobile_verification_otp",
+                'mobile_otp_expiration_time',
+
+                'corporate_email_otp',
+                'corporate_email_otp_expiration_time'
+            )
+
+        read_only_fields = (
+                    'id',
+                    'last_login',
+                    'created_at',
+                    'updated_at',
+                    'is_active',
+                    'mobile_verified',
+                    'is_corporate'
+                )
 
         extra_kwargs = {
             # 'password': {'write_only': True,
             #                          "error_messages": {"required": "Enter your password."}},
             # 'mobile': {"error_messages": {"required": "Mobile number is mandatory to create your account."}},
-            'facebook_id': {'write_only': True, },
-            'google_id': {'write_only': True, },
-            'first_name': {"error_messages": {"required": "First name is mandatory to create your account."}},
-            'email': {"error_messages": {"required": "Email is mandatory to create your account."}}
+            'facebook_id'   : {'write_only': True, },
+            'google_id'     : {'write_only': True, },
+            'first_name'    : {"error_messages": {"required": "First name is mandatory to create your account."}},
+            'email'         : {"error_messages": {"required": "Email is mandatory to create your account."}}
         }
 
     def get_family_members_count(self, instance):
@@ -42,11 +68,36 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                                            is_visible=True).count()
 
     def to_internal_value(self, data):
-        restriced_fields = ['mobile_verified', 'email_verified', 'pre_registration_number',
-                            'is_visible', 'raw_info_from_manipal_API', 'mobile_verification_otp',
-                            'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
-                            'is_staff', 'is_superuser', 'otp_expiration_time',
-                            'user_permissions', 'groups', 'password']
+        restriced_fields = [
+                            'groups', 
+                            'user_permissions', 
+
+                            'pre_registration_number',
+
+                            'is_staff',
+                            'is_visible', 
+                            'is_superuser',
+                            'raw_info_from_manipal_API', 
+
+                            'password',
+                            'otp_expiration_time',
+                            
+                            'email_otp',
+                            'email_verified',
+                            'email_verification_otp',
+                            'email_otp_expiration_time',
+
+                            'mobile_verified',
+                            'mobile_verification_otp',
+                            'mobile_otp_expiration_time',
+
+                            "new_mobile_verification_otp",
+                            "new_mobile_otp_expiration_time",
+
+                            "is_corporate",
+                            'corporate_email_otp',
+                            'corporate_email_otp_expiration_time'
+                        ]
         data = {
             k: v for k, v in data.items() if not k in restriced_fields}
         return super().to_internal_value(data)
@@ -72,14 +123,27 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         return response_object
 
     def create(self, validated_data):
-        restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified']
+        restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified','is_corporate']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        restriced_fields = ['uhid_number', 'mobile', 'mobile_verified',
-                            'otp_expiration_time', 'email_otp_expiration_time', 'is_active']
+        restriced_fields = [
+                    'is_active',
+                    'is_corporate',
+
+                    'mobile',
+                    'mobile_verified',
+
+                    'uhid_number',
+
+                    'otp_expiration_time',
+                    'email_otp_expiration_time',
+                    'mobile_otp_expiration_time',
+                    "new_mobile_otp_expiration_time",
+                    'corporate_email_otp_expiration_time',
+                ]
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         return super().update(instance, validated_data)
@@ -103,13 +167,26 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = FamilyMember
-        exclude = ('raw_info_from_manipal_API', 'mobile_verification_otp',
-                   'email_verification_otp', 'mobile_otp_expiration_time', 'email_otp_expiration_time',
-                   'created_at', 'updated_at')
+        exclude = (
+                'raw_info_from_manipal_API', 
+
+                'mobile_verification_otp',
+                'mobile_otp_expiration_time', 
+
+                'email_verification_otp',
+                'email_otp_expiration_time',
+
+                'created_at', 
+                'updated_at'
+            )
 
         extra_kwargs = {
-            'relation_name': {"error_messages":
-                              {"required": "Enter your relationship with the person whom you are linking."}}}
+            'relation_name': {
+                "error_messages": {
+                        "required": "Enter your relationship with the person whom you are linking."
+                }
+            }
+        }
 
     def create(self, validated_data):
         restriced_fields = ['uhid_number']
@@ -118,7 +195,16 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        restriced_fields = ['uhid_number', 'is_visible', ]
+        restriced_fields = [
+                        'uhid_number', 
+                        'is_visible',
+
+                        'mobile_verified',
+                        'mobile_otp_expiration_time',
+
+                        'email_verified',
+                        'email_otp_expiration_time'
+                    ]
         # 'otp_expiration_time', 'email_otp_expiration_time']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
@@ -128,12 +214,9 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         if instance.relationship:
-            response_object['relationship'] = RelationSerializer(
-                instance.relationship).data
-
+            response_object['relationship'] = RelationSerializer(instance.relationship).data
         try:
-            response_object['display_picture'] = generate_pre_signed_url(
-                instance.display_picture.url)
+            response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
         except Exception as error:
             logger.info("Exception in FamilyMemberSerializer: %s"%(str(error)))
             response_object['display_picture'] = None
@@ -145,10 +228,8 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
             data.pop('mobile')
         return super().to_internal_value(data)
 
-
 class PatientAddressSerializer(DynamicFieldsModelSerializer):
-    patient_info = serializers.UUIDField(write_only=True,
-                                         default=CurrentPatientUserDefault())
+    patient_info = serializers.UUIDField(write_only=True, default=CurrentPatientUserDefault())
 
     class Meta:
         model = PatientAddress

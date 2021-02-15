@@ -119,8 +119,8 @@ class CipherResponseMiddleware(object):
     def process_template_response(self, request, response):
         # Logic executed after the view is called,
         # ONLY IF view response is TemplateResponse, see listing 2-24
-        
-        if ENCRYPTION_ENABLED and request.META.get(ENCRYPTION_FLAG) and request.META.get(ENCRYPTION_FLAG)==True and response.data:
+    
+        if  ENCRYPTION_ENABLED and MiddlewareUtils.is_encryption_required(request,response):
             try:
                 response_data = response.data.copy()
                 if isinstance(response_data, dict):
