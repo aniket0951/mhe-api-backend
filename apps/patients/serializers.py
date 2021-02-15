@@ -87,7 +87,6 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                             "new_mobile_verification_otp",
                             "new_mobile_otp_expiration_time",
 
-                            "is_corporate",
                             'corporate_email_otp',
                             'corporate_email_otp_expiration_time'
                         ]
@@ -103,15 +102,13 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                 Hospital.objects.get(id=str(response_object['favorite_hospital']))).data
 
         try:
-            response_object['display_picture'] = generate_pre_signed_url(
-                instance.display_picture.url)
+            response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
         except Exception as error:
             logger.info("Exception in PatientSerializer: %s"%(str(error)))
             response_object['display_picture'] = None
 
         if instance.company_info:
-            response_object['company_info'] = CompanySerializer(
-                instance.company_info).data
+            response_object['company_info'] = CompanySerializer(instance.company_info).data
 
         return response_object
 
