@@ -55,7 +55,7 @@ from .serializers import (
 from .utils import fetch_uhid_user_details, link_uhid
 from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .constants import PatientsConstants
-
+from utils.custom_validation import ValidationUtil
 logger = logging.getLogger('django')
 
 class PatientViewSet(custom_viewsets.ModelViewSet):
@@ -864,7 +864,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         if is_mobile_to_be_verified:
             message="You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
-                request_patient.first_name,
+                ValidationUtil.refine_text_only(request_patient.first_name),
                 random_mobile_password, settings.OTP_EXPIRATION_TIME)
 
             if self.request.query_params.get('is_android', True):
@@ -926,7 +926,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
             message="Your mobile number has been added on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
-                request_patient.first_name,
+                ValidationUtil.refine_text_only(request_patient.first_name),
                 random_mobile_password, settings.OTP_EXPIRATION_TIME)
 
             if self.request.query_params.get('is_android', True):
@@ -1148,7 +1148,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         message="You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
-            request_patient.first_name,
+            ValidationUtil.refine_text_only(request_patient.first_name),
             random_password, settings.OTP_EXPIRATION_TIME)
 
         if self.request.query_params.get('is_android', True):

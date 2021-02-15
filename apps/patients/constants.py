@@ -8,4 +8,4 @@ class PatientsConstants:
     UHID_LINKED_TO_FAMILY_MEMBER = "You have an existing family member with this UHID."
     REACHED_LIMIT_FAMILY_MEMBER = "You have reached limit, you cannot add family members!"
     CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER = "Your cannnot associate your UHID number to your family member."
-    
+    ONLY_ALPHABETS_FIRST_NAME = "Only alphabets are allowes in your First Name."
