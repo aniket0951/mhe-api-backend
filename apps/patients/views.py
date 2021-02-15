@@ -108,7 +108,6 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()
 
-    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     def perform_create(self, serializer):
 
         facebook_id = self.request.data.get('facebook_id')
@@ -155,8 +154,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration is completed successfully. Activate your account by entering the OTP which we have sent to your mobile number.'
         else:
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
-
-    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
+    
     def perform_update(self, serializer):
         patient_object = self.get_object()
 
@@ -206,7 +204,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.save()
             self.update_success_message = "You email is changed, please enter the OTP to verify."
         else:
-            patient_object = serializer.save()
+            serializer.save()
 
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
@@ -828,7 +826,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 is_visible=True)
         return qs
 
-    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     def perform_create(self, serializer):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
             raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
@@ -879,7 +876,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             else:
                 self.create_success_message='We are unable to send OTP to your family member. Please try after sometime.'
 
-    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     def perform_update(self, serializer):
         request_patient=patient_user_object(self.request)
         family_member_object=self.get_object()
