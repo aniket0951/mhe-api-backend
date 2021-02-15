@@ -35,9 +35,6 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                 "new_mobile_verification_otp",
                 "new_mobile_otp_expiration_time",
 
-                "mobile_verification_otp",
-                'mobile_otp_expiration_time',
-
                 'corporate_email_otp',
                 'corporate_email_otp_expiration_time'
             )
@@ -86,8 +83,6 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                             'email_otp_expiration_time',
 
                             'mobile_verified',
-                            'mobile_verification_otp',
-                            'mobile_otp_expiration_time',
 
                             "new_mobile_verification_otp",
                             "new_mobile_otp_expiration_time",
@@ -138,7 +133,6 @@ class PatientSerializer(DynamicFieldsModelSerializer):
 
                     'otp_expiration_time',
                     'email_otp_expiration_time',
-                    'mobile_otp_expiration_time',
                     "new_mobile_otp_expiration_time",
                     'corporate_email_otp_expiration_time',
                 ]
