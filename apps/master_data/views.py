@@ -938,11 +938,11 @@ class UhidConsultationPricingView(ProxyView):
             
             response_content = response_content[0]
             if "OPDConsCharges" in response_content:
-                response_content["OPDConsCharges"] = str(response_content["OPDConsCharges"])
+                response_content["OPDConsCharges"] = int(response_content["OPDConsCharges"])
             if "VCConsCharges" in response_content:
-                response_content["VCConsCharges"] = str(response_content["VCConsCharges"])
+                response_content["VCConsCharges"] = int(response_content["VCConsCharges"])
             if "PRConsCharges" in response_content:
-                response_content["PRConsCharges"] = str(response_content["PRConsCharges"])
+                response_content["PRConsCharges"] = int(response_content["PRConsCharges"])
             success = True
             message = "Price returned successfully!!"
 
