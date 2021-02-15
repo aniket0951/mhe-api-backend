@@ -2,13 +2,14 @@ import logging
 from uuid import UUID
 
 from phonenumber_field.serializerfields import PhoneNumberField
-
+from rest_framework.serializers import ValidationError
 from apps.master_data.models import Hospital
 from apps.master_data.serializers import HospitalSerializer, CompanySerializer
 from apps.patient_registration.serializers import RelationSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
+from utils.custom_validation import ValidationUtil
 
 from .models import FamilyMember, Patient, PatientAddress, WhiteListedToken
 
@@ -117,6 +118,10 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         restriced_fields = ['uhid_number', 'mobile_verified', 'email_verified']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
+        validate_fields = ["first_name","last_name","middle_name"]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        if validated_fields:
+            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -136,6 +141,11 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                 ]
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
+        validate_fields = ["first_name","last_name","middle_name"]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        if validated_fields:
+            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
+        
         return super().update(instance, validated_data)
 
 
@@ -170,6 +180,10 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         restriced_fields = ['uhid_number']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
+        validate_fields = ["first_name","last_name","middle_name"]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        if validated_fields:
+            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -186,6 +200,10 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         # 'otp_expiration_time', 'email_otp_expiration_time']
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
+        validate_fields = ["first_name","last_name","middle_name"]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and not ValidationUtil.validate_text_only(v)]
+        if validated_fields:
+            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
