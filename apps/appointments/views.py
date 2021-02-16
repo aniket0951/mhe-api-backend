@@ -253,6 +253,8 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["hospital"] = data.get("hospital").id
                 new_appointment["appointment_mode"] = data.get(
                     "appointment_mode", None)
+                if new_appointment.get("appointment_mode") and new_appointment.get("appointment_mode").upper()=="VC":
+                    new_appointment["booked_via_app"] = True
                 if data.get('corporate', None):
                     new_appointment["corporate_appointment"] = True
 
@@ -585,6 +587,9 @@ class OfflineAppointment(APIView):
             appointment_data["appointment_slot"] = datetime_object.time().strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
+            
+            if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
+                appointment_data["booked_via_app"] = True
             if appointment_instance:
                 if appointment_instance.payment_status == "success":
                     appointment_data.pop("payment_status")
@@ -593,7 +598,8 @@ class OfflineAppointment(APIView):
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
             else:
-                appointment_data["booked_via_app"] = False
+                if not appointment_data.get("appointment_mode") or not appointment_data.get("appointment_mode").upper()=="VC":
+                    appointment_data["booked_via_app"] = False
                 appointment_serializer = AppointmentSerializer(
                     data=appointment_data)
             message = "Record Inserted"
