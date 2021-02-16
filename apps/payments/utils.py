@@ -864,7 +864,7 @@ class PaymentUtils:
     def update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile):
         payment = {}
         payment = PaymentUtils.set_receipt_number(payment_instance,payment_response,payment,is_requested_from_mobile)
-        payment["uhid_number"] = payment_response.get("uhid_number").upper()
+        payment["uhid_number"] = payment_response.get("uhid_number")
         payment["razor_payment_id"] = order_payment_details.get("id")
         payment["razor_invoice_id"] = order_payment_details.get("invoice_id")
         payment["payment_method"] = PaymentUtils.get_payment_method_from_order_payment_details(order_payment_details)
