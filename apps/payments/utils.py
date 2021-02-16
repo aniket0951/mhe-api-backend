@@ -775,9 +775,7 @@ class PaymentUtils:
     def get_episode_number_for_op_bill(payment_instance):
         episode_numbers = ""
         if payment_instance.episode_number:
-            episode_numbers += payment_instance.episode_number
-        if payment_instance.bill_row_id:
-            episode_numbers += "||"+payment_instance.bill_row_id
+            episode_numbers = payment_instance.episode_number
         return episode_numbers
 
     @staticmethod
