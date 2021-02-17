@@ -1,8 +1,25 @@
 from django.db import models
 
 from apps.users.models import BaseUser
+from apps.meta_app.models import MyBaseModel
+from apps.master_data.models import Hospital
 
+class AdminMenu(MyBaseModel):
+    name = models.CharField(blank= False, null=False, max_length= 200, default= 'Admin menu')
 
+    parent_menu = models.ForeignKey("self", on_delete=models.CASCADE,blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+class AdminRole(MyBaseModel):
+
+    name = models.CharField(max_length=200, blank=False, null=False, default= 'Admin Role')
+
+    menus = models.ManyToManyField(AdminMenu, null = True)
+
+    def __str__(self):
+        return self.name
 class ManipalAdmin(BaseUser):
 
     email = models.EmailField(blank=False,
@@ -16,6 +33,13 @@ class ManipalAdmin(BaseUser):
 
     email_verified = models.BooleanField(default=False,
                                          verbose_name='Email Verified')
+    
+    hospital = models.ForeignKey(
+        Hospital,null = True, on_delete=models.PROTECT, related_name='hospital_name')
+    
+    role = models.ForeignKey(AdminRole, on_delete=models.PROTECT, null = True)
+
+    menus = models.ManyToManyField(AdminMenu)
 
     @property
     def representation(self):

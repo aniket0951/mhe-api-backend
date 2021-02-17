@@ -145,3 +145,21 @@ class IsDoctor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         doctor_id = request.user.id
         return Doctor.objects.filter(id = doctor_id).exists()
+
+class IsPlatformAdmin(permissions.BasePermission):
+
+    message = 'You do not have permission to do this action.'
+
+    def has_permission(self, request, view):
+        """
+        Checking if the user is Manipal administartor.
+        """
+        try:
+            if ManipalAdmin.objects.filter(id=request.user.id, role__name__contains = 'Platform Admin').exists():
+                return True
+        except Exception as e:
+            pass
+        self.message = 'Manipal Administrator has the permission to perform this action.'
+        return False
+
+        

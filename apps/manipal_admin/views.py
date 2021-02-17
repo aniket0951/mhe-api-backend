@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
-from apps.manipal_admin.models import ManipalAdmin
+from apps.manipal_admin.models import ManipalAdmin, AdminMenu, AdminRole
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.exceptions import InvalidCredentialsException
 from utils.custom_permissions import IsManipalAdminUser
@@ -25,8 +25,8 @@ from .emails import send_reset_password_email
 from .exceptions import (ManipalAdminDoesNotExistsValidationException,
                          ManipalAdminPasswordURLExipirationValidationException,
                          ManipalAdminPasswordURLValidationException)
-from .serializers import ManipalAdminResetPasswordSerializer
-
+from .serializers import ManipalAdminResetPasswordSerializer, ManipalAdminMenuSerializer, ManipalAdminRoleSerializer
+from utils import custom_viewsets
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -130,3 +130,16 @@ class ManipalAdminResetPasswordView(CreateAPIView):
 
         context = {'data': None, 'message': self.message}
         return Response(context, status=status.HTTP_200_OK)
+
+class AdminMenuView(custom_viewsets.ListUpdateViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = AdminMenu
+    serializer_class = ManipalAdminMenuSerializer
+    queryset = AdminMenu.objects.all()
+
+
+class AdminRoleView(custom_viewsets.ListUpdateViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = AdminRole
+    serializer_class = ManipalAdminRoleSerializer
+    queryset = AdminRole.objects.all()
