@@ -200,7 +200,6 @@ class PaymentUtils:
 
     @staticmethod
     def get_razorpay_order_payment_response(request,order_details,payment_instance):
-        order_payment_details = dict()
         if request.data.get("event") and request.data.get("event") in [PaymentConstants.RAZORPAY_ORDER_PAID_EVENT,PaymentConstants.RAZORPAY_ORDER_PAYMENT_FAILED_EVENT]:
             order_payment_details = PaymentUtils.get_payment_details_from_webhook_request(request.data)
         else:
@@ -597,8 +596,13 @@ class PaymentUtils:
             response.data.get("data"):
             episode_list = response.data.get("data")
             for episode in episode_list:
-                if episode.get("EpisodeNo") == episode_no and episode.get("BillRowId") == bill_row_id:
+                if episode.get("EpisodeNo") == episode_no:
+                    # if episode.get("BillRowId"):
+                    #     if episode.get("BillRowId") == bill_row_id:
+                    #         calculated_amount += int(float(episode["OutStandingAmt"]))
+                    # else:
                     calculated_amount += int(float(episode["OutStandingAmt"]))
+
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
@@ -699,7 +703,7 @@ class PaymentUtils:
 
     @staticmethod
     def validate_uhid_number(uhid_number):
-        if uhid_number and len(uhid_number)>2 and (uhid_number[:2] == "MH" or uhid_number[:3] == "MMH"):
+        if uhid_number and len(uhid_number)>2 and (uhid_number[:2].upper() == "MH" or uhid_number[:3].upper() == "MMH"):
             return True
         return False
 
@@ -773,9 +777,6 @@ class PaymentUtils:
         if payment_instance.episode_number:
             episode_numbers = payment_instance.episode_number
         return episode_numbers
-        # if payment_instance.bill_row_id:
-        #     episode_numbers.append(payment_instance.bill_row_id)
-        # return "||".join(episode_numbers) if episode_numbers else payment_instance.episode_number
 
     @staticmethod
     def get_bill_row_id_for_op_bill(payment_instance):
@@ -932,11 +933,6 @@ class PaymentUtils:
                 "appointment_identifier" : payment_response.get("appointment_identifier"),
                 "appointment_status":PaymentConstants.HEALTH_PACKAGE_APPOINTMENT_STATUS_BOOKED
             }
-            # package_name = PaymentUtils.get_health_package_name(appointment_instance)
-            # if payment_instance.payment_done_for_patient:
-            #     patient = Patient.objects.filter(id=payment_instance.payment_done_for_patient.id).first()
-            # if payment_instance.payment_done_for_family_member:
-            #     family_member = FamilyMember.objects.filter(id=payment_instance.payment_done_for_family_member.id).first()
             appointment_serializer = HealthPackageAppointmentSerializer(appointment_instance, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()

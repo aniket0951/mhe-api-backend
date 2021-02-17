@@ -1,3 +1,4 @@
+import logging
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
@@ -6,6 +7,7 @@ from rest_framework import serializers
 
 from apps.patients.serializers import CurrentPatientUserDefault
 
+logger = logging.getLogger('django')
 
 class PatientPersonalDocumentsSerializer(DynamicFieldsModelSerializer):
     patient_info = serializers.UUIDField(write_only=True,
@@ -26,6 +28,7 @@ class PatientPersonalDocumentsSerializer(DynamicFieldsModelSerializer):
                 response_object['document'] = generate_pre_signed_url(
                     instance.document.url)
         except Exception as error:
+            logger.error("Error while PatientPersonalDocumentsSerializer : %s"%str(error))
             response_object['display_picture'] = None
 
         return response_object

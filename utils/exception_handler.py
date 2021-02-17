@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.humanize.templatetags.humanize import ordinal
+from ratelimit.exceptions import Ratelimited
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
@@ -16,9 +17,11 @@ def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
     customized_response = {'errors': []}
     if response is not None:
-
-        if isinstance(exc, ValidationError):
-
+        
+        if isinstance(exc, Ratelimited):
+            error = {'field': 'Ratelimit', 'message': "You cannot perform this action too much! Please wait for some time and try again!"}
+            customized_response['errors'].append(error)
+        elif isinstance(exc, ValidationError):
             def generate_error_responses(data, key=''):
                 if isinstance(data, str):
                     error = {'field': key, 'message': data}

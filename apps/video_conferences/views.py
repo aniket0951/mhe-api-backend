@@ -1,6 +1,8 @@
+from apps.video_conferences.constants import VideoConferencesConstants
 import base64
 import json
 import hashlib
+import logging
 import xml.etree.ElementTree as ET
 
 import requests
@@ -37,8 +39,10 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
 from .utils import create_room_parameters
+from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 
 client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_AUTH_KEY)
+logger = logging.getLogger('django')
 
 class RoomCreationView(APIView):
     permission_classes = (AllowAny,)
@@ -85,14 +89,24 @@ class RoomCreationView(APIView):
                 appointment.enable_join_button = True
                 appointment.vc_appointment_status = 2
                 appointment.save()
-            return Response({"message": "Room Already Exists"}, status=status.HTTP_200_OK)
+            return Response({
+                        "message": VideoConferencesConstants.ROOM_ALREADY_EXISTS
+                    }, status=status.HTTP_200_OK)
+        room = None
+        channel = None
         try:
             room = client.video.rooms.create(
-                record_participants_on_connect=True, type='group', unique_name=room_name)
+                                record_participants_on_connect=True, 
+                                type='group', 
+                                unique_name=room_name
+                            )
             channel = client.chat.services(
-                settings.TWILIO_CHAT_SERVICE_ID).channels.create(unique_name=room_name)
-        except Exception as e:
-            print(e)
+                                settings.TWILIO_CHAT_SERVICE_ID
+                            ).channels.create(
+                                unique_name=room_name
+                            )
+        except Exception as error:
+            logger.error("Exception in RoomCreationView %s"%(str(error)))
         data["appointment"] = appointment.id
         data["room_name"] = room.unique_name
         data["room_sid"] = room.sid
@@ -103,10 +117,11 @@ class RoomCreationView(APIView):
         video_instance.save()
         if appointment.family_member:
             member = FamilyMember.objects.filter(
-                id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
+                                    id = appointment.family_member.id, 
+                                    patient_info_id=appointment.patient.id
+                                ).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-                patient_member = Patient.objects.filter(
-                    uhid_number=member.uhid_number).first()
+                patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
                 send_push_notification.delay(
                     notification_data=notification_data)
@@ -141,13 +156,12 @@ class AccessTokenGenerationView(APIView):
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:
-            raise ValidationError("Room does not Exist")
+            raise ValidationError(VideoConferencesConstants.ROOM_DOES_NOT_EXIST)
         channel_sid = room_instance.channel_sid
         try:
-            member = client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(
-                channel_sid).members.create(identity=identity)
-        except:
-            pass
+            client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).members.create(identity=identity)
+        except Exception as error:
+            logger.error("Exception in AccessTokenGenerationView %s"%(str(error)))
         if Patient.objects.filter(id=request.user.id).exists():
             if not appointment.patient_ready:
                 param = dict()
@@ -155,7 +169,7 @@ class AccessTokenGenerationView(APIView):
                 param["location_code"] = appointment.hospital.code
                 param["set_status"] = "ARRIVED"
                 status_param = create_room_parameters(param)
-                response = SendStatus.as_view()(status_param)
+                SendStatus.as_view()(status_param)
             appointment.patient_ready = True
         if Doctor.objects.filter(id=request.user.id).exists():
             appointment.vc_appointment_status = 3
@@ -177,12 +191,12 @@ class CloseRoomView(APIView):
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:
-            raise ValidationError("Room does not Exist")
+            raise ValidationError(VideoConferencesConstants.ROOM_DOES_NOT_EXIST)
         room_sid = room_instance.room_sid
         channel_sid = room_instance.channel_sid
         room_status = client.video.rooms(room_sid).fetch().status
         if room_status == "in-progress":
-            room = client.video.rooms(room_sid).update(status="completed")
+            client.video.rooms(room_sid).update(status="completed")
         notification_data = {
             "patient": PatientSerializer(appointment.patient).data,
             "appointment_id": appointment.appointment_identifier
@@ -192,7 +206,7 @@ class CloseRoomView(APIView):
         param["location_code"] = appointment.hospital.code
         param["set_status"] = "DEPARTED"
         status_param = create_room_parameters(param)
-        response = SendStatus.as_view()(status_param)
+        SendStatus.as_view()(status_param)
         send_silent_push_notification.delay(
             notification_data=notification_data)
         client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).delete()
@@ -210,35 +224,45 @@ class InitiateTrackerAppointment(APIView):
             raise ValidationError("Invalid Parameter")
         secret_key = settings.SMS_SECRET_KEY
         checksum_string = appointment_identifier + secret_key + doctor_code
-        encoded_string_generated = base64.b64encode(hashlib.sha256(
-            checksum_string.encode()).hexdigest().encode()).decode()
+        encoded_string_generated = base64.b64encode(hashlib.sha256(checksum_string.encode()).hexdigest().encode()).decode()
         if not (encoded_string == encoded_string_generated):
             raise ValidationError("Invalid Parameter")
         doctor = Doctor.objects.filter(code=doctor_code).first()
+
         payload = jwt_payload_handler(doctor)
         payload["username"] = doctor.code
         token = jwt_encode_handler(payload)
+
+        WhiteListedJWTTokenUtil.create_token(doctor,token)
+
         redirect_data = dict()
         redirect_data["token"] = token
         redirect_data["appointment_identifier"] = appointment_identifier
         redirect_data_string = json.dumps(redirect_data)
         encoded_string = base64.b64encode(redirect_data_string.encode("utf-8"))
+
         param = str(encoded_string)[2:-1]
         result = settings.VC_URL_REDIRECTION + param
-        param = create_room_parameters(
-            {"appointment_id": appointment_identifier})
+        param = create_room_parameters({"appointment_id": appointment_identifier})
         response = RoomCreationView.as_view()(param)
         message = "Something went wrong"
         if response.status_code == 200:
             if response.data.get("room_name"):
                 message = "Room Created"
-            elif response.data.get("message") == "Room Already Exists":
-                message = "Room Already Exists"
+            elif response.data.get("message") == VideoConferencesConstants.ROOM_ALREADY_EXISTS:
+                message = VideoConferencesConstants.ROOM_ALREADY_EXISTS
             return Response({"message": message, "url": result}, status=status.HTTP_200_OK)
         elif response.status_code == 417:
-            return Response({"Message": "Video Consultation is Open", "uhid": response.data["appointment"][0]["uhid"],
-                             "appointment_date": response.data["appointment"][0]["appointment_date"], "appointment_time": response.data["appointment"][0]["appointment_slot"]}, status=status.HTTP_200_OK)
-        return Response({"Error": "Something Went Wrong"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                        "Message": "Video Consultation is Open", 
+                        "uhid": response.data["appointment"][0]["uhid"],
+                        "appointment_date": response.data["appointment"][0]["appointment_date"], 
+                        "appointment_time": response.data["appointment"][0]["appointment_slot"]
+                    }, 
+                    status=status.HTTP_200_OK)
+        return Response({
+                    "Error": "Something Went Wrong"
+                }, status=status.HTTP_404_NOT_FOUND)
 
 
 class SendStatus(ProxyView):
@@ -279,17 +303,17 @@ class HoldAppointmentView(APIView):
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:
-            raise ValidationError("Room does not Exist")
+            raise ValidationError(VideoConferencesConstants.ROOM_DOES_NOT_EXIST)
         room_sid = room_instance.room_sid
         room_status = client.video.rooms(room_sid).fetch().status
         if room_status == "in-progress":
-            room = client.video.rooms(room_sid).update(status="completed")
+            client.video.rooms(room_sid).update(status="completed")
         param = dict()
         param["app_id"] = appointment.appointment_identifier
         param["location_code"] = appointment.hospital.code
         param["set_status"] = "DEPARTED"
         status_param = create_room_parameters(param)
-        response = SendStatus.as_view()(status_param)
+        SendStatus.as_view()(status_param)
 
         notification_data = {}
         notification_data["title"] = "Consultation On Hold"

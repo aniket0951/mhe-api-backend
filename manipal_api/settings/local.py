@@ -133,6 +133,8 @@ DEFAULT_MIDDLEWARES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'axes.middleware.AxesMiddleware',
+    'apps.middleware.cipherMiddleware.CipherRequestMiddleware',
+    'apps.middleware.cipherMiddleware.CipherResponseMiddleware'
 ]
 
 
@@ -192,8 +194,6 @@ DATABASES = {
 
     # }
 }
-
-# DATABASE_ROUTERS = ['utils.custom_db_routers.CustomDBRouter']
 
 
 # Password validation
@@ -351,10 +351,6 @@ EMAIL_HOST_USER = env('AWS_SES_ACCESS_KEY_ID')
 EMAIL_HOST_PASSWORD = env('AWS_SES_SECRET_ACCESS_KEY')
 EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_TLS = True
-#EMAIL_BACKEND = 'django_ses.SESBackend'
-#EMAIL_FROM_USER = env('EMAIL_FROM_USER')
-#AWS_SES_REGION_NAME = env('AWS_SES_REGION_NAME')
-#AWS_SES_REGION_ENDPOINT = env('AWS_SES_REGION_ENDPOINT')
 
 # Celery settings
 SQS_ACCESS_KEY_ID = env('SQS_ACCESS_KEY_ID')

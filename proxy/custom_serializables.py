@@ -424,7 +424,7 @@ class PatientAppStatus:
         self.hospital_code = param.get("hospital_code", None)
         self.trans_date = param.get("trans_date", None)
         self.trans_time = param.get("trans_time", None)
-        self.android_download = str(param.get("android_download" or "0"))
+        self.android_download = str(param.get("android_download") or "0")
         self.ios_download = str(param.get("ios_download") or "0")
         self.linked_user_count = str(param.get("linked_user_count") or "0")
         self.family_member_count = str(param.get("family_member_count") or "0")

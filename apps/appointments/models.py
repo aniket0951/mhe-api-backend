@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
@@ -13,8 +13,6 @@ from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
-
-from .tasks import set_status_as_completed
 
 
 def generate_personal_file_path(self, filename):
@@ -117,37 +115,34 @@ class Appointment(models.Model):
 
     @property
     def is_cancellable(self):
-        if self.appointment_date:
-            if ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
-                if self.appointment_date > datetime.now().date():
-                    if self.payment_status == "success":
-                        self.refundable_amount = self.consultation_amount
-                        self.save()
+        if self.appointment_date and ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
+            if self.appointment_date > datetime.now().date():
+                if self.payment_status == "success":
+                    self.refundable_amount = self.consultation_amount
+                    self.save()
+                return True
+            if self.appointment_date == datetime.now().date() and self.appointment_slot > datetime.now().time():
+                if not self.payment_status:
                     return True
-                if self.appointment_date == datetime.now().date():
-                    if self.appointment_slot > datetime.now().time():
-                        if not self.payment_status:
-                            return True
-                        date_time_slot = datetime.combine(
-                            datetime.now(), self.appointment_slot)
-                        date_time_now = datetime.combine(
-                            datetime.now(), datetime.now().time())
-                        time_delta = (
-                            date_time_slot - date_time_now).total_seconds()/3600
-                        if time_delta > 2:
-                            self.refundable_amount = self.consultation_amount
-                            if time_delta <= 4:
-                                self.refundable_amount = self.consultation_amount - 100.0
-                            self.save()
-                            return True
+                date_time_slot = datetime.combine(
+                    datetime.now(), self.appointment_slot)
+                date_time_now = datetime.combine(
+                    datetime.now(), datetime.now().time())
+                time_delta = (
+                    date_time_slot - date_time_now).total_seconds()/3600
+                if time_delta > 2:
+                    self.refundable_amount = self.consultation_amount
+                    if time_delta <= 4:
+                        self.refundable_amount = self.consultation_amount - 100.0
+                    self.save()
+                    return True
         self.save()
         return False
 
     @property
     def is_payment_option_enabled(self):
-        if self.appointment_date:
-            if ((self.appointment_date < datetime.now().date()) or ((self.appointment_date == datetime.now().date()) and (self.appointment_slot < datetime.now().time()))):
-                return False
+        if self.appointment_date and ((self.appointment_date < datetime.now().date()) or ((self.appointment_date == datetime.now().date()) and (self.appointment_slot < datetime.now().time()))):
+            return False
         return True
 
 
@@ -194,9 +189,8 @@ class HealthPackageAppointment(models.Model):
 
     @property
     def is_cancellable(self):
-        if self.appointment_date:
-            if ((self.appointment_date > datetime.now()) and (self.appointment_status != "Cancelled")):
-                return True
+        if self.appointment_date and ((self.appointment_date > datetime.now()) and (self.appointment_status != "Cancelled")):
+            return True
         return False
 
 
@@ -323,7 +317,7 @@ class Feedbacks(MyBaseModel):
 
     feedback = models.TextField(blank=False,
                                 null=False,
-                                max_length=100)
+                                max_length=500)
 
     rating = models.IntegerField(default="1")
 

@@ -306,10 +306,10 @@ class FeedbackRecipients(MyBaseModel):
                             null=True
                         )
     email = models.CharField(
-                                max_length=50,
-                                blank=True,
-                                null=True
-                            )
+                            max_length=50,
+                            blank=True,
+                            null=True
+                        )
     class Meta:
         verbose_name = "Feedback recipient"
         verbose_name_plural = "Feedback recipients"

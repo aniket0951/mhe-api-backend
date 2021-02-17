@@ -1,3 +1,4 @@
+from apps.health_packages.constants import HealthPackagesConstants
 import ast
 import json
 import xml.etree.ElementTree as ET
@@ -179,14 +180,11 @@ class HealthPackageSlotAvailability(ProxyView):
             time = datetime.strptime(
                 slot['startTime'], time_format).time()
             if time.hour < 12:
-                morning_slot.append({"slot": time.strftime(
-                    "%I:%M %p"), "type": appointment_type})
+                morning_slot.append({"slot": time.strftime(HealthPackagesConstants.SLOT_TIME_FORMAT), "type": appointment_type})
             elif (time.hour >= 12) and (time.hour < 17):
-                afternoon_slot.append({"slot": time.strftime(
-                    "%I:%M %p"), "type": appointment_type})
+                afternoon_slot.append({"slot": time.strftime(HealthPackagesConstants.SLOT_TIME_FORMAT), "type": appointment_type})
             else:
-                evening_slot.append({"slot": time.strftime(
-                    "%I:%M %p"), "type": appointment_type})
+                evening_slot.append({"slot": time.strftime(HealthPackagesConstants.SLOT_TIME_FORMAT), "type": appointment_type})
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
@@ -213,13 +211,12 @@ class HealthPackagePrice(ProxyView):
         success_status = False
         response_message = {}
         if response.status_code == 200:
-            status = root.find("Status").text
+            root.find("Status").text
             message = root.find("Message").text
             if message == "Success":
                 package_detail = root.find("packagepricedetails").text
                 if package_detail:
                     success_status = True
-                    response_message = "Price details"
                     total_package_info = ast.literal_eval(package_detail)
                     discounted_price = total_package_info['TotalPackagePrice']
                     response_message = total_package_info

@@ -47,7 +47,6 @@ def send_push_notification(self, **kwargs):
                                'appointment_id': notification_data["appointment_id"]
                                }
                         )
-    return
 
 
 @app.task(bind=True, name="silent_push_notification")
@@ -59,13 +58,13 @@ def send_silent_push_notification(self, **kwargs):
             id=notification_data.get("patient")["id"]).first()
         if (hasattr(patient_instance, 'device') and patient_instance.device.token):
             if patient_instance.device.platform == 'Android':
-                result = fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
+                fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
                     "notification_type": "SILENT_NOTIFICATION", "appointment_id": notification_data["appointment_id"]}, low_priority=False)
             elif patient_instance.device.platform == 'iOS':
                 client = APNSClient(certificate=settings.APNS_CERT_PATH)
                 token = patient_instance.device.token
                 alert = "Doctor completed this consultation"
-                res = client.send(token,
+                client.send(token,
                                   alert,
                                   badge=1,
                                   sound="default",
@@ -73,7 +72,6 @@ def send_silent_push_notification(self, **kwargs):
                                          'appointment_id': notification_data["appointment_id"]
                                          }
                                   )
-    return
 
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
@@ -195,7 +193,7 @@ def auto_appointment_cancellation():
         param["reason_id"] = "1"
         param["status"] = "2"
         request_param = cancel_parameters(param)
-        response = CancelMyAppointment.as_view()(request_param)
+        CancelMyAppointment.as_view()(request_param)
 
 
 @app.task(name="tasks.daily_auto_appointment_cancellation")
@@ -210,7 +208,7 @@ def daily_auto_appointment_cancellation():
         param["reason_id"] = "1"
         param["status"] = "2"
         request_param = cancel_parameters(param)
-        response = CancelMyAppointment.as_view()(request_param)
+        CancelMyAppointment.as_view()(request_param)
 
 
 @app.task(name="tasks.daily_update")

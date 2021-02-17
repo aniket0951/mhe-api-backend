@@ -1,3 +1,4 @@
+import logging
 import urllib
 from datetime import datetime, timedelta
 from django.db.models import Count, Sum
@@ -15,6 +16,7 @@ from apps.patients.models import FamilyMember, Patient
 from apps.payments.models import Payment
 from rest_framework.serializers import ValidationError
 
+logger = logging.getLogger('django')
 
 def generate_pre_signed_url(image_url):
     try:
@@ -35,7 +37,7 @@ def patient_user_object(request):
     try:
         return Patient.objects.get(id=request.user.id)
     except Exception as error:
-        # logger.error("Unable to fetch patient user : " + str(error))
+        logger.error("Unable to fetch patient user : " + str(error))
         return None
 
 
@@ -43,7 +45,7 @@ def manipal_admin_object(request):
     try:
         return ManipalAdmin.objects.get(id=request.user.id)
     except Exception as error:
-        # logger.error("Unable to fetch patient user : " + str(error))
+        logger.error("Unable to fetch patient user : " + str(error))
         return None
 
 

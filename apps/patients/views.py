@@ -1,3 +1,4 @@
+import logging
 import base64
 import hashlib
 from datetime import datetime, timedelta
@@ -6,45 +7,56 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.contrib.gis.geos import Point
-from django.shortcuts import render
 from django.utils.crypto import get_random_string
-
+from django.utils.decorators import method_decorator
 from apps.master_data.models import Company
 from apps.master_data.views import ValidateMobileView, ValidateUHIDView
-from axes.models import AccessAttempt, AccessLog
+from axes.models import AccessAttempt
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, serializers, status, viewsets
+from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ParseError
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+from ratelimit.decorators import ratelimit
 from utils import custom_viewsets
-from utils.custom_permissions import (BlacklistDestroyMethodPermission,
-                                      BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser, IsPatientUser,
-                                      IsSelfAddress, IsSelfFamilyMember,
-                                      SelfUserAccess)
 from utils.custom_sms import send_sms
+from utils.custom_permissions import (
+                                BlacklistDestroyMethodPermission,
+                                BlacklistUpdateMethodPermission,
+                                IsManipalAdminUser, IsPatientUser,
+                                IsSelfAddress, IsSelfFamilyMember,
+                                SelfUserAccess
+                            )
+from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 from utils.utils import manipal_admin_object, patient_user_object
-
-from .emails import (send_corporate_email_activation_otp,
-                     send_email_activation_otp,
-                     send_family_member_email_activation_otp)
-from .exceptions import (InvalidCredentialsException, InvalidEmailOTPException,
-                         InvalidUHID, OTPExpiredException,
-                         PatientDoesNotExistsValidationException,
-                         PatientMobileDoesNotExistsValidationException,
-                         PatientMobileExistsValidationException,
-                         PatientOTPExceededLimitException)
-from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
-from .serializers import (FamilyMemberSerializer, PatientAddressSerializer,
-                          PatientSerializer)
+from .emails import (
+                send_corporate_email_activation_otp,
+                send_email_activation_otp,
+                send_family_member_email_activation_otp
+            )
+from .exceptions import (
+                    InvalidCredentialsException, 
+                    InvalidEmailOTPException,
+                    OTPExpiredException,
+                    PatientDoesNotExistsValidationException,
+                    PatientMobileDoesNotExistsValidationException,
+                    PatientMobileExistsValidationException
+                )
+from .serializers import (  
+                    FamilyMemberSerializer, 
+                    PatientAddressSerializer,
+                    PatientSerializer
+                )
 from .utils import fetch_uhid_user_details, link_uhid
-
+from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
+from .constants import PatientsConstants
+from utils.custom_validation import ValidationUtil
+logger = logging.getLogger('django')
 
 class PatientViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -107,18 +119,15 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if patient_obj:
 
-            if not (facebook_id or google_id or apple_id):
-                if patient_obj.mobile_verified == True:
-                    raise PatientMobileExistsValidationException
+            if not (facebook_id or google_id or apple_id) and patient_obj.mobile_verified == True:
+                raise PatientMobileExistsValidationException
 
             if patient_obj.mobile_verified == False:
                 patient_obj.delete()
                 patient_obj = None
 
-        random_password = get_random_string(
-            length=4, allowed_chars='0123456789')
-        otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+        random_password = get_random_string(length=4, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         if patient_obj:
             patient_obj.set_password(random_password)
@@ -135,6 +144,26 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             user_obj.set_password(random_password)
             user_obj.save()
 
+        
+        otp_instance = OtpGenerationCount.objects.filter(mobile=user_obj.mobile).first()
+        if not otp_instance:
+            otp_instance = OtpGenerationCount.objects.create(mobile=user_obj.mobile, otp_generation_count=1)
+
+        current_time = datetime.today()
+        delta = current_time - otp_instance.updated_at
+        if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
+            raise ValidationError(
+                "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
+
+        if delta.seconds > 600:
+            otp_instance.otp_generation_count = 1
+            otp_instance.save()
+
+        if delta.seconds <= 600:
+            otp_instance.otp_generation_count += 1
+            otp_instance.save()
+
+
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
             random_password, settings.OTP_EXPIRATION_TIME)
         if self.request.query_params.get('is_android', True):
@@ -145,9 +174,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             self.create_success_message = 'Your registration is completed successfully. Activate your account by entering the OTP which we have sent to your mobile number.'
         else:
             self.create_success_message = 'Your registration completed successfully, we are unable to send OTP to your number. Please try after sometime.'
-
+    
     def perform_update(self, serializer):
-        is_new_mobile_to_be_verified = False
         patient_object = self.get_object()
 
         if 'new_mobile' in serializer.validated_data and\
@@ -157,10 +185,27 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError(
                     "This mobile number is already registered with us, please try with another number!")
 
-            random_mobile_change_password = get_random_string(
-                length=4, allowed_chars='0123456789')
-            otp_expiration_time = datetime.now(
-            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+            otp_instance = OtpGenerationCount.objects.filter(mobile=serializer.validated_data['new_mobile']).first()
+            if not otp_instance:
+                otp_instance = OtpGenerationCount.objects.create(mobile=serializer.validated_data['new_mobile'], otp_generation_count=1)
+
+            current_time = datetime.today()
+            delta = current_time - otp_instance.updated_at
+            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
+                raise ValidationError(
+                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
+
+            if delta.seconds > 600:
+                otp_instance.otp_generation_count = 1
+                otp_instance.save()
+
+            if delta.seconds <= 600:
+                otp_instance.otp_generation_count += 1
+                otp_instance.save()
+
+
+            random_mobile_change_password = get_random_string(length=4, allowed_chars='0123456789')
+            otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             patient_object = serializer.save()
             patient_object.new_mobile_verification_otp = random_mobile_change_password
@@ -198,12 +243,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.save()
             self.update_success_message = "You email is changed, please enter the OTP to verify."
         else:
-            patient_object = serializer.save()
+            serializer.save()
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
         username = request.data.get('mobile')
-        password = request.data.get('password')
+        password = request.data.get('otp')
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
@@ -232,8 +278,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if access_log:
             access_log.delete()
 
-        if datetime.now().timestamp() > \
-                authenticated_patient.otp_expiration_time.timestamp():
+        if datetime.now().timestamp() > authenticated_patient.otp_expiration_time.timestamp():
             raise OTPExpiredException
         message = "Login successful!"
 
@@ -257,20 +302,21 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             length=4, allowed_chars='0123456789')
         authenticated_patient.set_password(random_password)
         authenticated_patient.save()
+        
         serializer = self.get_serializer(authenticated_patient)
         payload = jwt_payload_handler(authenticated_patient)
         payload['username'] = payload['username'].raw_input
         payload['mobile'] = payload['mobile'].raw_input
         token = jwt_encode_handler(payload)
-        expiration = datetime.utcnow(
-        ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+        expiration = datetime.utcnow() + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
         expiration_epoch = expiration.timestamp()
 
-        otp_instance = OtpGenerationCount.objects.filter(
-            mobile=authenticated_patient.mobile).first()
+        otp_instance = OtpGenerationCount.objects.filter(mobile=authenticated_patient.mobile).first()
         if otp_instance:
             otp_instance.otp_generation_count = 0
             otp_instance.save()
+
+        WhiteListedJWTTokenUtil.create_token(authenticated_patient,token)
 
         data = {
             "data": serializer.data,
@@ -280,6 +326,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['PATCH'])
     def verify_new_mobile_otp(self, request):
         new_mobile_otp = request.data.get('new_mobile_otp')
@@ -288,7 +335,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         patient_obj = patient_user_object(request)
 
         if not patient_obj.new_mobile_verification_otp == new_mobile_otp:
-            raise ValidationError("Invalid OTP is entered!")
+            raise ValidationError(PatientsConstants.INVALID_OTP)
 
         if datetime.now().timestamp() > \
                 patient_obj.new_mobile_otp_expiration_time.timestamp():
@@ -315,12 +362,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['GET'])
     def generate_new_mobile_verification_otp(self, request):
         patient_obj = patient_user_object(request)
 
         if not patient_obj.new_mobile or patient_obj.mobile == patient_obj.new_mobile:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_mobile_change_password = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -338,8 +386,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if self.request.query_params.get('is_android', True):
             message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
-        is_message_sent = send_sms(
-            mobile_number=mobile_number, message=message)
+        is_message_sent = send_sms(mobile_number=mobile_number, message=message)
         if is_message_sent:
             response_message = 'Enter the OTP which we have sent to your new mobile number to activate.'
         else:
@@ -351,6 +398,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def verify_email_otp(self, request):
         email_otp = request.data.get('email_otp')
@@ -379,12 +427,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['GET'])
     def generate_email_verification_otp(self, request):
         authenticated_patient = patient_user_object(request)
 
         if authenticated_patient.email_verified:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_email_otp = get_random_string(
             length=4, allowed_chars='0123456789')
@@ -400,10 +449,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": {"email": str(authenticated_patient.email), },
-            "message": "OTP to verify you email is sent successfully!",
+            "message": PatientsConstants.OTP_EMAIL_SENT,
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_login_otp(self, request):
         mobile = request.data.get('mobile')
@@ -455,22 +505,25 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if not request_patient:
             raise PatientDoesNotExistsValidationException
 
-        if request_patient.mobile_verified == False:
-            if not sign_up:
-                raise PatientMobileDoesNotExistsValidationException
+        if request_patient.mobile_verified == False and not sign_up:
+            raise PatientMobileDoesNotExistsValidationException
 
         if (facebook_id or google_id or apple_id):
+
             serializer = self.get_serializer(request_patient)
             if apple_email:
                 request_patient.apple_email = apple_email
                 request_patient.save()
+
             payload = jwt_payload_handler(request_patient)
             payload['username'] = payload['username'].raw_input
             payload['mobile'] = payload['mobile'].raw_input
             token = jwt_encode_handler(payload)
-            expiration = datetime.utcnow(
-            ) + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+            expiration = datetime.utcnow() + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
             expiration_epoch = expiration.timestamp()
+
+            WhiteListedJWTTokenUtil.create_token(request_patient,token)
+
             message = "Login successful!"
             data = {
                 "data": serializer.data,
@@ -516,14 +569,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": response_message,
         }
         return Response(data, status=status.HTTP_200_OK)
-
+    
     @action(detail=True, methods=['PATCH'])
     def update_uhid(self, request, pk=None):
         uhid_number = request.data.get('uhid_number')
         
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info = patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
@@ -537,8 +589,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if FamilyMember.objects.filter(patient_info=patient_info,
                                        uhid_number=uhid_number,
                                        is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
         uhid_user_info = fetch_uhid_user_details(request)
 
         patient_user_obj = self.get_object()
@@ -560,6 +611,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         link_uhid(request)
         return Response(data, status=status.HTTP_201_CREATED)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_uhid_otp(self, request):
         uhid_number = request.data.get('uhid_number')
@@ -579,6 +631,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def validate_uhid_otp(self, request):
         uhid_user_info = fetch_uhid_user_details(request)
@@ -589,6 +642,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         link_uhid(request)
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_corporate_email_verification_otp(self, request):
         authenticated_patient = patient_user_object(request)
@@ -599,13 +653,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             company_instance = Company.objects.filter(
                 name=company_name).first()
 
-        random_email_otp = get_random_string(
-            length=4, allowed_chars='0123456789')
+        random_email_otp = get_random_string(length=4, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
-        send_corporate_email_activation_otp(
-            str(authenticated_patient.id), corporate_email, random_email_otp)
+        send_corporate_email_activation_otp(str(authenticated_patient.id), corporate_email, random_email_otp)
 
         if company_instance:
             authenticated_patient.company_info = company_instance
@@ -617,10 +669,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": {"email": str(authenticated_patient.corporate_email), },
-            "message": "OTP to verify you email is sent successfully!",
+            "message": PatientsConstants.OTP_EMAIL_SENT,
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def verify_corporate_email_otp(self, request):
         email_otp = request.data.get('email_otp')
@@ -662,11 +715,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": serialize_data.data,
-            "message": "OTP to verify you email is sent successfully!",
+            "message": PatientsConstants.OTP_EMAIL_SENT,
         }
         return Response(data, status=status.HTTP_200_OK)
-        
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_mobile_uhid_otp(self, request):
         mobile = request.data.get('mobile')
@@ -706,12 +759,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError("Family Member not Available")
 
             if patient.uhid_number == uhid_number:
-                raise ValidationError(
-                    "Your cannnot associate your UHID number to your family member.")
+                raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
             if family_member.filter(uhid_number=uhid_number).exists():
-                raise ValidationError(
-                    "You have an existing family member with this UHID.")
+                raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
 
             member.uhid_number = uhid_number
             member.first_name = request.data.get("first_name", None)
@@ -735,7 +786,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError("There is an exisiting user  on our platform with this UHID.")
             
             if FamilyMember.objects.filter(patient_info=patient,uhid_number=uhid_number,is_visible=True).exists():
-                raise ValidationError("You have an existing family member with this UHID.")
+                raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
 
             patient.uhid_number = uhid_number
             patient.first_name = request.data.get("first_name", None)
@@ -801,14 +852,14 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         qs=super().get_queryset().filter(patient_info__id=self.request.user.id,
                                            is_visible=True)
         if manipal_admin_object(self.request):
+            request_patient_info = None
             try:
                 request_patient_info=Patient.objects.get(
                     id=self.request.query_params.get('patient_id'))
-            except:
+            except Exception as error:
+                logger.error("Exception in FamilyMemberViewSet %s"%(str(error)))
                 if not request_patient_info:
-                    raise ValidationError(
-                        "Invalid patient information.")
-
+                    raise ValidationError("Invalid patient information.")
             qs=FamilyMember.objects.filter(
                 patient_info__id=request_patient_info.id,
                 is_visible=True)
@@ -816,8 +867,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError(
-                "You have reached limit, you cannot add family members!")
+            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
 
         if not 'email' in serializer.validated_data or not serializer.validated_data['email']:
             raise ValidationError("Email is not mentioned!")
@@ -851,9 +901,28 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         self.create_success_message="Family member is added successfully!"
 
         if is_mobile_to_be_verified:
+
+            otp_instance = OtpGenerationCount.objects.filter(mobile=user_obj.mobile).first()
+            if not otp_instance:
+                otp_instance = OtpGenerationCount.objects.create(mobile=user_obj.mobile, otp_generation_count=1)
+
+            current_time = datetime.today()
+            delta = current_time - otp_instance.updated_at
+            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 5:
+                raise ValidationError(
+                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
+
+            if delta.seconds > 600:
+                otp_instance.otp_generation_count = 1
+                otp_instance.save()
+
+            if delta.seconds <= 600:
+                otp_instance.otp_generation_count += 1
+                otp_instance.save()
+
             message="You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
-                request_patient.first_name,
+                ValidationUtil.refine_text_only(request_patient.first_name),
                 random_mobile_password, settings.OTP_EXPIRATION_TIME)
 
             if self.request.query_params.get('is_android', True):
@@ -904,6 +973,25 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             #     str(family_member_object.id), random_email_otp)
 
         if is_mobile_to_be_verified:
+
+            otp_instance = OtpGenerationCount.objects.filter(mobile=family_member_object.new_mobile).first()
+            if not otp_instance:
+                otp_instance = OtpGenerationCount.objects.create(mobile=family_member_object.new_mobile, otp_generation_count=1)
+
+            current_time = datetime.today()
+            delta = current_time - otp_instance.updated_at
+            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
+                raise ValidationError(
+                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
+
+            if delta.seconds > 600:
+                otp_instance.otp_generation_count = 1
+                otp_instance.save()
+
+            if delta.seconds <= 600:
+                otp_instance.otp_generation_count += 1
+                otp_instance.save()
+
             random_mobile_password=get_random_string(
                 length=4, allowed_chars='0123456789')
             otp_expiration_time=datetime.now(
@@ -915,7 +1003,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
             message="Your mobile number has been added on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
-                request_patient.first_name,
+                ValidationUtil.refine_text_only(request_patient.first_name),
                 random_mobile_password, settings.OTP_EXPIRATION_TIME)
 
             if self.request.query_params.get('is_android', True):
@@ -934,23 +1022,19 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def validate_new_family_member_uhid_otp(self, request):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError(
-                "You have reached limit, you cannot add family members!")
+            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
 
         uhid_number=request.data.get('uhid_number')
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info=patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError(
-                "Your cannnot associate your UHID number to your family member.")
+            raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number, is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
         uhid_user_info=fetch_uhid_user_details(request)
         uhid_user_info['mobile_verified']=True
         uhid_user_info['is_visible']=True
@@ -974,18 +1058,15 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_number=request.data.get('uhid_number')
 
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info=patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError(
-                "Your cannnot associate your UHID number to your family member.")
+            raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number, is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
 
         uhid_user_info=fetch_uhid_user_details(request)
 
@@ -1012,6 +1093,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['PATCH'])
     def verify_family_member_otp(self, request, pk=None):
         mobile_otp=request.data.get('mobile_otp')
@@ -1020,11 +1102,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         try:
             # TODO: self.get_object() doesn't seem to work
             family_member=self.model.objects.get(pk=pk)
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in verify_family_member_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if not family_member.mobile_verification_otp == mobile_otp:
-            raise ValidationError("Invalid OTP is entered!")
+            raise ValidationError(PatientsConstants.INVALID_OTP)
 
         if datetime.now().timestamp() > \
                 family_member.mobile_otp_expiration_time.timestamp():
@@ -1050,6 +1133,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['PATCH'])
     def verify_family_member_email_otp(self, request, pk=None):
         email_otp=request.data.get('email_otp')
@@ -1057,11 +1141,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Enter OTP to verify family member!")
         try:
             family_member=self.model.objects.get(pk=pk)
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in verify_family_member_email_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if not family_member.email_verification_otp == email_otp:
-            raise ValidationError("Invalid OTP is entered!")
+            raise ValidationError(PatientsConstants.INVALID_OTP)
 
         if datetime.now().timestamp() > \
                 family_member.email_otp_expiration_time.timestamp():
@@ -1081,15 +1166,17 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['GET'])
     def generate_family_member_email_verification_otp(self, request, pk=None):
         try:
             family_member_object=self.get_object()
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in generate_family_member_email_verification_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if family_member_object.email_verified:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_email_otp=get_random_string(
             length=4, allowed_chars='0123456789')
@@ -1109,15 +1196,17 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=True, methods=['GET'])
     def generate_family_member_mobile_verification_otp(self, request, pk=None):
         try:
             family_member=self.model.objects.get(pk=pk)
-        except:
-            raise NotFound(detail='Requested information not found!')
+        except Exception as error:
+            logger.error("Exception in generate_family_member_mobile_verification_otp %s"%(str(error)))
+            raise NotFound(detail=PatientsConstants.REQUESTED_INFO_NOT_FOUND)
 
         if family_member.mobile_verified and not family_member.new_mobile:
-            raise ValidationError("Invalid request!")
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         mobile_number=str(family_member.mobile.raw_input)
         if family_member.mobile_verified:
@@ -1136,7 +1225,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         message="You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
-            request_patient.first_name,
+            ValidationUtil.refine_text_only(request_patient.first_name),
             random_password, settings.OTP_EXPIRATION_TIME)
 
         if self.request.query_params.get('is_android', True):
@@ -1154,27 +1243,22 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
-
     @action(detail=False, methods=['POST'])
     def add_new_family_member_using_mobile(self, request):
         if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError(
-                "You have reached limit, you cannot add family members!")
+            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBER)
 
         uhid_number=request.data.get('uhid_number')
         if not uhid_number:
-            raise ValidationError(
-                "Enter valid UHID number.")
+            raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
         patient_info=patient_user_object(request)
         if patient_info.uhid_number == uhid_number:
-            raise ValidationError(
-                "Your cannnot associate your UHID number to your family member.")
+            raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
 
         if self.model.objects.filter(patient_info=patient_info,
                                      uhid_number=uhid_number, is_visible=True).exists():
-            raise ValidationError(
-                "You have an existing family member with this UHID.")
+            raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
                 
         uhid_user_info=dict()
         uhid_user_info['first_name'] = request.data.get("first_name")
@@ -1239,9 +1323,6 @@ class PatientAddressViewSet(custom_viewsets.ModelViewSet):
         request_data=self.request.data
         longitude=float(request_data.get("longitude", 0))
         latitude=float(request_data.get("latitude", 0))
-        # if not (longitude and latitude):
-        #     raise ValidationError(
-        #         "Missing information about longitude and latitude!")
         serializer.save(location=Point(longitude, latitude, srid=4326))
 
     def perform_update(self, serializer):

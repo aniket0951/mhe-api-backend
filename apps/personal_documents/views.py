@@ -1,20 +1,22 @@
 from django.db.models import Q
-from django_filters.rest_framework import DjangoFilterBackend
+from django.conf import settings
 from rest_framework import filters
-from rest_framework.permissions import AllowAny, IsAuthenticated
-
+from ratelimit.decorators import ratelimit
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
 from apps.patients.exceptions import InvalidFamilyMemberValidationException
 from apps.patients.models import FamilyMember
 from utils import custom_viewsets
-from utils.custom_permissions import (BlacklistDestroyMethodPermission,
-                                      BlacklistUpdateMethodPermission,
-                                      IsManipalAdminUser, IsPatientUser,
-                                      IsSelfDocument)
-
+from utils.custom_permissions import (
+                                BlacklistUpdateMethodPermission,
+                                IsPatientUser,
+                                IsSelfDocument
+                            )
 from .models import PatientPersonalDocuments
 from .serializers import PatientPersonalDocumentsSerializer
 
-
+@method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_DOCUMENT_UPLOAD, block=True, method=ratelimit.UNSAFE), name='create')
 class PatientPersonalDocumentsViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     model = PatientPersonalDocuments
@@ -25,8 +27,7 @@ class PatientPersonalDocumentsViewSet(custom_viewsets.ModelViewSet):
     retrieve_success_message = 'Document information returned successfully!'
     update_success_message = 'Document information is updated successfuly!'
     delete_success_message = 'Your document is deleted successfuly!'
-    filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter, )
+    filter_backends = (DjangoFilterBackend,filters.SearchFilter, )
     search_fields = ['name', 'description']
 
     def get_permissions(self):

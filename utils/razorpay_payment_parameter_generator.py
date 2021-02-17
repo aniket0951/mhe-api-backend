@@ -19,21 +19,10 @@ def get_payment_param_for_razorpay(data=None):
     token["auth"]["key"] = hospital_key_info.secret_key
     token["auth"]["secret"] = hospital_key_info.secret_secret
     
-    # token["auth"]["user"] = settings.SALUCRO_AUTH_USER
-    # token["auth"]["key"] = settings.SALUCRO_AUTH_KEY
-    # token["username"] = settings.SALUCRO_USERNAME
-    # token["paymode"] = ""
-    # token["response_url"] = settings.SALUCRO_RESPONSE_URL
-    # token["return_url"] = settings.SALUCRO_RETURN_URL
-    # token["transaction_type"] = ""
-    
     token["processing_id"] = processing_id
     param["mid"] = hospital_key_info.mid
     param["token"] = token
     
-    # param["check_sum_hash"] = get_checksum(
-    # settings.SALUCRO_AUTH_USER, settings.SALUCRO_AUTH_KEY, processing_id, mid, secret_key)
-
     return param
 
 def get_hospital_key_info(location_code):

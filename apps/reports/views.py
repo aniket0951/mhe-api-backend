@@ -58,8 +58,6 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
         filter_by = self.request.query_params.get("filter_by", None)
         request_patient_obj = patient_user_object(self.request)
 
-        qs = Report.objects.none()
-
         if family_member_id:
             family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,
                                                         id=family_member_id).first()
@@ -154,7 +152,8 @@ class ReportsSyncAPIView(CreateAPIView):
             try:
                 report_response = ReportViewSet.as_view(
                     {'post': 'create'})(proxy_request)
-            except:
+            except Exception as error:
+                logger.error("Exception in ReportsSyncAPIView %s"%(str(error)))
                 return Response({"data": report_response.data, "consumed": False},
                                 status=status.HTTP_200_OK)
             visit_id = report_response.data["data"]["visit_id"]
@@ -207,7 +206,8 @@ class ReportsSyncAPIView(CreateAPIView):
 
                 return Response({"data": None, "consumed": True},
                                 status=status.HTTP_201_CREATED)
-        except:
+        except Exception as error:
+            logger.error("Exception in ReportsSyncAPIView %s"%(str(error)))
             return Response({"data": "Parameters are not sufficient", "consumed": False},
                         status=status.HTTP_200_OK)
 
