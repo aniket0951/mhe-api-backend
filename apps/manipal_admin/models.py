@@ -20,6 +20,7 @@ class AdminRole(MyBaseModel):
 
     def __str__(self):
         return self.name
+
 class ManipalAdmin(BaseUser):
 
     email = models.EmailField(blank=False,

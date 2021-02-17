@@ -149,10 +149,15 @@ class AdminMenuView(custom_viewsets.ListUpdateViewSet):
     model = AdminMenu
     serializer_class = ManipalAdminMenuSerializer
     queryset = AdminMenu.objects.all()
-
+    list_success_message = "Admin menus listed successfully"
+    retrieve_success_message = "Admin menus retrieved successfully"
 
 class AdminRoleView(custom_viewsets.ListUpdateViewSet):
     permission_classes = [IsManipalAdminUser]
     model = AdminRole
     serializer_class = ManipalAdminRoleSerializer
     queryset = AdminRole.objects.all()
+    list_success_message = "Admin roles listed successfully"
+    retrieve_success_message = "Admin roles retrieved successfully"
+
+    
