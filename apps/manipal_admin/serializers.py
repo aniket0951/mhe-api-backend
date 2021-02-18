@@ -29,7 +29,6 @@ class ManipalAdminRoleSerializer(DynamicFieldsModelSerializer):
             response_object["menu_rights"][menu.name] = False
             if menu.id in allowed_menus:
                 response_object["menu_rights"][menu.name] = True
-        response_object.pop("menus")
         return response_object
 
 
@@ -37,4 +36,4 @@ class ManipalAdminMenuSerializer(DynamicFieldsModelSerializer):
     
     class Meta:
         model = AdminMenu
-        fields = '__all__'
+        exclude = ('created_at', 'updated_at')

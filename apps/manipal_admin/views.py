@@ -7,7 +7,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core import serializers
 from django.http import HttpResponse
 from django.utils.http import urlsafe_base64_decode
-from rest_framework import status
+from rest_framework import filters, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -28,6 +28,7 @@ from .exceptions import (ManipalAdminDoesNotExistsValidationException,
                          ManipalAdminPasswordURLValidationException)
 from .serializers import ManipalAdminResetPasswordSerializer, ManipalAdminMenuSerializer, ManipalAdminRoleSerializer
 from utils import custom_viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -144,7 +145,7 @@ class ManipalAdminResetPasswordView(CreateAPIView):
         context = {'data': None, 'message': self.message}
         return Response(context, status=status.HTTP_200_OK)
 
-class AdminMenuView(custom_viewsets.ListUpdateViewSet):
+class AdminMenuView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsManipalAdminUser]
     model = AdminMenu
     serializer_class = ManipalAdminMenuSerializer
@@ -152,12 +153,39 @@ class AdminMenuView(custom_viewsets.ListUpdateViewSet):
     list_success_message = "Admin menus listed successfully"
     retrieve_success_message = "Admin menus retrieved successfully"
 
-class AdminRoleView(custom_viewsets.ListUpdateViewSet):
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['name', ]
+    ordering_fields = ('-created_at',)
+
+class AdminRoleView(custom_viewsets.ModelViewSet):
     permission_classes = [IsManipalAdminUser]
     model = AdminRole
     serializer_class = ManipalAdminRoleSerializer
     queryset = AdminRole.objects.all()
     list_success_message = "Admin roles listed successfully"
-    retrieve_success_message = "Admin roles retrieved successfully"
+    retrieve_success_message = "Admin role retrieved successfully"
+    create_success_message = 'Role creation completed successfully!'
+    update_success_message = 'Information updated successfully!'
+    delete_success_message = 'Role has been deleted successfully!'
 
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['name', ]
+    ordering_fields = ('-created_at',)
+
+    def create(self, request):
+        print("its beet done")
+        admin_menu_object = self.serializer_class(data = request.data)
+        admin_menu_object.is_valid()
+        admin_menu_object.save()
+        return Response(status=status.HTTP_200_OK)
+    
+    
+        
+
+    
+
+    
+    
     

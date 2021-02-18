@@ -5,7 +5,7 @@ from apps.meta_app.models import MyBaseModel
 from apps.master_data.models import Hospital
 
 class AdminMenu(MyBaseModel):
-    name = models.CharField(blank= False, null=False, max_length= 200, default= 'Admin menu')
+    name = models.CharField(blank= False, null=False, max_length= 200, default= 'Admin menu', unique= True)
 
     parent_menu = models.ForeignKey("self", on_delete=models.CASCADE,blank=True, null=True)
 
@@ -14,7 +14,7 @@ class AdminMenu(MyBaseModel):
 
 class AdminRole(MyBaseModel):
 
-    name = models.CharField(max_length=200, blank=False, null=False, default= 'Admin Role')
+    name = models.CharField(max_length=200, blank=False, null=False, default= 'Admin Role', unique= True)
 
     menus = models.ManyToManyField(AdminMenu, null = True)
 
@@ -40,7 +40,7 @@ class ManipalAdmin(BaseUser):
     
     role = models.ForeignKey(AdminRole, on_delete=models.PROTECT, null = True)
 
-    menus = models.ManyToManyField(AdminMenu)
+    menus = models.ManyToManyField(AdminMenu, null = True)
 
     @property
     def representation(self):
