@@ -162,7 +162,7 @@ class IsPlatformAdmin(permissions.BasePermission):
             if ManipalAdmin.objects.filter(id=request.user.id, role__name__contains = 'Platform Admin').exists():
                 return True
         except Exception as e:
-            pass
+            logger.error("Error while IsPlatformAdmin : %s"%str(e))
         self.message = 'Manipal Administrator has the permission to perform this action.'
         return False
 

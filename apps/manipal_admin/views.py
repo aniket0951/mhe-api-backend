@@ -18,7 +18,7 @@ from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from apps.manipal_admin.models import ManipalAdmin, AdminMenu, AdminRole
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.exceptions import InvalidCredentialsException
-from utils.custom_permissions import IsManipalAdminUser
+from utils.custom_permissions import IsManipalAdminUser, IsPlatformAdmin
 from utils.utils import manipal_admin_object
 from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 from utils.custom_jwt_authentication import JSONWebTokenAuthentication
@@ -146,7 +146,7 @@ class ManipalAdminResetPasswordView(CreateAPIView):
         return Response(context, status=status.HTTP_200_OK)
 
 class AdminMenuView(custom_viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsManipalAdminUser]
+    permission_classes = [IsPlatformAdmin]
     model = AdminMenu
     serializer_class = ManipalAdminMenuSerializer
     queryset = AdminMenu.objects.all()
@@ -159,7 +159,7 @@ class AdminMenuView(custom_viewsets.ReadOnlyModelViewSet):
     ordering_fields = ('-created_at',)
 
 class AdminRoleView(custom_viewsets.ModelViewSet):
-    permission_classes = [IsManipalAdminUser]
+    permission_classes = [IsPlatformAdmin]
     model = AdminRole
     serializer_class = ManipalAdminRoleSerializer
     queryset = AdminRole.objects.all()
@@ -175,7 +175,6 @@ class AdminRoleView(custom_viewsets.ModelViewSet):
     ordering_fields = ('-created_at',)
 
     def create(self, request):
-        print("its beet done")
         admin_menu_object = self.serializer_class(data = request.data)
         admin_menu_object.is_valid()
         admin_menu_object.save()
