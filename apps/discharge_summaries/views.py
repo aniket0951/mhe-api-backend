@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 import os 
-
+import logging
 from django.db.models import Q
 
 from apps.master_data.models import Hospital
@@ -23,6 +23,7 @@ from .serializers import DischargeSummarysSerializer
 from apps.doctors.models import Doctor
 from apps.master_data.models import Department, Hospital
 
+logger = logging.getLogger('django')
 
 class DischargeViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [AllowAny, ]
@@ -53,22 +54,26 @@ class DischargeViewSet(custom_viewsets.ListCreateViewSet):
         return qs.filter(uhid=uhid)
 
     def create(self, request):
-        data = request.data
-        visit_id = data["visit_id"]
-        discharge_obj = DischargeSummary.objects.filter(visit_id=visit_id).first()
-        doctor_code = data.pop("doctor_code")
-        if doctor_code:
-            doctor = Doctor.objects.filter(code=doctor_code)
-            if doctor:
-                data["doctor"] = doctor.id
-        data["time"] = datetime.strptime(
-            data["time"], '%Y%m%d%H%M%S') 
-        serializer = DischargeSummarysSerializer(data=data)
-        if discharge_obj:
-            serializer = DischargeSummarysSerializer(discharge_obj, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+        try:
+            data = request.data
+            visit_id = data["visit_id"]
+            discharge_obj = DischargeSummary.objects.filter(visit_id=visit_id).first()
+            doctor_code = data.pop("doctor_code")
+            if doctor_code:
+                doctor = Doctor.objects.filter(code=doctor_code)
+                if doctor:
+                    data["doctor"] = doctor.id
+            data["time"] = datetime.strptime(
+                data["time"], '%Y%m%d%H%M%S') 
+            serializer = DischargeSummarysSerializer(data=data)
+            if discharge_obj:
+                serializer = DischargeSummarysSerializer(discharge_obj, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(data={"message": "File Upload Sucessful"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("Exception in DischargeViewSet: %s"%(str(e)))
+            return Response(data={"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DischargeSummarySyncAPIView(CreateAPIView):
