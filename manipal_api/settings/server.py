@@ -318,6 +318,11 @@ SMS_SENDER = env('SMS_SENDER')
 
 #  User OTP expiration time in seconds
 OTP_EXPIRATION_TIME = env('OTP_EXPIRATION_TIME')
+OTP_LENGTH = 6
+try:
+    OTP_LENGTH = int(env('OTP_LENGTH'))
+except Exception as error:
+    pass
 
 MAX_FAMILY_MEMBER_COUNT = env('MAX_FAMILY_MEMBER_COUNT')
 

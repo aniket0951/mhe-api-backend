@@ -93,7 +93,7 @@ class Patient(BaseUser):
     apple_email = models.EmailField(null=True,
                                     blank=True)
 
-    email_otp = models.CharField(max_length=4,
+    email_otp = models.CharField(max_length=6,
                                  null=True,
                                  blank=True)
 
@@ -148,7 +148,7 @@ class Patient(BaseUser):
 
     corporate_email = models.EmailField(null=True, blank=True)
 
-    corporate_email_otp = models.CharField(max_length=4,
+    corporate_email_otp = models.CharField(max_length=6,
                                            null=True,
                                            blank=True)
 
