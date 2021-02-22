@@ -1,3 +1,4 @@
+import re
 class ValidationUtil:
 
     @staticmethod
@@ -12,3 +13,7 @@ class ValidationUtil:
                 if i and ValidationUtil.validate_text_only(i):
                     new_string+=i 
         return new_string
+    
+    @staticmethod
+    def validate_alphawidespace(string):
+        return re.match('[a-zA-Z ]+$',string)
