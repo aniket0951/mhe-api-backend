@@ -7,7 +7,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core import serializers
 from django.http import HttpResponse
 from django.utils.http import urlsafe_base64_decode
-from rest_framework import status
+from rest_framework import filters, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,10 +15,10 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
-from apps.manipal_admin.models import ManipalAdmin
+from apps.manipal_admin.models import ManipalAdmin, AdminMenu, AdminRole
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.exceptions import InvalidCredentialsException
-from utils.custom_permissions import IsManipalAdminUser
+from utils.custom_permissions import IsManipalAdminUser, IsPlatformAdmin
 from utils.utils import manipal_admin_object
 from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 from utils.custom_jwt_authentication import JSONWebTokenAuthentication
@@ -26,8 +26,9 @@ from .emails import send_reset_password_email
 from .exceptions import (ManipalAdminDoesNotExistsValidationException,
                          ManipalAdminPasswordURLExipirationValidationException,
                          ManipalAdminPasswordURLValidationException)
-from .serializers import ManipalAdminResetPasswordSerializer
-
+from .serializers import ManipalAdminResetPasswordSerializer, ManipalAdminMenuSerializer, ManipalAdminRoleSerializer
+from utils import custom_viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -143,3 +144,47 @@ class ManipalAdminResetPasswordView(CreateAPIView):
 
         context = {'data': None, 'message': self.message}
         return Response(context, status=status.HTTP_200_OK)
+
+class AdminMenuView(custom_viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsPlatformAdmin]
+    model = AdminMenu
+    serializer_class = ManipalAdminMenuSerializer
+    queryset = AdminMenu.objects.all()
+    list_success_message = "Admin menus listed successfully"
+    retrieve_success_message = "Admin menus retrieved successfully"
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['name', ]
+    ordering_fields = ('-created_at',)
+
+class AdminRoleView(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPlatformAdmin]
+    model = AdminRole
+    serializer_class = ManipalAdminRoleSerializer
+    queryset = AdminRole.objects.all()
+    list_success_message = "Admin roles listed successfully"
+    retrieve_success_message = "Admin role retrieved successfully"
+    create_success_message = 'Role creation completed successfully!'
+    update_success_message = 'Information updated successfully!'
+    delete_success_message = 'Role has been deleted successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['name', ]
+    ordering_fields = ('-created_at',)
+
+    def create(self, request):
+        admin_menu_object = self.serializer_class(data = request.data)
+        admin_menu_object.is_valid()
+        admin_menu_object.save()
+        return Response(status=status.HTTP_200_OK)
+    
+    
+        
+
+    
+
+    
+    
+    

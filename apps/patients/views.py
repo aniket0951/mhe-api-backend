@@ -57,6 +57,7 @@ from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
 logger = logging.getLogger('django')
+OTP_LENGTH = settings.OTP_LENGTH
 
 class PatientViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -126,7 +127,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 patient_obj.delete()
                 patient_obj = None
 
-        random_password = get_random_string(length=4, allowed_chars='0123456789')
+        random_password = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
         otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         if patient_obj:
@@ -204,7 +205,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 otp_instance.save()
 
 
-            random_mobile_change_password = get_random_string(length=4, allowed_chars='0123456789')
+            random_mobile_change_password = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
             otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             patient_object = serializer.save()
@@ -232,7 +233,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 email_verified=False)
 
             random_email_otp = get_random_string(
-                length=4, allowed_chars='0123456789')
+                length=OTP_LENGTH, allowed_chars='0123456789')
             otp_expiration_time = datetime.now(
             ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -299,7 +300,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             authenticated_patient.mobile_verified = True
             message = "Your account is activated successfully!"
         random_password = get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
         authenticated_patient.set_password(random_password)
         authenticated_patient.save()
         
@@ -348,7 +349,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         message = "Successfully changed your mobile number, please login again!"
 
         random_password = get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
 
         patient_obj.new_mobile_verification_otp = random_password
         patient_obj.mobile = patient_obj.new_mobile
@@ -371,7 +372,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_mobile_change_password = get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
 
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
@@ -412,7 +413,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             raise OTPExpiredException
 
         random_email_otp = get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
 
         authenticated_patient.email_otp = random_email_otp
         authenticated_patient.email_verified = True
@@ -436,7 +437,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_email_otp = get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -534,10 +535,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             return Response(data, status=status.HTTP_200_OK)
 
         random_password = get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
 
         if str(request_patient.mobile) == "+919824783423":
-            random_password = "1234"
+            random_password = "123456"
 
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
@@ -653,7 +654,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             company_instance = Company.objects.filter(
                 name=company_name).first()
 
-        random_email_otp = get_random_string(length=4, allowed_chars='0123456789')
+        random_email_otp = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -687,7 +688,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             raise OTPExpiredException
 
         random_email_otp = get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
 
         authenticated_patient.corporate_email_otp = random_email_otp
         authenticated_patient.active_view = "Corporate"
@@ -873,7 +874,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Email is not mentioned!")
 
         random_mobile_password=get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
         otp_expiration_time=datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -960,7 +961,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         if is_email_to_be_verified:
             random_email_otp=get_random_string(
-                length=4, allowed_chars='0123456789')
+                length=OTP_LENGTH, allowed_chars='0123456789')
             otp_expiration_time=datetime.now(
             ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -993,7 +994,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 otp_instance.save()
 
             random_mobile_password=get_random_string(
-                length=4, allowed_chars='0123456789')
+                length=OTP_LENGTH, allowed_chars='0123456789')
             otp_expiration_time=datetime.now(
             ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -1116,7 +1117,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         message="Successfull!"
 
         random_password=get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
         family_member.mobile_verification_otp=random_password
 
         if family_member.mobile_verified:
@@ -1153,7 +1154,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             raise OTPExpiredException
 
         random_email_otp=get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
         family_member.email_verification_otp=random_email_otp
         family_member.email_verified=True
         family_member.save()
@@ -1179,7 +1180,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
         random_email_otp=get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
         otp_expiration_time=datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
@@ -1213,7 +1214,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             mobile_number=str(family_member.new_mobile.raw_input)
 
         random_password=get_random_string(
-            length=4, allowed_chars='0123456789')
+            length=OTP_LENGTH, allowed_chars='0123456789')
         otp_expiration_time=datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
