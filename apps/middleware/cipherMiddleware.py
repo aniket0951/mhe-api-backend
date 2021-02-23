@@ -76,7 +76,7 @@ class CipherResponseMiddleware(object):
     def process_exception(self, request, exception):
         # Logic executed if an exception/error occurs in the view
         pass
-
+            
     
     def dict_replace_value(self,d):
         x = {}
@@ -86,7 +86,7 @@ class CipherResponseMiddleware(object):
             elif isinstance(v, list):
                 v = self.list_replace_value(v)
             elif isinstance(v, UUID):
-                v = v.hex
+                v = str(v)
             elif isinstance(v, OrderedDict):
                 v = dict(v)
             elif isinstance(v, bytes):
@@ -105,7 +105,7 @@ class CipherResponseMiddleware(object):
             elif isinstance(e, dict):
                 e = self.dict_replace_value(e)
             elif isinstance(e, UUID):
-                e = e.hex
+                e = str(e)
             elif isinstance(e, OrderedDict):
                 e = dict(e)
             elif isinstance(e, bytes):
