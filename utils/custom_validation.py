@@ -17,3 +17,19 @@ class ValidationUtil:
     @staticmethod
     def validate_alphawidespace(string):
         return re.match('[a-zA-Z ]+$',string)
+
+    @staticmethod
+    def validate_email(string):
+        return re.match("[^@]+@[^@]+\.[^@]+",string)
+
+    @staticmethod
+    def refine_string(text):
+        text = re.sub(r'^https?:\/\/.*[\r\n]*', '', text, flags=re.MULTILINE)
+        text = ValidationUtil.cleanhtml(text)
+        return text
+
+    @staticmethod
+    def cleanhtml(raw_html):
+        cleanr = re.compile('<.*?>')
+        cleantext = re.sub(cleanr, '', raw_html)
+        return cleantext
