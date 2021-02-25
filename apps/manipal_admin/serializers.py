@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.manipal_admin.models import ManipalAdmin, AdminRole, AdminMenu
+from apps.master_data.models import Hospital
 from utils.serializers import DynamicFieldsModelSerializer
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
@@ -8,12 +9,18 @@ class ManipalAdminSerializer(serializers.ModelSerializer):
    
     class Meta:
         model = ManipalAdmin
-        fields = ['id', 'name', 'email','role', 'menus']
+        fields = ['id', 'name', 'email','hospital','role', 'menus']
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         all_menus = AdminMenu.objects.all()
-        role_id= response_object.get('role')
+        if response_object.get('role'):
+            role_object = AdminRole.objects.get(pk=response_object.get('role'))
+            response_object["role_name"] = role_object.name
+        if response_object.get('hospital'):
+            hospital_object = Hospital.objects.get(pk=response_object.get('hospital'))
+            response_object["hospital_name"] = hospital_object.description
+            response_object["hospital_code"] = hospital_object.code
         allowed_menus = response_object.get('menus')
         response_object["menu_rights"] = {}
         for menu in all_menus:
@@ -27,12 +34,18 @@ class ManipalAdminTypeSerializer(DynamicFieldsModelSerializer):
     mobile = PhoneNumberField()
     class Meta:
         model = ManipalAdmin
-        fields = ['id', 'name', 'email','role', 'menus', 'mobile']
+        fields = ['id', 'name', 'email','role','hospital','menus', 'mobile']
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         all_menus = AdminMenu.objects.all()
-        role_id= response_object.get('role')
+        if response_object.get('role'):
+            role_object = AdminRole.objects.get(pk=response_object.get('role'))
+            response_object["role_name"] = role_object.name
+        if response_object.get('hospital'):
+            hospital_object = Hospital.objects.get(pk=response_object.get('hospital'))
+            response_object["hospital_name"] = hospital_object.description
+            response_object["hospital_code"] = hospital_object.code
         allowed_menus = response_object.get('menus')
         response_object["menu_rights"] = {}
         for menu in all_menus:
