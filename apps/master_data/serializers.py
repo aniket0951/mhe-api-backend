@@ -1,3 +1,4 @@
+import logging
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point, fromstr
 
@@ -7,6 +8,7 @@ from utils.serializers import DynamicFieldsModelSerializer
 from .models import (AmbulanceContact, Company, Department, EmergencyContact,
                      Hospital, HospitalDepartment, Specialisation)
 
+_logger = logging.getLogger("django")
 
 class HospitalSerializer(DynamicFieldsModelSerializer):
     distance = serializers.CharField(
@@ -21,8 +23,12 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
         try:
             if 'distance' in response_object and instance.calculated_distance:
                 response_object['distance'] = instance.calculated_distance.km
-        except Exception:
-            pass
+        except Exception as e:
+            _logger.error("Error in to_representation HospitalSerializer: %s"%(str(e)))
+
+        ambulance_contact_object = AmbulanceContact.objects.filter(hospital_id=instance.id).first()
+        response_object['hospital_contact'] = str(ambulance_contact_object.mobile) if ambulance_contact_object and ambulance_contact_object.mobile else ""
+
         return response_object
 
 
