@@ -4,12 +4,15 @@ from apps.master_data.models import Hospital
 from utils.serializers import DynamicFieldsModelSerializer
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
+from django.db import models
 from phonenumber_field.serializerfields import PhoneNumberField
 class ManipalAdminSerializer(serializers.ModelSerializer):
+
+    is_active = models.BooleanField(default=True)
    
     class Meta:
         model = ManipalAdmin
-        fields = ['id', 'name', 'email','hospital','role', 'menus']
+        fields = ['id', 'name', 'email','hospital','role', 'menus','is_active']
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
@@ -32,9 +35,11 @@ class ManipalAdminSerializer(serializers.ModelSerializer):
 class ManipalAdminTypeSerializer(DynamicFieldsModelSerializer):
 
     mobile = PhoneNumberField()
+    is_active = models.BooleanField(default=True)
+    
     class Meta:
         model = ManipalAdmin
-        fields = ['id', 'name', 'email','role','hospital','menus', 'mobile']
+        fields = ['id', 'name', 'email','role','hospital','menus', 'mobile','is_active']
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
