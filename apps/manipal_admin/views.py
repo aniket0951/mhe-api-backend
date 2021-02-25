@@ -26,7 +26,7 @@ from .emails import send_reset_password_email
 from .exceptions import (ManipalAdminDoesNotExistsValidationException,
                          ManipalAdminPasswordURLExipirationValidationException,
                          ManipalAdminPasswordURLValidationException)
-from .serializers import ManipalAdminResetPasswordSerializer, ManipalAdminMenuSerializer, ManipalAdminRoleSerializer
+from .serializers import ManipalAdminResetPasswordSerializer, ManipalAdminMenuSerializer, ManipalAdminRoleSerializer, ManipalAdminTypeSerializer
 from utils import custom_viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -180,6 +180,35 @@ class AdminRoleView(custom_viewsets.ModelViewSet):
         admin_menu_object.save()
         return Response(status=status.HTTP_200_OK)
     
+class ManipalAdminView(custom_viewsets.ModelViewSet):
+    permission_classes = [IsPlatformAdmin]
+    model = ManipalAdmin
+    serializer_class = ManipalAdminTypeSerializer
+    queryset = ManipalAdmin.objects.all()
+    list_success_message = "Admin roles listed successfully"
+    retrieve_success_message = "Admin role retrieved successfully"
+    create_success_message = 'Role creation completed successfully!'
+    update_success_message = 'Information updated successfully!'
+    delete_success_message = 'Role has been deleted successfully!'
+
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['name', ]
+    ordering_fields = ('-created_at',)
+
+    def create(self, request):
+        if not request.data.get('mobile'):
+            raise ValidationError("Mobile is mandatory")
+        admin_object = self.serializer_class(data = request.data)
+        admin_object.is_valid(raise_exception=True)
+        admin_object.save()
+        print("password", request.data.get('password'))
+        if request.data.get('password'):
+            user_object = ManipalAdmin.objects.filter(email=request.data.get("email")).first()
+            print(user_object)
+            user_object.set_password(request.data.get('password'))
+            user_object.save()
+        return Response(status=status.HTTP_200_OK)
     
         
 

@@ -52,7 +52,7 @@ from rest_framework.views import APIView
 from rest_framework.test import APIClient
 
 from utils import custom_viewsets
-
+from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
@@ -1212,6 +1212,7 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
         feedback_instance = Feedbacks.objects.filter(
             user_id__id=patient.id).first()
         request.data["user_id"] = patient.id
+        request.data["feedback"] = ValidationUtil.refine_string(request.data.get("feedback"))
         if feedback_instance:
             feedback_serializer = FeedbacksSerializer(
                 feedback_instance, data=request.data, partial=True)

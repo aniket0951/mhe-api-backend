@@ -8,7 +8,8 @@ from .views import (
                 login,
                 logout,
                 AdminMenuView,
-                AdminRoleView
+                AdminRoleView,
+                ManipalAdminView
             )
 
 app_name = 'manipal_admin'
@@ -16,6 +17,7 @@ app_name = 'manipal_admin'
 router = DefaultRouter(trailing_slash=False)
 router.register('admin_menus',AdminMenuView)
 router.register('admin_roles',AdminRoleView)
+router.register('admin_access',ManipalAdminView)
 
 urlpatterns = [
     url(r'^login', login, name='login'),
