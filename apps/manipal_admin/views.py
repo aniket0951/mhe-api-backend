@@ -206,10 +206,10 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
     def create(self, request):
         if not request.data.get('mobile'):
             raise ValidationError("Mobile is mandatory")
+        request.data.['is_active'] = True
         admin_object = self.serializer_class(data = request.data)
         admin_object.is_valid(raise_exception=True)
         admin_object.save()
-        print("password", request.data.get('password'))
         if request.data.get('password'):
             user_object = ManipalAdmin.objects.filter(email=request.data.get("email")).first()
             print(user_object)
