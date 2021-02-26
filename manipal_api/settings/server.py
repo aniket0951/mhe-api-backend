@@ -109,6 +109,7 @@ THIRD_PARTY_APPS = [
     'import_export',
     'django_extensions',
     'django.contrib.gis',
+    'django_clamd',
     'fcm_django',
     'axes'
 ]

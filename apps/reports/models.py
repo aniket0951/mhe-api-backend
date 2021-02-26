@@ -9,6 +9,7 @@ from apps.master_data.models import Hospital
 from apps.meta_app.models import MyBaseModel
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
+from django_clamd.validators import validate_file_infection
 
 
 def generate_lab_report_file_path(self, filename):
@@ -221,17 +222,24 @@ class ReportDocuments(MyBaseModel):
 
     lab_report = models.FileField(upload_to=generate_lab_report_file_path,
                                   storage=FileStorage(),
-                                  validators=[FileExtensionValidator(
-                                      settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                      validate_file_authenticity],
+                                  validators=[
+                                      FileExtensionValidator(settings.VALID_FILE_EXTENSIONS), 
+                                      validate_file_size,
+                                      validate_file_authenticity,
+                                      validate_file_infection
+                                    ],
+                                      
                                   blank=True,
                                   null=True)
 
     radiology_report = models.FileField(upload_to=generate_radiology_report_file_path,
                                         storage=FileStorage(),
-                                        validators=[FileExtensionValidator(
-                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                            validate_file_authenticity],
+                                        validators=[
+                                            FileExtensionValidator(settings.VALID_FILE_EXTENSIONS), 
+                                            validate_file_size,
+                                            validate_file_authenticity,
+                                            validate_file_infection
+                                        ],
                                         blank=True,
                                         null=True)
 
