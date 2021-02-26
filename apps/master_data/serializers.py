@@ -27,7 +27,12 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
             _logger.error("Error in to_representation HospitalSerializer: %s"%(str(e)))
 
         ambulance_contact_object = AmbulanceContact.objects.filter(hospital_id=instance.id).first()
-        response_object['hospital_contact'] = str(ambulance_contact_object.mobile) if ambulance_contact_object and ambulance_contact_object.mobile else ""
+        response_object['hospital_contact'] = {}
+        if ambulance_contact_object and ambulance_contact_object.mobile:
+            response_object['hospital_contact'].update({
+                "id":ambulance_contact_object.id,
+                "contact":str(ambulance_contact_object.mobile)
+            })
 
         return response_object
 
