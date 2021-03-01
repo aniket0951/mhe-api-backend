@@ -74,6 +74,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     search_fields = ['first_name', 'mobile', 'email']
     ordering_fields = ('-created_at',)
 
+    def get_queryset(self):
+        admin_object = manipal_admin_object(self.request)
+        if admin_object and admin_object.hospital:
+            location_id = admin_object.hospital.id
+            return Patient.objects.filter(favorite_hospital__id=location_id)
+        return super().get_queryset().distinct()
+
     def get_permissions(self):
 
         if self.action in ['create', 'verify_login_otp', 'generate_login_otp', ]:
@@ -849,21 +856,34 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()
 
+    
+    def get_patient_info_object(self):
+        request_patient_info = None
+        try:
+            if self.request.query_params.get('patient_id'):
+                request_patient_info = Patient.objects.get(id=self.request.query_params.get('patient_id'))
+        except Exception as error:
+            logger.error("Exception in FamilyMemberViewSet %s"%(str(error)))
+        if not request_patient_info:
+            raise ValidationError("Invalid patient information.")
+        return request_patient_info
+    
     def get_queryset(self):
-        qs=super().get_queryset().filter(patient_info__id=self.request.user.id,
-                                           is_visible=True)
-        if manipal_admin_object(self.request):
-            request_patient_info = None
-            try:
-                request_patient_info=Patient.objects.get(
-                    id=self.request.query_params.get('patient_id'))
-            except Exception as error:
-                logger.error("Exception in FamilyMemberViewSet %s"%(str(error)))
-                if not request_patient_info:
-                    raise ValidationError("Invalid patient information.")
+        qs=super().get_queryset().filter(patient_info__id=self.request.user.id,is_visible=True)
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            request_patient_info = self.get_patient_info_object()
+            if admin_object.hospital:
+                location_id = admin_object.hospital.id
+                return FamilyMember.objects.filter(
+                        patient_info__id=request_patient_info.id,
+                        is_visible=True,
+                        patient_info__favorite_hospital__id=location_id
+                    )
             qs=FamilyMember.objects.filter(
-                patient_info__id=request_patient_info.id,
-                is_visible=True)
+                        patient_info__id=request_patient_info.id,
+                        is_visible=True
+                    )
         return qs
 
     def perform_create(self, serializer):

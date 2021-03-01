@@ -306,9 +306,8 @@ REST_PROXY = {
 
 # MAX_FILE_UPLOAD_SIZE IN MB
 MAX_FILE_UPLOAD_SIZE = int(env('MAX_FILE_UPLOAD_SIZE_IN_MB'))
-FILE_UPLOAD_MAX_MEMORY_SIZE = int(
-    env('MAX_FILE_UPLOAD_SIZE_IN_MB')) * 1024 * 1024
-
+FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_UPLOAD_SIZE * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
 # Supported File Extensions
 VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(
     env('VALID_IMAGE_FILE_EXTENSIONS'))
@@ -440,7 +439,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 15728640,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
             'backupCount': 10,
             'formatter': 'standard'
         },
