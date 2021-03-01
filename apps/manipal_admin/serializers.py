@@ -4,23 +4,32 @@ from apps.master_data.models import Hospital
 from utils.serializers import DynamicFieldsModelSerializer
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
+from django.db import models
 from phonenumber_field.serializerfields import PhoneNumberField
 class ManipalAdminSerializer(serializers.ModelSerializer):
+
+    is_active = models.BooleanField(default=True)
    
     class Meta:
         model = ManipalAdmin
-        fields = ['id', 'name', 'email','hospital','role', 'menus']
+        fields = ['id', 'name', 'email','hospital','role', 'menus','is_active']
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         all_menus = AdminMenu.objects.all()
         if response_object.get('role'):
             role_object = AdminRole.objects.get(pk=response_object.get('role'))
-            response_object["role_name"] = role_object.name
+            response_object["role"] = {
+                "id":role_object.id,
+                "name":role_object.name
+            }
         if response_object.get('hospital'):
             hospital_object = Hospital.objects.get(pk=response_object.get('hospital'))
-            response_object["hospital_name"] = hospital_object.description
-            response_object["hospital_code"] = hospital_object.code
+            response_object["hospital"] = {
+                "id":hospital_object.id,
+                "name":hospital_object.description,
+                "code":hospital_object.code
+            }
         allowed_menus = response_object.get('menus')
         response_object["menu_rights"] = {}
         for menu in all_menus:
@@ -32,20 +41,28 @@ class ManipalAdminSerializer(serializers.ModelSerializer):
 class ManipalAdminTypeSerializer(DynamicFieldsModelSerializer):
 
     mobile = PhoneNumberField()
+    is_active = models.BooleanField(default=True)
+    
     class Meta:
         model = ManipalAdmin
-        fields = ['id', 'name', 'email','role','hospital','menus', 'mobile']
+        fields = ['id', 'name', 'email','role','hospital','menus', 'mobile','is_active']
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         all_menus = AdminMenu.objects.all()
         if response_object.get('role'):
             role_object = AdminRole.objects.get(pk=response_object.get('role'))
-            response_object["role_name"] = role_object.name
+            response_object["role"] = {
+                "id":role_object.id,
+                "name":role_object.name
+            }
         if response_object.get('hospital'):
             hospital_object = Hospital.objects.get(pk=response_object.get('hospital'))
-            response_object["hospital_name"] = hospital_object.description
-            response_object["hospital_code"] = hospital_object.code
+            response_object["hospital"] = {
+                "id":hospital_object.id,
+                "name":hospital_object.description,
+                "code":hospital_object.code
+            }
         allowed_menus = response_object.get('menus')
         response_object["menu_rights"] = {}
         for menu in all_menus:

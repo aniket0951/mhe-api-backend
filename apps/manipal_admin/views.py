@@ -23,9 +23,12 @@ from utils.utils import manipal_admin_object
 from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 from utils.custom_jwt_authentication import JSONWebTokenAuthentication
 from .emails import send_reset_password_email
-from .exceptions import (ManipalAdminDoesNotExistsValidationException,
-                         ManipalAdminPasswordURLExipirationValidationException,
-                         ManipalAdminPasswordURLValidationException)
+from .exceptions import (
+                    ManipalAdminDoesNotExistsValidationException,
+                    ManipalAdminPasswordURLExipirationValidationException,
+                    ManipalAdminPasswordURLValidationException,
+                    ManipalAdminDisabledUserException
+                )
 from .serializers import ManipalAdminResetPasswordSerializer, ManipalAdminMenuSerializer, ManipalAdminRoleSerializer, ManipalAdminTypeSerializer
 from utils import custom_viewsets
 from django_filters.rest_framework import DjangoFilterBackend
@@ -41,10 +44,14 @@ def login(request):
     admin = ManipalAdmin.objects.filter(email=email).first()
     if not admin:
         raise ManipalAdminDoesNotExistsValidationException
+    
     hash_password = admin.password
     match_password = check_password(password, hash_password)
     if not match_password:
         raise InvalidCredentialsException
+
+    if not admin.is_active:
+        raise ManipalAdminDisabledUserException
     
     payload = jwt_payload_handler(admin)
     payload['mobile'] = payload['mobile'].raw_input
@@ -199,10 +206,10 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
     def create(self, request):
         if not request.data.get('mobile'):
             raise ValidationError("Mobile is mandatory")
+        request.data['is_active'] = True
         admin_object = self.serializer_class(data = request.data)
         admin_object.is_valid(raise_exception=True)
         admin_object.save()
-        print("password", request.data.get('password'))
         if request.data.get('password'):
             user_object = ManipalAdmin.objects.filter(email=request.data.get("email")).first()
             print(user_object)

@@ -56,7 +56,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-
+from utils.utils import manipal_admin_object
 from .exceptions import (AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -99,9 +99,13 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         family_member = self.request.query_params.get("user_id", None)
         is_upcoming = self.request.query_params.get("is_upcoming", False)
         is_cancelled = self.request.query_params.get("is_cancelled", False)
-        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
+            if admin_object.hospital:
+                qs = qs.filter(hospital__id=admin_object.hospital.id)
             if date_from and date_to:
                 qs = qs.filter(appointment_date__range=[date_from, date_to])
             if is_cancelled == "true":

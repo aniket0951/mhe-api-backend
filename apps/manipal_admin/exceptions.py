@@ -12,6 +12,11 @@ class ManipalAdminPasswordURLValidationException(APIException):
     default_code = 'invalid_manipal_admin_password_url'
     default_detail = 'This password link is not valid, looks like you are not registered with us.'
 
+class ManipalAdminDisabledUserException(APIException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_code = 'invalid_manipal_user_disabled'
+    default_detail = 'The user is disabled'
+
 class ManipalAdminPasswordURLExipirationValidationException(APIException):
     status_code = status.HTTP_410_GONE
     default_code = 'invalid_manipal_admin_password_url_expired'

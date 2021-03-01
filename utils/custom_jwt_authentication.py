@@ -17,7 +17,7 @@ from .custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 jwt_decode_handler = api_settings.JWT_DECODE_HANDLER
 jwt_get_username_from_payload = api_settings.JWT_PAYLOAD_GET_USERNAME_HANDLER
 INVALID_SIGNATURE = "Invalid signature."
-
+TOKEN_EXPIRED = "Token expired."
 class BaseJSONWebTokenAuthentication(BaseAuthentication):
     """
     Token based authentication using the JSON Web Token standard.
@@ -51,7 +51,7 @@ class BaseJSONWebTokenAuthentication(BaseAuthentication):
     def check_token_blacklisted(self,user,jwt_value):
         is_allowed_user = WhiteListedJWTTokenUtil.has_permission(user,jwt_value)
         if not is_allowed_user:
-            msg = _(INVALID_SIGNATURE)
+            msg = _(TOKEN_EXPIRED)
             raise exceptions.AuthenticationFailed(msg)
 
     def authenticate_credentials(self, payload):
