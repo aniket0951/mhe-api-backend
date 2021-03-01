@@ -309,8 +309,7 @@ MAX_FILE_UPLOAD_SIZE = int(env('MAX_FILE_UPLOAD_SIZE_IN_MB'))
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_UPLOAD_SIZE * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
 # Supported File Extensions
-VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(
-    env('VALID_IMAGE_FILE_EXTENSIONS'))
+VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(env('VALID_IMAGE_FILE_EXTENSIONS'))
 VALID_FILE_EXTENSIONS = ast.literal_eval(env('VALID_FILE_EXTENSIONS'))
 
 SMS_SENDER = env('SMS_SENDER')
@@ -472,7 +471,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/requests.log',
-            'maxBytes': 5242880,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
             'backupCount': 5,
         },
         'error_file': {
