@@ -41,13 +41,13 @@ class DashboardAPIView(ListAPIView):
     def list(self, request, *args, **kwargs):
         dashboard_details = {}
         dashboard_details['banners'] = DashboardBannerSerializer(DashboardBanner.objects.all(), many=True).data
+        version_number = self.request.query_params.get("version", None)
+        dashboard_details = DashboardUtils.validate_app_version(version_number,dashboard_details)
 
         if request.user:
 
             patient_obj = patient_user_object(request)
             if patient_obj:
-                version_number = self.request.query_params.get("version", None)
-                dashboard_details = DashboardUtils.validate_app_version(version_number,dashboard_details)
                 
                 dashboard_details['patient'] = PatientSerializer(patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
