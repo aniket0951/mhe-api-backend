@@ -71,7 +71,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['first_name', 'mobile', 'email']
+    search_fields = ['first_name','last_name','mobile', 'email']
     ordering_fields = ('-created_at',)
 
     def get_queryset(self):
