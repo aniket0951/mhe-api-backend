@@ -474,10 +474,14 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def generate_login_otp(self, request):
 
         app_version = self.request.query_params.get("version", None)
+        data = {}
         if  app_version and \
             DashboardUtils.check_if_version_update_enabled() and \
             DashboardUtils.check_if_version_update_required(app_version):
-            raise MobileAppVersionValidationException
+            
+            data["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
+            data["force_update_required"] = DashboardUtils.check_if_version_update_required(app_version)
+            return Response(data, status=status.HTTP_200_OK)
 
         mobile = request.data.get('mobile')
         facebook_id = request.data.get('facebook_id')
