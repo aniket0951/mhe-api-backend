@@ -13,6 +13,10 @@ class PatientDoesNotExistsValidationException(APIException):
     default_code = 'invalid_patient'
     default_detail = 'You are not registered on mobile app! Please Sign Up for a new account'
 
+class MobileAppVersionValidationException(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_code = 'invalid_app_version'
+    default_detail = 'You are using the older version of the app. Please update to the latest version'
 
 class InvalidFamilyMemberValidationException(APIException):
     status_code = status.HTTP_404_NOT_FOUND

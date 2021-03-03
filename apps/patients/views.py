@@ -11,6 +11,7 @@ from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
 from apps.master_data.models import Company
 from apps.master_data.views import ValidateMobileView, ValidateUHIDView
+from apps.dashboard.utils import DashboardUtils
 from axes.models import AccessAttempt
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
@@ -45,7 +46,8 @@ from .exceptions import (
                     OTPExpiredException,
                     PatientDoesNotExistsValidationException,
                     PatientMobileDoesNotExistsValidationException,
-                    PatientMobileExistsValidationException
+                    PatientMobileExistsValidationException,
+                    MobileAppVersionValidationException
                 )
 from .serializers import (  
                     FamilyMemberSerializer, 
@@ -117,6 +119,12 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+
+        app_version = self.request.query_params.get("version", None)
+        if  app_version and \
+            DashboardUtils.check_if_version_update_enabled() and \
+            DashboardUtils.check_if_version_update_required(app_version):
+            raise MobileAppVersionValidationException
 
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
@@ -464,6 +472,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_login_otp(self, request):
+
+        app_version = self.request.query_params.get("version", None)
+        if  app_version and \
+            DashboardUtils.check_if_version_update_enabled() and \
+            DashboardUtils.check_if_version_update_required(app_version):
+            raise MobileAppVersionValidationException
+
         mobile = request.data.get('mobile')
         facebook_id = request.data.get('facebook_id')
         google_id = request.data.get('google_id')

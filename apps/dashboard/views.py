@@ -40,24 +40,16 @@ class DashboardAPIView(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         dashboard_details = {}
-        dashboard_details['banners'] = DashboardBannerSerializer(
-            DashboardBanner.objects.all(), many=True).data
+        dashboard_details['banners'] = DashboardBannerSerializer(DashboardBanner.objects.all(), many=True).data
 
         if request.user:
 
             patient_obj = patient_user_object(request)
             if patient_obj:
                 version_number = self.request.query_params.get("version", None)
-                if version_number:
-                    dashboard_details["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
-                    current_version = settings.IOS_VERSION
-                    if DashboardUtils.compare_versions(version_number,current_version)!=-1:
-                        dashboard_details["force_update_required"] = False
-                    else:
-                        dashboard_details["force_update_required"] = True
-
-                dashboard_details['patient'] = PatientSerializer(
-                    patient_obj).data
+                dashboard_details = DashboardUtils.validate_app_version(version_number,dashboard_details)
+                
+                dashboard_details['patient'] = PatientSerializer(patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
                 dashboard_details['upcoming_appointment'] = AppointmentSerializer(
                     patient_appointment, many=True
@@ -66,37 +58,35 @@ class DashboardAPIView(ListAPIView):
             manipal_admin_obj = manipal_admin_object(request)
 
             if manipal_admin_obj:
-                dashboard_details['manipal_admin'] = ManipalAdminSerializer(
-                    manipal_admin_obj).data
-                unique_uhid_info = set(Patient.objects.filter(
-                    uhid_number__isnull=False, mobile_verified=True).values_list('uhid_number', flat=True))
-                unique_uhid_info.update(set(FamilyMember.objects.filter(
-                    uhid_number__isnull=False, is_visible=True).values_list('uhid_number', flat=True)))
-                dashboard_details['patients_count'] = len(unique_uhid_info)
+                dashboard_details['manipal_admin'] = ManipalAdminSerializer(manipal_admin_obj).data
 
-                user_without_uhid_count = Patient.objects.filter(
-                    uhid_number__isnull=True, mobile_verified=True).count() + FamilyMember.objects.filter(
-                    uhid_number__isnull=True, is_visible=True).count()
-                dashboard_details['app_users_count'] = dashboard_details['patients_count'] + \
-                    user_without_uhid_count
+                patients_with_uhid = set(Patient.objects.filter(uhid_number__isnull=False, mobile_verified=True).values_list('uhid_number', flat=True))
+                family_members_with_uhid = set(FamilyMember.objects.filter(uhid_number__isnull=False, is_visible=True).values_list('uhid_number', flat=True))
 
-                dashboard_details['registered_user_count'] = Patient.objects.filter(
-                    mobile_verified=True).count()
+                unique_uhid_info = patients_with_uhid
+                unique_uhid_info.update(family_members_with_uhid)
+                user_with_uhid_count = len(unique_uhid_info)
 
-                dashboard_details['user_with_uhid_count'] = Patient.objects.filter(
-                    mobile_verified=True, uhid_number__isnull=False).count()
+                patients_without_uhid = Patient.objects.filter(uhid_number__isnull=True, mobile_verified=True).count()
+                family_members_without_uhid = FamilyMember.objects.filter(uhid_number__isnull=True, is_visible=True).count()
+                user_without_uhid_count = patients_without_uhid + family_members_without_uhid
 
-                dashboard_details['family_Member_count'] = FamilyMember.objects.filter(
-                    is_visible=True).count()
+                app_users_count = user_with_uhid_count + user_without_uhid_count
 
-                dashboard_details['family_Member_with_uhid_count'] = FamilyMember.objects.filter(
-                    is_visible=True, uhid_number__isnull=False).count()
+                dashboard_details['patients_count'] = user_with_uhid_count
 
-                dashboard_details["android_user"] = MobileDevice.objects.filter(
-                    platform='Android').count()
+                dashboard_details['user_with_uhid_count'] = len(patients_with_uhid)
+                dashboard_details['family_Member_with_uhid_count'] = len(family_members_with_uhid)
 
-                dashboard_details["apple_user"] = MobileDevice.objects.filter(
-                    platform='iOS').count()
+                dashboard_details['app_users_count'] = app_users_count
+
+                dashboard_details['registered_user_count'] = Patient.objects.filter(mobile_verified=True).count()
+
+                dashboard_details['family_Member_count'] = FamilyMember.objects.filter(is_visible=True).count()
+
+                dashboard_details["android_user"] = MobileDevice.objects.filter(platform='Android').count()
+
+                dashboard_details["apple_user"] = MobileDevice.objects.filter(platform='iOS').count()
 
                 payment_qs = Payment.objects.all()
                 appointment_qs = Appointment.objects.all()
