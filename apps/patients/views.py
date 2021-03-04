@@ -283,11 +283,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             if access_log:
                 attempt = access_log.failures_since_start
                 if attempt < 3:
-                    message = "You have entered wrong OTP in your {} attempt. Account will be locked after 3 unscuccessful attempts".format(
-                        attempt)
+                    message = settings.WRONG_OTP_ATTEMPT_ERROR.format(attempt)
                     raise ValidationError(message)
                 if attempt >= 3:
-                    message = "Your account is locked. Please try after 10 mins"
+                    message = settings.MAX_WRONG_OTP_ATTEMPT_ERROR
                     raise ValidationError(message)
             raise InvalidCredentialsException
 
