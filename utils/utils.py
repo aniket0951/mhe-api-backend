@@ -43,10 +43,11 @@ def patient_user_object(request):
 
 def manipal_admin_object(request):
     try:
-        return ManipalAdmin.objects.get(id=request.user.id)
+        if request.user:
+            return ManipalAdmin.objects.get(id=request.user.id)
     except Exception as error:
         logger.error("Unable to fetch patient user : " + str(error))
-        return None
+    return None
 
 
 def get_appointment(patient_id):
