@@ -63,8 +63,8 @@ class DashboardAPIView(ListAPIView):
                 patients_with_uhid = set(Patient.objects.filter(uhid_number__isnull=False, mobile_verified=True).values_list('uhid_number', flat=True))
                 family_members_with_uhid = set(FamilyMember.objects.filter(uhid_number__isnull=False, is_visible=True).values_list('uhid_number', flat=True))
 
-                unique_uhid_info = patients_with_uhid
-                unique_uhid_info.update(family_members_with_uhid)
+                unique_uhid_info = patients_with_uhid.copy()
+                unique_uhid_info.update(family_members_with_uhid.copy())
                 user_with_uhid_count = len(unique_uhid_info)
 
                 patients_without_uhid = Patient.objects.filter(uhid_number__isnull=True, mobile_verified=True).count()
