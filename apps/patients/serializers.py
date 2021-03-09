@@ -1,5 +1,5 @@
+
 import logging
-from uuid import UUID
 
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework.serializers import ValidationError
@@ -8,10 +8,10 @@ from apps.master_data.serializers import HospitalSerializer, CompanySerializer
 from apps.patient_registration.serializers import RelationSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
-from utils.utils import generate_pre_signed_url, patient_user_object
+from utils.utils import generate_pre_signed_url,assign_users
 from utils.custom_validation import ValidationUtil
 
-from .models import FamilyMember, Patient, PatientAddress, WhiteListedToken
+from .models import CovidVaccinationRegistration, FamilyMember, Patient, PatientAddress, WhiteListedToken
 
 logger = logging.getLogger("django")
 
@@ -269,3 +269,24 @@ class WhiteListedTokenSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = WhiteListedToken
         fields = '__all__'
+
+class CovidVaccinationRegistrationSerializer(DynamicFieldsModelSerializer):
+    
+    class Meta:
+        model = CovidVaccinationRegistration
+        exclude = ('created_at', 'updated_at')
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        user_object = None
+        if not response_object['other_user']:
+            if response_object['family_member']:
+                user_object = FamilyMember.objects.filter(id=response_object['family_member']).first()
+            elif response_object['patient']:
+                user_object = Patient.objects.filter(id=response_object['patient']).first()
+        if user_object:
+            response_object['uhid_number'] = user_object.uhid_number
+        return response_object
+
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)

@@ -14,6 +14,16 @@ class MyBaseModel(models.Model):
     class Meta:
         abstract = True
 
+class AutoIncrementBaseModel(models.Model):
+    registration_no = models.AutoField(primary_key=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
 
 class UserTypes(Group):
     slug = models.SlugField(unique=True,

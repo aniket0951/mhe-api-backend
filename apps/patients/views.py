@@ -34,7 +34,7 @@ from utils.custom_permissions import (
                                 SelfUserAccess
                             )
 from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
-from utils.utils import manipal_admin_object, patient_user_object
+from utils.utils import manipal_admin_object, patient_user_object, assign_users
 from .emails import (
                 send_corporate_email_activation_otp,
                 send_email_activation_otp,
@@ -50,12 +50,12 @@ from .exceptions import (
                     MobileAppVersionValidationException
                 )
 from .serializers import (  
-                    FamilyMemberSerializer, 
+                    CovidVaccinationRegistrationSerializer, FamilyMemberSerializer, 
                     PatientAddressSerializer,
                     PatientSerializer
                 )
-from .utils import fetch_uhid_user_details, link_uhid
-from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
+from .utils import covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid
+from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
 logger = logging.getLogger('django')
@@ -1393,3 +1393,55 @@ class SendSms(APIView):
         is_message_sent=send_sms(
             mobile_number=str(mobile), message=str(message))
         return Response({"is_message_sent": is_message_sent})
+
+
+class CovidVaccinationRegistrationView(custom_viewsets.ModelViewSet):
+    permission_classes  = [IsPatientUser]
+    model               = CovidVaccinationRegistration
+    serializer_class    = CovidVaccinationRegistrationSerializer
+    queryset            = CovidVaccinationRegistration.objects.all()
+    list_success_message        = "Covid vaccination registrations listed successfully"
+    retrieve_success_message    = "Covid vaccination registration retrieved successfully"
+    create_success_message      = 'Covid vaccination registration completed successfully!'
+    update_success_message      = 'Covid vaccination registration updated successfully!'
+    delete_success_message      = 'Covid vaccination registration has been deleted successfully!'
+
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    search_fields = ['name', ]
+    ordering_fields = ('-created_at',)
+
+    def get_permissions(self):
+        if self.action in ['create', ]:
+            permission_classes=[ IsPatientUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve']:
+            permission_classes=[ IsPatientUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'list':
+            permission_classes=[IsManipalAdminUser | IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes=[BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'destroy':
+            permission_classes=[BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        request_data = request.data.copy()
+        covid_registration_mandatory_check(request_data)
+        request_data = assign_users(request_data,request.user.id)
+        registration_object = self.serializer_class(data = request_data)
+        registration_object.is_valid(raise_exception=True)
+        registration_object.save()
+        return Response(data=registration_object.data,status=status.HTTP_201_CREATED)

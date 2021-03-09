@@ -1,3 +1,4 @@
+from apps.master_data.models import Hospital
 from apps.master_data.views import LinkUhidView, ValidateOTPView
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
@@ -50,3 +51,16 @@ def link_uhid(request):
     if not (response.status_code == 200 and response.data['success']):
         return False
     return True
+
+
+def covid_registration_mandatory_check(request_data):
+    mandatory_check = [ field for field in ('name','mobile_number','dob','preferred_hospital') if not request_data.get(field) or not str(request_data.get(field)).strip() ]
+    if mandatory_check:
+        raise ValidationError("%s is mandatory"%(str(mandatory_check[0])))
+
+def assign_hospital(request_data):
+    hospital_instance = Hospital.objects.filter(id=request_data.get("preferred_hospital")).first()
+    if not hospital_instance:
+        raise ValidationError("Invalid hospital provided.")
+    request_data["preferred_hospital"] = hospital_instance
+    return request_data
