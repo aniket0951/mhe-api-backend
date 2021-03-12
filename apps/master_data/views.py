@@ -54,11 +54,11 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
                      Department, EmergencyContact, Hospital,
-                     HospitalDepartment, Specialisation)
+                     HospitalDepartment, Specialisation, Components, CompanyDomain)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
                           DepartmentSerializer, EmergencyContactSerializer,
                           HospitalDepartmentSerializer, HospitalSerializer,
-                          HospitalSpecificSerializer, SpecialisationSerializer)
+                          HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer)
 
 logger = logging.getLogger('django')
 
@@ -781,6 +781,7 @@ class PatientAppointmentStatus(ProxyView):
 class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsManipalAdminUser]
     model = Company
+    depth =1 
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     list_success_message = 'Company list returned successfully!'
@@ -803,7 +804,6 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
         company_serializer.is_valid(raise_exception=True)
         company_serializer.save()
         return Response(status=status.HTTP_200_OK)
-
 
 class RequestSyncView(APIView):
     permission_classes = (IsManipalAdminUser,)
@@ -948,3 +948,64 @@ class UhidConsultationPricingView(ProxyView):
 
         return self.custom_success_response(success=success, message=message,
                                             data=response_content)
+class ComponentsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+
+    permission_classes = [IsManipalAdminUser]
+    model = Components
+    queryset = Components.objects.all()
+    serializer_class = ComponentsSerializer
+    create_success_message = 'Component created successfully!'
+    list_success_message = 'Component list returned successfully!'
+    retrieve_success_message = 'Component returned successfully!'
+    update_success_message = 'Component updated successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+    def get_permissions(self):
+        if self.action in ['list']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        component_serializer = ComponentsSerializer(data=request.data)
+        component_serializer.is_valid(raise_exception=True)
+        component_serializer.save()
+        return Response(status=status.HTTP_200_OK)
+
+class CompanyDomainView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+
+    permission_classes = [IsManipalAdminUser]
+    model = CompanyDomain
+    queryset = CompanyDomain.objects.all()
+    serializer_class = CompanyDomainsSerializer
+    create_success_message = 'Company domain created successfully!'
+    list_success_message = 'Company domain list retured successfully!'
+    retrieve_success_message = 'Company domain returned successfully!'
+    update_success_message = 'Company domain updated successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+    def get_permissions(self):
+        if self.action in ['list']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        component_serializer = ComponentsSerializer(data=request.data)
+        component_serializer.is_valid(raise_exception=True)
+        component_serializer.save()
+        return Response(status=status.HTTP_200_OK)
+
+
