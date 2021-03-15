@@ -785,6 +785,7 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     list_success_message = 'Company list returned successfully!'
+    retrieve_success_message = 'Company returned successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
 
@@ -950,7 +951,7 @@ class UhidConsultationPricingView(ProxyView):
                                             data=response_content)
 class ComponentsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
-    permission_classes = [IsManipalAdminUser]
+    permission_classes = [AllowAny]
     model = Components
     queryset = Components.objects.all()
     serializer_class = ComponentsSerializer
@@ -980,7 +981,7 @@ class ComponentsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
 class CompanyDomainView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
-    permission_classes = [IsManipalAdminUser]
+    permission_classes = [AllowAny]
     model = CompanyDomain
     queryset = CompanyDomain.objects.all()
     serializer_class = CompanyDomainsSerializer

@@ -279,7 +279,7 @@ class Company(MyBaseModel):
                                              null=True,
                                              related_name='company_hospital')
     
-    commponents = models.ManyToManyField(Components, blank=True,
+    components = models.ManyToManyField(Components, blank=True,
                                              null=True,related_name='allowed_components')
 
     is_active = models.BooleanField(default=True)
