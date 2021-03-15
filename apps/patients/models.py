@@ -14,7 +14,7 @@ from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
 from apps.master_data.models import Hospital, Company
-from apps.meta_app.models import MyBaseModel
+from apps.meta_app.models import AutoIncrementBaseModel, MyBaseModel
 from apps.patient_registration.models import Relation
 from apps.users.models import BaseUser
 from utils.custom_storage import MediaStorage
@@ -369,5 +369,67 @@ class WhiteListedToken(models.Model):
     class Meta:
         unique_together = ("token", "user")
 
+class CovidVaccinationRegistration(AutoIncrementBaseModel):
 
+    PENDING     = 'pending'
+    SCHEDULED   = 'scheduled'
+    COMPLETED   = 'completed'
+    CANCELLED   = 'cancelled'
 
+    STATUS_CHOICES = (
+        (PENDING,   'Pending'),
+        (SCHEDULED, 'Scheduled'),
+        (COMPLETED, 'Completed'),
+        (CANCELLED, 'Cancelled')
+    )
+
+    name            = models.CharField(
+                        max_length=200,
+                        blank=False,
+                        null=False,
+                        verbose_name='Name'
+                    )
+    mobile_number   = PhoneNumberField(
+                        blank = False,
+                        null = False,
+                        verbose_name = "Mobile Number"
+                    )
+    dob             = models.DateField(
+                        blank=False,
+                        null=False,
+                        verbose_name='Date of birth'
+                    )
+    preferred_hospital = models.ForeignKey(
+                        Hospital, 
+                        on_delete = models.PROTECT, 
+                        related_name = 'hospital_covid_registration'
+                    )
+    vaccination_date= models.DateField(
+                        blank=True,
+                        null=True,
+                        verbose_name='Date of vaccination'
+                    )
+    status          = models.CharField(
+                        choices=STATUS_CHOICES,
+                        default='pending',
+                        max_length=15
+                    )
+    other_user      = models.BooleanField(
+                        default=False
+                    )
+    patient         = models.ForeignKey(
+                        Patient, 
+                        on_delete = models.PROTECT, 
+                        related_name = 'patient_covid_registration'
+                    )
+    family_member   = models.ForeignKey(
+                        FamilyMember, 
+                        on_delete = models.PROTECT, 
+                        related_name = 'family_member_covid_registration',
+                        null=True
+                    )
+    remarks         = models.TextField(
+                        null=True,
+                        blank=True
+                    )
+    

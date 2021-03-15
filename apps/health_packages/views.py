@@ -121,14 +121,26 @@ class HealthPackageViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Hospital ID is missiing!")
 
         hospital_related_health_packages = HealthPackagePricing.objects.filter(
-            hospital=hospital_id).filter((Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
-                                         Q(start_date__lte=datetime.now().date())).values_list('health_package_id', flat=True)
+                                                        hospital=hospital_id
+                                                    ).filter(
+                                                        (
+                                                            Q(end_date__gte=datetime.now().date()) | 
+                                                            Q(end_date__isnull=True)
+                                                        ) &
+                                                            Q(start_date__lte=datetime.now().date())
+                                                    ).values_list('health_package_id', flat=True)
 
         user_cart_packages = HealthPackageCart.objects.filter(
-            patient_info_id=self.request.user.id,  health_packages=OuterRef('pk'), hospital_id=hospital_id)
+                                        patient_info_id = self.request.user.id,  
+                                        health_packages = OuterRef('pk'), 
+                                        hospital_id     = hospital_id
+                                    )
 
-        return HealthPackage.objects.filter(id__in=hospital_related_health_packages)\
-            .distinct().annotate(is_added_to_cart=Exists(user_cart_packages))
+        return HealthPackage.objects.filter(
+                            id__in=hospital_related_health_packages
+                        ).distinct().annotate(
+                                        is_added_to_cart=Exists(user_cart_packages)
+                                    )
 
 
 class HealthPackageSlotAvailability(ProxyView):

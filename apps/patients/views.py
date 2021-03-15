@@ -11,6 +11,7 @@ from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
 from apps.master_data.models import Company
 from apps.master_data.views import ValidateMobileView, ValidateUHIDView
+from apps.dashboard.utils import DashboardUtils
 from axes.models import AccessAttempt
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
@@ -33,7 +34,7 @@ from utils.custom_permissions import (
                                 SelfUserAccess
                             )
 from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
-from utils.utils import manipal_admin_object, patient_user_object
+from utils.utils import manipal_admin_object, patient_user_object, assign_users
 from .emails import (
                 send_corporate_email_activation_otp,
                 send_email_activation_otp,
@@ -45,15 +46,16 @@ from .exceptions import (
                     OTPExpiredException,
                     PatientDoesNotExistsValidationException,
                     PatientMobileDoesNotExistsValidationException,
-                    PatientMobileExistsValidationException
+                    PatientMobileExistsValidationException,
+                    MobileAppVersionValidationException
                 )
 from .serializers import (  
-                    FamilyMemberSerializer, 
+                    CovidVaccinationRegistrationSerializer, FamilyMemberSerializer, 
                     PatientAddressSerializer,
                     PatientSerializer
                 )
-from .utils import fetch_uhid_user_details, link_uhid
-from .models import FamilyMember, OtpGenerationCount, Patient, PatientAddress
+from .utils import covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid
+from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
 logger = logging.getLogger('django')
@@ -71,8 +73,15 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['first_name', 'mobile', 'email']
+    search_fields = ['first_name','last_name','mobile', 'email']
     ordering_fields = ('-created_at',)
+
+    def get_queryset(self):
+        admin_object = manipal_admin_object(self.request)
+        if admin_object and admin_object.hospital:
+            location_id = admin_object.hospital.id
+            return Patient.objects.filter(favorite_hospital__id=location_id)
+        return super().get_queryset().distinct()
 
     def get_permissions(self):
 
@@ -110,6 +119,12 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+
+        app_version = self.request.query_params.get("version", None)
+        if  app_version and \
+            DashboardUtils.check_if_version_update_enabled() and \
+            DashboardUtils.check_if_version_update_required(app_version):
+            raise MobileAppVersionValidationException
 
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
@@ -268,11 +283,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             if access_log:
                 attempt = access_log.failures_since_start
                 if attempt < 3:
-                    message = "You have entered wrong OTP in your {} attempt. Account will be locked after 3 unscuccessful attempts".format(
-                        attempt)
+                    message = settings.WRONG_OTP_ATTEMPT_ERROR.format(attempt)
                     raise ValidationError(message)
                 if attempt >= 3:
-                    message = "Your account is locked. Please try after 10 mins"
+                    message = settings.MAX_WRONG_OTP_ATTEMPT_ERROR
                     raise ValidationError(message)
             raise InvalidCredentialsException
 
@@ -457,6 +471,17 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_login_otp(self, request):
+
+        app_version = self.request.query_params.get("version", None)
+        data = {}
+        if  app_version and \
+            DashboardUtils.check_if_version_update_enabled() and \
+            DashboardUtils.check_if_version_update_required(app_version):
+            
+            data["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
+            data["force_update_required"] = DashboardUtils.check_if_version_update_required(app_version)
+            return Response(data, status=status.HTTP_200_OK)
+
         mobile = request.data.get('mobile')
         facebook_id = request.data.get('facebook_id')
         google_id = request.data.get('google_id')
@@ -537,8 +562,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         random_password = get_random_string(
             length=OTP_LENGTH, allowed_chars='0123456789')
 
-        if str(request_patient.mobile) == "+919824783423":
-            random_password = "123456"
+        if str(request_patient.mobile) == settings.HARDCODED_MOBILE_NO:
+            random_password = settings.HARDCODED_MOBILE_OTP
 
         otp_expiration_time = datetime.now(
         ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
@@ -849,21 +874,34 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()
 
+    
+    def get_patient_info_object(self):
+        request_patient_info = None
+        try:
+            if self.request.query_params.get('patient_id'):
+                request_patient_info = Patient.objects.get(id=self.request.query_params.get('patient_id'))
+        except Exception as error:
+            logger.error("Exception in FamilyMemberViewSet %s"%(str(error)))
+        if not request_patient_info:
+            raise ValidationError("Invalid patient information.")
+        return request_patient_info
+    
     def get_queryset(self):
-        qs=super().get_queryset().filter(patient_info__id=self.request.user.id,
-                                           is_visible=True)
-        if manipal_admin_object(self.request):
-            request_patient_info = None
-            try:
-                request_patient_info=Patient.objects.get(
-                    id=self.request.query_params.get('patient_id'))
-            except Exception as error:
-                logger.error("Exception in FamilyMemberViewSet %s"%(str(error)))
-                if not request_patient_info:
-                    raise ValidationError("Invalid patient information.")
+        qs=super().get_queryset().filter(patient_info__id=self.request.user.id,is_visible=True)
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            request_patient_info = self.get_patient_info_object()
+            if admin_object.hospital:
+                location_id = admin_object.hospital.id
+                return FamilyMember.objects.filter(
+                        patient_info__id=request_patient_info.id,
+                        is_visible=True,
+                        patient_info__favorite_hospital__id=location_id
+                    )
             qs=FamilyMember.objects.filter(
-                patient_info__id=request_patient_info.id,
-                is_visible=True)
+                        patient_info__id=request_patient_info.id,
+                        is_visible=True
+                    )
         return qs
 
     def perform_create(self, serializer):
@@ -1355,3 +1393,55 @@ class SendSms(APIView):
         is_message_sent=send_sms(
             mobile_number=str(mobile), message=str(message))
         return Response({"is_message_sent": is_message_sent})
+
+
+class CovidVaccinationRegistrationView(custom_viewsets.ModelViewSet):
+    permission_classes  = [IsPatientUser]
+    model               = CovidVaccinationRegistration
+    serializer_class    = CovidVaccinationRegistrationSerializer
+    queryset            = CovidVaccinationRegistration.objects.all()
+    list_success_message        = "Covid vaccination registrations listed successfully"
+    retrieve_success_message    = "Covid vaccination registration retrieved successfully"
+    create_success_message      = 'Covid vaccination registration completed successfully!'
+    update_success_message      = 'Covid vaccination registration updated successfully!'
+    delete_success_message      = 'Covid vaccination registration has been deleted successfully!'
+
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    search_fields = ['name', ]
+    ordering_fields = ('-created_at',)
+
+    def get_permissions(self):
+        if self.action in ['create', ]:
+            permission_classes=[ IsPatientUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve']:
+            permission_classes=[ IsPatientUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'list':
+            permission_classes=[IsManipalAdminUser | IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes=[BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'destroy':
+            permission_classes=[BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        request_data = request.data.copy()
+        covid_registration_mandatory_check(request_data)
+        request_data = assign_users(request_data,request.user.id)
+        registration_object = self.serializer_class(data = request_data)
+        registration_object.is_valid(raise_exception=True)
+        registration_object.save()
+        return Response(data=registration_object.data,status=status.HTTP_201_CREATED)

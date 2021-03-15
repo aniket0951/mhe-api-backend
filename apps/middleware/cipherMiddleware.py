@@ -35,7 +35,7 @@ class CipherRequestMiddleware(object):
         # Logic executed before a call to view
         # Gives access to the view itself & arguments
 
-        if ENCRYPTION_ENABLED and MiddlewareUtils.authenticate_encryption(request):
+        if MiddlewareUtils.authenticate_encryption(request):
             request_data = getattr(request, '_body', request.body)
             if request_data:
                 try:
@@ -120,7 +120,7 @@ class CipherResponseMiddleware(object):
         # Logic executed after the view is called,
         # ONLY IF view response is TemplateResponse, see listing 2-24
     
-        if  ENCRYPTION_ENABLED and MiddlewareUtils.is_encryption_required(request,response):
+        if MiddlewareUtils.is_encryption_required(request,response) and ENCRYPTION_ENABLED:
             try:
                 response_data = response.data.copy()
                 if isinstance(response_data, dict):
