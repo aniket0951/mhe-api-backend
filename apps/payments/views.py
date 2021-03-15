@@ -47,6 +47,7 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from utils import custom_viewsets
+from utils.utils import manipal_admin_object
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
 from utils.payment_parameter_generator import get_payment_param
 from utils.refund_parameter_generator import get_refund_param
@@ -538,12 +539,14 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
         qs = super().get_queryset()
         uhid = self.request.query_params.get("uhid", None)
         is_booked = self.request.query_params.get("is_booked", None)
-        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             if date_from and date_to:
-                qs = qs.filter(payment_id__status="success",
-                               appointment_date__date__range=[date_from, date_to])
+                qs = qs.filter(payment_id__status="success",appointment_date__date__range=[date_from, date_to])
+            if admin_object.hospital:
+                qs = qs.filter(hospital__id=admin_object.hospital.id)
             return qs.filter(payment_id__status="success")
         if is_booked:
             return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")

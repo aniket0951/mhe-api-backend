@@ -1,7 +1,12 @@
 from django.urls import path
 
-from apps.patients.views import (FamilyMemberViewSet, PatientAddressViewSet,
-                                 PatientViewSet, SendSms)
+from apps.patients.views import (
+                        CovidVaccinationRegistrationView,
+                        FamilyMemberViewSet, 
+                        PatientAddressViewSet,
+                        PatientViewSet, 
+                        SendSms
+                    )
 from rest_framework.routers import DefaultRouter
 
 app_name = 'patients'
@@ -10,6 +15,7 @@ router = DefaultRouter(trailing_slash=False)
 
 router.register('family_members', FamilyMemberViewSet)
 router.register('address', PatientAddressViewSet)
+router.register('vaccine_registration', CovidVaccinationRegistrationView)
 router.register('', PatientViewSet)
 
 urlpatterns = [

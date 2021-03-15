@@ -66,6 +66,11 @@ class Doctor(BaseUser):
         blank=True,
     )
 
+    talks_publications = models.TextField(
+        null=True,
+        blank=True,
+    )
+
     fellowship_membership = models.TextField(
         null=True,
         blank=True,

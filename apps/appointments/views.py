@@ -56,7 +56,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-
+from utils.utils import manipal_admin_object
 from .exceptions import (AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -99,9 +99,13 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         family_member = self.request.query_params.get("user_id", None)
         is_upcoming = self.request.query_params.get("is_upcoming", False)
         is_cancelled = self.request.query_params.get("is_cancelled", False)
-        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
+            if admin_object.hospital:
+                qs = qs.filter(hospital__id=admin_object.hospital.id)
             if date_from and date_to:
                 qs = qs.filter(appointment_date__range=[date_from, date_to])
             if is_cancelled == "true":
@@ -255,6 +259,8 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["hospital"] = data.get("hospital").id
                 new_appointment["appointment_mode"] = data.get(
                     "appointment_mode", None)
+                if new_appointment.get("appointment_mode") and new_appointment.get("appointment_mode").upper()=="VC":
+                    new_appointment["booked_via_app"] = True
                 if data.get('corporate', None):
                     new_appointment["corporate_appointment"] = True
 
@@ -587,6 +593,9 @@ class OfflineAppointment(APIView):
             appointment_data["appointment_slot"] = datetime_object.time().strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
+            
+            if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
+                appointment_data["booked_via_app"] = True
             if appointment_instance:
                 if appointment_instance.payment_status == "success":
                     appointment_data.pop("payment_status")
@@ -595,7 +604,8 @@ class OfflineAppointment(APIView):
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
             else:
-                appointment_data["booked_via_app"] = False
+                if not appointment_data.get("appointment_mode") or not appointment_data.get("appointment_mode").upper()=="VC":
+                    appointment_data["booked_via_app"] = False
                 appointment_serializer = AppointmentSerializer(
                     data=appointment_data)
             message = "Record Inserted"

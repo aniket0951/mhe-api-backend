@@ -19,11 +19,17 @@ class ManipalAdminSerializer(serializers.ModelSerializer):
         all_menus = AdminMenu.objects.all()
         if response_object.get('role'):
             role_object = AdminRole.objects.get(pk=response_object.get('role'))
-            response_object["role_name"] = role_object.name
+            response_object["role"] = {
+                "id":role_object.id,
+                "name":role_object.name
+            }
         if response_object.get('hospital'):
             hospital_object = Hospital.objects.get(pk=response_object.get('hospital'))
-            response_object["hospital_name"] = hospital_object.description
-            response_object["hospital_code"] = hospital_object.code
+            response_object["hospital"] = {
+                "id":hospital_object.id,
+                "name":hospital_object.description,
+                "code":hospital_object.code
+            }
         allowed_menus = response_object.get('menus')
         response_object["menu_rights"] = {}
         for menu in all_menus:
@@ -46,11 +52,17 @@ class ManipalAdminTypeSerializer(DynamicFieldsModelSerializer):
         all_menus = AdminMenu.objects.all()
         if response_object.get('role'):
             role_object = AdminRole.objects.get(pk=response_object.get('role'))
-            response_object["role_name"] = role_object.name
+            response_object["role"] = {
+                "id":role_object.id,
+                "name":role_object.name
+            }
         if response_object.get('hospital'):
             hospital_object = Hospital.objects.get(pk=response_object.get('hospital'))
-            response_object["hospital_name"] = hospital_object.description
-            response_object["hospital_code"] = hospital_object.code
+            response_object["hospital"] = {
+                "id":hospital_object.id,
+                "name":hospital_object.description,
+                "code":hospital_object.code
+            }
         allowed_menus = response_object.get('menus')
         response_object["menu_rights"] = {}
         for menu in all_menus:

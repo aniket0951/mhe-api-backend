@@ -43,10 +43,11 @@ def patient_user_object(request):
 
 def manipal_admin_object(request):
     try:
-        return ManipalAdmin.objects.get(id=request.user.id)
+        if request.user and request.user.id:
+            return ManipalAdmin.objects.get(id=request.user.id)
     except Exception as error:
         logger.error("Unable to fetch patient user : " + str(error))
-        return None
+    return None
 
 
 def get_appointment(patient_id):
@@ -105,3 +106,15 @@ def get_report_info(hospital_code=None):
     param['ip_deposit_count'] = Payment.objects.filter(created_at__date=yesterday.date(), payment_for_ip_deposit=True, status="success", location__code=hospital_code).count()
     
     return param
+
+
+def assign_users(request_data,user_id):
+    loggedin_patient_instance = Patient.objects.filter(id=user_id).first()
+    request_data["patient"] = loggedin_patient_instance
+    if request_data and request_data.get("family_member"):
+        request_data["other_user"] = False
+        family_member_instace = FamilyMember.objects.filter(id=request_data.get("family_member")).first()
+        if not family_member_instace:
+            raise ValidationError("Invalid family member selected.")
+        request_data["family_member"] = family_member_instace
+    return request_data

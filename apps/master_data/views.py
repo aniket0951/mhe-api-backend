@@ -318,6 +318,7 @@ class DoctorsView(ProxyView):
 
         all_doctors = list()
         doctor_sorted_keys = [
+            'AllowWebDisplay',
             'start_date',
             'end_date',
             'department_code',
@@ -334,14 +335,15 @@ class DoctorsView(ProxyView):
             'pr_consultation_charges',
             'specialisation_code',
             'specialisation_description',
-            'vc_consultation_charges',
+            'vc_consultation_charges'
         ]
         today_date = datetime.now().date()
         for each_doctor in response_content:
             doctor_details = dict()
             doctor_details["is_active"] = True
             for index, key in enumerate(sorted(each_doctor.keys())):
-                if key in ['DocProfile', 'DeptName', 'SpecDesc']:
+
+                if key in ['DocProfile', 'DeptName', 'SpecDesc','AllowWebDisplay']:
                     continue
 
                 if not each_doctor[key]:

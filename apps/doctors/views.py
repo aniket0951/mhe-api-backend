@@ -53,7 +53,11 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
 
     def get_queryset(self):
-        if manipal_admin_object(self.request):
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            if admin_object.hospital:
+                location_id = admin_object.hospital.id
+                return Doctor.objects.filter(hospital_departments__hospital__id=location_id).distinct()
             return super().get_queryset().distinct()
 
         location_id = self.request.query_params.get('location_id', None)

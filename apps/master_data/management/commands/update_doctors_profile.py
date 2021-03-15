@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from django.core.management import BaseCommand
 from requests.auth import HTTPBasicAuth
-
+from utils.custom_validation import ValidationUtil
 from apps.doctors.models import Doctor
 
 logger = logging.getLogger('django')
@@ -46,6 +46,9 @@ class Command(BaseCommand):
                     if key == "doc.awards_achievements":
                         doctor_details["awards_achievements"] = each_doctor_record[key]
 
+                    if key == "doc.talks_publications":
+                        doctor_details["talks_publications"] = ValidationUtil.cleanhtml(each_doctor_record[key]) if each_doctor_record[key] else None
+                    
                     if key == "'doc.fellowship_membership":
                         doctor_details["'fellowship_membership"] = each_doctor_record[key]
 
