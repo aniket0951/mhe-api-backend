@@ -249,7 +249,21 @@ class AmbulanceContact(MyBaseModel):
         verbose_name = "Ambulance Contact"
         verbose_name_plural = "Ambulance Contacts"
 
+class Components(MyBaseModel):
 
+    name = models.CharField(max_length=50,
+                            null=False,
+                            blank=False)
+
+    is_active = models.BooleanField(default=True)
+
+class CompanyDomain(MyBaseModel):
+
+    domain = models.CharField(max_length=30,
+                            null=False,
+                            blank=False)
+
+    is_active = models.BooleanField(default=True)
 class Company(MyBaseModel):
 
     name = models.SlugField(unique=True,
@@ -264,7 +278,11 @@ class Company(MyBaseModel):
                                              blank=True,
                                              null=True,
                                              related_name='company_hospital')
+    
+    commponents = models.ManyToManyField(Components, blank=True,
+                                             null=True,related_name='allowed_components')
 
+    is_active = models.BooleanField(default=True)
 
 class EmergencyContact(MyBaseModel):
 

@@ -6,7 +6,7 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import (AmbulanceContact, Company, Department, EmergencyContact,
-                     Hospital, HospitalDepartment, Specialisation)
+                     Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain)
 
 _logger = logging.getLogger("django")
 
@@ -107,4 +107,17 @@ class CompanySerializer(DynamicFieldsModelSerializer):
 class EmergencyContactSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = EmergencyContact
+        exclude = ('created_at', 'updated_at',)
+
+
+class ComponentsSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = Components
+        exclude = ('created_at', 'updated_at',)
+
+class CompanyDomainsSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = CompanyDomain
         exclude = ('created_at', 'updated_at',)
