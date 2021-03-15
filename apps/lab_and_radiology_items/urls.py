@@ -11,8 +11,7 @@ router = DefaultRouter(trailing_slash=False)
 router.register('home_collection', HomeCollectionViewSet)
 router.register('services', HomeCareServiceViewSet)
 router.register('service_appointments', PatientServiceAppointmentViewSet)
-router.register('home_collection_appointments',
-                HomeCollectionAppointmentViewSet)
+router.register('home_collection_appointments',HomeCollectionAppointmentViewSet)
 
 urlpatterns = [
     *router.urls

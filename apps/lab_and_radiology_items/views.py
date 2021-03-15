@@ -142,11 +142,14 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
     def get_queryset(self):
         qs=super().get_queryset()
         
-        if manipal_admin_object(self.request):
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             if date_from and date_to:
                 qs = qs.filter(appointment_date__range=[date_from, date_to])
+            if admin_object.hospital:
+                qs = qs.filter(hospital__id=admin_object.hospital.id)
             return qs  
         
 
@@ -207,11 +210,14 @@ class HomeCollectionAppointmentViewSet(custom_viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs=super().get_queryset()
-        if manipal_admin_object(self.request):
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             if date_from and date_to:
                 qs = qs.filter(appointment_date__range=[date_from, date_to])
+            if admin_object.hospital:
+                qs = qs.filter(hospital__id=admin_object.hospital.id)
             return qs    
         family_member = self.request.query_params.get("user_id", None)
         if family_member is not None:

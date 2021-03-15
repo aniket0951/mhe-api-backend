@@ -306,12 +306,10 @@ REST_PROXY = {
 
 # MAX_FILE_UPLOAD_SIZE IN MB
 MAX_FILE_UPLOAD_SIZE = int(env('MAX_FILE_UPLOAD_SIZE_IN_MB'))
-FILE_UPLOAD_MAX_MEMORY_SIZE = int(
-    env('MAX_FILE_UPLOAD_SIZE_IN_MB')) * 1024 * 1024
-
+FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_FILE_UPLOAD_SIZE * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_UPLOAD_MAX_MEMORY_SIZE
 # Supported File Extensions
-VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(
-    env('VALID_IMAGE_FILE_EXTENSIONS'))
+VALID_IMAGE_FILE_EXTENSIONS = ast.literal_eval(env('VALID_IMAGE_FILE_EXTENSIONS'))
 VALID_FILE_EXTENSIONS = ast.literal_eval(env('VALID_FILE_EXTENSIONS'))
 
 SMS_SENDER = env('SMS_SENDER')
@@ -393,7 +391,7 @@ AXES_COOLOFF_TIME = datetime.timedelta(minutes=10)
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
 
 JWT_AUTHORIZATION_KEY = env("JWT_AUTHORIZATION_KEY")
-ENCRYPTION_ENABLED= True if env("ENCRYPTION_ENABLED") and env("ENCRYPTION_ENABLED")=="True" else False
+ENCRYPTION_ENABLED= True if env("ENCRYPTION_ENABLED") and str(env("ENCRYPTION_ENABLED"))=="True" else False
 ENCRYPTION_FLAG = env("ENCRYPTION_FLAG")
 ENCRYPTION_KEYWORD = env("ENCRYPTION_KEYWORD")
 ENCRYPTION_KEYWORD_LENGTH = env("ENCRYPTION_KEYWORD_LENGTH")
@@ -405,6 +403,11 @@ RATELIMIT_KEY_USER_OR_IP = env("RATELIMIT_KEY_USER_OR_IP")
 RATELIMIT_DOCUMENT_UPLOAD = env("RATELIMIT_DOCUMENT_UPLOAD")
 RATELIMIT_OTP_GENERATION = env("RATELIMIT_OTP_GENERATION")
 
+HARDCODED_MOBILE_NO = env("HARDCODED_MOBILE_NO")
+HARDCODED_MOBILE_OTP = env("HARDCODED_MOBILE_OTP")
+
+WRONG_OTP_ATTEMPT_ERROR = env("WRONG_OTP_ATTEMPT_ERROR")
+MAX_WRONG_OTP_ATTEMPT_ERROR = env("MAX_WRONG_OTP_ATTEMPT_ERROR")
 
 
 # Logger configuration
@@ -440,7 +443,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 15728640,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
             'backupCount': 10,
             'formatter': 'standard'
         },
@@ -473,7 +476,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/requests.log',
-            'maxBytes': 5242880,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
             'backupCount': 5,
         },
         'error_file': {
