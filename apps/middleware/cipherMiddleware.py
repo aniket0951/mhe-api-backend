@@ -35,7 +35,7 @@ class CipherRequestMiddleware(object):
         # Logic executed before a call to view
         # Gives access to the view itself & arguments
 
-        if ENCRYPTION_ENABLED and MiddlewareUtils.authenticate_encryption(request):
+        if MiddlewareUtils.authenticate_encryption(request):
             request_data = getattr(request, '_body', request.body)
             if request_data:
                 try:
