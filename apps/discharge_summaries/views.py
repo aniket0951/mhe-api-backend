@@ -80,10 +80,10 @@ class DischargeSummarySyncAPIView(CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        discharge_info = request.data.get('MDMMessage', None)
+        discharge_details = request.data.get('MDMDetails', None)
+        file_name = get_discharge_summary(discharge_info, discharge_details)
         try:
-            discharge_info = request.data.get('MDMMessage', None)
-            discharge_details = request.data.get('MDMDetails', None)
-            file_name = get_discharge_summary(discharge_info, discharge_details)
             os.remove(file_name)
         except Exception as e:
             return Response(data={"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
