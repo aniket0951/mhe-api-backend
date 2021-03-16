@@ -17,6 +17,9 @@ from pyfcm import FCMNotification
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters
 
+NOTIFICAITON_TYPE_MAP = {
+    "HOLD_VC_NOTIFICATION":"2"
+}
 
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
@@ -43,10 +46,11 @@ def send_push_notification(self, **kwargs):
                         alert,
                         badge=1,
                         sound="default",
-                        extra={'notification_type': '1',
-                               'appointment_id': notification_data["appointment_id"]
-                               }
-                        )
+                        extra={
+                            'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
+                            'appointment_id': notification_data["appointment_id"]
+                        }
+                    )
 
 
 @app.task(bind=True, name="silent_push_notification")
