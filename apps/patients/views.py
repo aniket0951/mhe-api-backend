@@ -203,7 +203,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
         username = request.data.get('mobile')
-        password = request.data.get('password')
+        password = request.data.get('password') or request.data.get('otp')
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
