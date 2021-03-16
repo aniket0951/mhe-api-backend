@@ -100,7 +100,7 @@ class CompanySerializer(DynamicFieldsModelSerializer):
         if instance.hospital_info:
             response_object['hospital_info'] = HospitalSerializer(
                 instance.hospital_info, many=True).data
-        if instance.components_ids:
+        if instance.component_ids:
             response_object["component_ids"] = ComponentsSerializer(instance.components, many = True).data
         
         return response_object
