@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+import logging
+
 from django.conf import settings
 from django.core.management import call_command
 from pushjack import APNSClient
@@ -20,6 +22,8 @@ from .utils import cancel_parameters
 NOTIFICAITON_TYPE_MAP = {
     "HOLD_VC_NOTIFICATION":"2"
 }
+
+_logger = logging.getLogger("Django")
 
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
@@ -42,6 +46,11 @@ def send_push_notification(self, **kwargs):
             client = APNSClient(certificate=settings.APNS_CERT_PATH)
             alert = notification_instance.message
             token = notification_instance.recipient.device.token
+            _logger.info("notification_data.get(\"notification_type\") :%s"%(str(notification_data.get("notification_type"))))
+            if notification_data.get("notification_type") in NOTIFICAITON_TYPE_MAP:
+                _logger.info("notification_data.get(\"notification_type\") in NOTIFICAITON_TYPE_MAP :%s"%(str(notification_data.get("notification_type") in NOTIFICAITON_TYPE_MAP)))
+            if notification_data.get("notification_type") and notification_data.get("notification_type") in NOTIFICAITON_TYPE_MAP and NOTIFICAITON_TYPE_MAP.get(notification_data.get("notification_type")):
+                _logger.info("NOTIFICAITON_TYPE_MAP.get(notification_data.get(\"notification_type\")) :%s"%(str(NOTIFICAITON_TYPE_MAP.get(notification_data.get("notification_type")))))
             client.send(token,
                         alert,
                         badge=1,
