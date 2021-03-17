@@ -1420,7 +1420,7 @@ class CovidVaccinationRegistrationView(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action in ['partial_update', 'retrieve']:
-            permission_classes=[ IsPatientUser ]
+            permission_classes=[ IsPatientUser | IsManipalAdminUser ]
             return [permission() for permission in permission_classes]
 
         if self.action == 'list':

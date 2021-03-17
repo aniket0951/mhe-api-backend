@@ -800,6 +800,18 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
+        if self.action in ['partial_update', 'retrieve']:
+            permission_classes=[ IsManipalAdminUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes=[BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'destroy':
+            permission_classes=[BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
         return super().get_permissions()
 
     def create(self, request):
