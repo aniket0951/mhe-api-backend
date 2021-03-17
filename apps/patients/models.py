@@ -19,6 +19,7 @@ from apps.patient_registration.models import Relation
 from apps.users.models import BaseUser
 from utils.custom_storage import MediaStorage
 from utils.validators import validate_file_authenticity, validate_file_size
+import datetime
 
 
 def generate_display_picture_path(self, filename):
@@ -409,6 +410,7 @@ class CovidVaccinationRegistration(AutoIncrementBaseModel):
                         null=True,
                         verbose_name='Date of vaccination'
                     )
+    vaccination_slot = models.TimeField()
     status          = models.CharField(
                         choices=STATUS_CHOICES,
                         default='pending',
@@ -432,4 +434,5 @@ class CovidVaccinationRegistration(AutoIncrementBaseModel):
                         null=True,
                         blank=True
                     )
+
     

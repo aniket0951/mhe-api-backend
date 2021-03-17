@@ -33,3 +33,7 @@ class ValidationUtil:
         cleanr = re.compile('<.*?>')
         cleantext = re.sub(cleanr, '', raw_html)
         return cleantext
+
+    @staticmethod
+    def check_Domain_Corporate(string):
+        return re.match("^[@]\w+[.]\w{2,3}$", string)
