@@ -318,7 +318,6 @@ class DoctorsView(ProxyView):
 
         all_doctors = list()
         doctor_sorted_keys = [
-            'AllowWebDisplay',
             'start_date',
             'end_date',
             'department_code',
@@ -343,7 +342,7 @@ class DoctorsView(ProxyView):
             doctor_details["is_active"] = True
             for index, key in enumerate(sorted(each_doctor.keys())):
 
-                if key in ['DocProfile', 'DeptName', 'SpecDesc','AllowWebDisplay']:
+                if key in ['DocProfile', 'DeptName', 'SpecDesc']:
                     continue
 
                 if not each_doctor[key]:
@@ -759,7 +758,10 @@ class PatientAppointmentStatus(ProxyView):
 
     def get_request_data(self, request):
         hospital_code = request.data.get("hospital_code")
-        param = get_report_info(hospital_code=hospital_code)
+        specific_date = None
+        if request.data.get("specific_date"):
+            specific_date = request.data.get("specific_date")
+        param = get_report_info(hospital_code=hospital_code,specific_date=specific_date)
         request_param = serializable_patient_app_status(param)
         request_data = custom_serializer().serialize(request_param, 'XML')
         print(request_data)
@@ -787,6 +789,7 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     list_success_message = 'Company list returned successfully!'
+    retrieve_success_message = 'Company returned successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
 
@@ -797,6 +800,18 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
 
         if self.action in ['create']:
             permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['partial_update', 'retrieve']:
+            permission_classes=[ IsManipalAdminUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes=[BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'destroy':
+            permission_classes=[BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
@@ -952,7 +967,7 @@ class UhidConsultationPricingView(ProxyView):
                                             data=response_content)
 class ComponentsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
-    permission_classes = [IsManipalAdminUser]
+    permission_classes = [AllowAny]
     model = Components
     queryset = Components.objects.all()
     serializer_class = ComponentsSerializer
@@ -982,7 +997,7 @@ class ComponentsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
 class CompanyDomainView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
-    permission_classes = [IsManipalAdminUser]
+    permission_classes = [AllowAny]
     model = CompanyDomain
     queryset = CompanyDomain.objects.all()
     serializer_class = CompanyDomainsSerializer

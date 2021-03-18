@@ -407,6 +407,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk":"6e4badb5-8aed-4183-815f-35c499fed3e1",
+        "fields": {
+            "created_at": "2021-01-27T18:47:24.893Z",
+            "updated_at": "2021-01-27T18:47:24.893Z",
+            "hospital_code":"MHV",
+            "name":"CE Vijayawada",
+            "type":"TO",
+            "email":"ce.vijayawada@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "6ac1b11f-e6d8-4691-899e-ef7b54eb3003",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -573,6 +585,54 @@
             "name":"Amit K",
             "type":"CC",
             "email":"amit.k@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "e06e0ac0-790d-4d87-88ac-f78929b70164",
+        "fields": {
+            "created_at": "2021-01-27T18:47:24.893Z",
+            "updated_at": "2021-01-27T18:47:24.893Z",
+            "hospital_code":"ALL",
+            "name":"Madhur Gopal",
+            "type":"CC",
+            "email":"madhur.gopal@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "4cd2ed94-fa7a-4282-ab12-dff52f94adc9",
+        "fields": {
+            "created_at": "2021-01-27T18:47:24.893Z",
+            "updated_at": "2021-01-27T18:47:24.893Z",
+            "hospital_code":"ALL",
+            "name":"Mohd Fakhrul I Khan",
+            "type":"CC",
+            "email":"fakhrul.khan@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "22f3a8c2-2527-48b1-a01c-fd059c1b9528",
+        "fields": {
+            "created_at": "2021-01-27T18:47:24.893Z",
+            "updated_at": "2021-01-27T18:47:24.893Z",
+            "hospital_code":"ALL",
+            "name":"Kiran R",
+            "type":"CC",
+            "email":"kiran.r@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "15d62967-ad78-415c-9fec-9b789c9876fc",
+        "fields": {
+            "created_at": "2021-01-27T18:47:24.893Z",
+            "updated_at": "2021-01-27T18:47:24.893Z",
+            "hospital_code":"ALL",
+            "name":"Akshatha B R",
+            "type":"CC",
+            "email":"akshatha.br@manipalhospitals.com"
         }
     }
 ]

@@ -1,0 +1,72 @@
+[
+    {
+    "model": "master_data.Components",
+    "pk": "6b8d3528-2d75-4dc8-a4f6-9a8d77b00013",
+    "fields": {
+        "created_at": "2021-03-15T18:47:24.893Z",
+        "updated_at": "2021-03-15T18:47:24.893Z",
+        "name":"Appointments",
+        "is_active" : "True"
+        }
+    },
+    {
+        "model": "master_data.Components",
+        "pk": "01f22c2a-ebb4-4240-bb0f-56f3e68f5396",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name":"Health Packages",
+            "is_active" : "True"
+            }
+        },
+    {
+        "model": "master_data.Components",
+        "pk": "1f11b55d-8c25-4e06-9c47-2c8150eae7c1",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name":"Pay Bills",
+            "is_active" : "True"
+            }
+    },
+    {
+        "model": "master_data.Components",
+        "pk": "9ac55b8f-2d36-430b-a8d2-192b3f2fe559",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name":"Reports",
+            "is_active" : "True"
+            }
+    },
+    {
+        "model": "master_data.Components",
+        "pk": "b4db7653-52d0-45c8-b8c0-3ca878f7e245",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name":"Medical Records",
+            "is_active" : "True"
+            }
+    },
+    {
+        "model": "master_data.Components",
+        "pk": "c518dc12-4222-4e59-83e1-87f8f6b48989",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name":"Home Care",
+            "is_active" : "True"
+            }
+    },
+    {
+        "model": "master_data.Components",
+        "pk": "e2ed1f35-129d-4e05-ad22-5024f525b9a3",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name":"Covid Vaccination Registration",
+            "is_active" : "True"
+            }
+    }
+]

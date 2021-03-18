@@ -593,7 +593,6 @@ class OfflineAppointment(APIView):
             appointment_data["appointment_slot"] = datetime_object.time().strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
-            
             if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
                 appointment_data["booked_via_app"] = True
             if appointment_instance:
