@@ -410,7 +410,11 @@ class CovidVaccinationRegistration(AutoIncrementBaseModel):
                         null=True,
                         verbose_name='Date of vaccination'
                     )
-    vaccination_slot = models.TimeField()
+    vaccination_slot = models.TimeField(
+                        blank=True,
+                        null=True,
+                        verbose_name='Time slot of vaccination'
+                    )
     status          = models.CharField(
                         choices=STATUS_CHOICES,
                         default='pending',
