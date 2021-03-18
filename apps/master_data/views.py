@@ -782,7 +782,7 @@ class PatientAppointmentStatus(ProxyView):
                                             success=response_success, data=None)
 
 
-class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
+class CompanyViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     permission_classes = [IsManipalAdminUser]
     model = Company
     depth =1 
@@ -790,6 +790,7 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
     serializer_class = CompanySerializer
     list_success_message = 'Company list returned successfully!'
     retrieve_success_message = 'Company returned successfully!'
+    update_success_message = 'Company details updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
 
@@ -807,7 +808,7 @@ class CompanyViewSet(custom_viewsets.ReadOnlyModelViewSet):
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':
-            permission_classes=[BlacklistUpdateMethodPermission]
+            permission_classes=[IsManipalAdminUser]
             return [permission() for permission in permission_classes]
         
         if self.action == 'destroy':

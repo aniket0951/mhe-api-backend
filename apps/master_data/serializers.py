@@ -7,6 +7,8 @@ from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import (AmbulanceContact, Company, Department, EmergencyContact,
                      Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain)
+from rest_framework.serializers import ValidationError
+from utils.custom_validation import ValidationUtil
 
 _logger = logging.getLogger("django")
 
@@ -104,6 +106,19 @@ class CompanySerializer(DynamicFieldsModelSerializer):
             response_object["component_ids"] = ComponentsSerializer(instance.component_ids, many = True).data
         
         return response_object
+    
+    def update(self, instance, validated_data):
+        restriced_fields = [
+                    'name'
+                ]
+        validated_data = {
+            k: v for k, v in validated_data.items() if not k in restriced_fields}
+        validate_fields = ["domain"]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.check_Domain_Corporate(v)]
+        if validated_fields:
+            raise ValidationError("Only vaild domain format @domain.com is allowed %s"%(str(validated_fields[0])))
+        
+        return super().update(instance, validated_data)
 
 
 class EmergencyContactSerializer(DynamicFieldsModelSerializer):
