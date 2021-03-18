@@ -318,7 +318,6 @@ class DoctorsView(ProxyView):
 
         all_doctors = list()
         doctor_sorted_keys = [
-            'AllowWebDisplay',
             'start_date',
             'end_date',
             'department_code',
@@ -343,7 +342,7 @@ class DoctorsView(ProxyView):
             doctor_details["is_active"] = True
             for index, key in enumerate(sorted(each_doctor.keys())):
 
-                if key in ['DocProfile', 'DeptName', 'SpecDesc','AllowWebDisplay']:
+                if key in ['DocProfile', 'DeptName', 'SpecDesc']:
                     continue
 
                 if not each_doctor[key]:
@@ -759,7 +758,10 @@ class PatientAppointmentStatus(ProxyView):
 
     def get_request_data(self, request):
         hospital_code = request.data.get("hospital_code")
-        param = get_report_info(hospital_code=hospital_code)
+        specific_date = None
+        if request.data.get("specific_date"):
+            specific_date = request.data.get("specific_date")
+        param = get_report_info(hospital_code=hospital_code,specific_date=specific_date)
         request_param = serializable_patient_app_status(param)
         request_data = custom_serializer().serialize(request_param, 'XML')
         print(request_data)

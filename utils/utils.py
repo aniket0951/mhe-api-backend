@@ -74,10 +74,15 @@ def get_appointment(patient_id):
     return patient_appointment.order_by('appointment_date', 'appointment_slot')
 
 
-def get_report_info(hospital_code=None):
+def get_report_info(hospital_code=None,specific_date=None):
     param = dict()
     param['hospital_code'] = hospital_code
     yesterday = datetime.today() - timedelta(days=1)
+    if specific_date:
+        try:
+            yesterday = datetime.strptime(specific_date,"%d-%m-%Y")
+        except Exception as error:
+            logger.info("Error while parsing date : %s"%(str(error)))
     unique_uhid_info = set(Patient.objects.filter(
                     uhid_number__isnull=False, mobile_verified=True, created_at__date=yesterday.date()).values_list('uhid_number', flat=True))
     unique_uhid_info.update(set(FamilyMember.objects.filter(
