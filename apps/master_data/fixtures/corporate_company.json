@@ -8,7 +8,7 @@
         "name":"Infosys",
         "domain": "@infosys.com",
         "hospital_info": ["63850af2-3fdd-4fd6-84a2-a3c18b9f8213", "63850af2-3fdd-4fd6-84a2-a3c18b9f8212"],
-        "components": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396", 
+        "component_ids": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396", 
             "9ac55b8f-2d36-430b-a8d2-192b3f2fe559", "b4db7653-52d0-45c8-b8c0-3ca878f7e245", "c518dc12-4222-4e59-83e1-87f8f6b48989",
             "e2ed1f35-129d-4e05-ad22-5024f525b9a3"
         ],
@@ -24,7 +24,7 @@
             "name":"Mantralabs",
             "domain": "@mantralabsglobal.com",
             "hospital_info": ["63850af2-3fdd-4fd6-84a2-a3c18b9f8202", "63850af2-3fdd-4fd6-84a2-a3c18b9f8203", "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"],
-            "components": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396"],
+            "component_ids": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396"],
             "is_active" : "True"
             }
         },
@@ -37,7 +37,7 @@
                 "name":"Manipal",
                 "domain": "@manipalhospitals.com",
                 "hospital_info": ["63850af2-3fdd-4fd6-84a2-a3c18b9f8202", "63850af2-3fdd-4fd6-84a2-a3c18b9f8203", "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"],
-                "components": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396", "e2ed1f35-129d-4e05-ad22-5024f525b9a3"],
+                "component_ids": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396", "e2ed1f35-129d-4e05-ad22-5024f525b9a3"],
                 "is_active" : "True"
                 }
             }
