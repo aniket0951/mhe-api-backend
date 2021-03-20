@@ -9,6 +9,7 @@ from apps.patients.models import FamilyMember, Patient
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 
+from django_clamd.validators import validate_file_infection
 
 def generate_personal_file_path(self, filename):
     _, obj_file_extension = os.path.splitext(filename)
@@ -27,9 +28,12 @@ class PatientPersonalDocuments(MyBaseModel):
 
     document = models.FileField(upload_to=generate_personal_file_path,
                                 storage=FileStorage(),
-                                validators=[FileExtensionValidator(
-                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                            validate_file_authenticity],
+                                validators=[
+                                    FileExtensionValidator(settings.VALID_FILE_EXTENSIONS), 
+                                    validate_file_size,
+                                    validate_file_authenticity,
+                                    validate_file_infection
+                                ],
                                 blank=False,
                                 null=False)
 

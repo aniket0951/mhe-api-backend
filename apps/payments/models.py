@@ -12,6 +12,7 @@ from apps.patients.models import FamilyMember, Patient
 from fernet_fields import EncryptedTextField
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
+from django_clamd.validators import validate_file_infection
 
 
 def generate_receipt_file_path(self, filename):
@@ -181,9 +182,12 @@ class PaymentReceipts(MyBaseModel):
 
     receipt = models.FileField(upload_to=generate_receipt_file_path,
                                storage=FileStorage(),
-                               validators=[FileExtensionValidator(
-                                   settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                   validate_file_authenticity],
+                               validators=[
+                                   FileExtensionValidator(settings.VALID_FILE_EXTENSIONS), 
+                                   validate_file_size,
+                                   validate_file_authenticity,
+                                   validate_file_infection
+                                ],
                                blank=False,
                                null=False)
 

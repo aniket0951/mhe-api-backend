@@ -109,6 +109,7 @@ THIRD_PARTY_APPS = [
     'import_export',
     'django_extensions',
     'django.contrib.gis',
+    'django_clamd',
     'fcm_django',
     'axes'
 ]
@@ -443,7 +444,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE*2,  # 5 MB
             'backupCount': 10,
             'formatter': 'standard'
         },
@@ -463,7 +464,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 15728640,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE*3,  # 5 MB
             'backupCount': 10,
         },
         'django_request_console': {
@@ -476,7 +477,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/requests.log',
-            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE*2,  # 5 MB
             'backupCount': 5,
         },
         'error_file': {
