@@ -51,8 +51,8 @@ S3_CLIENT = S3_SESSION.client(
 # AWS SNS Settings
 AWS_SNS_CLIENT = boto3.client(
     "sns",
-    aws_access_key_id=env('AWS_SNS_ACCESS_KEY_ID'),
-    aws_secret_access_key=env('AWS_SNS_SECRET_ACCESS_KEY'),
+    aws_access_key_id=None,
+    aws_secret_access_key=None,
     region_name=env('AWS_SNS_REGION_NAME')
 )
 AWS_SNS_CLIENT.set_sms_attributes(
@@ -443,7 +443,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE*2,  # 5 MB
             'backupCount': 10,
             'formatter': 'standard'
         },
@@ -463,7 +463,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/app.log',
-            'maxBytes': 15728640,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE*2,  # 5 MB
             'backupCount': 10,
         },
         'django_request_console': {
@@ -476,7 +476,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/requests.log',
-            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE,  # 5 MB
+            'maxBytes': FILE_UPLOAD_MAX_MEMORY_SIZE*2,  # 5 MB
             'backupCount': 5,
         },
         'error_file': {
