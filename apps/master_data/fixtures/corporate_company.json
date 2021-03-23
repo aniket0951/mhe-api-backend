@@ -1,44 +1,85 @@
 [
     {
-    "model": "master_data.Company",
-    "pk":"3564a11b-e680-4e62-a771-6903797e7a9e",
-    "fields": {
-        "created_at": "2021-03-15T18:47:24.893Z",
-        "updated_at": "2021-03-15T18:47:24.893Z",
-        "name":"Infosys",
-        "domain": "@infosys.com",
-        "hospital_info": ["63850af2-3fdd-4fd6-84a2-a3c18b9f8213", "63850af2-3fdd-4fd6-84a2-a3c18b9f8212"],
-        "component_ids": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396", 
-            "9ac55b8f-2d36-430b-a8d2-192b3f2fe559", "b4db7653-52d0-45c8-b8c0-3ca878f7e245", "c518dc12-4222-4e59-83e1-87f8f6b48989",
-            "e2ed1f35-129d-4e05-ad22-5024f525b9a3"
-        ],
-        "is_active" : "True"
+        "model": "master_data.Company",
+        "pk": "3564a11b-e680-4e62-a771-6903797e7a9e",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name": "Infosys",
+            "domain": "@infosys.com",
+            "hospital_info": [
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8213",
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8212"
+            ],
+            "component_ids": [
+                "6b8d3528-2d75-4dc8-a4f6-9a8d77b00013",
+                "01f22c2a-ebb4-4240-bb0f-56f3e68f5396",
+                "9ac55b8f-2d36-430b-a8d2-192b3f2fe559",
+                "b4db7653-52d0-45c8-b8c0-3ca878f7e245",
+                "c518dc12-4222-4e59-83e1-87f8f6b48989",
+                "e2ed1f35-129d-4e05-ad22-5024f525b9a3"
+            ],
+            "is_active": "True"
         }
     },
     {
         "model": "master_data.Company",
-        "pk":"45695a36-cacd-4d9e-9d0f-3f0359b31f04",
+        "pk": "45695a36-cacd-4d9e-9d0f-3f0359b31f04",
         "fields": {
             "created_at": "2021-03-15T18:47:24.893Z",
             "updated_at": "2021-03-15T18:47:24.893Z",
-            "name":"Mantralabs",
+            "name": "Mantralabs",
             "domain": "@mantralabsglobal.com",
-            "hospital_info": ["63850af2-3fdd-4fd6-84a2-a3c18b9f8202", "63850af2-3fdd-4fd6-84a2-a3c18b9f8203", "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"],
-            "component_ids": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396"],
-            "is_active" : "True"
-            }
-        },
-        {
-            "model": "master_data.Company",
-            "pk":"f6894d9b-6f8d-40a0-b8c9-e1bd7510d7b3",
-            "fields": {
-                "created_at": "2021-03-15T18:47:24.893Z",
-                "updated_at": "2021-03-15T18:47:24.893Z",
-                "name":"Manipal",
-                "domain": "@manipalhospitals.com",
-                "hospital_info": ["63850af2-3fdd-4fd6-84a2-a3c18b9f8202", "63850af2-3fdd-4fd6-84a2-a3c18b9f8203", "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"],
-                "component_ids": ["6b8d3528-2d75-4dc8-a4f6-9a8d77b00013", "01f22c2a-ebb4-4240-bb0f-56f3e68f5396", "e2ed1f35-129d-4e05-ad22-5024f525b9a3"],
-                "is_active" : "True"
-                }
-            }
+            "hospital_info": [
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"
+            ],
+            "component_ids": [
+                "6b8d3528-2d75-4dc8-a4f6-9a8d77b00013",
+                "01f22c2a-ebb4-4240-bb0f-56f3e68f5396"
+            ],
+            "is_active": "True"
+        }
+    },
+    {
+        "model": "master_data.Company",
+        "pk": "f6894d9b-6f8d-40a0-b8c9-e1bd7510d7b3",
+        "fields": {
+            "created_at": "2021-03-15T18:47:24.893Z",
+            "updated_at": "2021-03-15T18:47:24.893Z",
+            "name": "Manipal",
+            "domain": "@manipalhospitals.com",
+            "hospital_info": [
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
+                "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"
+            ],
+            "component_ids": [
+                "6b8d3528-2d75-4dc8-a4f6-9a8d77b00013",
+                "01f22c2a-ebb4-4240-bb0f-56f3e68f5396",
+                "e2ed1f35-129d-4e05-ad22-5024f525b9a3"
+            ],
+            "is_active": "True"
+        }
+    },
+    {
+        "model": "master_data.Company",
+        "pk":"51eb0254-ae87-4bc1-b0c3-b8c635dbb4eb",
+        "fields": {
+            "created_at": "2021-03-23T18:47:24.893Z",
+            "updated_at": "2021-03-23T18:47:24.893Z",
+            "name": "Goldman Sachs",
+            "domain": "@GS.com",
+            "hospital_info": [
+                "9ed4ad81-6136-4788-ae8e-24845b35ecb4"
+            ],
+            "component_ids": [
+                "6b8d3528-2d75-4dc8-a4f6-9a8d77b00013",
+                "01f22c2a-ebb4-4240-bb0f-56f3e68f5396",
+                "e2ed1f35-129d-4e05-ad22-5024f525b9a3"
+            ],
+            "is_active": "True"
+        }
+    }
 ]
