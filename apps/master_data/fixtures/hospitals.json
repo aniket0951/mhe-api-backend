@@ -202,6 +202,25 @@
             "location":"",
             "corporate_only":"True"
         }
+    },{
+        "model": "master_data.hospital",
+        "pk": "9ed4ad81-6136-4788-ae8e-24845b35ecb4",
+        "fields": {
+            "created_at": "2021-03-23T00:00:00+05:30",
+            "updated_at": "2021-03-23T00:00:00+05:30",
+            "code": "GMS",
+            "description": "Goldman Sachs Clinic",
+            "email": "",
+            "mobile": "",
+            "address": "",
+            "is_health_package_online_purchase_supported": "False",
+            "health_package_doctor_code":"",
+            "health_package_department_code":"",
+            "is_home_collection_supported":"True",
+            "location":"",
+            "corporate_only":"True"
+        }
     }
+
 
 ]
