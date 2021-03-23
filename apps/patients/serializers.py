@@ -1,4 +1,5 @@
 
+from apps.patients.constants import PatientsConstants
 import logging
 
 from phonenumber_field.serializerfields import PhoneNumberField
@@ -121,7 +122,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         validate_fields = ["first_name","last_name","middle_name"]
         validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
-            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
+            raise ValidationError(PatientsConstants.NO_SPECIAL_ONLY_ALPHABETS%(str(validated_fields[0])))
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -144,7 +145,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         validate_fields = ["first_name","last_name","middle_name"]
         validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
-            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
+            raise ValidationError(PatientsConstants.NO_SPECIAL_ONLY_ALPHABETS%(str(validated_fields[0])))
         
         return super().update(instance, validated_data)
 
@@ -183,7 +184,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         validate_fields = ["first_name","last_name","middle_name"]
         validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
-            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
+            raise ValidationError(PatientsConstants.NO_SPECIAL_ONLY_ALPHABETS%(str(validated_fields[0])))
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -203,7 +204,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         validate_fields = ["first_name","last_name","middle_name"]
         validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.validate_text_only(v)]
         if validated_fields:
-            raise ValidationError("Only alphabets are allowed for %s"%(str(validated_fields[0])))
+            raise ValidationError(PatientsConstants.NO_SPECIAL_ONLY_ALPHABETS%(str(validated_fields[0])))
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
@@ -275,18 +276,19 @@ class CovidVaccinationRegistrationSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = CovidVaccinationRegistration
         exclude = ('created_at', 'updated_at')
-        depth = 1
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         user_object = None
-        if not response_object['other_user']:
-            if response_object['family_member']:
-                user_object = FamilyMember.objects.filter(id=response_object['family_member']).first()
-            elif response_object['patient']:
-                user_object = Patient.objects.filter(id=response_object['patient']).first()
+        if response_object['family_member']:
+            user_object = FamilyMember.objects.filter(id=response_object['family_member']).first()
+        elif response_object['patient']:
+            user_object = Patient.objects.filter(id=response_object['patient']).first()
         if user_object:
-            response_object['uhid_number'] = user_object.uhid_number
+            response_object['uhid_number']      = user_object.uhid_number
+            response_object['name']             = "%s %s"%(str(user_object.first_name),str(user_object.last_name))
+            response_object['mobile_number']    = "%s"%(str(user_object.mobile))
+            response_object['aadhar_number']    = user_object.aadhar_number
         return response_object
 
     def update(self, instance, validated_data):
