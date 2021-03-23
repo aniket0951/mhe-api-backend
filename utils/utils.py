@@ -116,10 +116,21 @@ def get_report_info(hospital_code=None,specific_date=None):
 def assign_users(request_data,user_id):
     loggedin_patient_instance = Patient.objects.filter(id=user_id).first()
     request_data["patient"] = loggedin_patient_instance
-    if request_data and request_data.get("family_member"):
-        request_data["other_user"] = False
+    aadhar_number = request_data.pop("aadhar_number")
+    
+    if request_data.get("family_member"):
         family_member_instace = FamilyMember.objects.filter(id=request_data.get("family_member")).first()
         if not family_member_instace:
             raise ValidationError("Invalid family member selected.")
         request_data["family_member"] = family_member_instace
+        request_data["family_member"].aadhar_number = aadhar_number
+        request_data["family_member"].save()
+        return request_data
+    
+    request_data["patient"].aadhar_number = aadhar_number
+    request_data["patient"].save()
     return request_data
+
+
+    
+    

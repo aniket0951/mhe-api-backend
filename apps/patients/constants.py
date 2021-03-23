@@ -9,3 +9,4 @@ class PatientsConstants:
     REACHED_LIMIT_FAMILY_MEMBER = "You have reached limit, you cannot add family members!"
     CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER = "Your cannnot associate your UHID number to your family member."
     ONLY_ALPHABETS_FIRST_NAME = "Only alphabets are allowes in your First Name."
+    NO_SPECIAL_ONLY_ALPHABETS = "No space or special characters allowed. Only alphabets are allowed for %s"
