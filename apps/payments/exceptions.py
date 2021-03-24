@@ -6,6 +6,11 @@ class ProcessingIdDoesNotExistsValidationException(APIException):
     default_code = 'invalid_processing_id'
     default_detail = 'Processing id does not Exist'
 
+class ProcessingIdDoesNotExistsValidationException200(APIException):
+    status_code = status.HTTP_200_OK
+    default_code = 'invalid_processing_id'
+    default_detail = 'Processing id does not Exist'
+
 class MandatoryProcessingIdException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_processing_id'
