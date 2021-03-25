@@ -1423,14 +1423,21 @@ class CovidVaccinationRegistrationView(custom_viewsets.ModelViewSet):
                 qs = qs.filter(preferred_hospital__id=admin_object.hospital.id)
             if date_from and date_to:
                 qs = qs.filter(vaccination_date__range=[date_from, date_to])
-            return qs
+        else:
+            qs = qs.filter(patient__id=self.request.user.id)
+        return qs
+        
 
     def get_permissions(self):
         if self.action in ['create', ]:
             permission_classes=[ IsPatientUser ]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'retrieve']:
+        if self.action in ['partial_update']:
+            permission_classes=[ IsManipalAdminUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['retrieve']:
             permission_classes=[ IsPatientUser | IsManipalAdminUser ]
             return [permission() for permission in permission_classes]
 
