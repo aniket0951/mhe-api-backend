@@ -1,6 +1,7 @@
 import logging
 import urllib
 from datetime import datetime, timedelta
+from utils.exceptions import UserNotRegisteredException
 from django.db.models import Count, Sum
 
 from django.conf import settings
@@ -114,21 +115,31 @@ def get_report_info(hospital_code=None,specific_date=None):
 
 
 def assign_users(request_data,user_id):
-    loggedin_patient_instance = Patient.objects.filter(id=user_id).first()
-    request_data["patient"] = loggedin_patient_instance
-    aadhar_number = request_data.pop("aadhar_number")
-    
+    selected_patient = Patient.objects.filter(id=user_id).first()
+    if not selected_patient:
+        raise ValidationError("Invalid patient selected.")
+    request_data["patient"] = selected_patient
+
     if request_data.get("family_member"):
-        family_member_instace = FamilyMember.objects.filter(id=request_data.get("family_member")).first()
-        if not family_member_instace:
+        selected_patient = FamilyMember.objects.filter(id=request_data.get("family_member")).first()
+        if not selected_patient:
             raise ValidationError("Invalid family member selected.")
-        request_data["family_member"] = family_member_instace
+        request_data["family_member"] = selected_patient
+
+    if not selected_patient.uhid_number and not selected_patient.pre_registration_number:
+        raise UserNotRegisteredException
+
+    aadhar_number = request_data.pop("aadhar_number")
+    dob = request_data.pop("dob")
+    if request_data.get("family_member"):
         request_data["family_member"].aadhar_number = aadhar_number
+        request_data["family_member"].dob = dob
         request_data["family_member"].save()
-        return request_data
-    
-    request_data["patient"].aadhar_number = aadhar_number
-    request_data["patient"].save()
+    else:
+        request_data["patient"].aadhar_number = aadhar_number
+        request_data["patient"].dob = dob
+        request_data["patient"].save()
+
     return request_data
 
 

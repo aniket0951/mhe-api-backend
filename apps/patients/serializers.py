@@ -280,6 +280,7 @@ class CovidVaccinationRegistrationSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         user_object = None
+        
         if 'preferred_hospital' in response_object and response_object.get('preferred_hospital'):
             response_object['preferred_hospital'] = HospitalSerializer(Hospital.objects.get(id=str(response_object['preferred_hospital']))).data
             
@@ -292,6 +293,7 @@ class CovidVaccinationRegistrationSerializer(DynamicFieldsModelSerializer):
 
         if user_object:
             response_object['uhid_number']      = user_object.uhid_number
+            response_object['dob']              = user_object.dob
             response_object['name']             = "%s %s"%(str(user_object.first_name),str(user_object.last_name))
             response_object['mobile_number']    = "%s"%(str(user_object.mobile))
             response_object['aadhar_number']    = user_object.aadhar_number
