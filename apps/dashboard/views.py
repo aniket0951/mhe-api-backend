@@ -21,8 +21,8 @@ from utils.custom_permissions import IsManipalAdminUser
 from utils.utils import (get_appointment, manipal_admin_object,
                          patient_user_object)
 
-from .models import DashboardBanner
-from .serializers import DashboardBannerSerializer
+from .models import DashboardBanner, FAQData
+from .serializers import DashboardBannerSerializer, FAQDataSerializer
 from .utils import DashboardUtils
 
 
@@ -216,3 +216,19 @@ class DashboardAPIView(ListAPIView):
                     payment_id__status="success", appointment_status="Not Booked").count()
 
         return Response(dashboard_details, status=status.HTTP_200_OK)
+
+class FAQDataViewSet(custom_viewsets.CreateDeleteViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = FAQData
+    queryset = FAQData.objects.all()
+    serializer_class = FAQDataSerializer
+    create_success_message = "New FAQ data added successfully."
+    delete_success_message = "FAQ data deleted successfully."
+
+class FAQDataAPIView(ListAPIView):
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        faq_data_details = {}
+        faq_data_details['data'] = FAQDataSerializer(FAQData.objects.all(), many=True).data
+        return Response(faq_data_details, status=status.HTTP_200_OK)
