@@ -89,13 +89,18 @@ class FAQData(MyBaseModel):
                         )
 
     question    = models.TextField(
-                            blank=False,
-                            null=False
+                            blank=True,
+                            null=True
                         )
 
     data        = models.TextField(
-                            blank=False,
-                            null=False
+                            blank=True,
+                            null=True
+                        )
+
+    data        = models.TextField(
+                            blank=True,
+                            null=True
                         )
     
     image       = models.ImageField(
@@ -107,7 +112,7 @@ class FAQData(MyBaseModel):
                                 validate_file_authenticity,
                                 validate_file_infection
                             ],
-                            blank=False,
-                            null=False,
+                            blank=True,
+                            null=True,
                             verbose_name='FAQ Picture'
                         )

@@ -229,6 +229,15 @@ class FAQDataAPIView(ListAPIView):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-        faq_data_details = {}
-        faq_data_details['data'] = FAQDataSerializer(FAQData.objects.all(), many=True).data
+        faq_data_details = {
+            FAQData.BANNER:[],
+            FAQData.DESCRIPTION:[],
+            FAQData.QNA:[],
+            FAQData.VIDEO:[]
+        }
+        faq_data = FAQDataSerializer(FAQData.objects.order_by('code').all(), many=True).data
+        if faq_data:
+            for faq in faq_data:
+                faq_data_details[faq["type"]].append(faq)
+        
         return Response(faq_data_details, status=status.HTTP_200_OK)

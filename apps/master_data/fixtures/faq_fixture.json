@@ -1,0 +1,146 @@
+[
+    {
+        "model": "dashboard.FAQData",
+        "pk":"39ee6dcc-454c-40a6-bdee-fc73deb06233",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "banner",
+            "code": "banner",
+            "question": "",
+            "data": "https://www.manipalhospitals.com/uploads/blog/covid_faq.jpg",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"7182fcc7-e92a-451d-8439-ce2f8f93a831",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "description",
+            "code": "description",
+            "question": "",
+            "data": "Coronavirus is a family of virus. SARS and MERS are also part of this family. This particular strain (type) has originated from Wuhan China in 2019 December and has been named as SARS-CoV-2",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"d97e534c-097c-41ad-8f82-6eaecbeaa77a",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna1",
+            "question": "What is COVID-19?",
+            "data": "It’s the name given by the world health organisation (WHO) for infection caused by this particular strain of coronavirus.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"31bffedd-bc5b-400e-8449-89191285f426",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna2",
+            "question": "What are the symptoms of Coronavirus?",
+            "data": "Fever, cough, sore throat, body aches, breathing difﬁculty.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"92607aa4-ca69-412c-b5a8-eaceaf6ca54e",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna3",
+            "question": "How is COVID-19 different from flu/respiratory virus?",
+            "data": "COVID -19 presents with an illness similar to any other respiratory virus. Hence differentiation on only clinical grounds is not possible.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"9afb8475-892c-4db0-a7fb-af0a68457e13",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna4",
+            "question": "How does it spread?",
+            "data": "Usually, it spreads in droplet form through the respiratory secretions (released while coughing or sneezing) and close contact. Rarely it may spread from contact with contaminated surfaces. It may be possible that a person can get COVID-19 by touching a surface or object that has the virus on it and then touching their own mouth, nose, or their eyes.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"e9e40e98-8dc0-4fde-818d-4ce74e465184",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna5",
+            "question": "Who is close contact?",
+            "data": "Close  Contact:  is someone who has been within 6 feet of a positive case (unprotected), at home, work or during travel. If you have been identiﬁed to have had close contact (unprotected) with someone who is conﬁrmed to have COVID-19 infection, you are advised to isolate yourself at home  and monitor your health closely and  consult your Doctor",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"f363b9ce-1d0f-44e3-8cde-758d45fb18cf",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna6",
+            "question": "Who is susceptible/high risk for the infection?",
+            "data": "People who are > 60 years of age, Diabetic, Hypertensive, suffering from heart disease, immunosuppressed, and Chronic respiratory disease are at higher risk.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"96d09d29-d887-4781-aadf-6500e8861ecb",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "video",
+            "code": "video1",
+            "question": "https://img.youtube.com/vi/a373xUeNL_c/0.jpg",
+            "data": "https://www.youtube.com/watch?v=a373xUeNL_c",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"96860d3c-2b5d-47bd-a339-353c9c78f061",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "video",
+            "code": "video2",
+            "question": "https://img.youtube.com/vi/649hIKtBMlE/0.jpg",
+            "data": "https://www.youtube.com/watch?v=649hIKtBMlE",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"2b4850ea-048e-4fc0-8c71-6699935f779b",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "video",
+            "code": "video3",
+            "question": "https://img.youtube.com/vi/5I5uWx7g7EM/0.jpg",
+            "data": "https://www.youtube.com/watch?v=5I5uWx7g7EM",
+            "image": null
+        }
+    }
+    
+]
