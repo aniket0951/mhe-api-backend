@@ -112,7 +112,7 @@
             "type": "video",
             "code": "video1",
             "question": "https://img.youtube.com/vi/a373xUeNL_c/0.jpg",
-            "data": "https://www.youtube.com/watch?v=a373xUeNL_c",
+            "data": "a373xUeNL_c",
             "image": null
         }
     },
@@ -125,7 +125,7 @@
             "type": "video",
             "code": "video2",
             "question": "https://img.youtube.com/vi/649hIKtBMlE/0.jpg",
-            "data": "https://www.youtube.com/watch?v=649hIKtBMlE",
+            "data": "649hIKtBMlE",
             "image": null
         }
     },
@@ -138,7 +138,7 @@
             "type": "video",
             "code": "video3",
             "question": "https://img.youtube.com/vi/5I5uWx7g7EM/0.jpg",
-            "data": "https://www.youtube.com/watch?v=5I5uWx7g7EM",
+            "data": "5I5uWx7g7EM",
             "image": null
         }
     }
