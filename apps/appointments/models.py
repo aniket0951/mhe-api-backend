@@ -114,6 +114,8 @@ class Appointment(models.Model):
 
     plan_code = models.CharField(max_length=30,blank=True,null=True)
 
+    beneficiary_reference_id = models.CharField(max_length=30,null=True,blank=True)
+
     @property
     def is_cancellable(self):
         if self.appointment_date and ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
