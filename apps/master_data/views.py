@@ -156,7 +156,7 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    filter_fields = ('hospital__id',)
+    filter_fields = ('hospital__id','service','sub_service')
     ordering = ('department_id__name')
 
     def get_permissions(self):
