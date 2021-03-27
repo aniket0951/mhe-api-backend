@@ -15,9 +15,9 @@ from apps.doctors.models import Doctor
 from apps.health_packages.exceptions import FeatureNotAvailableException
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.exceptions import (
-    DepartmentDoesNotExistsValidationException,
+    AadharMandatoryValidationException, BeneficiaryReferenceIDValidationException, DepartmentDoesNotExistsValidationException,
     HospitalDoesNotExistsValidationException)
-from apps.master_data.models import Department, Hospital
+from apps.master_data.models import Department, Hospital, HospitalDepartment
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
 from apps.payments.razorpay_views import RazorRefundView
@@ -179,28 +179,45 @@ class CreateMyAppointment(ProxyView):
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
         corporate = request.data.pop("corporate", None)
+
         patient = Patient.objects.filter(id=patient_id).first()
-        family_member = FamilyMember.objects.filter(
-            id=family_member_id).first()
+        family_member = FamilyMember.objects.filter(id=family_member_id).first()
         if not patient:
             raise PatientDoesNotExistsValidationException
-        hospital = Hospital.objects.filter(
-            id=request.data.pop("hospital_id")).first()
+
+        hospital = Hospital.objects.filter(id=request.data.pop("hospital_id")).first()
         if not hospital:
             raise HospitalDoesNotExistsValidationException
-        doctor = Doctor.objects.filter(
-            id=request.data.pop("doctor_id")).first()
+
+        doctor = Doctor.objects.filter(id=request.data.pop("doctor_id")).first()
         if not doctor:
             raise DoctorDoesNotExistsValidationException
-        department = Department.objects.filter(
-            id=request.data.pop("department_id")).first()
+
+        department = Department.objects.filter(id=request.data.pop("department_id")).first()
         if not department:
             raise DepartmentDoesNotExistsValidationException
+
+        hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
+        if not hospital_department:
+            raise DepartmentDoesNotExistsValidationException
+
+        if hospital_department.service in ["Covid"]:
+            request.data['appointment_type'] = "covid"
+            if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
+                raise AadharMandatoryValidationException
+            if hospital_department.sub_service in ["Dose2"] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
+                raise BeneficiaryReferenceIDValidationException
 
         if family_member:
             user = family_member
         else:
             user = patient
+
+        if 'aadhar_number' in request.data:
+            aadhar_number = request.data.pop('aadhar_number')
+            if aadhar_number:
+                user.aadhar_number = aadhar_number
+                user.save()
 
         request.data['doctor_code'] = doctor.code
         request.data['location_code'] = hospital.code
@@ -232,16 +249,19 @@ class CreateMyAppointment(ProxyView):
             root = ET.fromstring(response.content)
             appointment_identifier = root.find("appointmentIdentifier").text
             status = root.find("Status").text
+
             if status == "FAILED":
                 message = root.find("Message").text
                 raise ValidationError(message)
+
             else:
                 data = self.request.data
                 family_member = data.get("family_member")
                 new_appointment = {}
                 appointment_date_time = data.pop("appointment_date_time")
-                datetime_object = datetime.strptime(
-                    appointment_date_time, '%Y%m%d%H%M%S')
+                
+                datetime_object = datetime.strptime(appointment_date_time, '%Y%m%d%H%M%S')
+
                 time = datetime_object.time()
                 new_appointment["appointment_date"] = datetime_object.date()
                 new_appointment["appointment_slot"] = time.strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
@@ -250,15 +270,21 @@ class CreateMyAppointment(ProxyView):
                 new_appointment["patient"] = data.get("patient").id
                 new_appointment["uhid"] = data.get("patient").uhid_number
                 new_appointment["department"] = data.get("department").id
-                new_appointment["consultation_amount"] = data.get(
-                    "consultation_amount")
+                new_appointment["consultation_amount"] = data.get("consultation_amount")
+
+                if data.get("beneficiary_reference_id"):
+                    new_appointment["beneficiary_reference_id"] = data.get("beneficiary_reference_id")
+                if data.get("appointment_type"):
+                    new_appointment["appointment_type"] = data.get("appointment_type")
+
                 if family_member:
                     new_appointment["family_member"] = family_member.id
                     new_appointment["uhid"] = family_member.uhid_number
+
                 new_appointment["doctor"] = data.get("doctor").id
                 new_appointment["hospital"] = data.get("hospital").id
-                new_appointment["appointment_mode"] = data.get(
-                    "appointment_mode", None)
+                new_appointment["appointment_mode"] = data.get("appointment_mode", None)
+
                 if new_appointment.get("appointment_mode") and new_appointment.get("appointment_mode").upper()=="VC":
                     new_appointment["booked_via_app"] = True
                 if data.get('corporate', None):
@@ -268,37 +294,42 @@ class CreateMyAppointment(ProxyView):
                     appointment_identifier=appointment_identifier).first()
                 if instance:
                     new_appointment["booked_via_app"] = True
-                    appointment = AppointmentSerializer(
-                        instance, data=new_appointment, partial=True)
+                    appointment = AppointmentSerializer(instance, data=new_appointment, partial=True)
                 else:
                     appointment = AppointmentSerializer(data=new_appointment)
+
                 appointment.is_valid(raise_exception=True)
                 appointment_instance = appointment.save()
                 patient = data.get("patient", None)
                 date_time = datetime_object.strftime("%Y%m%d")
                 corporate_appointment = dict()
+                
                 corporate_appointment["uhid"] = new_appointment["uhid"]
-                corporate_appointment["location_code"] = data.get(
-                    "hospital").code
+                corporate_appointment["location_code"] = data.get("hospital").code
                 corporate_appointment["app_date"] = date_time
                 corporate_appointment["app_id"] = appointment_identifier
+
                 if patient and patient.active_view == 'Corporate':
-                    corporate_param = cancel_and_refund_parameters(
-                        corporate_appointment)
+                    corporate_param = cancel_and_refund_parameters(corporate_appointment)
                     payment_update_response = AppointmentPaymentView.as_view()(corporate_param)
+                    
                     try:
+
                         if  payment_update_response.status_code==200 and \
                             payment_update_response.data and \
                             payment_update_response.data.get("data") and \
                             payment_update_response.data.get("data").get("payDetailAPIResponse") and \
                             payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"):
                             bill_detail = json.loads(payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"))[0]
+                            
                             if bill_detail.get("AppointmentId") and "||" in bill_detail.get("AppointmentId"):
+                                
                                 appointment_instance.uhid = bill_detail.get("HospitalNo")
                                 appointment_instance.appointment_identifier = bill_detail.get("AppointmentId")
                                 appointment_instance.payment_status = "success"
                                 appointment_instance.save()
                                 new_appointment["uhid"] = bill_detail.get("HospitalNo")
+
                                 if family_member:
                                     family_member_instance = FamilyMember.objects.filter(id=family_member.id).first()
                                     family_member_instance.uhid_number = bill_detail.get("HospitalNo")
@@ -316,8 +347,7 @@ class CreateMyAppointment(ProxyView):
                 doctor_code = data.get("doctor").code
                 specialty_code = data.get("department").code
                 order_date = datetime_object.strftime("%d%m%Y")
-                consultation_response = client.post('/api/master_data/consultation_charges',
-                                       json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code, 'order_date':order_date}), content_type='application/json')
+                consultation_response = client.post('/api/master_data/consultation_charges',json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code, 'order_date':order_date}), content_type='application/json')
                 
                 response_success = True
                 response_message = "Appointment has been created"
@@ -342,11 +372,13 @@ class CreateMyAppointment(ProxyView):
                         if (appointment_instance.appointment_mode == "HV" and str(hv_charges) == "0") or (appointment_instance.appointment_mode == "VC" and str(vc_charges) == "0") or (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
                             corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                             corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
+
                             corporate_appointment["processing_id"] = get_processing_id()
                             if consultation_response.data['data'].get('IsFollowUp') != "N":
                                 corporate_appointment["transaction_number"] = "F"+appointment_identifier
                             else:
                                 corporate_appointment["transaction_number"] = consultation_response.data['data'].get("PlanCode")+appointment_identifier
+
                             followup_payment_param = cancel_and_refund_parameters(corporate_appointment)
                             appointment_instance.consultation_amount = 0
                             response = AppointmentPaymentView.as_view()(followup_payment_param)
