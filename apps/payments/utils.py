@@ -20,7 +20,7 @@ from apps.payments.exceptions import (
                         InvalidGeneratedUHIDException, 
                         ProcessingIdDoesNotExistsValidationException,
                         MandatoryOrderIdException,
-                        MandatoryProcessingIdException,
+                        MandatoryProcessingIdException, ProcessingIdDoesNotExistsValidationException200,
                         UHIDRegistrationFailedException,
                         AppointmentCreationFailedException,
                         ReceiptGenerationFailedException,
@@ -120,7 +120,7 @@ class PaymentUtils:
         try:
             payment_instance = Payment.objects.get(razor_order_id=razor_order_id)
         except Exception:
-            raise ProcessingIdDoesNotExistsValidationException
+            raise ProcessingIdDoesNotExistsValidationException200
         return payment_instance
 
     @staticmethod

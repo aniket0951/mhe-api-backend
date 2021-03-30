@@ -36,3 +36,14 @@ class ItemOrDepartmentDoesNotExistsValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'Invalid location or item code.'
     default_detail = 'Invalid location or item code.'
+
+class AadharMandatoryValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_aadhar_number'
+    default_detail = 'Aadhar number is mandatory'
+
+class BeneficiaryReferenceIDValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_beneficiary_reference_id'
+    default_detail = 'Beneficiary Reference ID is mandatory'
+    

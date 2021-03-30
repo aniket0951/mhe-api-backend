@@ -54,7 +54,7 @@ def link_uhid(request):
 
 
 def covid_registration_mandatory_check(request_data):
-    mandatory_check = [ field for field in ('name','mobile_number','dob','preferred_hospital') if not request_data.get(field) or not str(request_data.get(field)).strip() ]
+    mandatory_check = [ field for field in ("dose_type",'dob','preferred_hospital','aadhar_number') if not request_data.get(field) or not str(request_data.get(field)).strip() ]
     if mandatory_check:
         raise ValidationError("%s is mandatory"%(str(mandatory_check[0])))
 

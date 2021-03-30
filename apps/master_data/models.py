@@ -91,18 +91,34 @@ class Department(MyBaseModel):
 
 class HospitalDepartment(MyBaseModel):
 
-    hospital = models.ForeignKey(Hospital,
-                                 on_delete=models.PROTECT,
-                                 )
+    hospital    = models.ForeignKey(
+                                Hospital,
+                                on_delete=models.PROTECT,
+                            )
 
-    department = models.ForeignKey(Department,
-                                   on_delete=models.PROTECT,
-                                   )
-    start_date = models.DateField()
+    department  = models.ForeignKey(
+                                Department,
+                                on_delete=models.PROTECT,
+                            )
 
-    end_date = models.DateField(null=True,
+    start_date  = models.DateField()
+
+    end_date    = models.DateField(
+                                null=True,
                                 blank=True
-                                )
+                            )
+                            
+    service     = models.CharField(
+                                max_length=30,
+                                null=True,
+                                blank=True,
+                            )
+
+    sub_service = models.CharField(
+                                max_length=30,
+                                null=True,
+                                blank=True,
+                            )
 
     class Meta:
         verbose_name = "Hospital Department"
@@ -264,6 +280,7 @@ class CompanyDomain(MyBaseModel):
                             blank=False)
 
     is_active = models.BooleanField(default=True)
+    
 class Company(MyBaseModel):
 
     name = models.SlugField(unique=True,

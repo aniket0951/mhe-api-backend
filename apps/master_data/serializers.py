@@ -27,14 +27,14 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
                 response_object['distance'] = instance.calculated_distance.km
         except Exception as e:
             _logger.error("Error in to_representation HospitalSerializer: %s"%(str(e)))
-
+    
         ambulance_contact_object = AmbulanceContact.objects.filter(hospital_id=instance.id).first()
-        response_object['hospital_contact'] = {}
-        if ambulance_contact_object and ambulance_contact_object.mobile:
-            response_object['hospital_contact'].update({
-                "id":ambulance_contact_object.id,
+        response_object['hospital_contact'] = None
+        if ambulance_contact_object:
+            response_object['hospital_contact'] = {
+                "id":str(ambulance_contact_object.id),
                 "contact":str(ambulance_contact_object.mobile)
-            })
+            }
 
         return response_object
 

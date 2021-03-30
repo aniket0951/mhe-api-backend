@@ -156,7 +156,7 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    filter_fields = ('hospital__id',)
+    filter_fields = ('hospital__id','service','sub_service')
     ordering = ('department_id__name')
 
     def get_permissions(self):
@@ -318,7 +318,7 @@ class DoctorsView(ProxyView):
 
         all_doctors = list()
         doctor_sorted_keys = [
-            'AllowWebDisplay',
+            "AllowWebDisplay",
             'start_date',
             'end_date',
             'department_code',
@@ -343,7 +343,7 @@ class DoctorsView(ProxyView):
             doctor_details["is_active"] = True
             for index, key in enumerate(sorted(each_doctor.keys())):
 
-                if key in ['DocProfile', 'DeptName', 'SpecDesc','AllowWebDisplay']:
+                if key in ['DocProfile', 'DeptName', 'SpecDesc',"AllowWebDisplay"]:
                     continue
 
                 if not each_doctor[key]:
@@ -759,7 +759,10 @@ class PatientAppointmentStatus(ProxyView):
 
     def get_request_data(self, request):
         hospital_code = request.data.get("hospital_code")
-        param = get_report_info(hospital_code=hospital_code)
+        specific_date = None
+        if request.data.get("specific_date"):
+            specific_date = request.data.get("specific_date")
+        param = get_report_info(hospital_code=hospital_code,specific_date=specific_date)
         request_param = serializable_patient_app_status(param)
         request_data = custom_serializer().serialize(request_param, 'XML')
         print(request_data)
@@ -791,6 +794,7 @@ class CompanyViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     update_success_message = 'Company details updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
+    ordering_fields = ('-created_at',)
 
     def get_permissions(self):
         if self.action in ['list']:

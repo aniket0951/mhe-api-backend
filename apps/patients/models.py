@@ -164,6 +164,18 @@ class Patient(BaseUser):
     is_corporate = models.BooleanField(default=False,
                                        verbose_name='is_corporate')
 
+    aadhar_number = models.BigIntegerField(
+        validators=[MinValueValidator(100000000000), MaxValueValidator(999999999999)],
+        blank=True,
+        null=True
+    )
+
+    dob     = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Date of birth'
+    )
+
     @property
     def representation(self):
         return 'Unique Manipal Identifier: {} Name: {}'.format(self.uhid_number, self.first_name)
@@ -182,7 +194,6 @@ class Patient(BaseUser):
             if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
                 self._uhid_updated = True
         super().save(*args, **kwargs)
-
 
 class FamilyMember(MyBaseModel):
 
@@ -282,6 +293,18 @@ class FamilyMember(MyBaseModel):
         blank=True,
         null=True,
         verbose_name='Email OTP Key Expiration DateTime')
+    
+    aadhar_number = models.BigIntegerField(
+        validators=[MinValueValidator(100000000000), MaxValueValidator(999999999999)],
+        blank=True,
+        null=True
+    )
+
+    dob     = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Date of birth'
+    )
 
     @property
     def representation(self):
@@ -301,7 +324,6 @@ class FamilyMember(MyBaseModel):
             if self.uhid_number and not self.__class__.objects.filter(pk=self.pk).first().uhid_number:
                 self._uhid_updated = True
         super().save(*args, **kwargs)
-
 
 class PatientAddress(MyBaseModel):
     ADDRESS_CHOICES = (
@@ -349,7 +371,6 @@ class PatientAddress(MyBaseModel):
     def __str__(self):
         return self.representation
 
-
 class OtpGenerationCount(MyBaseModel):
 
     mobile = PhoneNumberField(blank=True,
@@ -372,34 +393,28 @@ class WhiteListedToken(models.Model):
 
 class CovidVaccinationRegistration(AutoIncrementBaseModel):
 
-    PENDING     = 'pending'
-    SCHEDULED   = 'scheduled'
-    COMPLETED   = 'completed'
-    CANCELLED   = 'cancelled'
+    PAYMENT_PENDING = 'payment_pending'
+    REQUESTED       = 'requested'
+    SCHEDULED       = 'scheduled'
+    COMPLETED       = 'completed'
+    CANCELLED       = 'cancelled'
 
     STATUS_CHOICES = (
-        (PENDING,   'Pending'),
-        (SCHEDULED, 'Scheduled'),
-        (COMPLETED, 'Completed'),
-        (CANCELLED, 'Cancelled')
+        (PAYMENT_PENDING,   'Payment Pending'),
+        (REQUESTED,         'Requested'),
+        (SCHEDULED,         'Scheduled'),
+        (COMPLETED,         'Completed'),
+        (CANCELLED,         'Cancelled')
     )
 
-    name            = models.CharField(
-                        max_length=200,
-                        blank=False,
-                        null=False,
-                        verbose_name='Name'
-                    )
-    mobile_number   = PhoneNumberField(
-                        blank = False,
-                        null = False,
-                        verbose_name = "Mobile Number"
-                    )
-    dob             = models.DateField(
-                        blank=False,
-                        null=False,
-                        verbose_name='Date of birth'
-                    )
+    DOSE_1 = "1"
+    DOSE_2 = "2"
+
+    DOSE_TYPE_CHOICE = (
+        (DOSE_1,DOSE_1),
+        (DOSE_2,DOSE_2),
+    )
+
     preferred_hospital = models.ForeignKey(
                         Hospital, 
                         on_delete = models.PROTECT, 
@@ -410,14 +425,20 @@ class CovidVaccinationRegistration(AutoIncrementBaseModel):
                         null=True,
                         verbose_name='Date of vaccination'
                     )
-    vaccination_slot = models.TimeField()
+    vaccination_slot = models.TimeField(
+                        blank=True,
+                        null=True,
+                        verbose_name='Time slot of vaccination'
+                    )
     status          = models.CharField(
                         choices=STATUS_CHOICES,
-                        default='pending',
-                        max_length=15
+                        default=PAYMENT_PENDING,
+                        max_length=30
                     )
-    other_user      = models.BooleanField(
-                        default=False
+    dose_type       = models.CharField(
+                        choices=DOSE_TYPE_CHOICE,
+                        default=DOSE_1,
+                        max_length=10
                     )
     patient         = models.ForeignKey(
                         Patient, 

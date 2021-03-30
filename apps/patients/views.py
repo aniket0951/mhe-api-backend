@@ -265,7 +265,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def verify_login_otp(self, request):
         username = request.data.get('mobile')
-        password = request.data.get('otp')
+        password = request.data.get('password') or request.data.get('otp')
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
@@ -873,7 +873,6 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
-
     
     def get_patient_info_object(self):
         request_patient_info = None
@@ -1405,21 +1404,40 @@ class CovidVaccinationRegistrationView(custom_viewsets.ModelViewSet):
     create_success_message      = 'Covid vaccination registration completed successfully!'
     update_success_message      = 'Covid vaccination registration updated successfully!'
     delete_success_message      = 'Covid vaccination registration has been deleted successfully!'
-
     filter_backends = (
                 DjangoFilterBackend,
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
-    search_fields = ['name', ]
+    filter_fields = ('status', 'registration_no')
+    search_fields = ("status","preferred_hospital","patient","family_member","patient__first_name","family_member__first_name" )
     ordering_fields = ('-created_at',)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            date_from = self.request.query_params.get("date_from", None)
+            date_to = self.request.query_params.get("date_to", None)
+            if admin_object.hospital:
+                qs = qs.filter(preferred_hospital__id=admin_object.hospital.id)
+            if date_from and date_to:
+                qs = qs.filter(vaccination_date__range=[date_from, date_to])
+        else:
+            qs = qs.filter(patient__id=self.request.user.id)
+        return qs
+        
 
     def get_permissions(self):
         if self.action in ['create', ]:
             permission_classes=[ IsPatientUser ]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['partial_update', 'retrieve']:
+        if self.action in ['partial_update']:
+            permission_classes=[ IsManipalAdminUser ]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['retrieve']:
             permission_classes=[ IsPatientUser | IsManipalAdminUser ]
             return [permission() for permission in permission_classes]
 

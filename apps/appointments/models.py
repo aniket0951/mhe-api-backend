@@ -13,6 +13,7 @@ from apps.meta_app.models import MyBaseModel
 from apps.patients.models import FamilyMember, Patient
 from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
+from django_clamd.validators import validate_file_infection
 
 
 def generate_personal_file_path(self, filename):
@@ -94,6 +95,8 @@ class Appointment(models.Model):
 
     appointment_mode = models.CharField(max_length=10,
                                         default="HV")
+    
+    appointment_type = models.CharField(max_length=20,default="consultation")
 
     enable_join_button = models.BooleanField(default=False)
 
@@ -112,6 +115,8 @@ class Appointment(models.Model):
     is_follow_up = models.BooleanField(default=False)
 
     plan_code = models.CharField(max_length=30,blank=True,null=True)
+
+    beneficiary_reference_id = models.CharField(max_length=30,null=True,blank=True)
 
     @property
     def is_cancellable(self):
@@ -209,9 +214,12 @@ class AppointmentDocuments(MyBaseModel):
 
     document = models.FileField(upload_to=generate_personal_file_path,
                                 storage=FileStorage(),
-                                validators=[FileExtensionValidator(
-                                            settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                            validate_file_authenticity],
+                                validators=[
+                                        FileExtensionValidator(settings.VALID_FILE_EXTENSIONS), 
+                                        validate_file_size,
+                                        validate_file_authenticity,
+                                        validate_file_infection
+                                ],
                                 blank=False,
                                 null=False)
 
@@ -275,9 +283,12 @@ class PrescriptionDocuments(MyBaseModel):
 
     prescription = models.FileField(upload_to=generate_prescription_file_path,
                                     storage=FileStorage(),
-                                    validators=[FileExtensionValidator(
-                                        settings.VALID_FILE_EXTENSIONS), validate_file_size,
-                                        validate_file_authenticity],
+                                    validators=[
+                                        FileExtensionValidator(settings.VALID_FILE_EXTENSIONS), 
+                                        validate_file_size,
+                                        validate_file_authenticity,
+                                        validate_file_infection
+                                    ],
                                     blank=False,
                                     null=False)
 

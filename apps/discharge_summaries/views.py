@@ -75,7 +75,6 @@ class DischargeSummarySyncAPIView(CreateAPIView):
         file_name = get_discharge_summary(discharge_info, discharge_details)
         try:
             os.remove(file_name)
-        except Exception as error:
-            logger.error("Exception in DischargeSummarySyncAPIView %s"%(str(error)))
-        return Response({"data": None, "consumed": True},
-                        status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(data={"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"data": None, "consumed": True},status=status.HTTP_201_CREATED)
