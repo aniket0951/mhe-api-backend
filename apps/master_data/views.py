@@ -44,7 +44,7 @@ from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      InternalAPICall, IsManipalAdminUser,BlacklistCreateMethodPermission)
+                                      InternalAPICall, IsManipalAdminUser,BlacklistCreateMethodPermission, IsPatientUser)
 from utils.utils import get_report_info
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
@@ -1030,25 +1030,33 @@ class CompanyDomainView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
 class ConfigurationsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsPatientUser]
     model = Configurations
     queryset = Configurations.objects.all()
     serializer_class = ConfigurationSerializer
-    create_success_message = 'Method Not Allowed'
-    list_success_message = 'Configurations list retured successfully!'
-    retrieve_success_message = 'Configurations returned successfully!'
-    update_success_message = 'Configurations updated successfully!'
-    filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter, filters.OrderingFilter,)
+    create_success_message      = 'Method Not Allowed'
+    list_success_message        = 'Configurations list retured successfully!'
+    retrieve_success_message    = 'Configurations returned successfully!'
+    update_success_message      = 'Configurations updated successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
 
     def get_permissions(self):
         if self.action in ['list']:
-            permission_classes = [AllowAny]
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['update']:
+            permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action in ['create']:
             permission_classes = [BlacklistCreateMethodPermission]
             return [permission() for permission in permission_classes]
+            
         if self.action == 'destroy':
             permission_classes=[BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]

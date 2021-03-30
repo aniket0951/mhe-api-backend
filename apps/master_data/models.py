@@ -271,6 +271,10 @@ class Components(MyBaseModel):
                             null=False,
                             blank=False)
 
+    code = models.SlugField(unique=True,
+                            blank=False,
+                            null=True)
+
     is_active = models.BooleanField(default=True)
 
 class CompanyDomain(MyBaseModel):

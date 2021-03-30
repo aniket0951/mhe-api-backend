@@ -1,3 +1,5 @@
+from apps.master_data.models import Configurations
+from apps.master_data.serializers import ConfigurationSerializer
 from django.conf import settings
 from django.db.models import Count, Sum
 
@@ -41,9 +43,10 @@ class DashboardAPIView(ListAPIView):
     def list(self, request, *args, **kwargs):
         dashboard_details = {}
         dashboard_details['banners'] = DashboardBannerSerializer(DashboardBanner.objects.all(), many=True).data
+        dashboard_details['configurations'] = ConfigurationSerializer(Configurations.objects.filter(allowed_components__is_active=True).first(),many=False).data
         version_number = self.request.query_params.get("version", None)
         dashboard_details = DashboardUtils.validate_app_version(version_number,dashboard_details)
-
+        
         if request.user:
 
             patient_obj = patient_user_object(request)

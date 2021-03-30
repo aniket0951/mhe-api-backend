@@ -144,8 +144,7 @@ class ConfigurationSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.allowed_components:
-            response_object["allowed_component_ids"] = ComponentsSerializer(instance.allowed_components, many = True).data
-        response_object.pop('allowed_components')
+            response_object["allowed_components"] = ComponentsSerializer(instance.allowed_components, many = True).data
         return response_object
     class Meta:
         model = Configurations
