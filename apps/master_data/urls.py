@@ -10,7 +10,7 @@ from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
                     PatientAppointmentStatus, RequestSyncView,
                     SpecialisationViewSet, UhidConsultationPricingView,
                     ValidateMobileOTPView, ValidateMobileView, ValidateOTPView,
-                    ValidateUHIDView, CompanyDomainView, ComponentsView)
+                    ValidateUHIDView, CompanyDomainView, ComponentsView, ConfigurationsView)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -22,6 +22,7 @@ router.register('all_companies', CompanyViewSet)
 router.register('emergency_contact', EmergencyContactViewSet)
 router.register('company_domain', CompanyDomainView)
 router.register('compoments', ComponentsView)
+router.register('configurations', ConfigurationsView)
 
 urlpatterns = [
 

@@ -167,3 +167,14 @@ class IsPlatformAdmin(permissions.BasePermission):
         return False
 
         
+class BlacklistCreateMethodPermission(permissions.BasePermission):
+    """
+    Global permission check for blacklisted UPDATE method.
+    """
+    message = DO_NOT_HAVE_PERMISSION
+
+    def has_permission(self, request, view):
+        return request.method != 'POST'
+
+    def has_object_permission(self, request, view, obj):
+        return request.method != 'POST'

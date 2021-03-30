@@ -6,7 +6,7 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import (AmbulanceContact, Company, Department, EmergencyContact,
-                     Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain)
+                     Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations)
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
 
@@ -138,3 +138,16 @@ class CompanyDomainsSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = CompanyDomain
         exclude = ('created_at', 'updated_at',)
+
+class ConfigurationSerializer(DynamicFieldsModelSerializer):
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.allowed_components:
+            response_object["allowed_component_ids"] = ComponentsSerializer(instance.allowed_components, many = True).data
+        response_object.pop('allowed_components')
+        return response_object
+    class Meta:
+        model = Configurations
+        exclude = ('created_at', 'updated_at',)
+        

@@ -44,7 +44,7 @@ from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      InternalAPICall, IsManipalAdminUser)
+                                      InternalAPICall, IsManipalAdminUser,BlacklistCreateMethodPermission)
 from utils.utils import get_report_info
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
@@ -54,11 +54,11 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
                      Department, EmergencyContact, Hospital,
-                     HospitalDepartment, Specialisation, Components, CompanyDomain)
+                     HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
                           DepartmentSerializer, EmergencyContactSerializer,
                           HospitalDepartmentSerializer, HospitalSerializer,
-                          HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer)
+                          HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer, ConfigurationSerializer)
 
 logger = logging.getLogger('django')
 
@@ -1024,4 +1024,35 @@ class CompanyDomainView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         component_serializer.save()
         return Response(status=status.HTTP_200_OK)
 
+class ConfigurationsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
 
+    permission_classes = [AllowAny]
+    model = Configurations
+    queryset = Configurations.objects.all()
+    serializer_class = ConfigurationSerializer
+    create_success_message = 'Method Not Allowed'
+    list_success_message = 'Configurations list retured successfully!'
+    retrieve_success_message = 'Configurations returned successfully!'
+    update_success_message = 'Configurations updated successfully!'
+    filter_backends = (DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter,)
+
+    def get_permissions(self):
+        if self.action in ['list']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create']:
+            permission_classes = [BlacklistCreateMethodPermission]
+            return [permission() for permission in permission_classes]
+        if self.action == 'destroy':
+            permission_classes=[BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+
+    def create(self, request):
+        configuration_serializer = ConfigurationSerializer(data=request.data)
+        configuration_serializer.is_valid(raise_exception=True)
+        configuration_serializer.save()
+        return Response(status=status.HTTP_200_OK)

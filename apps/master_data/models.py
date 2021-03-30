@@ -331,3 +331,9 @@ class FeedbackRecipients(MyBaseModel):
     class Meta:
         verbose_name = "Feedback recipient"
         verbose_name_plural = "Feedback recipients"
+
+
+class Configurations(MyBaseModel):
+
+    allowed_components = models.ManyToManyField(Components, blank=True,
+                                             null=True,related_name='allowed_component_ids')
