@@ -1049,7 +1049,7 @@ class ConfigurationsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
             permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['update']:
+        if self.action in ['update','partial_update']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
