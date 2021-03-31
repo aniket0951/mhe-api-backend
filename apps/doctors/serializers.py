@@ -1,3 +1,4 @@
+from apps.master_data.serializers import HospitalDepartmentSerializer
 from apps.doctors.models import Doctor, DoctorCharges
 from apps.master_data.models import (Department, Hospital, HospitalDepartment,
                                      Specialisation)
@@ -73,4 +74,7 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
         if instance.department_info:
             response_object['department_code'] = instance.department_info.code
             response_object['department_name'] = instance.department_info.name
+            if instance.doctor_info and instance.doctor_info.hospital_departments:
+                response_object['hospital_department_details'] = HospitalDepartmentSerializer(instance.doctor_info.hospital_departments.filter(department__id=instance.department_info.id).first(), many = False).data
+            
         return response_object

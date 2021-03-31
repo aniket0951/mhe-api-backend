@@ -8,8 +8,8 @@
             "department":"0c64a6c5-0679-41e0-be09-be2bb224c827",
             "hospital":"63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
             "start_date":"2021-03-25",
-            "service":"Covid",
-            "sub_service":"Dose1"
+            "service":"covid",
+            "sub_service":"dose1"
         }
     },
     {
@@ -21,8 +21,8 @@
             "department":"a2ebd6e1-d356-4ae3-9344-4bc1b79fe754",
             "hospital":"63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
             "start_date":"2021-03-25",
-            "service":"Covid",
-            "sub_service":"Dose2"
+            "service":"covid",
+            "sub_service":"dose2"
         }
     }
 ]
