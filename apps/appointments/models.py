@@ -96,7 +96,7 @@ class Appointment(models.Model):
     appointment_mode = models.CharField(max_length=10,
                                         default="HV")
     
-    appointment_type = models.CharField(max_length=20,default="consultation")
+    appointment_service = models.CharField(max_length=20,default="consultation")
 
     enable_join_button = models.BooleanField(default=False)
 

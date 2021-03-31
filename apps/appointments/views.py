@@ -77,16 +77,26 @@ logger = logging.getLogger('django')
 
 
 class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
-    search_fields = ['patient__first_name', 'doctor__name', 'family_member__first_name',
-                     'appointment_identifier', 'patient__uhid_number', 'family_member__uhid_number',
-                     'patient__mobile', 'patient__email']
-    filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter, filters.OrderingFilter)
+    search_fields = [   
+                'patient__first_name',
+                'doctor__name', 
+                'family_member__first_name',
+                'appointment_identifier', 
+                'patient__uhid_number', 
+                'family_member__uhid_number',
+                'patient__mobile', 
+                'patient__email'
+            ]
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
 
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    filter_fields = ('status', 'appointment_identifier')
+    filter_fields = ('status', 'appointment_identifier','appointment_service')
     ordering = ('appointment_date', '-appointment_slot', 'status')
     ordering_fields = ('appointment_date', 'appointment_slot', 'status')
     create_success_message = None
@@ -202,7 +212,7 @@ class CreateMyAppointment(ProxyView):
             raise DepartmentDoesNotExistsValidationException
 
         if hospital_department.service in ["Covid"]:
-            request.data['appointment_type'] = "covid"
+            request.data['appointment_service'] = "covid"
             if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
                 raise AadharMandatoryValidationException
             if hospital_department.sub_service in ["Dose2"] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
@@ -274,8 +284,8 @@ class CreateMyAppointment(ProxyView):
 
                 if data.get("beneficiary_reference_id"):
                     new_appointment["beneficiary_reference_id"] = data.get("beneficiary_reference_id")
-                if data.get("appointment_type"):
-                    new_appointment["appointment_type"] = data.get("appointment_type")
+                if data.get("appointment_service"):
+                    new_appointment["appointment_service"] = data.get("appointment_service")
 
                 if family_member:
                     new_appointment["family_member"] = family_member.id
