@@ -506,6 +506,8 @@ class PaymentUpdate:
         self.app_id = param.get("app_id", None)
         self.plan_code = param.get("plan_code", None) or "NA"
         self.is_followup = param.get("is_followup", "N") or "N"
+        self.aadhar_number = param.get("aadhar_number", "") or ""
+        self.beneficiary_reference_id = param.get("beneficiary_reference_id", "") or ""
 
     def serialize(self, serializer):
         serializer.start_object('OnlinePaymentParam')
@@ -522,6 +524,8 @@ class PaymentUpdate:
         serializer.add_property('ApptId', self.app_id)
         serializer.add_property('PlanCode', self.plan_code)
         serializer.add_property('IsFollowUp', self.is_followup)
+        serializer.add_property('AdhaarId', self.aadhar_number)
+        serializer.add_property('CoWinRefId', self.beneficiary_reference_id)
 
 class UHIDPaymentUpdate:
     def __init__(self, param):

@@ -793,9 +793,22 @@ class PaymentUtils:
         return uhid_number
 
     @staticmethod
+    def get_aadhar_number(payment_instance):
+        aadhar_number = ""
+        patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
+        if patient_instance and patient_instance.aadhar_number:
+            aadhar_number = str(patient_instance.aadhar_number)
+        return aadhar_number
+
+    @staticmethod
     def get_appointment_identifier(payment_instance):
         appointment_instance = PaymentUtils.get_appointment_instance_from_payment_instance(payment_instance)
         return appointment_instance.appointment_identifier if appointment_instance and appointment_instance.appointment_identifier else ""
+
+    @staticmethod
+    def get_beneficiary_reference_id(payment_instance):
+        appointment_instance = PaymentUtils.get_appointment_instance_from_payment_instance(payment_instance)
+        return appointment_instance.beneficiary_reference_id if appointment_instance and appointment_instance.beneficiary_reference_id else ""
     
     @staticmethod
     def get_payment_appointment_date(payment_instance):
@@ -1071,7 +1084,9 @@ class PaymentUtils:
             "package_code":PaymentUtils.get_health_package_appointment_code(payment_instance),
             "plan_code":PaymentUtils.get_appointment_plan_code(payment_instance),
             "type":PaymentUtils.get_appointment_type(payment_instance),
-            "app_id":PaymentUtils.get_appointment_identifier(payment_instance)
+            "app_id":PaymentUtils.get_appointment_identifier(payment_instance),
+            "aadhar_number":PaymentUtils.get_aadhar_number(payment_instance),
+            "beneficiary_reference_id":PaymentUtils.get_beneficiary_reference_id(payment_instance)
         }
         payment_update_response = AppointmentPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if payment_update_response and payment_update_response.data:
