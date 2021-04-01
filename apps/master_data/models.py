@@ -102,7 +102,19 @@ class HospitalDepartment(MyBaseModel):
 
     end_date = models.DateField(null=True,
                                 blank=True
-                                )
+                            )
+                            
+    service     = models.CharField(
+                                max_length=30,
+                                null=True,
+                                blank=True,
+                            )
+
+    sub_service = models.CharField(
+                                max_length=30,
+                                null=True,
+                                blank=True,
+                            )
 
     class Meta:
         verbose_name = "Hospital Department"
