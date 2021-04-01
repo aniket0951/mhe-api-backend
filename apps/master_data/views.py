@@ -9,6 +9,7 @@ from django.contrib.gis.geos import Point
 from django.core.management import call_command
 from django.db.models import Q
 from django.utils.timezone import datetime
+from django.conf import settings
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -45,7 +46,7 @@ from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
                                       InternalAPICall, IsManipalAdminUser,BlacklistCreateMethodPermission, IsPatientUser)
-from utils.utils import get_report_info
+from utils.utils import get_report_info,patient_user_object
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -166,10 +167,13 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        return super().get_queryset().filter(
+        qs = super().get_queryset().filter(
             (Q(end_date__gte=datetime.now().date()) | Q(end_date__isnull=True)) &
             Q(start_date__lte=datetime.now().date()))
-
+        service = self.request.query_params.get("service", None)
+        if patient_user_object(self.request) and not service:
+            qs = qs.exclude(Q(service__in=[settings.COVID_SERVICE]))
+        return qs
 
 class SpecialisationViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]

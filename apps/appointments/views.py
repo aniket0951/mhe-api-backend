@@ -211,11 +211,11 @@ class CreateMyAppointment(ProxyView):
         if not hospital_department:
             raise DepartmentDoesNotExistsValidationException
 
-        if hospital_department.service in ["covid"]:
-            request.data['appointment_service'] = "covid"
+        if hospital_department.service in [settings.COVID_SERVICE]:
+            request.data['appointment_service'] = settings.COVID_SERVICE
             if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
                 raise AadharMandatoryValidationException
-            if hospital_department.sub_service in ["dose2"] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
+            if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
                 raise BeneficiaryReferenceIDValidationException
 
         if family_member:
