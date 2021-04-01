@@ -239,7 +239,9 @@ class DepartmentsView(ProxyView):
                                   'end_date',
                                   'code',
                                   'name',
-                                  'hospital_code'
+                                  'hospital_code',
+                                  'service',
+                                  'sub_service'
                                   ]
         for each_department in response_content:
             department_details = dict()
@@ -257,10 +259,14 @@ class DepartmentsView(ProxyView):
             hospital_department_details = dict()
             hospital_department_kwargs = dict()
             hospital_code = department_details.pop('hospital_code')
-            hospital_department_details['start_date'] = department_details.pop(
-                'start_date')
-            hospital_department_details['end_date'] = department_details.pop(
-                'end_date')
+            hospital_department_details['start_date'] = department_details.pop('start_date')
+            hospital_department_details['end_date'] = department_details.pop('end_date')
+            
+            service = department_details.pop('service')
+            hospital_department_details['service'] = service.lower() if service else ""
+            sub_service = department_details.pop('sub_service')
+            hospital_department_details['sub_service'] = sub_service.lower() if sub_service else ""
+
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
             department_kwargs['code'] = department_details['code']
