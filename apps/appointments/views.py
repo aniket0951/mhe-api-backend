@@ -135,48 +135,95 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             if is_upcoming:
                 if patient.active_view == 'Corporate':
                     return super().get_queryset().filter(
-                        Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
-                        Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=True)
+                            Q(appointment_date__gte=datetime.now().date()) & 
+                            Q(status=1) & 
+                            (
+                                (Q(uhid__isnull=False) &  Q(uhid=member_uhid)) | 
+                                Q(family_member_id=family_member)
+                            )
+                        ).exclude(
+                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
+                        ).filter(corporate_appointment=True)
 
                 return super().get_queryset().filter(
-                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).exclude(
-                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=False)
+                            Q(appointment_date__gte=datetime.now().date()) & 
+                            Q(status=1) & 
+                            (
+                                (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
+                                Q(family_member_id=family_member)
+                            )
+                        ).exclude(
+                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
+                        ).filter(corporate_appointment=False)
+
             if patient.active_view == 'Corporate':
                 return super().get_queryset().filter(
-                    (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).filter(corporate_appointment=True)
+                    (
+                        Q(appointment_date__lt=datetime.now().date()) | 
+                        Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")
+                    ) & (
+                            (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
+                            Q(family_member_id=family_member)
+                        )
+                    ).filter(corporate_appointment=True)
 
             return super().get_queryset().filter(
-                (Q(appointment_date__lt=datetime.now().date()) | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")) & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=family_member))).filter(corporate_appointment=False)
+                (
+                    Q(appointment_date__lt=datetime.now().date()) | 
+                    Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")
+                ) & (
+                        ( Q(uhid__isnull=False) & Q(uhid=member_uhid) ) | 
+                        Q(family_member_id=family_member)
+                    )
+                ).filter(corporate_appointment=False)
         else:
             member_uhid = patient.uhid_number
             if is_upcoming:
                 if patient.active_view == 'Corporate':
                     return super().get_queryset().filter(
-                        Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
-                        & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
-                                                                            & Q(family_member__isnull=True)))).exclude(
-                        Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=True)
+                            Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
+                            & (
+                                (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
+                                (Q(patient_id=patient.id) & Q(family_member__isnull=True))
+                            )
+                        ).exclude(
+                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
+                        ).filter(corporate_appointment=True)
 
                 return super().get_queryset().filter(
-                    Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
-                    & ((Q(uhid__isnull=False) & Q(uhid=member_uhid)) | (Q(patient_id=patient.id)
-                                                                        & Q(family_member__isnull=True)))).exclude(
-                    Q(appointment_mode="VC") & (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))).filter(corporate_appointment=False)
+                        Q(appointment_date__gte=datetime.now().date()) & Q(status=1)
+                        & (
+                            (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
+                            (Q(patient_id=patient.id) & Q(family_member__isnull=True))
+                        )
+                    ).exclude(
+                        (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                        (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
+                    ).filter(corporate_appointment=False)
 
             if patient.active_view == 'Corporate':
                 return super().get_queryset().filter(
-                    (Q(appointment_date__lt=datetime.now().date())
-                     | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
-                    & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
-                       | (Q(patient_id=patient.id)) &
-                        Q(family_member__isnull=True))).filter(corporate_appointment=True)
+                        (
+                            Q(appointment_date__lt=datetime.now().date()) | 
+                            Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")
+                        ) & (
+                            (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
+                            (Q(patient_id=patient.id)) & Q(family_member__isnull=True)
+                        )
+                    ).filter(corporate_appointment=True)
 
             return super().get_queryset().filter(
-                (Q(appointment_date__lt=datetime.now().date())
-                 | Q(status=2) | Q(status=5) | Q(vc_appointment_status="4"))
-                & ((Q(uhid__isnull=False) & Q(uhid=member_uhid))
-                   | (Q(patient_id=patient.id)) &
-                   Q(family_member__isnull=True))).filter(corporate_appointment=False)
+                        (
+                            Q(appointment_date__lt=datetime.now().date()) | 
+                            Q(status=2) | Q(status=5) | Q(vc_appointment_status="4")
+                        ) & (
+                            (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
+                            (Q(patient_id=patient.id)) & Q(family_member__isnull=True)
+                        )
+                    ).filter(corporate_appointment=False)
 
 
 class CreateMyAppointment(ProxyView):
@@ -483,7 +530,12 @@ class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.filter(patient_id=self.request.user.id, hospital_id=self.request.query_params.get("location_id", None)).distinct('doctor__code')
+        return queryset.filter(
+                    patient_id=self.request.user.id, 
+                    hospital_id=self.request.query_params.get("location_id", None)
+                ).exclude(
+                    Q(doctor__hospital_departments__service__in=[settings.COVID_SERVICE])
+                ).distinct('doctor__code')
 
 
 class CancellationReasonlistView(custom_viewsets.ReadOnlyModelViewSet):
