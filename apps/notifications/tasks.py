@@ -13,6 +13,7 @@ from celery.schedules import crontab
 from fcm_django.models import FCMDevice
 from manipal_api.celery import app
 from pyfcm import FCMNotification
+from django.db.models import Q
 
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters
@@ -190,7 +191,15 @@ def auto_appointment_cancellation():
     end_time = now - timedelta(minutes=13)
     start_time = now - timedelta(minutes=45)
     appointments = Appointment.objects.filter(
-        created_at__date=now.date(), status="1", appointment_mode="VC", payment_status=None, booked_via_app=True).filter(created_at__time__gte=start_time, created_at__time__lte=end_time)
+            Q(created_at__date=now.date()) & 
+            Q(status="1") &
+            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) &
+            Q(payment_status=None) &
+            Q(booked_via_app=True)
+        ).filter(
+            created_at__time__gte=start_time, 
+            created_at__time__lte=end_time
+        )
     for appointment in appointments:
         param = dict()
         param["appointment_identifier"] = appointment.appointment_identifier
@@ -203,8 +212,14 @@ def auto_appointment_cancellation():
 @app.task(name="tasks.daily_auto_appointment_cancellation")
 def daily_auto_appointment_cancellation():
     now = datetime.now() - timedelta(days=1)
+    
     appointments = Appointment.objects.filter(
-        created_at__date=now.date(), status="1", appointment_mode="VC", payment_status=None, booked_via_app=True)
+        Q(created_at__date=now.date()) &
+        Q(status="1") &
+        (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) &
+        Q(payment_status=None) &
+        Q(booked_via_app=True)
+    )
 
     for appointment in appointments:
         param = dict()
