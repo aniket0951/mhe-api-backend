@@ -963,6 +963,9 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             "app_type")
                         new_appointment["corporate_appointment"] = instance.corporate_appointment
                         new_appointment["booked_via_app"] = True
+                        new_appointment["beneficiary_reference_id"] = instance.beneficiary_reference_id
+                        new_appointment["appointment_service"] = instance.appointment_service
+
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
                         if appointment_instance:
                             appointment_serializer = AppointmentSerializer(appointment_instance, data=new_appointment, partial=True)
