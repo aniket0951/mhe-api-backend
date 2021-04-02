@@ -656,6 +656,11 @@ class OfflineAppointment(APIView):
         doctor = Doctor.objects.filter(code=data["doctorCode"].upper()).first()
         hospital = Hospital.objects.filter(code=data["locationCode"]).first()
         department = Department.objects.filter(code=deparmtment_code).first()
+        hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
+        
+        if hospital_department.service in [settings.COVID_SERVICE]:
+            appointment_data['appointment_service'] = settings.COVID_SERVICE
+            
         if not (patient or family_member):
             return Response({"message": "User is not App user"}, status=status.HTTP_200_OK)
         if not (doctor and hospital and department):
