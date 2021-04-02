@@ -318,7 +318,7 @@ class DoctorsView(ProxyView):
             raise DoctorHospitalCodeMissingValidationException
 
         try:
-            response_content = json.loads(item.text)
+            response_content = json.loads(item.text.replace(" \\ "," \\\\ "))
         except Exception as error:
             logger.error("Exception in DoctorsView: %s"%(str(error)))
             raise DoctorDoesNotExistsValidationException
