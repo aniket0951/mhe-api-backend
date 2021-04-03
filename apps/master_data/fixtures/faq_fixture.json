@@ -8,7 +8,7 @@
             "type": "banner",
             "code": "banner",
             "question": "",
-            "data": "https://www.manipalhospitals.com/uploads/blog/covid_faq.jpg",
+            "data": "https://covidvaccination.manipalhospitals.com/images/slider/banner.png",
             "image": null
         }
     },
@@ -21,7 +21,7 @@
             "type": "description",
             "code": "description",
             "question": "",
-            "data": "Coronavirus is a family of virus. SARS and MERS are also part of this family. This particular strain (type) has originated from Wuhan China in 2019 December and has been named as SARS-CoV-2",
+            "data": "From April 1, 2021, anybody above 45 years of age can get the COVID-19 vaccination. At Manipal Hospitals, we are working closely with the government to vaccinate maximum citizens.\nPlease do follow COVID-19 guidelines throughout the vaccination process and also continue to do so thereafter for the safety of the unimmunized population.\nExperience a hassle-free vaccination booking now through the Manipal Hospital website.",
             "image": null
         }
     },
@@ -32,9 +32,9 @@
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "qna",
-            "code": "qna1",
-            "question": "What is COVID-19?",
-            "data": "It’s the name given by the world health organisation (WHO) for infection caused by this particular strain of coronavirus.",
+            "code": "qna010",
+            "question": "What are the 2 vaccines that have been approved in India recently?",
+            "data": "COVISHIELD and COVAXIN are the 2 vaccines recently approved in India.",
             "image": null
         }
     },
@@ -45,9 +45,9 @@
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "qna",
-            "code": "qna2",
-            "question": "What are the symptoms of Coronavirus?",
-            "data": "Fever, cough, sore throat, body aches, breathing difﬁculty.",
+            "code": "qna020",
+            "question": "Are both the vaccines are same?",
+            "data": "No, both are not the same.\nCOVISHIELD manufactured by the Serum Institute of India is a Chimpanzee Adenovirus vector vaccine encoding the SARS-CoV-2 Spike (S) glycoprotein.\nThe other vaccine COVAXIN developed by Bharat Biotech contains the inactive virus.",
             "image": null
         }
     },
@@ -58,9 +58,9 @@
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "qna",
-            "code": "qna3",
-            "question": "How is COVID-19 different from flu/respiratory virus?",
-            "data": "COVID -19 presents with an illness similar to any other respiratory virus. Hence differentiation on only clinical grounds is not possible.",
+            "code": "qna030",
+            "question": "Is there enough evidence to suggest that these vaccines are effective and safe?",
+            "data": "Both the vaccines have gone through rigorous animal and human trials before they have been approved for use. Phase 3 trial for COVISHIELD, proved the efﬁcacy to be around 70%, with no major adverse events. The duration of protection, however, is yet to be established. \nData available for COVAXIN also suggest the efﬁcacy of 60-70% with no major side-effects. This vaccine has been currently granted \"Restricted Emergency approval for use\" in India.",
             "image": null
         }
     },
@@ -71,9 +71,9 @@
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "qna",
-            "code": "qna4",
-            "question": "How does it spread?",
-            "data": "Usually, it spreads in droplet form through the respiratory secretions (released while coughing or sneezing) and close contact. Rarely it may spread from contact with contaminated surfaces. It may be possible that a person can get COVID-19 by touching a surface or object that has the virus on it and then touching their own mouth, nose, or their eyes.",
+            "code": "qna040",
+            "question": "Who can get vaccinated?",
+            "data": "The home ministry allowed people above 45 years of age to get inoculated from April 1. The vaccination stages have so far covered all those aged 60 years or above, people above 45 with comorbidities, healthcare, and frontline workers.",
             "image": null
         }
     },
@@ -84,9 +84,9 @@
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "qna",
-            "code": "qna5",
-            "question": "Who is close contact?",
-            "data": "Close  Contact:  is someone who has been within 6 feet of a positive case (unprotected), at home, work or during travel. If you have been identiﬁed to have had close contact (unprotected) with someone who is conﬁrmed to have COVID-19 infection, you are advised to isolate yourself at home  and monitor your health closely and  consult your Doctor",
+            "code": "qna050",
+            "question": "How is the vaccine administered and how many shots are required?",
+            "data": "Both available vaccines are given in the muscle (Intra Muscular route) and are recommended for administration in 2 separate doses 0.5 ml each within 4 weeks interval. \nIt has been demonstrated that if the duration between the 2 vaccines has been increased by 12 weeks the efﬁcacy of the vaccine increases signiﬁcantly, hence if possible same can be considered.",
             "image": null
         }
     },
@@ -97,9 +97,139 @@
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "qna",
-            "code": "qna6",
-            "question": "Who is susceptible/high risk for the infection?",
-            "data": "People who are > 60 years of age, Diabetic, Hypertensive, suffering from heart disease, immunosuppressed, and Chronic respiratory disease are at higher risk.",
+            "code": "qna060",
+            "question": "Are the vaccines interchangeable?",
+            "data": "No, you should receive both shots of the same vaccine.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"8e65a4b9-45a4-402d-b05e-76b040bfcfe6",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna070",
+            "question": "Does the vaccine contain a live virus?",
+            "data": "No, The COVID 19 vaccines do not contain live viruses, but only a part of the viral protein or inactive virus which enables your body to produce neutralizing antibodies against it.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"40d2a6ec-38ef-4aaa-9a98-39faf385a340",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna080",
+            "question": "Is there any absolute contraindication for the elderly population?",
+            "data": "Hypersensitivity or allergy to any active substance or the excipients of the vaccine is an absolute contraindication for any individual. Therefore any allergies during previous vaccination (including COVID vaccine and other vaccines as well) and any drug allergies should be reported. It is advised to seek a physician’s consultation if there is any history suggesting the same.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"9ce61e22-8f21-4d68-9fac-0cda4494b4fc",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna090",
+            "question": "Am I eligible for vaccination, if I am above 65 years and have recently recovered from COVID-19?",
+            "data": "Yes, you can also take the vaccine, although it is advisable for a patient with acute infection to wait for 14 days after symptom resolution.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"2988eac6-91c2-4cf3-8544-81d0b408d844",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna100",
+            "question": "I am 65 years old, what adverse effects should I watch for after taking the vaccine?",
+            "data": "The common side effects are usually mild, like injection site pain, fatigue, fever, headache, nausea, and joint pain or muscle ache. The same is expected in the elderly population as well.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"e9ce0830-23c8-44be-9a50-a980a5b09da6",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna110",
+            "question": "Is it safe to take the vaccine for an elderly who is on immunosuppressive therapy?",
+            "data": "Yes, individuals on immunosuppressive treatment for cancer, autoimmune diseases and infections like HIV, etc. can also receive the vaccine shot. Although, it is thought that the individual on immunosuppressive therapy for any reason, might not be able to mount an adequate immune response to the vaccine and response might vary depending on the type of immunosuppressive therapy they are getting. \nThe beneﬁt they get from the vaccine might not be consistent, but there is no reason to believe that vaccine should be deferred on these grounds.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"889c0da5-9db3-43fe-8b6c-44234c54d6c0",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna120",
+            "question": "Should the elderly be concerned if they are taking blood thinners or have coagulation disorders before they take their shots?",
+            "data": "The vaccine is given into the muscle as mentioned earlier; hence there can be a risk of bleeding into the muscle or bruising following vaccination. This might vary depending upon the type of anticoagulation and severity of thrombocytopenia (low platelets). It is advisable to consult your physician in case of any doubts, as the decision has to be individualized.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"cdc674b6-8d93-4692-9e85-550ed530658a",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna130",
+            "question": "I have Diabetes with Coronary artery disease. Can I get a vaccine?",
+            "data": "Yes, patients with comorbid diseases including diabetes, HIV, CKD, cancer, post transplants, cardiac disorders as well as chronic lung diseases can get the vaccine.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"dce13d8a-a0a9-41fa-9bdd-1cd78d8eec08",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna140",
+            "question": "How long the immunity from the vaccine lasts in the elderly?",
+            "data": "There is limited data on the duration of protection; studies are underway to establish the same.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"a973ca2a-398a-4041-94a2-ecf3fc327c37",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna150",
+            "question": "Can I get rid of mask/social distancing after getting vaccinated?",
+            "data": "To protect yourself and your loved ones you still need to practice social distancing wear a face mask, observe hand sanitization, and all government guidelines.",
+            "image": null
+        }
+    },
+    {
+        "model": "dashboard.FAQData",
+        "pk":"eb673f01-0e52-4ddd-a658-aed5b4683760",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "type": "qna",
+            "code": "qna160",
+            "question": "Why is vaccine so important for COVID—19?",
+            "data": "We have seen in the past that vaccines have been the answer to most of the infectious diseases that have affected humankind for example Polio, Smallpox. With the vaccine available, it’s a relief that we are moving towards a lasting solution to COVID. \nThe vaccines are adequately checked for safety and efﬁcacy before they are approved for public use. Hence with minor acceptable adverse events, it is recommended to get vaccinated at the earliest.",
             "image": null
         }
     },
@@ -111,8 +241,8 @@
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "video",
             "code": "video1",
-            "question": "https://img.youtube.com/vi/a373xUeNL_c/0.jpg",
-            "data": "a373xUeNL_c",
+            "question": "https://img.youtube.com/vi/CBc1lQWgi30/0.jpg",
+            "data": "CBc1lQWgi30",
             "image": null
         }
     },
@@ -124,8 +254,8 @@
             "updated_at": "2021-02-16T18:47:24.893Z",
             "type": "video",
             "code": "video2",
-            "question": "https://img.youtube.com/vi/649hIKtBMlE/0.jpg",
-            "data": "649hIKtBMlE",
+            "question": "https://img.youtube.com/vi/-7uGJ6GCi4Q/0.jpg",
+            "data": "-7uGJ6GCi4Q",
             "image": null
         }
     },
