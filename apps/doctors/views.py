@@ -31,7 +31,7 @@ from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
 from utils.exceptions import InvalidRequest
-from utils.utils import manipal_admin_object
+from utils.utils import manipal_admin_object,patient_user_object
 from .constants import DoctorsConstants
 from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 
@@ -63,9 +63,13 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         location_id = self.request.query_params.get('location_id', None)
         date = self.request.query_params.get('date', None)
 
-        return Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
+        qs = Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
             (Q(end_date__gte=date) | Q(end_date__isnull=True)) &
             Q(start_date__lte=date) & Q(is_online_appointment_enable=True)).distinct()
+        hospital_departments__department__id = self.request.query_params.get("hospital_departments__department__id", None)
+        if patient_user_object(self.request) and not hospital_departments__department__id:
+            qs = qs.exclude(Q(hospital_departments__service__in=[settings.COVID_SERVICE]))
+        return qs
 
 
 class DoctorSlotAvailability(ProxyView):
