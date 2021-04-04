@@ -66,8 +66,8 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         qs = Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
             (Q(end_date__gte=date) | Q(end_date__isnull=True)) &
             Q(start_date__lte=date) & Q(is_online_appointment_enable=True)).distinct()
-        hospital_departments__department__id = self.request.query_params.get("hospital_departments__department__id", None)
-        if patient_user_object(self.request) and not hospital_departments__department__id:
+        hospital_departments__id = self.request.query_params.get("hospital_departments__id", None)
+        if patient_user_object(self.request) and not hospital_departments__id:
             qs = qs.exclude(Q(hospital_departments__service__in=[settings.COVID_SERVICE]))
         return qs
 
