@@ -9,7 +9,6 @@ from apps.doctors.models import Doctor
 from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
                                                  PatientServiceAppointment)
 from apps.manipal_admin.serializers import ManipalAdminSerializer
-from apps.manipal_admin.models import ManipalAdmin
 from apps.notifications.models import MobileDevice
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
@@ -20,9 +19,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from utils import custom_viewsets
 from utils.custom_permissions import IsManipalAdminUser
-from utils.utils import (get_appointment, manipal_admin_object,
-                         patient_user_object)
-
+from utils.utils import (
+                    get_appointment, 
+                    manipal_admin_object,
+                    patient_user_object
+                )
 from .models import DashboardBanner, FAQData
 from .serializers import DashboardBannerSerializer, FAQDataSerializer
 from .utils import DashboardUtils
@@ -54,9 +55,8 @@ class DashboardAPIView(ListAPIView):
                 
                 dashboard_details['patient'] = PatientSerializer(patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
-                dashboard_details['upcoming_appointment'] = AppointmentSerializer(
-                    patient_appointment, many=True
-                ).data
+                dashboard_details['upcoming_appointment'] = AppointmentSerializer(patient_appointment, many=True).data
+                dashboard_details["vaccination_age_error_message"]=settings.VACCINATION_AGE_ERROR_MESSAGE.format(str(settings.MIN_VACCINATION_AGE))
 
             manipal_admin_obj = manipal_admin_object(request)
 
