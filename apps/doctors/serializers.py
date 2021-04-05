@@ -5,7 +5,10 @@ from apps.master_data.models import (Department, Hospital, HospitalDepartment,
 from apps.patients.models import Patient
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
+from rest_framework.test import APIClient
 
+import json
+client = APIClient()
 
 class DepartmentSpecificSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -50,11 +53,12 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
         if instance.name:
             response_object['name'] = instance.name.title()
         response_object["consultation_charge"] = None
-        doctor_consultation = DoctorCharges.objects.filter(
-            doctor_info=instance.id)
+        doctor_consultation = DoctorCharges.objects.filter(doctor_info=instance.id)
+        if not doctor_consultation:
+            DoctorChargesSerializer.get_and_update_doctor_price(instance)
+            doctor_consultation = DoctorCharges.objects.filter(doctor_info=instance.id)
         if doctor_consultation:
-            response_object["consultation_charge"] = DoctorChargesSerializer(
-                doctor_consultation, many=True).data
+            response_object["consultation_charge"] = DoctorChargesSerializer(doctor_consultation, many=True).data
         return response_object
 
 
@@ -78,3 +82,41 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
                 response_object['hospital_department_details'] = HospitalDepartmentSerializer(instance.doctor_info.hospital_departments.filter(department__id=instance.department_info.id).first(), many = False).data
             
         return response_object
+
+    @staticmethod
+    def get_and_update_doctor_price(doctor_instance):
+    
+        all_departments = doctor_instance.hospital_departments.all()
+
+        for each_department in all_departments:
+            
+            data = dict()
+            location_code = doctor_instance.hospital.code
+            doctor_code = doctor_instance.code
+            data["doctor_info"] = doctor_instance.id
+            data["department_info"] = each_department.department.id
+
+            try:
+                response = client.post('/api/doctors/doctor_charges',json.dumps({
+                                                        'location_code': location_code, 
+                                                        'specialty_code': each_department.department.code, 
+                                                        'doctor_code': doctor_code
+                                                    }), content_type='application/json')
+
+                consultation_charge = response.data["data"]
+
+                if response.status_code == 200 and response.data["success"] == True:
+                    data["hv_consultation_charges"] = consultation_charge["hv_charge"]
+                    data["vc_consultation_charges"] = consultation_charge["vc_charge"]
+                    data["pr_consultation_charges"] = consultation_charge["pr_charge"]
+
+                    doctor_instance = DoctorCharges.objects.filter(doctor_info__code=doctor_code, department_info__code=each_department.department.code).first()
+                    if doctor_instance:
+                        serializer = DoctorChargesSerializer(doctor_instance, data=data, partial=True)
+                    else:
+                        serializer = DoctorChargesSerializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+
+            except Exception as e:
+                print("Unexpected error occurred while calling the API- {0}".format(e))

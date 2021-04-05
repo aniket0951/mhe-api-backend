@@ -39,10 +39,8 @@ logger = logging.getLogger("django")
 
 class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
-    search_fields = [
-        'name', 'hospital_departments__department__name', 'hospital__code', 'code', 'id', 'hospital_departments__department__code', 'hospital_departments__department__id']
-    filter_backends = (filters.SearchFilter,
-                       filters.OrderingFilter, DjangoFilterBackend)
+    search_fields = ['name', 'hospital_departments__department__name', 'hospital__code', 'code', 'id', 'hospital_departments__department__code', 'hospital_departments__department__id']
+    filter_backends = (filters.SearchFilter,filters.OrderingFilter, DjangoFilterBackend)
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     ordering = ('name',)
