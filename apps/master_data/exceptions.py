@@ -42,6 +42,11 @@ class AadharMandatoryValidationException(APIException):
     default_code = 'invalid_aadhar_number'
     default_detail = 'Aadhar number is mandatory'
 
+class DobMandatoryValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_dob'
+    default_detail = 'Date of birth is mandatory'
+
 class BeneficiaryReferenceIDValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_beneficiary_reference_id'

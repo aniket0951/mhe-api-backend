@@ -56,7 +56,7 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['patient'] = PatientSerializer(patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
                 dashboard_details['upcoming_appointment'] = AppointmentSerializer(patient_appointment, many=True).data
-                dashboard_details["vaccination_age_error_message"]=settings.VACCINATION_AGE_ERROR_MESSAGE.format(str(settings.MIN_VACCINATION_AGE))
+                dashboard_details["vaccination_age_error_message"] = settings.VACCINATION_AGE_ERROR_MESSAGE.format(str(settings.MIN_VACCINATION_AGE))
 
             manipal_admin_obj = manipal_admin_object(request)
 

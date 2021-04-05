@@ -16,7 +16,7 @@ from apps.doctors.models import Doctor
 from apps.health_packages.exceptions import FeatureNotAvailableException
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.exceptions import (
-    AadharMandatoryValidationException, BeneficiaryReferenceIDValidationException, DepartmentDoesNotExistsValidationException,
+    AadharMandatoryValidationException, BeneficiaryReferenceIDValidationException, DepartmentDoesNotExistsValidationException, DobMandatoryValidationException,
     HospitalDoesNotExistsValidationException)
 from apps.master_data.models import Department, Hospital, HospitalDepartment
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
@@ -263,6 +263,8 @@ class CreateMyAppointment(ProxyView):
             request.data['appointment_service'] = settings.COVID_SERVICE
             if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
                 raise AadharMandatoryValidationException
+            # if 'dob' not in request.data or not request.data.get('dob'):
+            #     raise DobMandatoryValidationException
             if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
                 raise BeneficiaryReferenceIDValidationException
 
@@ -429,13 +431,14 @@ class CreateMyAppointment(ProxyView):
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
+                response_data['consultation_object'] = consultation_response.data['data']
 
                 if  patient and patient.active_view != 'Corporate' and \
                     consultation_response.status_code == 200 and \
                     consultation_response.data and \
                     consultation_response.data['data']:
 
-                    response_data['consultation_object'] = consultation_response.data['data']
+                    
                     if consultation_response.data['data'].get("PlanCode"):
                         appointment_instance.plan_code = consultation_response.data['data'].get("PlanCode")
 
