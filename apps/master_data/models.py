@@ -56,6 +56,12 @@ class Hospital(MyBaseModel):
 
     hospital_enabled = models.BooleanField(default=True)
 
+    promo_code = models.CharField(
+                            max_length=30,
+                            null=True,
+                            blank=True
+                        )
+
     class Meta:
         verbose_name = "Hospital"
         verbose_name_plural = "Hospitals"
@@ -315,11 +321,6 @@ class Company(MyBaseModel):
 
     is_active = models.BooleanField(default=True)
 
-    promo_code = models.CharField(
-                            max_length=30,
-                            null=True,
-                            blank=True
-                        )
 
 class EmergencyContact(MyBaseModel):
 

@@ -54,10 +54,10 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
             response_object['name'] = instance.name.title()
         response_object["consultation_charge"] = None
         doctor_consultation = DoctorCharges.objects.filter(doctor_info__id=instance.id)
-        # today_date = datetime.now().date()
-        # if not doctor_consultation or doctor_consultation.first().updated_at.date()<today_date:
-        #     DoctorChargesSerializer.get_and_update_doctor_price(instance)
-        #     doctor_consultation = DoctorCharges.objects.filter(doctor_info__id=instance.id)
+        today_date = datetime.now().date()
+        if not doctor_consultation or doctor_consultation.first().updated_at.date()<today_date:
+            DoctorChargesSerializer.get_and_update_doctor_price(instance)
+            doctor_consultation = DoctorCharges.objects.filter(doctor_info__id=instance.id)
         if doctor_consultation:
             response_object["consultation_charge"] = DoctorChargesSerializer(doctor_consultation, many=True).data
         return response_object
@@ -86,10 +86,8 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
     @staticmethod
     def get_promo_code(doctor_instance):
         promo_code = ""
-        if doctor_instance.hospital:
-            company = Company.objects.filter(hospital_info__id=doctor_instance.hospital.id).first()
-            if company and company.promo_code:
-                promo_code = company.promo_code
+        if doctor_instance.hospital and doctor_instance.hospital.promo_code:
+            promo_code = doctor_instance.hospital.promo_code
         return promo_code
 
     @staticmethod

@@ -200,6 +200,7 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
+            "promo_code":"MIO",
             "corporate_only":"True"
         }
     },{
@@ -218,6 +219,7 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
+            "promo_code":"MIO",
             "corporate_only":"True"
         }
     }
