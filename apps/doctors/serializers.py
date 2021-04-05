@@ -90,6 +90,7 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
         if doctor_instance.hospital:
             company = Company.objects.filter(hospital_info__id=doctor_instance.hospital.id).first()
             _logger.error("Company- {0}".format(str(company)))
+            _logger.error("Company Promo- {0}".format(str(company.promo_code)))
             if company and company.promo_code:
                 promo_code = company.promo_code
         return promo_code
