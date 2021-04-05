@@ -365,11 +365,31 @@ class CreateMyAppointment(ProxyView):
                 patient = data.get("patient", None)
                 date_time = datetime_object.strftime("%Y%m%d")
                 corporate_appointment = dict()
+
+
+                uhid = new_appointment["uhid"] or "None"
+                location_code = data.get("hospital").code
+                doctor_code = data.get("doctor").code
+                specialty_code = data.get("department").code
+                order_date = datetime_object.strftime("%d%m%Y")
+
+                promo_code = DoctorChargesSerializer.get_promo_code(data.get("doctor"))
+                consultation_response = client.post('/api/master_data/consultation_charges',json.dumps({
+                                                    'location_code': location_code, 
+                                                    'uhid': uhid, 
+                                                    'doctor_code': doctor_code, 
+                                                    'specialty_code': specialty_code, 
+                                                    'order_date':order_date,
+                                                    "promo_code":promo_code
+                                                }), content_type='application/json')
+                
                 
                 corporate_appointment["uhid"] = new_appointment["uhid"]
                 corporate_appointment["location_code"] = data.get("hospital").code
                 corporate_appointment["app_date"] = date_time
                 corporate_appointment["app_id"] = appointment_identifier
+                if consultation_response.data.get('data') and consultation_response.data['data'].get("PlanCode"):
+                    corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
                 if patient and patient.active_view == 'Corporate':
                     corporate_param = cancel_and_refund_parameters(corporate_appointment)
@@ -404,27 +424,12 @@ class CreateMyAppointment(ProxyView):
                         logger.error("Error parsing response while booking appointment for corporate user %s"%(str(e)))
                         
                 
-                uhid = new_appointment["uhid"] or "None"
-                location_code = data.get("hospital").code
-                doctor_code = data.get("doctor").code
-                specialty_code = data.get("department").code
-                order_date = datetime_object.strftime("%d%m%Y")
-
-                promo_code = DoctorChargesSerializer.get_promo_code(data.get("doctor"))
-                consultation_response = client.post('/api/master_data/consultation_charges',json.dumps({
-                                                    'location_code': location_code, 
-                                                    'uhid': uhid, 
-                                                    'doctor_code': doctor_code, 
-                                                    'specialty_code': specialty_code, 
-                                                    'order_date':order_date,
-                                                    "promo_code":promo_code
-                                                }), content_type='application/json')
-                
                 response_success = True
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
 
-                if  consultation_response.status_code == 200 and \
+                if  patient and patient.active_view != 'Corporate' and \
+                    consultation_response.status_code == 200 and \
                     consultation_response.data and \
                     consultation_response.data['data']:
 
