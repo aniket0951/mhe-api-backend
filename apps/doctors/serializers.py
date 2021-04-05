@@ -89,8 +89,6 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
         promo_code = ""
         if doctor_instance.hospital:
             company = Company.objects.filter(hospital_info__id=doctor_instance.hospital.id).first()
-            _logger.error("Company- {0}".format(str(company)))
-            _logger.error("Company Promo- {0}".format(str(company.promo_code)))
             if company and company.promo_code:
                 promo_code = company.promo_code
         return promo_code
@@ -138,9 +136,9 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
                     data["pr_consultation_charges"] = consultation_charge["pr_charge"]
                     data["plan_code"]               = consultation_charge["plan_code"]
 
-                    doctor_instance = DoctorCharges.objects.filter(doctor_info__code=doctor_code, department_info__code=each_department.department.code).first()
-                    if doctor_instance:
-                        serializer = DoctorChargesSerializer(doctor_instance, data=data, partial=True)
+                    doctor_price_instance = DoctorCharges.objects.filter(doctor_info__code=doctor_code, department_info__code=each_department.department.code).first()
+                    if doctor_price_instance:
+                        serializer = DoctorChargesSerializer(doctor_price_instance, data=data, partial=True)
                     else:
                         serializer = DoctorChargesSerializer(data=data)
                         
