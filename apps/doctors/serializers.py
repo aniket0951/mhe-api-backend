@@ -5,9 +5,10 @@ from apps.master_data.models import Company
 from utils.serializers import DynamicFieldsModelSerializer
 from rest_framework.test import APIClient
 from datetime import datetime
-
+import logging
 import json
 client = APIClient()
+_logger = logging.getLogger("django")
 
 class DepartmentSpecificSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -109,7 +110,7 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
             if response.status_code == 200 and response.data["success"] == True:
                 consultation_charge = response.data["data"]
         except Exception as e:
-            print("Unexpected error occurred while calling the API- {0}".format(e))
+            _logger.error("Unexpected error occurred while calling the API- {0}".format(e))
         return consultation_charge
 
 
@@ -145,4 +146,4 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
                     serializer.save()
 
             except Exception as e:
-                print("Unexpected error occurred while processing the API response- {0}".format(e))
+                _logger.error("Unexpected error occurred while processing the API response- {0}".format(e))
