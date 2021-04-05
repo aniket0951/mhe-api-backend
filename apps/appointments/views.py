@@ -275,9 +275,10 @@ class CreateMyAppointment(ProxyView):
             aadhar_number = request.data.pop('aadhar_number')
             if aadhar_number:
                 user.aadhar_number = int(aadhar_number)
-            dob = request.data.pop('dob')
-            if dob:
-                user.dob = dob
+            if 'dob' in request.data:
+                dob = request.data.pop('dob')
+                if dob:
+                    user.dob = dob
             user.save()
 
         request.data['doctor_code'] = doctor.code
