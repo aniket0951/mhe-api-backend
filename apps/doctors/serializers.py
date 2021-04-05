@@ -55,17 +55,12 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
         response_object["consultation_charge"] = None
         doctor_consultation = DoctorCharges.objects.filter(doctor_info__id=instance.id)
         today_date = datetime.now().date()
-        _logger.info("doctor_consultation %s"%(str(doctor_consultation)))
-        _logger.info("today_date %s"%(str(today_date)))
-        _logger.info("doctor_consultation.first().updated_at.date() %s"%(str(doctor_consultation.first().updated_at.date())))
-        _logger.info("comparison %s"%(str(doctor_consultation.first().updated_at.date()<today_date)))
         if not doctor_consultation or doctor_consultation.first().updated_at.date()<today_date:
             DoctorChargesSerializer.get_and_update_doctor_price(instance)
             doctor_consultation = DoctorCharges.objects.filter(doctor_info__id=instance.id)
         if doctor_consultation:
             response_object["consultation_charge"] = DoctorChargesSerializer(doctor_consultation, many=True).data
         return response_object
-
 
 class DoctorSpecificSerializer(DynamicFieldsModelSerializer):
     class Meta:
