@@ -9,7 +9,6 @@
             "domain": "@infosys.com",
             "hospital_info": [
                 "63850af2-3fdd-4fd6-84a2-a3c18b9f8213",
-                "63850af2-3fdd-4fd6-84a2-a3c18b9f8212"
             ],
             "component_ids": [
                 "6b8d3528-2d75-4dc8-a4f6-9a8d77b00013",
@@ -31,8 +30,6 @@
             "name": "Mantralabs",
             "domain": "@mantralabsglobal.com",
             "hospital_info": [
-                "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
-                "63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
                 "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"
             ],
             "component_ids": [
@@ -51,8 +48,6 @@
             "name": "Manipal",
             "domain": "@manipalhospitals.com",
             "hospital_info": [
-                "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
-                "63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
                 "63850af2-3fdd-4fd6-84a2-a3c18b9f8213"
             ],
             "component_ids": [
