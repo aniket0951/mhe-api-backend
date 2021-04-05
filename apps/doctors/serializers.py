@@ -54,7 +54,7 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
         response_object["consultation_charge"] = None
         doctor_consultation = DoctorCharges.objects.filter(doctor_info=instance.id)
         today_date = datetime.now().date()
-        if not doctor_consultation or doctor_consultation.first().updated_at<today_date:
+        if not doctor_consultation or doctor_consultation.first().updated_at.date()<today_date:
             DoctorChargesSerializer.get_and_update_doctor_price(instance)
             doctor_consultation = DoctorCharges.objects.filter(doctor_info=instance.id)
         if doctor_consultation:
