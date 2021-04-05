@@ -361,16 +361,23 @@ class RescheduleSlot:
 
 
 class DoctorConsultationCharges:
-    def __init__(self, location_code=None, specialty_code=None, doctor_code=None):
+    def __init__(self, 
+        location_code=None, 
+        specialty_code=None, 
+        doctor_code=None,
+        promo_code=None,
+    ):
         self.location_code = location_code
         self.specialty_code = specialty_code
         self.doctor_code = doctor_code
+        self.promo_code = promo_code
 
     def serialize(self, serializer):
         serializer.start_object('consultchargesParam')
         serializer.add_property('locationCode', self.location_code)
         serializer.add_property('specialtyCode', self.specialty_code)
         serializer.add_property('doctorCode', self.doctor_code)
+        serializer.add_property('PromoCode', self.promo_code)
 
 
 class CurrentPatientList:

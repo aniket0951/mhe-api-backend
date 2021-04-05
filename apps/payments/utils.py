@@ -1,3 +1,4 @@
+from apps.doctors.serializers import DoctorChargesSerializer
 import time
 import json
 import logging
@@ -332,6 +333,7 @@ class PaymentUtils:
 
     @staticmethod
     def get_consultation_charges(location_code,appointment_instance,uhid,order_date):
+        promo_code = DoctorChargesSerializer.get_promo_code(appointment_instance.doctor)
         response_doctor_charges = client.post(
                                         PaymentConstants.URL_CONSULTATION_CHARGES,
                                         json.dumps({
@@ -339,7 +341,8 @@ class PaymentUtils:
                                             'specialty_code': appointment_instance.department.code, 
                                             'doctor_code': appointment_instance.doctor.code, 
                                             "uhid":uhid, 
-                                            'order_date': order_date
+                                            'order_date': order_date,
+                                            "promo_code":promo_code
                                         }), 
                                         content_type=PaymentConstants.JSON_CONTENT_TYPE
                                     )

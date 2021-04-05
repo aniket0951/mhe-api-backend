@@ -287,23 +287,39 @@ class CompanyDomain(MyBaseModel):
     
 class Company(MyBaseModel):
 
-    name = models.SlugField(unique=True,
-                            blank=False,
-                            null=False)
+    name = models.SlugField(
+                        unique=True,
+                        blank=False,
+                        null=False
+                    )
 
-    domain = models.CharField(max_length=30,
-                            null=True,
-                            blank=True)
+    domain = models.CharField(
+                        max_length=30,
+                        null=True,
+                        blank=True
+                    )
 
-    hospital_info = models.ManyToManyField(Hospital,
-                                             blank=True,
-                                             null=True,
-                                             related_name='company_hospital')
+    hospital_info = models.ManyToManyField(
+                                        Hospital,
+                                        blank=True,
+                                        null=True,
+                                        related_name='company_hospital'
+                                    )
     
-    component_ids = models.ManyToManyField(Components, blank=True,
-                                             null=True,related_name='allowed_components')
+    component_ids = models.ManyToManyField(
+                                        Components, 
+                                        blank=True,
+                                        null=True,
+                                        related_name='allowed_components'
+                                    )
 
     is_active = models.BooleanField(default=True)
+
+    promo_code = models.CharField(
+                            max_length=30,
+                            null=True,
+                            blank=True
+                        )
 
 class EmergencyContact(MyBaseModel):
 

@@ -1,3 +1,4 @@
+from apps.doctors.serializers import DoctorChargesSerializer
 import ast
 import datetime
 import json
@@ -274,7 +275,10 @@ class CreateMyAppointment(ProxyView):
             aadhar_number = request.data.pop('aadhar_number')
             if aadhar_number:
                 user.aadhar_number = int(aadhar_number)
-                user.save()
+            dob = request.data.pop('dob')
+            if dob:
+                user.dob = dob
+            user.save()
 
         request.data['doctor_code'] = doctor.code
         request.data['location_code'] = hospital.code
@@ -404,7 +408,16 @@ class CreateMyAppointment(ProxyView):
                 doctor_code = data.get("doctor").code
                 specialty_code = data.get("department").code
                 order_date = datetime_object.strftime("%d%m%Y")
-                consultation_response = client.post('/api/master_data/consultation_charges',json.dumps({'location_code': location_code, 'uhid': uhid, 'doctor_code': doctor_code, 'specialty_code': specialty_code, 'order_date':order_date}), content_type='application/json')
+
+                promo_code = DoctorChargesSerializer.get_promo_code(data.get("doctor"))
+                consultation_response = client.post('/api/master_data/consultation_charges',json.dumps({
+                                                    'location_code': location_code, 
+                                                    'uhid': uhid, 
+                                                    'doctor_code': doctor_code, 
+                                                    'specialty_code': specialty_code, 
+                                                    'order_date':order_date,
+                                                    "promo_code":promo_code
+                                                }), content_type='application/json')
                 
                 response_success = True
                 response_message = "Appointment has been created"

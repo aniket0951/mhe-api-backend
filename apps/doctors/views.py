@@ -376,7 +376,11 @@ class DoctorConsultationChargeView(ProxyView):
                 data["hv_charge"] = consultation_charges[0]["OPDConsCharges"]
                 data["vc_charge"] = consultation_charges[0]["VCConsCharges"]
                 data["pr_charge"] = consultation_charges[0]["PRConsCharges"]
+                data["plan_code"] = consultation_charges[0]["PlanCode"]
                 message = "success"
                 success = True
-        return self.custom_success_response(message=message,
-                                            success=success, data=data)
+        return self.custom_success_response(
+                                        message=message,
+                                        success=success, 
+                                        data=data
+                                    )
