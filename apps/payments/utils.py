@@ -799,7 +799,7 @@ class PaymentUtils:
     def get_aadhar_number(payment_instance):
         aadhar_number = ""
         patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
-        if patient_instance and patient_instance.aadhar_number:
+        if patient_instance and payment_instance.appointment and patient_instance.aadhar_number:
             aadhar_number = str(patient_instance.aadhar_number)
         return aadhar_number
 
@@ -811,7 +811,7 @@ class PaymentUtils:
     @staticmethod
     def get_beneficiary_reference_id(payment_instance):
         appointment_instance = PaymentUtils.get_appointment_instance_from_payment_instance(payment_instance)
-        return appointment_instance.beneficiary_reference_id if appointment_instance and appointment_instance.beneficiary_reference_id else ""
+        return appointment_instance.beneficiary_reference_id if payment_instance.appointment and appointment_instance and appointment_instance.beneficiary_reference_id else ""
     
     @staticmethod
     def get_payment_appointment_date(payment_instance):
