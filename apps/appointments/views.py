@@ -17,7 +17,7 @@ from apps.health_packages.exceptions import FeatureNotAvailableException
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.exceptions import (
     AadharMandatoryValidationException, BeneficiaryReferenceIDValidationException, DepartmentDoesNotExistsValidationException, DobMandatoryValidationException,
-    HospitalDoesNotExistsValidationException)
+    HospitalDoesNotExistsValidationException, InvalidDobValidationException)
 from apps.master_data.models import Department, Hospital, HospitalDepartment
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
@@ -57,7 +57,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object
+from utils.utils import manipal_admin_object,calculate_age
 from .exceptions import (AppointmentDoesNotExistsValidationException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -263,10 +263,17 @@ class CreateMyAppointment(ProxyView):
             request.data['appointment_service'] = settings.COVID_SERVICE
             if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
                 raise AadharMandatoryValidationException
-            # if 'dob' not in request.data or not request.data.get('dob'):
-            #     raise DobMandatoryValidationException
+            if 'dob' not in request.data or not request.data.get('dob'):
+                raise DobMandatoryValidationException
             if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
                 raise BeneficiaryReferenceIDValidationException
+            try:
+                dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
+                if (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
+                    raise InvalidDobValidationException
+            except Exception as e:
+                logger.error("Error parsing date of birth!")
+                raise DobMandatoryValidationException
 
         if family_member:
             user = family_member

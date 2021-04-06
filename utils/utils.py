@@ -1,6 +1,6 @@
 import logging
 import urllib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from utils.exceptions import UserNotRegisteredException
 from django.db.models import Count, Sum
 
@@ -142,6 +142,7 @@ def assign_users(request_data,user_id):
 
     return request_data
 
-
-    
-    
+def calculate_age(dob):
+    today = date.today()
+    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    return age
