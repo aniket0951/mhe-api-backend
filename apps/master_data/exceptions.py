@@ -53,6 +53,11 @@ class InvalidDobValidationException(APIException):
     default_code = 'invalid_dob'
     default_detail = settings.VACCINATION_AGE_ERROR_MESSAGE.format(str(settings.MIN_VACCINATION_AGE))
 
+class InvalidDobFormatValidationException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_dob'
+    default_detail = "Format of Date of birth is invalid"
+
 class BeneficiaryReferenceIDValidationException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_beneficiary_reference_id'

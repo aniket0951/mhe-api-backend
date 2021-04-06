@@ -17,7 +17,7 @@ from apps.health_packages.exceptions import FeatureNotAvailableException
 from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.exceptions import (
     AadharMandatoryValidationException, BeneficiaryReferenceIDValidationException, DepartmentDoesNotExistsValidationException, DobMandatoryValidationException,
-    HospitalDoesNotExistsValidationException, InvalidDobValidationException)
+    HospitalDoesNotExistsValidationException, InvalidDobFormatValidationException, InvalidDobValidationException)
 from apps.master_data.models import Department, Hospital, HospitalDepartment
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
@@ -273,7 +273,7 @@ class CreateMyAppointment(ProxyView):
                     raise InvalidDobValidationException
             except Exception as e:
                 logger.error("Error parsing date of birth!")
-                raise InvalidDobValidationException
+                raise InvalidDobFormatValidationException
 
         if family_member:
             user = family_member
