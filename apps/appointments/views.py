@@ -1,6 +1,5 @@
 from apps.doctors.serializers import DoctorChargesSerializer
 import ast
-import datetime
 import json
 import logging
 import xml.etree.ElementTree as ET
@@ -269,10 +268,10 @@ class CreateMyAppointment(ProxyView):
                 raise BeneficiaryReferenceIDValidationException
             try:
                 dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
-                if (calculate_age(dob_date.date())<settings.MIN_VACCINATION_AGE):
+                if (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
                     raise InvalidDobValidationException
             except Exception as e:
-                logger.error("Error parsing date of birth!")
+                logger.error("Error parsing date of birth! %s"%(str(e)))
                 raise InvalidDobFormatValidationException
 
         if family_member:
