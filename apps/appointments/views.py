@@ -266,13 +266,14 @@ class CreateMyAppointment(ProxyView):
                 raise DobMandatoryValidationException
             if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
                 raise BeneficiaryReferenceIDValidationException
+            dob_date = None
             try:
                 dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
-                if (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
-                    raise InvalidDobValidationException
             except Exception as e:
                 logger.error("Error parsing date of birth! %s"%(str(e)))
                 raise InvalidDobFormatValidationException
+            if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
+                raise InvalidDobValidationException
 
         if family_member:
             user = family_member
