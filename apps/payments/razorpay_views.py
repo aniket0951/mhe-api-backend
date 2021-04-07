@@ -184,7 +184,7 @@ class RazorPaymentResponse(APIView):
         
         payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
 
-        if payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS]:
+        if payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED]:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
