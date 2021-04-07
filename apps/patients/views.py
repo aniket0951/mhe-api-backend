@@ -620,9 +620,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         patient_user_obj = self.get_object()
 
-        name = uhid_user_info['first_name'].split() if uhid_user_info.get('first_name') else ""
-        patient_user_obj.first_name = name[0] if len(name)>0 else ""
-        patient_user_obj.last_name = name[1] if len(name)>1 else ""
+        patient_user_obj.first_name = uhid_user_info['first_name']
+        patient_user_obj.last_name = None
         patient_user_obj.middle_name = None
         if uhid_user_info['email']:
             patient_user_obj.email = uhid_user_info['email']
