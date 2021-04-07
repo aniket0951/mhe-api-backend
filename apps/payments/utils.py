@@ -887,6 +887,9 @@ class PaymentUtils:
         payment_serializer.is_valid(raise_exception=True)
         payment_serializer.save()
 
+        patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
+        patient_instance.uhid_number = payment_response.get("uhid_number")
+        patient_instance.save()
 
 
 
