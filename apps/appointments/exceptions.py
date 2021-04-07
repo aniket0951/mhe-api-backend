@@ -10,3 +10,8 @@ class AppointmentAlreadyExistsException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'You have already booked an appointment for this date'
     default_detail = 'You have already booked an appointment for this date'
+
+class InvalidManipalResponseException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_response'
+    default_detail = 'Unable to process your request at the momenet, please try again later.'

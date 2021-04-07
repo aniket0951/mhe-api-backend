@@ -57,7 +57,7 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
 from utils.utils import manipal_admin_object,calculate_age
-from .exceptions import (AppointmentDoesNotExistsValidationException)
+from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
@@ -319,9 +319,17 @@ class CreateMyAppointment(ProxyView):
         response_data = {}
         response_success = False
         if response.status_code == 200:
-            root = ET.fromstring(response.content)
-            appointment_identifier = root.find("appointmentIdentifier").text
-            status = root.find("Status").text
+            root = None
+            appointment_identifier = None
+            status = ""
+
+            try:
+                root = ET.fromstring(response.content)
+                appointment_identifier = root.find("appointmentIdentifier").text
+                status = root.find("Status").text
+            except Exception as e:
+                logger.error("Error parsing response from manipal while booking appointment %s"%(str(e)))
+                raise InvalidManipalResponseException
 
             if status == "FAILED":
                 message = root.find("Message").text
