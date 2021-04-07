@@ -421,6 +421,7 @@ try:
 except Exception as e:
     pass
 VACCINATION_AGE_ERROR_MESSAGE = env("VACCINATION_AGE_ERROR_MESSAGE")
+COVID_BOOTH_IMAGE = env("COVID_BOOTH_IMAGE")
 
 # Logger configuration
 LOGGING = {

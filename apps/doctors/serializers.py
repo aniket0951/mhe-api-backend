@@ -7,6 +7,8 @@ from rest_framework.test import APIClient
 from datetime import datetime
 import logging
 import json
+from django.conf import settings
+
 client = APIClient()
 _logger = logging.getLogger("django")
 
@@ -52,14 +54,23 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.name:
             response_object['name'] = instance.name.title()
+        
         response_object["consultation_charge"] = None
         doctor_consultation = DoctorCharges.objects.filter(doctor_info__id=instance.id)
         today_date = datetime.now().date()
+
         if not doctor_consultation or doctor_consultation.first().updated_at.date()<today_date:
             DoctorChargesSerializer.get_and_update_doctor_price(instance)
             doctor_consultation = DoctorCharges.objects.filter(doctor_info__id=instance.id)
         if doctor_consultation:
             response_object["consultation_charge"] = DoctorChargesSerializer(doctor_consultation, many=True).data
+
+        if  not response_object['photo'] and \
+            response_object.get("hospital_departments") and \
+            len(response_object["hospital_departments"])>0 and \
+            [ hospital_department for hospital_department in response_object["hospital_departments"] if hospital_department.get("service") and hospital_department.get("service")==settings.COVID_SERVICE ]:
+            response_object['photo'] = settings.COVID_BOOTH_IMAGE
+
         return response_object
 
 class DoctorSpecificSerializer(DynamicFieldsModelSerializer):
