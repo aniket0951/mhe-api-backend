@@ -888,10 +888,9 @@ class PaymentUtils:
         payment_serializer.save()
 
         patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
-        patient_instance.uhid_number = payment_response.get("uhid_number")
-        patient_instance.save()
-
-
+        if payment_response.get("uhid_number") and not patient_instance.uhid_number:
+            patient_instance.uhid_number = payment_response.get("uhid_number")
+            patient_instance.save()
 
     @staticmethod
     def payment_for_uhid_creation_appointment(payment_instance):
