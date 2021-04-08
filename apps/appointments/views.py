@@ -498,6 +498,9 @@ class CreateMyAppointment(ProxyView):
                             param["reason_id"] = "1"
                             param["status"] = "2"
                             request_param = cancel_parameters(param)
+                            response_success = False
+                            response_message = "Unable to book your appointment!"
+                            logger.info("Cancelling the appointment : %s"%(str(param)))
                             CancelMyAppointment.as_view()(request_param)
                             raise InvalidAppointmentPrice
 
