@@ -23,6 +23,7 @@ from apps.patients.models import FamilyMember, Patient
 from apps.payments.razorpay_views import RazorRefundView
 from apps.payments.views import AppointmentPaymentView
 from apps.users.models import BaseUser
+from apps.notifications.utils import cancel_parameters
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
 from ratelimit.decorators import ratelimit
@@ -57,7 +58,7 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
 from utils.utils import manipal_admin_object,calculate_age
-from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidManipalResponseException)
+from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
@@ -315,9 +316,11 @@ class CreateMyAppointment(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+
         response_message = AppointmentsConstants.UNABLE_TO_BOOK
         response_data = {}
         response_success = False
+
         if response.status_code == 200:
             root = None
             appointment_identifier = None
@@ -407,6 +410,7 @@ class CreateMyAppointment(ProxyView):
                 corporate_appointment["location_code"] = data.get("hospital").code
                 corporate_appointment["app_date"] = date_time
                 corporate_appointment["app_id"] = appointment_identifier
+
                 if consultation_response.data.get('data') and consultation_response.data['data'].get("PlanCode"):
                     corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
@@ -439,9 +443,15 @@ class CreateMyAppointment(ProxyView):
                                     patient_instance = Patient.objects.filter(id=data.get("patient").id).first()
                                     patient_instance.uhid_number = bill_detail.get("HospitalNo")
                                     patient_instance.save()
+                                    
                     except Exception as e:
+                        param = dict()
+                        param["appointment_identifier"] = appointment_instance.appointment_identifier
+                        param["reason_id"] = "1"
+                        param["status"] = "2"
+                        request_param = cancel_parameters(param)
+                        CancelMyAppointment.as_view()(request_param)
                         logger.error("Error parsing response while booking appointment for corporate user %s"%(str(e)))
-                        
                 
                 response_success = True
                 response_message = "Appointment has been created"
@@ -453,19 +463,21 @@ class CreateMyAppointment(ProxyView):
                     consultation_response.data and \
                     consultation_response.data['data']:
 
-                    
+                    hv_charges = consultation_response.data['data'].get("OPDConsCharges")
+                    vc_charges = consultation_response.data['data'].get("VCConsCharges")
+                    pr_charges = consultation_response.data['data'].get("PRConsCharges")
+
                     if consultation_response.data['data'].get("PlanCode"):
                         appointment_instance.plan_code = consultation_response.data['data'].get("PlanCode")
+                    
+                    if  (appointment_instance.appointment_mode == "HV" and str(hv_charges) == "0") or \
+                        (appointment_instance.appointment_mode == "VC" and str(vc_charges) == "0") or \
+                        (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
 
-                    if  (consultation_response.data['data'].get('IsFollowUp') and \
-                        consultation_response.data['data'].get('IsFollowUp') != "N") or \
-                        consultation_response.data['data'].get("PlanCode"):
+                        if  (consultation_response.data['data'].get('IsFollowUp') and \
+                            consultation_response.data['data'].get('IsFollowUp') != "N") or \
+                            consultation_response.data['data'].get("PlanCode"):
 
-                        hv_charges = consultation_response.data['data'].get("OPDConsCharges")
-                        vc_charges = consultation_response.data['data'].get("VCConsCharges")
-                        pr_charges = consultation_response.data['data'].get("PRConsCharges")
-
-                        if (appointment_instance.appointment_mode == "HV" and str(hv_charges) == "0") or (appointment_instance.appointment_mode == "VC" and str(vc_charges) == "0") or (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
                             corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                             corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
@@ -479,6 +491,18 @@ class CreateMyAppointment(ProxyView):
                             appointment_instance.consultation_amount = 0
                             response = AppointmentPaymentView.as_view()(followup_payment_param)
                             appointment_instance.payment_status = "success"
+
+                        else:
+                            param = dict()
+                            param["appointment_identifier"] = appointment_instance.appointment_identifier
+                            param["reason_id"] = "1"
+                            param["status"] = "2"
+                            request_param = cancel_parameters(param)
+                            response_success = False
+                            response_message = "Unable to book your appointment!"
+                            logger.info("Cancelling the appointment : %s"%(str(param)))
+                            CancelMyAppointment.as_view()(request_param)
+                            raise InvalidAppointmentPrice
 
                         appointment_instance.is_follow_up = True if consultation_response.data['data'].get('IsFollowUp') != "N" else False
 

@@ -15,3 +15,8 @@ class InvalidManipalResponseException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = 'invalid_response'
     default_detail = 'Unable to process your request at the momenet, please try again later.'
+
+class InvalidAppointmentPrice(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = 'invalid_appointments_data'
+    default_detail = 'Unable to process your request of booking the appointment. Please try again later.'

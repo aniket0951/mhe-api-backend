@@ -45,8 +45,12 @@ from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      InternalAPICall, IsManipalAdminUser,BlacklistCreateMethodPermission, IsPatientUser)
-from utils.utils import get_report_info,patient_user_object
+                                      InternalAPICall, 
+                                      IsManipalAdminUser,
+                                      BlacklistCreateMethodPermission, 
+                                      IsPatientUser
+                                     )
+from utils.utils import get_report_info,patient_user_object 
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
