@@ -166,8 +166,6 @@ class ProxyView(BaseProxyView):
         data = self.get_request_data(request)
         headers = self.get_headers(request)
         verify_ssl = self.get_verify_ssl(request)
-        logger.info("MANIPAL URL : %s"%(str(url)))
-        logger.info("MANIPAL DATA : %s"%(str(data)))
         try:
             response = requests.request(request.method, url,
                                         data=data,
@@ -193,7 +191,6 @@ class ProxyView(BaseProxyView):
                 'message': 'Gateway timed out, please contact our helpdesk.',
             }, status)
         http_response = self.create_response(response)
-        logger.info("MANIPAL DATA : %s"%(str(http_response.data)))
         return http_response
 
     def get(self, request, *args, **kwargs):
