@@ -1,11 +1,11 @@
 [
     {
-    "model": "manipal_admin.AdminMenu",
-    "pk": "0b74676d-7fdb-4fe5-9390-0f0842de726c",
-    "fields": {
-        "created_at": "2021-02-16T18:47:24.893Z",
-        "updated_at": "2021-02-16T18:47:24.893Z",
-        "name":"Dashboard"
+        "model": "manipal_admin.AdminMenu",
+        "pk": "0b74676d-7fdb-4fe5-9390-0f0842de726c",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "name": "Dashboard"
         }
     },
     {
@@ -14,7 +14,7 @@
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Doctor Appointments"
+            "name": "Doctor Appointments"
         }
     },
     {
@@ -23,65 +23,56 @@
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Manage Health Packages"
+            "name": "Manage Health Packages"
         }
     },
-        {
-            "model": "manipal_admin.AdminMenu",
-            "pk": "7e952550-0b2c-42a9-829c-fccdd75cbeb5",
-            "fields": {
-                "created_at": "2021-02-16T18:47:24.893Z",
-                "updated_at": "2021-02-16T18:47:24.893Z",
-                "name":"Health Package List",
-                "parent_menu": "733d6fc8-d168-4bc6-9972-c35180c5eadb"
-            }
-        },
-        {
-            "model": "manipal_admin.AdminMenu",
-            "pk":"8119e162-9d9f-4255-a5d9-c68b5dc56954",
-            "fields": {
-                "created_at": "2021-02-16T18:47:24.893Z",
-                "updated_at": "2021-02-16T18:47:24.893Z",
-                "name":"Purchased Health Package List",
-                "parent_menu": "733d6fc8-d168-4bc6-9972-c35180c5eadb"
-            }
-        },
     {
         "model": "manipal_admin.AdminMenu",
-        "pk":"8cd9527c-ff21-40e0-8f00-b4109db6621a",
+        "pk": "7e952550-0b2c-42a9-829c-fccdd75cbeb5",
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Manage Home Care"
+            "name": "Health Package List",
+            "parent_menu": "733d6fc8-d168-4bc6-9972-c35180c5eadb"
         }
     },
-        {
-            "model": "manipal_admin.AdminMenu",
-            "pk": "acce07d4-5acc-460e-a22f-cc3dbcf76a67",
-            "fields": {
-                "created_at": "2021-02-16T18:47:24.893Z",
-                "updated_at": "2021-02-16T18:47:24.893Z",
-                "name":"Service Request",
-                "parent_menu": "8cd9527c-ff21-40e0-8f00-b4109db6621a"
-            }
-        },
-        {
-            "model": "manipal_admin.AdminMenu",
-            "pk":"bffce6e3-add5-491b-92b6-7f3a460ab708",
-            "fields": {
-                "created_at": "2021-02-16T18:47:24.893Z",
-                "updated_at": "2021-02-16T18:47:24.893Z",
-                "name":"Home Collection Request",
-                "parent_menu": "8cd9527c-ff21-40e0-8f00-b4109db6621a"
-            }
-        },
     {
         "model": "manipal_admin.AdminMenu",
-        "pk":"c148f2e8-4c71-414b-8e10-71123f5bee0e",
+        "pk": "8119e162-9d9f-4255-a5d9-c68b5dc56954",
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Covid-19 Registrations"
+            "name": "Purchased Health Package List",
+            "parent_menu": "733d6fc8-d168-4bc6-9972-c35180c5eadb"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "8cd9527c-ff21-40e0-8f00-b4109db6621a",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "name": "Manage Home Care"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "acce07d4-5acc-460e-a22f-cc3dbcf76a67",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "name": "Service Request",
+            "parent_menu": "8cd9527c-ff21-40e0-8f00-b4109db6621a"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "bffce6e3-add5-491b-92b6-7f3a460ab708",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "name": "Home Collection Request",
+            "parent_menu": "8cd9527c-ff21-40e0-8f00-b4109db6621a"
         }
     },
     {
@@ -90,7 +81,7 @@
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Doctors"
+            "name": "Doctors"
         }
     },
     {
@@ -99,7 +90,7 @@
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Users"
+            "name": "Users"
         }
     },
     {
@@ -108,7 +99,7 @@
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Manage Corporate"
+            "name": "Manage Corporate"
         }
     },
     {
@@ -117,36 +108,36 @@
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Manage Hospital"
+            "name": "Manage Hospital"
         }
     },
-        {
-            "model": "manipal_admin.AdminMenu",
-            "pk": "d859aaee-1e7a-4e24-ad8f-9dccdbfecf8a",
-            "fields": {
-                "created_at": "2021-02-16T18:47:24.893Z",
-                "updated_at": "2021-02-16T18:47:24.893Z",
-                "name":"Hospital Locaton",
-                "parent_menu": "d58c26ae-2398-4689-b708-d4b392151849"
-            }
-        },
-        {
-            "model": "manipal_admin.AdminMenu",
-            "pk":"d9fe9ac6-279f-4142-86c2-c2eea41f35c1",
-            "fields": {
-                "created_at": "2021-02-16T18:47:24.893Z",
-                "updated_at": "2021-02-16T18:47:24.893Z",
-                "name":"Hospital Departments",
-                "parent_menu": "d58c26ae-2398-4689-b708-d4b392151849"
-            }
-        },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "d859aaee-1e7a-4e24-ad8f-9dccdbfecf8a",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "name": "Hospital Locaton",
+            "parent_menu": "d58c26ae-2398-4689-b708-d4b392151849"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "d9fe9ac6-279f-4142-86c2-c2eea41f35c1",
+        "fields": {
+            "created_at": "2021-02-16T18:47:24.893Z",
+            "updated_at": "2021-02-16T18:47:24.893Z",
+            "name": "Hospital Departments",
+            "parent_menu": "d58c26ae-2398-4689-b708-d4b392151849"
+        }
+    },
     {
         "model": "manipal_admin.AdminMenu",
         "pk": "400e2382-d632-43d9-a269-97dc2b8c629e",
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Manage Specialisation"
+            "name": "Manage Specialisation"
         }
     },
     {
@@ -155,8 +146,7 @@
         "fields": {
             "created_at": "2021-02-16T18:47:24.893Z",
             "updated_at": "2021-02-16T18:47:24.893Z",
-            "name":"Manage Services"
+            "name": "Manage Services"
         }
     }
-    
 ]
