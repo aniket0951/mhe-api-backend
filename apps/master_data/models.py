@@ -5,6 +5,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 from apps.meta_app.models import MyBaseModel
 from django.contrib.gis.db import models
+from apps.patient_registration.models import Relation
 
 from utils.custom_storage import FileStorage, MediaStorage
 from utils.validators import validate_file_authenticity, validate_file_size
@@ -304,6 +305,23 @@ class Company(MyBaseModel):
                         null=True,
                         blank=True
                     )
+
+    is_family_members_allowed = models.BooleanField(
+                                                default=False,
+                                                null=True
+                                            )
+    
+    number_of_family_members =  models.IntegerField(
+                                            blank=True,
+                                            null=True
+                                        )
+
+    family_members_relations = models.ManyToManyField(
+                                                    Relation,
+                                                    blank=True,
+                                                    null=True,
+                                                    related_name='family_relation'
+                                                )
 
     hospital_info = models.ManyToManyField(
                                         Hospital,
