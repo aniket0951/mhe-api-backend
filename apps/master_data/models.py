@@ -308,7 +308,6 @@ class Company(MyBaseModel):
 
     is_family_members_allowed = models.BooleanField(
                                                 default=False,
-                                                null=True
                                             )
     
     number_of_family_members =  models.IntegerField(
@@ -320,7 +319,7 @@ class Company(MyBaseModel):
                                                     Relation,
                                                     blank=True,
                                                     null=True,
-                                                    related_name='family_relation'
+                                                    related_name='corporate_family_relation'
                                                 )
 
     hospital_info = models.ManyToManyField(
