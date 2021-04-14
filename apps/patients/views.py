@@ -736,7 +736,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": self.get_serializer(authenticated_patient).data,
-            "message": "Your email is unlinked successfully!"
+            "message": "Your corporate email is unlinked successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
 
