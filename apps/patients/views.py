@@ -257,7 +257,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.email_otp = random_email_otp
             patient_object.email_otp_expiration_time = otp_expiration_time
             patient_object.save()
-            self.update_success_message = "You email is changed, please enter the OTP to verify."
+            self.update_success_message = "Your email is changed, please enter the OTP to verify."
         else:
             serializer.save()
 
@@ -438,7 +438,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": self.get_serializer(authenticated_patient).data,
-            "message": "You email is verified successfully!"
+            "message": "Your email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -722,7 +722,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": self.get_serializer(authenticated_patient).data,
-            "message": "You email is verified successfully!"
+            "message": "Your email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
 
