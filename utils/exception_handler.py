@@ -19,12 +19,22 @@ def custom_exception_handler(exc, context):
     if response is not None:
         
         if isinstance(exc, Ratelimited):
-            error = {'field': 'Ratelimit', 'message': "You cannot perform this action too much! Please wait for some time and try again!"}
+            logger.error("RATELIMIT EXCEPTION : %s"%(str(exc)))
+            error = {
+                'field': 'Ratelimit',
+                'error_code': 'Ratelimit',
+                'message': "You cannot perform this action too much! Please wait for some time and try again!"
+            }
             customized_response['errors'].append(error)
         elif isinstance(exc, ValidationError):
+            logger.error("VALIDATION EXCEPTION : %s"%(str(exc)))
             def generate_error_responses(data, key=''):
                 if isinstance(data, str):
-                    error = {'field': key, 'message': data}
+                    error = {
+                        'field': key, 
+                        'message': data,
+                        'error_code': str(key)
+                    }
                     customized_response['errors'].append(error)
                 elif isinstance(data, dict):
                     for error_key, error_value in data.items():
@@ -49,33 +59,33 @@ def custom_exception_handler(exc, context):
                                     key, ordinal(sequence_no))
                             else:
                                 latest_key = ordinal(sequence_no)
-                            generate_error_responses(
-                                current_data, key=latest_key)
-
+                            generate_error_responses(current_data, key=latest_key)
             try:
                 generate_error_responses(response.data)
             except (Exception, TypeError):
                 customized_response = response.data
         else:
+            logger.error("EXCEPTION : %s"%(str(exc)))
             if hasattr(exc, 'detail') and isinstance(exc.detail, str):
-                error = {'field': 'detail', 'message': str(exc.detail)}
+                error = {
+                    'field': 'detail', 
+                    'error_code':exc.default_code,
+                    'message': str(exc.detail)
+                }
                 customized_response['errors'].append(error)
             else:
                 customized_response['errors'].append(response.data)
 
         response.data = customized_response
-        logger.error(customized_response)
-
-    # # If validation error, set status code to '422 Unprocessable Entity'
-    # # see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
-    # if isinstance(exc, ValidationError):
-    #     response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        logger.error("CUSTOMIZED RESPONSE : %s"%(str(customized_response)))
     else:
-        error = {'field': 'debug', 'message': "Internal server error, please try again after sometime",
-                 "exception": str(exc)}
+        error = {
+            'field': 'debug', 
+            'error_code': 'debug',
+            'message': "Internal server error, please try again after sometime",
+            "exception": str(exc)
+        }
         customized_response['errors'].append(error)
-        logger.error(customized_response)
-        response = Response(customized_response,
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        logger.error("INTERNAL SERVER EXCEPTION : %s"%(str(exc)))
+        response = Response(customized_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return response

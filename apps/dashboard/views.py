@@ -1,5 +1,5 @@
 from apps.master_data.models import Configurations
-from apps.master_data.serializers import ConfigurationSerializer
+from apps.master_data.serializers import ComponentsSerializer, ConfigurationSerializer
 from django.conf import settings
 from django.db.models import Count, Sum
 
@@ -42,6 +42,7 @@ class DashboardAPIView(ListAPIView):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
+
         dashboard_details = {}
         dashboard_details['banners'] = DashboardBannerSerializer(DashboardBanner.objects.all(), many=True).data
         dashboard_details['configurations'] = ConfigurationSerializer(Configurations.objects.filter(allowed_components__is_active=True).first(),many=False).data
@@ -52,7 +53,13 @@ class DashboardAPIView(ListAPIView):
 
             patient_obj = patient_user_object(request)
             if patient_obj:
-                
+
+                if  patient_obj.active_view == 'Corporate' and \
+                    dashboard_details['configurations'].get("allowed_components") and \
+                    patient_obj.company_info and \
+                    patient_obj.company_info.component_ids:
+                    dashboard_details['configurations']["allowed_components"] = ComponentsSerializer(patient_obj.company_info.component_ids,many=True).data
+
                 dashboard_details['patient'] = PatientSerializer(patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
                 dashboard_details['upcoming_appointment'] = AppointmentSerializer(patient_appointment, many=True).data
@@ -243,3 +250,26 @@ class FAQDataAPIView(ListAPIView):
                 faq_data_details[faq["type"]].append(faq)
         
         return Response(faq_data_details, status=status.HTTP_200_OK)
+    
+class RemoveAccountAPIView(ListAPIView):
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        contact_number = self.request.query_params.get("contact_number", None)
+        if not contact_number:
+            return Response({"error":"Please provide 10 digit contact_number"}, status=status.HTTP_400_BAD_REQUEST)
+        if not settings.DELETE_ACCOUNT_API:
+            return Response({"error":"This feature is not enabled!"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            contact_number = int(contact_number)
+            patient = Patient.objects.filter(mobile="+91%s"%(str(contact_number))).first()
+            if not patient:
+                return Response({"error":"No patient found for the given number!"}, status=status.HTTP_400_BAD_REQUEST)
+            contact_number+=1
+            while (Patient.objects.filter(mobile="+91%s"%(str(contact_number))).first()):
+                contact_number+=1
+            patient.mobile = "+91%s"%(str(contact_number))
+            patient.save()
+        except Exception as e:
+            return Response({"error":"Invalid contact number provided!"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message":"Your number has been deleted successfully!"}, status=status.HTTP_200_OK)

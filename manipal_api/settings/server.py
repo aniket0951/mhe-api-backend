@@ -423,6 +423,8 @@ except Exception as e:
 VACCINATION_AGE_ERROR_MESSAGE = env("VACCINATION_AGE_ERROR_MESSAGE")
 COVID_BOOTH_IMAGE = env("COVID_BOOTH_IMAGE")
 
+DELETE_ACCOUNT_API = True if env("DELETE_ACCOUNT_API")=="True" else False
+
 # Logger configuration
 LOGGING = {
     'version': 1,
