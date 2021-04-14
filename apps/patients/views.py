@@ -257,7 +257,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient_object.email_otp = random_email_otp
             patient_object.email_otp_expiration_time = otp_expiration_time
             patient_object.save()
-            self.update_success_message = "You email is changed, please enter the OTP to verify."
+            self.update_success_message = "Your email is changed, please enter the OTP to verify."
         else:
             serializer.save()
 
@@ -438,7 +438,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": self.get_serializer(authenticated_patient).data,
-            "message": "You email is verified successfully!"
+            "message": "Your email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
 
@@ -722,7 +722,21 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         data = {
             "data": self.get_serializer(authenticated_patient).data,
-            "message": "You email is verified successfully!"
+            "message": "Your email is verified successfully!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['POST'])
+    def unlink_corporate_email(self,request):
+        authenticated_patient = patient_user_object(request)
+        authenticated_patient.company_info = None
+        authenticated_patient.corporate_email = None
+        authenticated_patient.active_view = "Normal"
+        authenticated_patient.is_corporate = False
+        authenticated_patient.save()
+
+        data = {
+            "data": self.get_serializer(authenticated_patient).data,
+            "message": "Your email is unlinked successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
 

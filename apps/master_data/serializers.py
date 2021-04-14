@@ -53,6 +53,7 @@ class DepartmentSerializer(DynamicFieldsModelSerializer):
 
 class HospitalDepartmentSerializer(DynamicFieldsModelSerializer):
     department = DepartmentSerializer()
+    hospital = HospitalSerializer()
 
     class Meta:
         model = HospitalDepartment

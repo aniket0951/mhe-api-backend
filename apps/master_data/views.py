@@ -45,12 +45,12 @@ from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
-                                      InternalAPICall, 
+                                      InternalAPICall,
                                       IsManipalAdminUser,
-                                      BlacklistCreateMethodPermission, 
+                                      BlacklistCreateMethodPermission,
                                       IsPatientUser
                                      )
-from utils.utils import get_report_info,patient_user_object 
+from utils.utils import get_report_info,patient_user_object
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -161,6 +161,7 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
+    search_fields = ['department__code', 'department__name', 'hospital__code', 'hospital__description']
     filter_fields = ('hospital__id','service','sub_service')
     ordering = ('department_id__name')
 
@@ -269,7 +270,7 @@ class DepartmentsView(ProxyView):
             hospital_code = department_details.pop('hospital_code')
             hospital_department_details['start_date'] = department_details.pop('start_date')
             hospital_department_details['end_date'] = department_details.pop('end_date')
-            
+
             service = department_details.pop('service')
             hospital_department_details['service'] = service.lower() if service else ""
             sub_service = department_details.pop('sub_service')
@@ -396,11 +397,11 @@ class DoctorsView(ProxyView):
                              code=doctor_kwargs['code'],
                              hospital__code=hospital_code
                          ).exclude(updated_at__date__lt=today_date).first()
-            
+
             doctor, doctor_created = Doctor.objects.update_or_create(
                 **doctor_kwargs, defaults=doctor_details)
             doctor_details['doctor_created'] = doctor_created
-            
+
             if not is_doctor_updated:
                 doctor.hospital_departments.clear()
                 doctor.specialisations.clear()
@@ -410,7 +411,7 @@ class DoctorsView(ProxyView):
             if specialisation_obj:
                 doctor.specialisations.add(specialisation_obj)
             all_doctors.append(doctor_details)
-        
+
         previous_date = datetime.now() - timedelta(days=1)
         Doctor.objects.filter(hospital__code=hospital_code,
                               updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
@@ -717,7 +718,7 @@ class ValidateOTPView(ProxyView):
     def get_request_data(self, request):
         uhid_otp = serializable_validate_UHID(**request.data)
         request_data = custom_serializer().serialize(uhid_otp, 'XML')
-        
+
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -800,7 +801,7 @@ class PatientAppointmentStatus(ProxyView):
 class CompanyViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     permission_classes = [IsManipalAdminUser]
     model = Company
-    depth =1 
+    depth =1
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     list_success_message = 'Company list returned successfully!'
@@ -826,7 +827,7 @@ class CompanyViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         if self.action == 'update':
             permission_classes=[IsManipalAdminUser]
             return [permission() for permission in permission_classes]
-        
+
         if self.action == 'destroy':
             permission_classes=[BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]
@@ -969,7 +970,7 @@ class UhidConsultationPricingView(ProxyView):
         item = root.find('consultchargesResp')
         response_content = json.loads(item.text)
         if response_content:
-            
+
             response_content = response_content[0]
             if "OPDConsCharges" in response_content:
                 response_content["OPDConsCharges"] = int(response_content["OPDConsCharges"])
@@ -1054,7 +1055,7 @@ class ConfigurationsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     update_success_message      = 'Configurations updated successfully!'
     filter_backends = (
                 DjangoFilterBackend,
-                filters.SearchFilter, 
+                filters.SearchFilter,
                 filters.OrderingFilter
             )
 
@@ -1070,7 +1071,7 @@ class ConfigurationsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         if self.action in ['create']:
             permission_classes = [BlacklistCreateMethodPermission]
             return [permission() for permission in permission_classes]
-            
+
         if self.action == 'destroy':
             permission_classes=[BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]
