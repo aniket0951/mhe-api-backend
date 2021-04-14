@@ -161,7 +161,7 @@ class HospitalDepartmentViewSet(custom_viewsets.ReadOnlyModelViewSet):
     update_success_message = None
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['department__code', 'department__name', 'department__id', 'hospital__code', 'hospital__id']
+    search_fields = ['department__code', 'department__name', 'hospital__code', 'hospital__description']
     filter_fields = ('hospital__id','service','sub_service')
     ordering = ('department_id__name')
 
