@@ -146,16 +146,14 @@ class ReportsSyncAPIView(CreateAPIView):
             report_info["place_order"] = root.find('OBR.2').find('OBR.2.1').text
             report_details = request.data.get('ORUDetails', None)
             proxy_request = report_handler(report_info=report_info)
-
+            report_response = None
             if not proxy_request:
                 ValidationError("Something went wrong!")
             try:
-                report_response = ReportViewSet.as_view(
-                    {'post': 'create'})(proxy_request)
+                report_response = ReportViewSet.as_view({'post': 'create'})(proxy_request)
             except Exception as error:
                 logger.error("Exception in ReportsSyncAPIView %s"%(str(error)))
-                return Response({"data": report_response.data, "consumed": False},
-                                status=status.HTTP_200_OK)
+                return Response({"data": report_response.data if report_response else str(error), "consumed": False},status=status.HTTP_200_OK)
             visit_id = report_response.data["data"]["visit_id"]
             report_obj = Report.objects.filter(
                 id=report_response.data['data']['id']).first()
