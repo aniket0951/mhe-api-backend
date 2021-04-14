@@ -53,7 +53,6 @@ class DepartmentSerializer(DynamicFieldsModelSerializer):
 
 class HospitalDepartmentSerializer(DynamicFieldsModelSerializer):
     department = DepartmentSerializer()
-    hospital = HospitalSerializer()
 
     class Meta:
         model = HospitalDepartment
@@ -63,6 +62,8 @@ class HospitalDepartmentSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         if instance.department and instance.department.name:
             response_object["department"]["name"] = instance.department.name
+        if instance.hospital:
+            response_object["hospital_data"] = HospitalSerializer(instance.hospital).data
         return response_object
 
 
@@ -77,8 +78,7 @@ class AmbulanceContactSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.hospital:
-            response_object['hospital'] = HospitalSerializer(
-                instance.hospital).data
+            response_object['hospital'] = HospitalSerializer(instance.hospital).data
         try:
             if 'distance' in response_object and instance.calculated_distance:
                 response_object['distance'] = instance.calculated_distance.km
