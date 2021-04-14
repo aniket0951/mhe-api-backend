@@ -725,6 +725,20 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": "You email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
+    @action(detail=False, methods=['POST'])
+    def unlink_corporate_email(self,request):
+        authenticated_patient = patient_user_object(request)
+        authenticated_patient.company_info = None
+        authenticated_patient.corporate_email = None
+        authenticated_patient.active_view = "Normal"
+        authenticated_patient.is_corporate = False
+        authenticated_patient.save()
+
+        data = {
+            "data": self.get_serializer(authenticated_patient).data,
+            "message": "You email is unlinked successfully!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['POST'])
     def switch_view(self, request):
