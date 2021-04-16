@@ -1134,7 +1134,6 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
         return Response(data, status=status.HTTP_200_OK)
 
 
-@method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_DOCUMENT_UPLOAD, block=True, method=ratelimit.UNSAFE), name='create')
 class AppointmentDocumentsViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny, ]
     model = AppointmentDocuments
@@ -1245,7 +1244,7 @@ class AppointmentVitalViewSet(custom_viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_200_OK)
 
-@method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_DOCUMENT_UPLOAD, block=True, method=ratelimit.UNSAFE), name='create')
+
 class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny, ]
     model = PrescriptionDocuments
