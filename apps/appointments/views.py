@@ -1326,33 +1326,35 @@ class ManipalPrescriptionViewSet(custom_viewsets.ModelViewSet):
 
     def create(self, request):
         document_param = dict()
-        appointment_identifier = request.query_params.get(
-            "appointment_identifier")
+        appointment_identifier = request.query_params.get("appointment_identifier")
+        
         if not appointment_identifier:
             raise ValidationError("Paramter Missing")
-        appointment_instance = Appointment.objects.filter(
-            appointment_identifier=appointment_identifier).first()
+        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+
         if not appointment_instance:
             raise ValidationError(AppointmentsConstants.APPOINTMENT_DOESNT_EXIST)
+        
         for i, f in enumerate(request.FILES.getlist('prescription')):
+
             document_param["appointment_info"] = appointment_instance.id
             document_param["prescription"] = f
             document_param["name"] = f.name
             document_param["appointment_identifier"] = appointment_instance.appointment_identifier
-            document_param["episode_number"] = appointment_instance.episode_number
+            document_param["episode_number"] = request.query_params.get("episode_number") or appointment_instance.episode_number
             document_param["hospital_code"] = appointment_instance.hospital.code
             document_param["department_code"] = appointment_instance.department.code
             document_param["episode_date_time"] = appointment_instance.episode_date_time
             document_serializer = self.serializer_class(data=document_param)
             document_serializer.is_valid(raise_exception=True)
             prescription = document_serializer.save()
-            appointment_prescription = AppointmentPrescription.objects.filter(
-                appointment_info=appointment_instance.id).first()
+            
+            appointment_prescription = AppointmentPrescription.objects.filter(appointment_info=appointment_instance.id).first()
+
             if not appointment_prescription:
                 data = dict()
                 data["appointment_info"] = appointment_instance.id
-                prescription_serializer = AppointmentPrescriptionSerializer(
-                    data=data)
+                prescription_serializer = AppointmentPrescriptionSerializer(data=data)
                 prescription_serializer.is_valid(raise_exception=True)
                 appointment_prescription = prescription_serializer.save()
             appointment_prescription.prescription_documents.add(prescription)
