@@ -95,7 +95,7 @@ class HospitalSpecificSerializer(DynamicFieldsModelSerializer):
 
 
 class CompanySerializer(DynamicFieldsModelSerializer):
-    family_members_relations = RelationSerializer()
+    family_members_relations = RelationSerializer(many=True)
     
     class Meta:
         model = Company
