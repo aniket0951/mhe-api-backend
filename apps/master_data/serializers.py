@@ -95,6 +95,8 @@ class HospitalSpecificSerializer(DynamicFieldsModelSerializer):
 
 
 class CompanySerializer(DynamicFieldsModelSerializer):
+    family_members_relations = RelationSerializer()
+    
     class Meta:
         model = Company
         exclude = ('created_at', 'updated_at',)
@@ -106,8 +108,7 @@ class CompanySerializer(DynamicFieldsModelSerializer):
                 instance.hospital_info, many=True).data
         if instance.component_ids:
             response_object["component_ids"] = ComponentsSerializer(instance.component_ids, many = True).data
-        if instance.family_members_relations:
-            response_object["family_members_relations"] = RelationSerializer(instance.family_members_relations, many=True).data
+      
         return response_object
     
     def update(self, instance, validated_data):
