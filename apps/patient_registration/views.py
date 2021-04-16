@@ -20,7 +20,7 @@ from proxy.custom_serializables import CreateUHID as serializable_CreateUHID
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from utils import custom_viewsets
-from utils.custom_permissions import IsPatientUser
+from utils.custom_permissions import IsManipalAdminUser, IsPatientUser
 
 from .exceptions import FieldMissingValidationException
 from .models import (City, Country, Gender, IDProof, Language, MaritalStatus,
@@ -36,7 +36,7 @@ from .serializers import (CitySerializer, CountrySerializer, GenderSerializer,
 
 
 class RegistrationAPIView(ListAPIView):
-    permission_classes = [IsPatientUser]
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
 
     def list(self, request, *args, **kwargs):
         registration_details = {}
