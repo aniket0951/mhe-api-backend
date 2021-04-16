@@ -9,6 +9,7 @@ from .models import (AmbulanceContact, Company, Department, EmergencyContact,
                      Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations)
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
+from ..patient_registration.serializers import RelationSerializer
 
 _logger = logging.getLogger("django")
 
@@ -105,7 +106,8 @@ class CompanySerializer(DynamicFieldsModelSerializer):
                 instance.hospital_info, many=True).data
         if instance.component_ids:
             response_object["component_ids"] = ComponentsSerializer(instance.component_ids, many = True).data
-        
+        if instance.family_members_relations:
+            response_object["family_members_relations"] = RelationSerializer(instance.family_members_relations, many=True).data
         return response_object
     
     def update(self, instance, validated_data):

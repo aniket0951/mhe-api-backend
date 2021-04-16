@@ -9,7 +9,7 @@ from apps.master_data.serializers import HospitalSerializer, CompanySerializer
 from apps.patient_registration.serializers import RelationSerializer
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
-from utils.utils import generate_pre_signed_url,assign_users
+from utils.utils import generate_pre_signed_url, assign_users, calculate_age
 from utils.custom_validation import ValidationUtil
 
 from .models import CovidVaccinationRegistration, FamilyMember, Patient, PatientAddress, WhiteListedToken
@@ -113,6 +113,9 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         if instance.company_info:
             response_object['company_info'] = CompanySerializer(instance.company_info).data
 
+        if instance.dob:
+            response_object['age'] = calculate_age(instance.dob)
+            
         return response_object
 
     def create(self, validated_data):
