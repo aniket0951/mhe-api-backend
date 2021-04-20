@@ -1064,7 +1064,7 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter)
-    permission_classes = [IsDoctor, ]
+    permission_classes = [IsDoctor | IsManipalAdminUser]
     serializer_class = AppointmentSerializer
     ordering = ('appointment_date', 'appointment_slot')
     ordering_fields = ('appointment_date', 'appointment_slot')
