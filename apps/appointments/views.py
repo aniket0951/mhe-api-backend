@@ -1074,25 +1074,33 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
     retrieve_success_message = 'Appointment information returned successfully!'
 
     def get_queryset(self):
+
         qs = super().get_queryset()
+
         doctor_id = self.request.user.id
+        if self.request.query_params.get("doctor_id", None):
+            doctor_id = self.request.query_params.get("doctor_id", None)
+        
         doctor = Doctor.objects.filter(id=doctor_id).first()
+
         if not doctor:
             raise ValidationError("Doctor does not Exist")
+
         if self.request.query_params.get("hospital_visit", None):
-            return qs.filter(
-                doctor__code=doctor.code, status="1", appointment_mode="HV")
+            return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="HV")
 
         if self.request.query_params.get("vc_appointment_status", None):
-            return qs.filter(
-                doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")
-        return qs.filter(
-            doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(
-                vc_appointment_status=4)
+            return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")
+
+        return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(vc_appointment_status=4)
 
     def list(self, request, *args, **kwargs):
+
         pagination_data = None
         doctor_id = self.request.user.id
+        if self.request.query_params.get("doctor_id", None):
+            doctor_id = self.request.query_params.get("doctor_id", None)
+            
         doctor = Doctor.objects.filter(id=doctor_id).first()
         queryset = self.filter_queryset(self.get_queryset())
 
