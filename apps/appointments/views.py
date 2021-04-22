@@ -723,7 +723,7 @@ class OfflineAppointment(APIView):
             return Response({"message": "Hospital/doctor/department is not available"}, status=status.HTTP_200_OK)
         hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
         
-        if hospital_department.service in [settings.COVID_SERVICE]:
+        if hospital_department and hospital_department.service in [settings.COVID_SERVICE]:
             appointment_data['appointment_service'] = settings.COVID_SERVICE
             
         if not (patient or family_member):
