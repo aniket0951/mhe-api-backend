@@ -1,0 +1,208 @@
+[
+    {
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHB",
+            "description": "Manipal Hospital HAL Airport Road, Bengaluru",
+            "email": "www.manipalhospitals.com",
+            "mobile": "080-25023344",
+            "address": "#98 HAL Airport Road, Bangalore 560017",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHBHC",
+            "health_package_department_code":"MHBHSVC",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E610000044696FF08569534009F9A067B3EA2940"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8203",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHN",
+            "description": "Manipal Hospital Malleshwaram, Bengaluru",
+            "email": "www.manipalhospitals.com",
+            "mobile": "080-49007000",
+            "address": "No.71,11th Main,Opposite Malleswaram Railway Station,Bangalore-560003",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHNHC",
+            "health_package_department_code":"MHNDHC",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E6100000B98D06F0166453408D976E1283002A40"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8204",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MMH",
+            "description": " Manipal Hospital Jayanagar, Bengaluru",
+            "email": "www.manipalhospitals.com",
+            "address":"45/1, 45th Cross Rd, Kottapalya, Jayanagara 9th Block, Jayanagar, Bengaluru, Karnataka 560069",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"",
+            "health_package_department_code":"",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E6100000A089B0E1E96553406891ED7C3FD52940"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8205",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHW",
+            "description": "Manipal Hospital Whitefield, Bengaluru",
+            "email": "www.manipalhospitals.com",
+            "mobile": "080-25027000",
+            "address": "#143,212-215, EPIP Industrial Area, Hoodi Village K R Puram Hobli, Bengaluru 560066",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHWHC",
+            "health_package_department_code":"MHWHSVC",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8206",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHD",
+            "description": "Manipal Hospital Dwarka, Delhi",
+            "email": "www.manipalhospitals.com",
+            "address": "Palam Vihar, Sector 6 Dwarka, Dwarka, New Delhi, Delhi 110075",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHDHC",
+            "health_package_department_code":"MHDHSVS",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E61000004DF38E53744453404694F6065F983C40"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8207",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHJ",
+            "description": "Manipal Hospital Jaipur",
+            "email": "www.manipalhospitals.com",
+            "mobile": "+91 141 5164 000",
+            "address": "Sector 5, Vidhyadhar Nagar, Jaipur-302013, Rajasthan",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHJHC",
+            "health_package_department_code":"MHJHSVC",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E61000002FDD240681F152402B1895D409F83A40"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8208",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHV",
+            "description": "Manipal Hospital Vijayawada",
+            "email": "www.manipalhospitals.com",
+            "mobile": "0866-25027000",
+            "address": "Near Varadhi,(Near Vijayawada), Tadepalli,Guntur Dist - 522501",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHVHC",
+            "health_package_department_code":"MHVHSVC",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E6100000C139234A7B27544079E92631087C3040"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8209",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHG",
+            "description": "Manipal Hospital Goa",
+            "email": "www.manipalhospitals.com",
+            "mobile": "083-26632500",
+            "address": "Dr E Borges Road, Dona Paula Panaji - 403004",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHGHC",
+            "health_package_department_code":"MHGDHC",
+            "is_home_collection_supported":"True",
+            "location": "0101000020E6100000F2D24D6210745240EC51B81E85EB2E40"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8210",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MHS",
+            "description": "Manipal Hospital Salem",
+            "email": "www.manipalhospitals.com",
+            "mobile": "0427-2346600",
+            "address": "Dalmia Board, Salem-Bengaluru Highway, Salem 636012",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHSHC",
+            "health_package_department_code":"MHSDHC",
+            "is_home_collection_supported":"True",
+            "location": "0101000020E6100000D8817346948653400E2DB29DEF672740"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8211",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "KMC",
+            "description": "KMC, Manipal Hospital Mangalore",
+            "email": "www.manipalhospitals.com",
+            "mobile": "0824-2444590",
+            "address": "DR.B.R.Ambedkar Circle,Mangaluru 575 001",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"KMCHSVC",
+            "health_package_department_code":"KMCHC",
+            "is_home_collection_supported":"True",
+            "location":"0101000020E6100000984C158C4AB65240CAC342AD69BE2940"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8212",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MCB",
+            "description": "Manipal Clinics Brookefield",
+            "email": "www.manipalhospitals.com",
+            "mobile": "+918041242122",
+            "address": "189, Radhakrishna Enclave Ground Floor, A Block, AECS Layout, behind CMRIT College, Kundalahalli, Bengaluru, Karnataka 560037",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"MHWHC",
+            "health_package_department_code":"MHWHSVC",
+            "is_home_collection_supported":"True",
+            "location": "0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940"
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8213",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "code": "MIO",
+            "description": "Manipal Infosys OHC",
+            "email": "",
+            "mobile": "",
+            "address": "",
+            "is_health_package_online_purchase_supported": "False",
+            "health_package_doctor_code":"",
+            "health_package_department_code":"",
+            "is_home_collection_supported":"True",
+            "location":"",
+            "promo_code":"MIO",
+            "corporate_only":"True"
+        }
+    }
+
+]
