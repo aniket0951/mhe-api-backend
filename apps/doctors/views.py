@@ -245,7 +245,7 @@ class DoctorloginView(ProxyView):
                     doctor_code = login_response_json["CTPCP_Code"]
                     login_response_json["Hosp"]
 
-                    doctor = Doctor.objects.filter(code=doctor_code).first()
+                    doctor = Doctor.objects.filter(code=doctor_code).exclude(hospital_departments=None).first()
                     payload = jwt_payload_handler(doctor)
                     payload["username"] = doctor.code
                     token = jwt_encode_handler(payload)

@@ -716,7 +716,7 @@ class OfflineAppointment(APIView):
                             status=status.HTTP_200_OK)
         patient = Patient.objects.filter(uhid_number=uhid).first()
         family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
-        doctor = Doctor.objects.filter(code=data["doctorCode"].upper()).first()
+        doctor = Doctor.objects.filter(code=data["doctorCode"].upper(),hospital__code=data["locationCode"]).first()
         hospital = Hospital.objects.filter(code=data["locationCode"]).first()
         department = Department.objects.filter(code=deparmtment_code).first()
         if not (doctor and hospital and department):
