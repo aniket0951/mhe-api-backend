@@ -274,6 +274,9 @@ class FamilyMember(MyBaseModel):
 
     is_visible = models.BooleanField(default=False)
 
+    is_corporate = models.BooleanField(default=False,
+                                       verbose_name='is_corporate')
+    
     raw_info_from_manipal_API = JSONField(blank=True,
                                           null=True
                                           )
