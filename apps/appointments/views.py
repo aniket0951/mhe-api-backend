@@ -57,7 +57,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object,calculate_age
+from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj
 from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -1479,6 +1479,24 @@ class CurrentAppointmentListView(ProxyView):
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
 
+                if not appointment_instance:
+                    new_appointment = {
+                            'UHID':appointment["HospNo"],
+                            'doctorCode':self.request.data.doctor_code,
+                            'appointmentIdentifier':appointment_identifier,
+                            'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
+                            'appointmentMode': appointment["ApptType"],
+                            'episodeNumber':None,
+                            'locationCode': appointment["HospitalCode"],
+                            'status':"Confirmed", 
+                            'payment_status': appointment["PaymentStatus"],
+                            'department':appointment["DeptCode"]
+                    }
+                    new_appointment_request_param = cancel_parameters(new_appointment)
+                    OfflineAppointment.as_view()(new_appointment_request_param)
+                    appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                
+                
                 if appointment_instance:
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
