@@ -732,8 +732,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.corporate_email = None
         authenticated_patient.active_view = "Normal"
         authenticated_patient.is_corporate = False
+        family_members_ids = FamilyMember.objects.filter(patient_info=authenticated_patient.id)
+        if family_members_ids:
+             family_members_ids.update(is_corporate=False)
         authenticated_patient.save()
-
         data = {
             "data": self.get_serializer(authenticated_patient).data,
             "message": "Your corporate email is unlinked successfully!"

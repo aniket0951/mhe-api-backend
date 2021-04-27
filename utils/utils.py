@@ -169,3 +169,14 @@ def calculate_age(dob):
     today = date.today()
     age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
     return age
+
+def datetime_str_to_obj(datetime_str):
+    return datetime.strptime(datetime_str, "%d/%m/%Y %I:%M%p")
+
+def datetime_obj_to_str(datetime_obj):
+    return datetime.strftime(datetime_obj, "%Y%m%d%H%M%S")
+
+def date_and_time_str_to_obj(appdate,apptime):
+    datetime_obj = datetime_str_to_obj(appdate+" "+apptime)
+    datetime_str = datetime_obj_to_str(datetime_obj)
+    return datetime_str
