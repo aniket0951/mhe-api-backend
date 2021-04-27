@@ -108,7 +108,9 @@ class CompanySerializer(DynamicFieldsModelSerializer):
             response_object["component_ids"] = ComponentsSerializer(instance.component_ids, many = True).data
         if instance.family_members_relations:
             response_object["family_members_relations"] = RelationSerializer(instance.family_members_relations, many=True).data
-
+        if instance.family_members_components:
+            response_object["family_members_components"] = ComponentsSerializer(instance.family_members_components, many=True).data
+        
         return response_object
     
     def update(self, instance, validated_data):
