@@ -322,6 +322,12 @@ class Company(MyBaseModel):
                                                     related_name='corporate_family_relation'
                                                 )
 
+    family_members_components = models.ManyToManyField(
+                                        Components, 
+                                        blank=True,
+                                        null=True,
+                                        related_name='corporate_family_member_components'
+                                    )
     hospital_info = models.ManyToManyField(
                                         Hospital,
                                         blank=True,
