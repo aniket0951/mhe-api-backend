@@ -1,3 +1,5 @@
+from apps.payments.razorpay_views import RazorPaymentResponse
+from apps.payments.models import Payment
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -184,6 +186,23 @@ def appointment_reminder_scheduler():
         notification_data["recipient"] = appointment_instance.patient.id
         send_push_notification.delay(notification_data=notification_data)
 
+@app.task(name="tasks.process_payment_records")
+def process_payment_records_scheduler():
+    now = datetime.now()
+    end_time = now - timedelta(minutes=13)
+    start_time = now - timedelta(minutes=45)
+    payments = Payment.objects.filter(
+            Q(created_at__date=now.date()) & 
+            Q(status="Initiated")
+        ).filter(
+            created_at__time__gte=start_time, 
+            created_at__time__lte=end_time
+        )
+    for payment in payments:
+        param = dict()
+        param["order_id"] = payment.razor_order_id
+        request_param = cancel_parameters(param)
+        RazorPaymentResponse.as_view()(request_param)
 
 @app.task(name="tasks.auto_appointment_cancellation")
 def auto_appointment_cancellation():
@@ -283,6 +302,10 @@ app.conf.beat_schedule = {
     },
     "hourly_auto_cancellation_for_unpaid_vc_appointment": {
         "task": "tasks.auto_appointment_cancellation",
+        "schedule": crontab(minute="*/15", hour="*")
+    },
+    "hourly_auto_process_for_unpaid_payments": {
+        "task": "tasks.process_payment_records",
         "schedule": crontab(minute="*/15", hour="*")
     },
     "vc_daily_auto_appointment_cancellation": {

@@ -179,7 +179,7 @@ class RazorPaymentResponse(APIView):
         logger.info("request data: %s"%str(request.data))
 
         is_requested_from_mobile = False
-        if request.data.get("order_id"):
+        if request.data.get("order_id") and request.data.get("processing_id"):
             is_requested_from_mobile = True
         
         payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
