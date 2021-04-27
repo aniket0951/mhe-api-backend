@@ -864,7 +864,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
     filter_backends=(DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    filter_fields=('is_corporate')
+    filter_fields=['is_corporate']
     search_fields=['first_name', ]
     ordering_fields=('-created_at',)
 
