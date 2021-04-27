@@ -1,4 +1,5 @@
 from manipal_api.celery import app
+from .models import Appointment
 
 @app.task
 def set_status_as_completed(appointment_identifier):
