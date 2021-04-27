@@ -227,7 +227,7 @@ class InitiateTrackerAppointment(APIView):
         encoded_string_generated = base64.b64encode(hashlib.sha256(checksum_string.encode()).hexdigest().encode()).decode()
         if not (encoded_string == encoded_string_generated):
             raise ValidationError("Invalid Parameter")
-        doctor = Doctor.objects.filter(code=doctor_code).first()
+        doctor = Doctor.objects.filter(code=doctor_code).exclude(hospital_departments=None).first()
 
         payload = jwt_payload_handler(doctor)
         payload["username"] = doctor.code
