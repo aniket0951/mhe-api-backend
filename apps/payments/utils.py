@@ -98,6 +98,19 @@ class PaymentUtils:
         return appointment_instance
 
     @staticmethod
+    def get_payment_instance_from_order_id(razor_order_id):
+        if not razor_order_id:
+            raise MandatoryOrderIdException
+        payment_instance = None
+        try:
+            payment_instance = Payment.objects.get(
+                                        razor_order_id=razor_order_id
+                                    )
+        except Exception:
+            raise ProcessingIdDoesNotExistsValidationException
+        return payment_instance
+
+    @staticmethod
     def get_payment_instance(processing_id,razor_order_id):
         if not processing_id:
             raise MandatoryProcessingIdException
@@ -149,10 +162,13 @@ class PaymentUtils:
     @staticmethod
     def validate_request_get_payment_instance(request):
         payment_instance = None
-        if request.data.get("order_id"):
+        if request.data.get("order_id") and request.data.get("processing_id"):
             processing_id = request.data.get("processing_id")
             razor_order_id = request.data.get("order_id")
             payment_instance = PaymentUtils.get_payment_instance(processing_id,razor_order_id)
+        elif request.data.get("order_id"):
+            razor_order_id = request.data.get("order_id")
+            payment_instance = PaymentUtils.get_payment_instance_from_order_id(razor_order_id)
         elif request.data.get("event") and request.data.get("event") in [PaymentConstants.RAZORPAY_ORDER_PAID_EVENT,PaymentConstants.RAZORPAY_ORDER_PAYMENT_FAILED_EVENT]:
             razor_order_id = PaymentUtils.get_order_id_from_webhook_request(request.data)
             payment_instance = PaymentUtils.get_razorpay_payment_instance(razor_order_id)
