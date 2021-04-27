@@ -1482,7 +1482,7 @@ class CurrentAppointmentListView(ProxyView):
                 if not appointment_instance:
                     new_appointment = {
                             'UHID':appointment["HospNo"],
-                            'doctorCode':self.request.data.doctor_code,
+                            'doctorCode':self.request.data["doctor_code"],
                             'appointmentIdentifier':appointment_identifier,
                             'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
                             'appointmentMode': appointment["ApptType"],
