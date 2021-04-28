@@ -115,7 +115,9 @@
         "fields": {
             "created_at": "2020-02-06T00:00:00+05:30",
             "updated_at": "2020-02-06T00:00:00+05:30",
-            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8212"
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8212",
+            "secret_key":"rzp_live_fP6vAKxBSbXlG4",
+            "secret_secret":"L9jA7anGBJOqpWD40sJOGemt"
         }
     },
     {
