@@ -187,6 +187,7 @@ class UHIDRegistrationView(ProxyView):
                 family_serializer = FamilyMemberSpecificSerializer(
                     family_member, data=response_data, partial=True)
                 family_serializer.is_valid(raise_exception=True)
+                response_data["dob"] = self.request.data["dob"]
                 family_serializer.save()
             else:
                 patient = Patient.objects.filter(
@@ -194,6 +195,7 @@ class UHIDRegistrationView(ProxyView):
                 patient_serializer = PatientSpecificSerializer(
                     patient, data=response_data, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
+                response_data["dob"] = self.request.data["dob"]
                 patient_serializer.save()
         return self.custom_success_response(message=response_message,
                                             success=response_status, data=response_data)

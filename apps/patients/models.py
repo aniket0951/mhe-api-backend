@@ -328,6 +328,20 @@ class FamilyMember(MyBaseModel):
                 self._uhid_updated = True
         super().save(*args, **kwargs)
 
+class FamilyMemberCorporateHistory(MyBaseModel):
+
+    family_member = models.ForeignKey(FamilyMember,
+                                        on_delete=models.PROTECT,
+                                        null=False,
+                                        blank=False,
+                                        related_name='patient_family_member_corporate_history')
+
+    company_info = models.ForeignKey(Company,
+                                        on_delete=models.PROTECT,
+                                        null=False,
+                                        blank=False,
+                                        related_name='patient_family_member_company_info')
+
 class PatientAddress(MyBaseModel):
     ADDRESS_CHOICES = (
         ('Home Address', 'Home Address'),
