@@ -2,7 +2,7 @@ import ast
 import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
-
+import logging
 import requests
 from django.core import serializers
 from django.db.models import Q
@@ -33,7 +33,7 @@ from .serializers import (CitySerializer, CountrySerializer, GenderSerializer,
                           RelationSerializer, ReligionSerializer,
                           SpecialitySerializer, TitleSerializer,
                           ZipcodeSerializer)
-
+logger = logging.getLogger("django")
 
 class RegistrationAPIView(ListAPIView):
     permission_classes = [IsPatientUser | IsManipalAdminUser]
@@ -181,13 +181,16 @@ class UHIDRegistrationView(ProxyView):
             response_status = True
             response_message = message
             response_data["pre_registration_number"] = pre_registration_number
+            logger.info("request_dob :" + self.request.data["dob"])
+            dob_obj = datetime.strptime(self.request.data["dob"], "%m%d%Y")
+            logger.info("dob_obj :" +dob_obj)
+            response_data["dob"] = dob_obj.date()
 
             if user_id:
                 family_member = FamilyMember.objects.filter(id=user_id).first()
                 family_serializer = FamilyMemberSpecificSerializer(
                     family_member, data=response_data, partial=True)
                 family_serializer.is_valid(raise_exception=True)
-                response_data["dob"] = self.request.data["dob"]
                 family_serializer.save()
             else:
                 patient = Patient.objects.filter(
@@ -195,7 +198,6 @@ class UHIDRegistrationView(ProxyView):
                 patient_serializer = PatientSpecificSerializer(
                     patient, data=response_data, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
-                response_data["dob"] = self.request.data["dob"]
                 patient_serializer.save()
         return self.custom_success_response(message=response_message,
                                             success=response_status, data=response_data)

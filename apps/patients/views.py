@@ -1000,12 +1000,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             family_member_object.patient_info and \
             family_member_object.patient_info.company_info:
 
-            mapping_id = FamilyMemberCorporateHistory.objects.filter(family_member = family_member_object.id, company_info = family_member_object.patient_info.company_info)
+            mapping_id = FamilyMemberCorporateHistory.objects.filter(family_member = family_member_object.id, company_info = family_member_object.patient_info.company_info.id)
 
             if not mapping_id:
                 data = {
                     family_member : family_member_object.id,
-                    company_info  : family_member_object.patient_info.company_info
+                    company_info  : family_member_object.patient_info.company_info.id
                 }
                 FamilyMemberCorporateHistorySerializer(data=data)
                 FamilyMemberCorporateHistorySerializer.save()
