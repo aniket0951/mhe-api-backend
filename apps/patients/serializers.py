@@ -11,6 +11,7 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, assign_users, calculate_age
 from utils.custom_validation import ValidationUtil
+from apps.patients.models import FamilyMemberCorporateHistory
 
 from .models import CovidVaccinationRegistration, FamilyMember, Patient, PatientAddress, WhiteListedToken
 
@@ -227,6 +228,11 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
         if (not self.context['request'].method == 'POST') and 'mobile' in data:
             data.pop('mobile')
         return super().to_internal_value(data)
+
+class FamilyMemberCorporateHistorySerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = FamilyMemberCorporateHistory
+        fields = '__all__'
 
 class PatientAddressSerializer(DynamicFieldsModelSerializer):
     patient_info = serializers.UUIDField(write_only=True, default=CurrentPatientUserDefault())
