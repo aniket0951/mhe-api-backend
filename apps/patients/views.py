@@ -718,6 +718,12 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.corporate_email_otp = random_email_otp
         authenticated_patient.active_view = "Corporate"
         authenticated_patient.is_corporate = True
+        family_members_ids = FamilyMember.objects.filter(patient_info = authenticated_patient.id)
+        for family_members in family_members_ids:
+            family_members_history = FamilyMemberCorporateHistory.objects.filter(family_member = family_members.id, company_info = authenticated_patient.company_info.id)
+            if family_members_history:
+                family_members.is_corporate = True 
+                family_members.save()
         authenticated_patient.save()
 
         data = {
