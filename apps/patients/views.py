@@ -52,10 +52,10 @@ from .exceptions import (
 from .serializers import (  
                     CovidVaccinationRegistrationSerializer, FamilyMemberSerializer, 
                     PatientAddressSerializer,
-                    PatientSerializer
+                    PatientSerializer, FamilyMemberCorporateHistorySerializer
                 )
 from .utils import covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid
-from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress
+from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress, FamilyMemberCorporateHistory
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
 logger = logging.getLogger('django')
@@ -994,6 +994,21 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         family_member_object=self.get_object()
         is_email_to_be_verified=False
         is_mobile_to_be_verified=False
+
+        if 'is_corporate' in serializer.validated_data and \
+            serializer.validated_data['is_corporate'] and \
+            family_member_object.patient_info and \
+            family_member_object.patient_info.company_info:
+
+            mapping_id = FamilyMemberCorporateHistory.objects.filter(family_member = family_member_object.id, company_info = family_member_object.patient_info.company_info)
+
+            if not mapping_id:
+                data = {
+                    family_member : family_member_object.id,
+                    company_info  : family_member_object.patient_info.company_info
+                }
+                FamilyMemberCorporateHistorySerializer(data=data)
+                FamilyMemberCorporateHistorySerializer.save()
 
         if 'new_mobile' in serializer.validated_data and not family_member_object.mobile == serializer.validated_data['new_mobile']:
             if not serializer.validated_data['new_mobile'] == str(request_patient.mobile.raw_input):
