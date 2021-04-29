@@ -719,11 +719,15 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.active_view = "Corporate"
         authenticated_patient.is_corporate = True
         family_members_ids = FamilyMember.objects.filter(patient_info = authenticated_patient.id)
-        for family_members in family_members_ids:
-            family_members_history = FamilyMemberCorporateHistory.objects.filter(family_member = family_members.id, company_info = authenticated_patient.company_info.id)
-            if family_members_history:
-                family_members.is_corporate = True 
-                family_members.save()
+        if family_members_ids and authenticated_patient.company_info:
+            for family_member in family_members_ids:
+                family_members_history = FamilyMemberCorporateHistory.objects.filter(
+                                                                family_member = family_member.id, 
+                                                                company_info = authenticated_patient.company_info.id
+                                                            ).first()
+                if family_members_history:
+                    family_member.is_corporate = True
+                    family_member.save()
         authenticated_patient.save()
 
         data = {
@@ -731,6 +735,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             "message": "Your email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
+    
     @action(detail=False, methods=['POST'])
     def unlink_corporate_email(self,request):
         authenticated_patient = patient_user_object(request)
@@ -1010,8 +1015,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
             if not mapping_id:
                 data = {
-                    family_member : family_member_object.id,
-                    company_info  : family_member_object.patient_info.company_info.id
+                    "family_member" : family_member_object.id,
+                    "company_info"  : family_member_object.patient_info.company_info.id
                 }
                 FamilyMemberCorporateHistorySerializer(data=data)
                 FamilyMemberCorporateHistorySerializer.save()
