@@ -183,7 +183,7 @@ class UHIDRegistrationView(ProxyView):
             response_data["pre_registration_number"] = pre_registration_number
             logger.info("request_dob :" + self.request.data["dob"])
             dob_obj = datetime.strptime(self.request.data["dob"], "%m%d%Y")
-            logger.info("dob_obj :" +dob_obj)
+            logger.info("dob_obj : %s"%(str(dob_obj)))
             response_data["dob"] = dob_obj.date()
 
             if user_id:
