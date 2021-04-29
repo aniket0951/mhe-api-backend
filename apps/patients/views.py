@@ -73,7 +73,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
-    search_fields = ['first_name','last_name','mobile', 'email']
+    search_fields = ['first_name','last_name','mobile', 'email','uhid_number']
     ordering_fields = ('-created_at',)
 
     def get_queryset(self):
@@ -876,7 +876,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     filter_backends=(DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
     filter_fields=['is_corporate']
-    search_fields=['first_name', ]
+    search_fields=['first_name','uhid_number' ]
     ordering_fields=('-created_at',)
 
     def get_permissions(self):
