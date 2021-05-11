@@ -21,7 +21,7 @@ from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
 from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
                                       update_health_package, update_item)
-
+from utils.utils import check_code
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
@@ -1091,8 +1091,10 @@ class PatientDetailsByMobileView(ProxyView):
     permission_classes = [AllowAny]
     source = 'PatDetailsByMob'
     success_msg = 'Patient List Return Successfully'
-
     def get_request_data(self, request):
+        data = request.data
+        mobile_number = data.get("mobile")
+        data["check_code"] = check_code(mobile_number)
         patient = serializable_patient_details_by_mobile(**request.data)
         request_data = custom_serializer().serialize(patient, 'XML')
         return request_data
