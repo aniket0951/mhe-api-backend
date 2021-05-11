@@ -21,6 +21,7 @@ from apps.lab_and_radiology_items.models import (LabRadiologyItem,
                                                  LabRadiologyItemPricing)
 from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
                                       update_health_package, update_item)
+
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
@@ -34,6 +35,8 @@ from proxy.custom_serializables import \
     ValidatePatientMobile as serializable_validate_patient_mobile
 from proxy.custom_serializables import \
     ValidateUHID as serializable_validate_UHID
+from proxy.custom_serializables import \
+    PatientDetails as serializable_patient_details_by_mobile    
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 from rest_framework import filters, status
@@ -1083,3 +1086,32 @@ class ConfigurationsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         configuration_serializer.is_valid(raise_exception=True)
         configuration_serializer.save()
         return Response(status=status.HTTP_200_OK)
+
+class PatientDetailsByMobileView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'PatDetailsByMob'
+    success_msg = 'Patient List Return Successfully'
+
+    def get_request_data(self, request):
+        patient = serializable_patient_details_by_mobile(**request.data)
+        request_data = custom_serializer().serialize(patient, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response._content)
+        message = None
+        item = root.find('PatDetailResp')
+        response_content = json.loads(item.text)
+        if response_content and response_content[0] and ('Status' in response_content[0]):
+            success = False
+            message = response_content[0]['Message']
+            response_content = None
+        else:
+            success = True
+        if success and not message:
+            message = self.success_msg
+        return self.custom_success_response(success=success, message=message,
+                                            data=response_content)
