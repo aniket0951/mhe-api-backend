@@ -1,5 +1,6 @@
 import logging
 import urllib
+import hashlib
 from datetime import datetime, timedelta, date
 from utils.exceptions import UserNotRegisteredException
 from django.db.models import Count, Sum
@@ -16,7 +17,6 @@ from apps.notifications.models import MobileDevice
 from apps.patients.models import FamilyMember, Patient
 from apps.payments.models import Payment
 from rest_framework.serializers import ValidationError
-
 logger = logging.getLogger('django')
 
 def generate_pre_signed_url(image_url):
@@ -180,3 +180,9 @@ def date_and_time_str_to_obj(appdate,apptime):
     datetime_obj = datetime_str_to_obj(appdate+" "+apptime)
     datetime_str = datetime_obj_to_str(datetime_obj)
     return datetime_str
+
+def check_code(mobile):
+    string = settings.SKEY+mobile+settings.MID
+    checkcode = hashlib.md5(string.encode()).hexdigest()
+    result = checkcode.upper()
+    return result
