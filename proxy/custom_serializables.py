@@ -11,15 +11,15 @@ class ValidateUHID:
 
 
 class PatientDetails:
-    def __init__(self,mobile=None,check_code=None):
+    def __init__(self,mobile=None,location_code=None,check_code=None):
         self.mobile = mobile
+        self.location_code = location_code
         self.check_code = check_code
-
     def serialize(self, serializer):
         serializer.start_object('patdetailParammn')
         serializer.add_property('mobileno', self.mobile)
-        serializer.add_property('locationCode', "MHB")
-        serializer.add_property('checkcode', self.check_code)
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('checkcode',self.check_code)
 
 
 class SlotAvailability:
