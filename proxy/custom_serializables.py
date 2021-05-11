@@ -10,6 +10,18 @@ class ValidateUHID:
         serializer.add_property('LocationCode', "MHB")
 
 
+class PatientDetails:
+    def __init__(self,mobile=None,check_code=None):
+        self.mobile = mobile
+        self.check_code = check_code
+
+    def serialize(self, serializer):
+        serializer.start_object('patdetailParammn')
+        serializer.add_property('mobileno', self.mobile)
+        serializer.add_property('locationCode', "MHB")
+        serializer.add_property('checkcode', self.check_code)
+
+
 class SlotAvailability:
     def __init__(self, doctor_code=None, location_code=None, schedule_date=None,
                  appointment_type=None, speciality_code=None):
@@ -665,3 +677,4 @@ class UhidBasedConsultation:
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('PromoCode', self.promo_code)
         serializer.add_property('OrderDate', self.order_date)
+        
