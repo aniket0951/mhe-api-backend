@@ -425,6 +425,9 @@ COVID_BOOTH_IMAGE = env("COVID_BOOTH_IMAGE")
 
 DELETE_ACCOUNT_API = True if env("DELETE_ACCOUNT_API")=="True" else False
 
+SKEY = env('SKEY')
+MID = env('MID')
+
 # Logger configuration
 LOGGING = {
     'version': 1,
@@ -537,3 +540,4 @@ LOGGING = {
         },
     }
 }
+
