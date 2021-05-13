@@ -12,6 +12,7 @@ from django.utils.decorators import method_decorator
 from apps.master_data.models import Company
 from apps.master_data.views import ValidateMobileView, ValidateUHIDView
 from apps.dashboard.utils import DashboardUtils
+from apps.patient_registration.models import Relation
 from axes.models import AccessAttempt
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
@@ -1366,7 +1367,57 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         link_uhid(request)
         return Response(data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=['POST'])
+    def onboard_family_members(self, request):
+        request_data = request.data
+        response_data = request_data.get('Data')
+        if response_data:
+            if self.get_queryset().count() >= int(settings.MAX_FAMILY_MEMBER_COUNT):
+                raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBERS)
+                
+            for family_member in response_data: 
+                uhid_number=family_member.get('uhid_number')
+                if not uhid_number:
+                    raise ValidationError(PatientsConstants.ENTER_VALID_UHID)
 
+                patient_info=patient_user_object(request)
+                if patient_info.uhid_number == uhid_number:
+                    raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
+
+                if self.model.objects.filter(patient_info=patient_info,
+                                                uhid_number=uhid_number, is_visible=True).exists():
+                    raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
+
+                relationship = family_member.get('relationship')
+                
+                uhid_user_info=dict()
+                uhid_user_info['relationship'] = Relation.objects.get(code=relationship)
+                uhid_user_info['first_name'] = family_member.get("firstname")
+                uhid_user_info['mobile'] = family_member.get("mobile")
+                uhid_user_info['age'] = family_member.get("age")
+                uhid_user_info['gender'] = family_member.get("gender")
+                    
+                if family_member.get("email", None):
+                    uhid_user_info['email'] = family_member.get("email")
+                    uhid_user_info['email_verified'] = False
+                uhid_user_info['uhid_number'] = uhid_number
+                uhid_user_info['mobile_verified']=True
+                uhid_user_info['is_visible']=True
+                uhid_user_info['patient_info']=patient_info
+                    
+                self.model.objects.create(**uhid_user_info)
+
+                serializer=self.get_serializer(self.get_queryset(), many=True)
+        else:
+            raise ValidationError(PatientsConstants.INVALID_REQUEST)
+    
+        data={
+            "data": serializer.data,
+            "message": "New family members is added successfully!"
+        }
+        link_uhid(request)
+        return Response(data, status=status.HTTP_201_CREATED)
+      
 class PatientAddressViewSet(custom_viewsets.ModelViewSet):
     permission_classes=[IsPatientUser]
     model=PatientAddress
