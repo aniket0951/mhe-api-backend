@@ -1392,7 +1392,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 
                 uhid_user_info=dict()
                 uhid_user_info['relationship'] = Relation.objects.get(code=relationship)
-                uhid_user_info['first_name'] = family_member.get("firstname")
+                uhid_user_info['first_name'] = family_member.get("first_name")
                 uhid_user_info['mobile'] = family_member.get("mobile")
                 uhid_user_info['age'] = family_member.get("age")
                 uhid_user_info['gender'] = family_member.get("gender")
