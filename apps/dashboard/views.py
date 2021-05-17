@@ -37,6 +37,15 @@ class DashboardBannerViewSet(custom_viewsets.CreateDeleteViewSet):
     create_success_message = "New dashboard banner added successfully."
     delete_success_message = "Dashboard banner deleted successfully."
 
+class IOSVersionCheck(ListAPIView):
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        dashboard_details = {}
+        version_number = self.request.query_params.get("version", None)
+        dashboard_details = DashboardUtils.validate_app_version(version_number,dashboard_details)
+        
+        return Response(dashboard_details, status=status.HTTP_200_OK)
 
 class DashboardAPIView(ListAPIView):
     permission_classes = [AllowAny]
