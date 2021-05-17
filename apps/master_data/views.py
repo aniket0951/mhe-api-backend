@@ -1,3 +1,4 @@
+from apps.patients.models import Patient
 from apps.master_data.constants import MasterDataConstants
 import json
 import logging
@@ -1115,6 +1116,8 @@ class PatientDetailsByMobileView(ProxyView):
             response_content[0]:
             success = True
             message = self.success_msg
+            for response_data in response_content:
+                response_data["isExistingPrimaryUser"] = Patient.objects.filter(uhid_number=response_data.get("HospNo")).exists()
 
         return self.custom_success_response(
                                     success=success, 

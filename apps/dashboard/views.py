@@ -282,3 +282,22 @@ class RemoveAccountAPIView(ListAPIView):
         except Exception as e:
             return Response({"error":"Invalid contact number provided!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message":"Your number has been deleted successfully!"}, status=status.HTTP_200_OK)
+
+class RemoveUHIDAPIView(ListAPIView):
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        uhid_number = self.request.query_params.get("uhid_number", None)
+        if not uhid_number:
+            return Response({"error":"Please provide uhid_number"}, status=status.HTTP_400_BAD_REQUEST)
+        if not settings.DELETE_ACCOUNT_API:
+            return Response({"error":"This feature is not enabled!"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            patient = Patient.objects.filter(uhid_number="%s"%(str(uhid_number).upper())).first()
+            if not patient:
+                return Response({"error":"No patient found for the given uhid_number!"}, status=status.HTTP_400_BAD_REQUEST)
+            patient.uhid_number = None
+            patient.save()
+        except Exception as e:
+            return Response({"error":"Invalid uhid_number provided!"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message":"Your uhid_number has been unlinked successfully!"}, status=status.HTTP_200_OK)
