@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import DashboardBannerViewSet, DashboardAPIView, FAQDataViewSet, FAQDataAPIView, RemoveAccountAPIView
+from .views import DashboardBannerViewSet, DashboardAPIView, FAQDataViewSet, FAQDataAPIView, RemoveAccountAPIView, RemoveUHIDAPIView
 
 app_name = 'dashboard'
 
@@ -13,6 +13,7 @@ router.register('faq', FAQDataViewSet)
 urlpatterns = [
     path('details', DashboardAPIView.as_view()),
     path('remove_account', RemoveAccountAPIView.as_view()),
+    path('remove_uhid', RemoveUHIDAPIView.as_view()),
     path('faq_data', FAQDataAPIView.as_view()),
     *router.urls
 ]
