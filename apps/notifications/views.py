@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember, SelfUserAccess)
-
+from rest_framework.serializers import ValidationError
 from .models import MobileDevice, MobileNotification
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer
 from .tasks import send_push_notification
