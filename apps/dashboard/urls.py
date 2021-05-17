@@ -12,8 +12,8 @@ router.register('faq', FAQDataViewSet)
 
 urlpatterns = [
     path('details', DashboardAPIView.as_view()),
+    path('ios_version_check',IOSVersionCheck.as_view()),
     path('remove_account', RemoveAccountAPIView.as_view()),
     path('faq_data', FAQDataAPIView.as_view()),
-    path('ios_version_check',IOSVersionCheck.as_view())
     *router.urls
 ]
