@@ -1088,13 +1088,15 @@ class ConfigurationsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
 class PatientDetailsByMobileView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsPatientUser]
     source = 'PatDetailsByMob'
-    success_msg = 'Patient List Return Successfully'
+    success_msg = "Patients' list returned successfully"
+
     def get_request_data(self, request):
         data = request.data
         mobile_number = data.get("mobile")
         data["check_code"] = check_code(mobile_number)
+        print(data)
         patient = serializable_patient_details_by_mobile(**request.data)
         request_data = custom_serializer().serialize(patient, 'XML')
         return request_data
@@ -1104,16 +1106,18 @@ class PatientDetailsByMobileView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        message = None
+        message = "Error fetching the patients' list"
         item = root.find('PatDetailResp')
         response_content = json.loads(item.text)
-        if response_content and response_content[0] and ('Status' in response_content[0]):
-            success = False
-            message = response_content[0]['Message']
-            response_content = None
-        else:
+        success = False
+        
+        if  response_content and \
+            response_content[0]:
             success = True
-        if success and not message:
             message = self.success_msg
-        return self.custom_success_response(success=success, message=message,
-                                            data=response_content)
+
+        return self.custom_success_response(
+                                    success=success, 
+                                    message=message,
+                                    data=response_content
+                                )

@@ -42,16 +42,17 @@ def fetch_uhid_user_details(request):
 
 def link_uhid(request):
     uhid = request.data.get('uhid_number')
+    link_uhid_from_uhid_number(uhid)
+
+def link_uhid_from_uhid_number(uhid):
     if not uhid:
         return False
     factory = APIRequestFactory()
-    proxy_request = factory.post(
-        '', {"uhid": uhid}, format='json')
+    proxy_request = factory.post('', {"uhid": uhid}, format='json')
     response = LinkUhidView().as_view()(proxy_request)
     if not (response.status_code == 200 and response.data['success']):
         return False
     return True
-
 
 def covid_registration_mandatory_check(request_data):
     mandatory_check = [ field for field in ("dose_type",'dob','preferred_hospital','aadhar_number') if not request_data.get(field) or not str(request_data.get(field)).strip() ]
