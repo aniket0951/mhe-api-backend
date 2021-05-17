@@ -428,6 +428,8 @@ DELETE_ACCOUNT_API = True if env("DELETE_ACCOUNT_API")=="True" else False
 SKEY = env('SKEY')
 MID = env('MID')
 
+MANIPAL_WHATSAPP_CONTACT = env('MANIPAL_WHATSAPP_CONTACT')
+
 # Logger configuration
 LOGGING = {
     'version': 1,
