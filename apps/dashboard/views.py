@@ -48,7 +48,7 @@ class DashboardAPIView(ListAPIView):
         dashboard_details['configurations'] = ConfigurationSerializer(Configurations.objects.filter(allowed_components__is_active=True).first(),many=False).data
         version_number = self.request.query_params.get("version", None)
         dashboard_details = DashboardUtils.validate_app_version(version_number,dashboard_details)
-        
+        dashboard_details['manipal_whatsapp_contact'] = settings.MANIPAL_WHATSAPP_CONTACT
         if request.user:
 
             patient_obj = patient_user_object(request)
