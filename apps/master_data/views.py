@@ -1,3 +1,4 @@
+from apps.master_data.utils import MasterDataUtils
 from apps.patients.models import Patient
 from apps.master_data.constants import MasterDataConstants
 import json
@@ -257,17 +258,9 @@ class DepartmentsView(ProxyView):
                                   'sub_service'
                                   ]
         for each_department in response_content:
-            department_details = dict()
-            for index, key in enumerate(sorted(each_department.keys())):
-                if not each_department[key]:
-                    each_department[key] = None
 
-                if key in ['DateFrom', 'DateTo'] and each_department[key]:
-                    each_department[key] = datetime.strptime(
-                        each_department[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
+            department_details = MasterDataUtils.process_department_details(each_department,department_sorted_keys)
 
-                department_details[department_sorted_keys[index]
-                                   ] = each_department[key]
             department_kwargs = dict()
             hospital_department_details = dict()
             hospital_department_kwargs = dict()
@@ -283,8 +276,8 @@ class DepartmentsView(ProxyView):
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
             department_kwargs['code'] = department_details['code']
-            department, department_created = Department.objects.update_or_create(
-                **department_kwargs, defaults=department_details)
+            department, department_created = Department.objects.update_or_create(**department_kwargs,defaults=department_details)
+
             department_details['department_created'] = department_created
 
             hospital_department_kwargs['hospital'] = hospital
@@ -292,7 +285,9 @@ class DepartmentsView(ProxyView):
             hospital_department_details.update(hospital_department_kwargs)
 
             _, hospital_department_created = HospitalDepartment.objects.update_or_create(
-                **hospital_department_kwargs, defaults=hospital_department_details)
+                                                            **hospital_department_kwargs, 
+                                                            defaults=hospital_department_details
+                                                        )
             department_details['hospital_department_created'] = hospital_department_created
 
             all_departments.append(department_details)
@@ -300,10 +295,15 @@ class DepartmentsView(ProxyView):
             today_date = datetime.now().date()
             previous_date = datetime.now() - timedelta(days=1)
             HospitalDepartment.objects.filter(
-                updated_at__date__lt=today_date, end_date__isnull=True).update(end_date=previous_date.date())
+                                    updated_at__date__lt=today_date, 
+                                    end_date__isnull=True
+                                ).update(end_date=previous_date.date())
 
-        return self.custom_success_response(message=self.success_msg,
-                                            success=True, data=all_departments)
+        return self.custom_success_response(
+                                    message=self.success_msg,
+                                    success=True, 
+                                    data=all_departments
+                                )
 
 
 class DoctorsView(ProxyView):

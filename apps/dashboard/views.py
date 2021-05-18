@@ -1,3 +1,4 @@
+from apps.dashboard.constants import DashboardConstants
 from apps.master_data.models import Configurations
 from apps.master_data.serializers import ComponentsSerializer, ConfigurationSerializer
 from django.conf import settings
@@ -27,7 +28,9 @@ from utils.utils import (
 from .models import DashboardBanner, FAQData
 from .serializers import DashboardBannerSerializer, FAQDataSerializer
 from .utils import DashboardUtils
+import logging
 
+_logger = logging.getLogger("Django")
 
 class DashboardBannerViewSet(custom_viewsets.CreateDeleteViewSet):
     permission_classes = [IsManipalAdminUser]
@@ -271,15 +274,16 @@ class RemoveAccountAPIView(ListAPIView):
             return Response({"error":"This feature is not enabled!"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             contact_number = int(contact_number)
-            patient = Patient.objects.filter(mobile="+91%s"%(str(contact_number))).first()
+            patient = Patient.objects.filter(mobile=DashboardConstants.MOBILE_NUMBER_PREFIX%(str(contact_number))).first()
             if not patient:
                 return Response({"error":"No patient found for the given number!"}, status=status.HTTP_400_BAD_REQUEST)
             contact_number+=1
-            while (Patient.objects.filter(mobile="+91%s"%(str(contact_number))).first()):
+            while (Patient.objects.filter(mobile=DashboardConstants.MOBILE_NUMBER_PREFIX%(str(contact_number))).first()):
                 contact_number+=1
-            patient.mobile = "+91%s"%(str(contact_number))
+            patient.mobile = DashboardConstants.MOBILE_NUMBER_PREFIX%(str(contact_number))
             patient.save()
         except Exception as e:
+            _logger.error("Exception in RemoveAccountAPIView: %s"%(str(e)))
             return Response({"error":"Invalid contact number provided!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message":"Your number has been deleted successfully!"}, status=status.HTTP_200_OK)
 
@@ -299,5 +303,6 @@ class RemoveUHIDAPIView(ListAPIView):
             patient.uhid_number = None
             patient.save()
         except Exception as e:
+            _logger.error("Exception in RemoveUHIDAPIView: %s"%(str(e)))
             return Response({"error":"Invalid uhid_number provided!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message":"Your uhid_number has been unlinked successfully!"}, status=status.HTTP_200_OK)

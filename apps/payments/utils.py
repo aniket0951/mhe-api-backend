@@ -955,7 +955,7 @@ class PaymentUtils:
             appointment_serializer.save()
 
     @staticmethod
-    def payment_for_health_package(payment_instance,payment_response):
+    def payment_update_for_health_package(payment_instance,payment_response):
         if payment_instance.payment_for_health_package:
             appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
             update_data = {

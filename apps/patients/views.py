@@ -55,7 +55,7 @@ from .serializers import (
                     PatientAddressSerializer,
                     PatientSerializer, FamilyMemberCorporateHistorySerializer
                 )
-from .utils import covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid, link_uhid_from_uhid_number
+from .utils import check_max_otp_retries, check_max_otp_retries_from_mobile_number, covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid, link_uhid_from_uhid_number
 from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress, FamilyMemberCorporateHistory
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
@@ -161,25 +161,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             user_obj.set_password(random_password)
             user_obj.save()
 
-        
-        otp_instance = OtpGenerationCount.objects.filter(mobile=user_obj.mobile).first()
-        if not otp_instance:
-            otp_instance = OtpGenerationCount.objects.create(mobile=user_obj.mobile, otp_generation_count=1)
-
-        current_time = datetime.today()
-        delta = current_time - otp_instance.updated_at
-        if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
-            raise ValidationError(
-                "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
-
-        if delta.seconds > 600:
-            otp_instance.otp_generation_count = 1
-            otp_instance.save()
-
-        if delta.seconds <= 600:
-            otp_instance.otp_generation_count += 1
-            otp_instance.save()
-
+        check_max_otp_retries(user_obj)
 
         message = "OTP to activate your account is {}, this OTP will expire in {} seconds.".format(
             random_password, settings.OTP_EXPIRATION_TIME)
@@ -202,24 +184,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 raise ValidationError(
                     "This mobile number is already registered with us, please try with another number!")
 
-            otp_instance = OtpGenerationCount.objects.filter(mobile=serializer.validated_data['new_mobile']).first()
-            if not otp_instance:
-                otp_instance = OtpGenerationCount.objects.create(mobile=serializer.validated_data['new_mobile'], otp_generation_count=1)
-
-            current_time = datetime.today()
-            delta = current_time - otp_instance.updated_at
-            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
-                raise ValidationError(
-                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
-
-            if delta.seconds > 600:
-                otp_instance.otp_generation_count = 1
-                otp_instance.save()
-
-            if delta.seconds <= 600:
-                otp_instance.otp_generation_count += 1
-                otp_instance.save()
-
+            check_max_otp_retries_from_mobile_number(serializer.validated_data['new_mobile'])
 
             random_mobile_change_password = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
             otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
@@ -499,25 +464,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             if not request_patient:
                 raise PatientMobileDoesNotExistsValidationException
 
-            otp_instance = OtpGenerationCount.objects.filter(
-                mobile=mobile).first()
-            if not otp_instance:
-                otp_instance = OtpGenerationCount.objects.create(
-                    mobile=mobile, otp_generation_count=1)
-
-            current_time = datetime.today()
-            delta = current_time - otp_instance.updated_at
-            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
-                raise ValidationError(
-                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
-
-            if delta.seconds > 600:
-                otp_instance.otp_generation_count = 1
-                otp_instance.save()
-
-            if delta.seconds <= 600:
-                otp_instance.otp_generation_count += 1
-                otp_instance.save()
+            check_max_otp_retries_from_mobile_number(mobile)
 
         if facebook_id:
             request_patient = self.get_queryset().filter(
@@ -968,23 +915,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         if is_mobile_to_be_verified:
 
-            otp_instance = OtpGenerationCount.objects.filter(mobile=user_obj.mobile).first()
-            if not otp_instance:
-                otp_instance = OtpGenerationCount.objects.create(mobile=user_obj.mobile, otp_generation_count=1)
-
-            current_time = datetime.today()
-            delta = current_time - otp_instance.updated_at
-            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 5:
-                raise ValidationError(
-                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
-
-            if delta.seconds > 600:
-                otp_instance.otp_generation_count = 1
-                otp_instance.save()
-
-            if delta.seconds <= 600:
-                otp_instance.otp_generation_count += 1
-                otp_instance.save()
+            check_max_otp_retries(user_obj)
 
             message="You have been added as a family member on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
@@ -1054,25 +985,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             #     str(family_member_object.id), random_email_otp)
 
         if is_mobile_to_be_verified:
-
-            otp_instance = OtpGenerationCount.objects.filter(mobile=family_member_object.new_mobile).first()
-            if not otp_instance:
-                otp_instance = OtpGenerationCount.objects.create(mobile=family_member_object.new_mobile, otp_generation_count=1)
-
-            current_time = datetime.today()
-            delta = current_time - otp_instance.updated_at
-            if delta.seconds <= 600 and otp_instance.otp_generation_count >= 3:
-                raise ValidationError(
-                    "You have reached Maximum Otp generation Limit. Please try after 10 minutes")
-
-            if delta.seconds > 600:
-                otp_instance.otp_generation_count = 1
-                otp_instance.save()
-
-            if delta.seconds <= 600:
-                otp_instance.otp_generation_count += 1
-                otp_instance.save()
-
+            
+            check_max_otp_retries(family_member_object)
+      
             random_mobile_password=get_random_string(
                 length=OTP_LENGTH, allowed_chars='0123456789')
             otp_expiration_time=datetime.now(

@@ -287,11 +287,15 @@ class DoctorRescheduleSlot(ProxyView):
         status = root.find("Status").text
         morning_slot, afternoon_slot, evening_slot, slot_list = [], [], [], []
         response = {}
-        if status == "SUCCESS":
-            if slots:
-                slot_list = ast.literal_eval(slots)
+
+        response["price"] = price.split("-")[0]
+
+        if status == "SUCCESS" and slots:
+
+            slot_list = ast.literal_eval(slots)
+
             for slot in slot_list:
-                time_format = ""
+                time_format = '%d %b, %Y %I:%M:%S %p(HV)'
                 appointment_type = "HV"
                 if "HVVC" in slot['startTime']:
                     time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
@@ -302,20 +306,21 @@ class DoctorRescheduleSlot(ProxyView):
                 elif "PR" in slot['startTime']:
                     time_format = '%d %b, %Y %I:%M:%S %p(PR)'
                     appointment_type = "PR"
-                else:
-                    time_format = '%d %b, %Y %I:%M:%S %p(HV)'
-                time = datetime.strptime(
-                    slot['startTime'], time_format).time()
+                
+                time = datetime.strptime(slot['startTime'], time_format).time()
+                time_data = {"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type}
+
                 if time.hour < 12:
-                    morning_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
+                    morning_slot.append(time_data)
                 elif (time.hour >= 12) and (time.hour < 17):
-                    afternoon_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
+                    afternoon_slot.append(time_data)
                 else:
-                    evening_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
-            response["price"] = price.split("-")[0]
+                    evening_slot.append(time_data)
+
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
+        
         return self.custom_success_response(message=DoctorsConstants.AVAILABLE_SLOTS,success=True, data=response)
 
 

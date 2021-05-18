@@ -120,7 +120,7 @@ class CompanySerializer(DynamicFieldsModelSerializer):
         validated_data = {
             k: v for k, v in validated_data.items() if not k in restriced_fields}
         validate_fields = ["domain"]
-        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.check_Domain_Corporate(v)]
+        validated_fields = [ k for k, v in validated_data.items() if k in validate_fields and v and not ValidationUtil.check_domain_corporate(v)]
         if validated_fields:
             raise ValidationError("Only vaild domain format @domain.com is allowed %s"%(str(validated_fields[0])))
         

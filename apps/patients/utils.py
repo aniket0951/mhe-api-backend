@@ -1,8 +1,31 @@
+from apps.patients.models import OtpGenerationCount
 from apps.master_data.models import Hospital
 from apps.master_data.views import LinkUhidView, ValidateOTPView
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
+from datetime import datetime
+from .constants import PatientsConstants
 
+def check_max_otp_retries(user_obj):
+    check_max_otp_retries_from_mobile_number(user_obj.mobile)
+
+def check_max_otp_retries_from_mobile_number(mobile_number):
+    otp_instance = OtpGenerationCount.objects.filter(mobile=mobile_number).first()
+    if not otp_instance:
+        otp_instance = OtpGenerationCount.objects.create(mobile=mobile_number, otp_generation_count=1)
+
+    current_time = datetime.today()
+    delta = current_time - otp_instance.updated_at
+    if delta.seconds <= 600 and otp_instance.otp_generation_count >= 5:
+        raise ValidationError(PatientsConstants.OTP_MAX_LIMIT)
+
+    if delta.seconds > 600:
+        otp_instance.otp_generation_count = 1
+        otp_instance.save()
+
+    if delta.seconds <= 600:
+        otp_instance.otp_generation_count += 1
+        otp_instance.save()
 
 def fetch_uhid_user_details(request):
     uhid_number = request.data.get('uhid_number')

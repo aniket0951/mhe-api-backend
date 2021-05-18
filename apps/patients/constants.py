@@ -11,3 +11,4 @@ class PatientsConstants:
     ONLY_ALPHABETS_FIRST_NAME = "Only alphabets are allowes in your First Name."
     NO_SPECIAL_ONLY_ALPHABETS = "No space or special characters allowed. Only alphabets are allowed for %s"
     REACHED_LIMIT_FAMILY_MEMBERS = "You have reached limit, you cannot add more than ten family members!"
+    OTP_MAX_LIMIT = "You have reached Maximum Otp generation Limit. Please try after 10 minutes"
