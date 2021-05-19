@@ -290,9 +290,9 @@ class DoctorRescheduleSlot(ProxyView):
 
         response["price"] = price.split("-")[0]
 
-        if status == "SUCCESS" and slots:
-
-            slot_list = ast.literal_eval(slots)
+        if status == "SUCCESS":
+            if slots:
+                slot_list = ast.literal_eval(slots)
 
             for slot in slot_list:
                 time_format = '%d %b, %Y %I:%M:%S %p(HV)'
