@@ -19,6 +19,7 @@ def custom_exception_handler(exc, context):
     if response is not None:
         
         if isinstance(exc, Ratelimited):
+            logger.debug("RATELIMIT EXCEPTION : %s"%(str(exc)))
             error = {
                 'field': 'Ratelimit',
                 'error_code': 'Ratelimit',
@@ -26,6 +27,7 @@ def custom_exception_handler(exc, context):
             }
             customized_response['errors'].append(error)
         elif isinstance(exc, ValidationError):
+            logger.debug("VALIDATION EXCEPTION : %s"%(str(exc)))
             def generate_error_responses(data, key=''):
                 if isinstance(data, str):
                     error = {
@@ -63,6 +65,7 @@ def custom_exception_handler(exc, context):
             except (Exception, TypeError):
                 customized_response = response.data
         else:
+            logger.debug("EXCEPTION : %s"%(str(exc)))
             if hasattr(exc, 'detail') and isinstance(exc.detail, str):
                 error = {
                     'field': 'detail', 
@@ -74,6 +77,7 @@ def custom_exception_handler(exc, context):
                 customized_response['errors'].append(response.data)
 
         response.data = customized_response
+        logger.debug("CUSTOMIZED RESPONSE : %s"%(str(customized_response)))
     else:
         error = {
             'field': 'debug', 
