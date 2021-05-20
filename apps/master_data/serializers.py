@@ -14,8 +14,7 @@ from ..patient_registration.serializers import RelationSerializer
 _logger = logging.getLogger("django")
 
 class HospitalSerializer(DynamicFieldsModelSerializer):
-    distance = serializers.CharField(
-        source='calculated_distance', default=None)
+    distance = serializers.CharField(source='calculated_distance', default=None)
 
     class Meta:
         model = Hospital
@@ -24,7 +23,12 @@ class HospitalSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         try:
-            if 'distance' in response_object and instance.calculated_distance:
+            if  'distance' in response_object and \
+                hasattr(instance, "calculated_distance") and \
+                instance.calculated_distance and \
+                hasattr(instance.calculated_distance, "km") and \
+                instance.calculated_distance.km:
+                
                 response_object['distance'] = instance.calculated_distance.km
         except Exception as e:
             _logger.error("Error in to_representation HospitalSerializer: %s"%(str(e)))

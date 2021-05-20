@@ -105,11 +105,15 @@ class PatientSerializer(DynamicFieldsModelSerializer):
             response_object['favorite_hospital'] = HospitalSerializer(
                 Hospital.objects.get(id=str(response_object['favorite_hospital']))).data
 
+        response_object['display_picture'] = None
         try:
-            response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
+            if  hasattr(instance, "display_picture") and \
+                instance.display_picture and \
+                hasattr(instance.display_picture, "url") and \
+                instance.display_picture.url:
+                response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
         except Exception as error:
             logger.info("Exception in PatientSerializer: %s"%(str(error)))
-            response_object['display_picture'] = None
 
         if instance.company_info:
             response_object['company_info'] = CompanySerializer(instance.company_info).data
@@ -216,11 +220,16 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
 
         if instance.relationship:
             response_object['relationship'] = RelationSerializer(instance.relationship).data
+
+        response_object['display_picture'] = None
         try:
-            response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
+            if  hasattr(instance, "display_picture") and \
+                instance.display_picture and \
+                hasattr(instance.display_picture, "url") and \
+                instance.display_picture.url:
+                response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
         except Exception as error:
             logger.info("Exception in FamilyMemberSerializer: %s"%(str(error)))
-            response_object['display_picture'] = None
 
         return response_object
 
