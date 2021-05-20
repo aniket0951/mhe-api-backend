@@ -36,10 +36,11 @@ def generate_pre_signed_url(image_url):
 
 def patient_user_object(request):
     try:
-        return Patient.objects.get(id=request.user.id)
+        if request.user and request.user.id:
+            return Patient.objects.get(id=request.user.id)
     except Exception as error:
-        logger.error("Unable to fetch patient user : " + str(error))
-        return None
+        logger.debug("Unable to fetch patient user : " + str(error))
+    return None
 
 
 def manipal_admin_object(request):
@@ -47,7 +48,7 @@ def manipal_admin_object(request):
         if request.user and request.user.id:
             return ManipalAdmin.objects.get(id=request.user.id)
     except Exception as error:
-        logger.error("Unable to fetch patient user : " + str(error))
+        logger.debug("Unable to fetch manipal admin user : " + str(error))
     return None
 
 
