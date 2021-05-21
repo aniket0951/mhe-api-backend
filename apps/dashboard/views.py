@@ -308,7 +308,7 @@ class RemoveUHIDAPIView(ListAPIView):
             return Response({"error":"Invalid uhid_number provided!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message":"Your uhid_number has been unlinked successfully!"}, status=status.HTTP_200_OK)
 
-class FlyerSchedulerView(custom_viewsets.CreateDeleteViewSet):
+class FlyerSchedulerViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     queryset = FlyerScheduler.objects.all().order_by('-created_at')
     model = FlyerScheduler
@@ -320,12 +320,13 @@ class FlyerSchedulerView(custom_viewsets.CreateDeleteViewSet):
     delete_success_message = 'Flyers deleted successfuly!'
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [IsPatientUser]
+
+        if self.action in ['create','update']:
+            permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
-        if self.action in ['list', 'retrieve', 'create','update']:
-            permission_classes = [IsManipalAdminUser]
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'destroy':

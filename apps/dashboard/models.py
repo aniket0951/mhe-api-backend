@@ -155,13 +155,17 @@ class FlyerScheduler(MyBaseModel):
     created_by = models.ForeignKey(
                             BaseUser,
                             on_delete=models.PROTECT,
-                            related_name='created_by_base_user'
+                            related_name='created_by_base_user',
+                            blank=True,
+                            null=True
                         )
 
     updated_by = models.ForeignKey(
                             BaseUser,
                             on_delete=models.PROTECT,
-                            related_name='updated_by_base_user'
+                            related_name='updated_by_base_user',
+                            blank=True,
+                            null=True
                         )
 
 class FlyerImages(MyBaseModel):
@@ -207,13 +211,17 @@ class FlyerImages(MyBaseModel):
                                 )
     
     created_by = models.ForeignKey(
-                                BaseUser,
-                                on_delete=models.PROTECT,
-                                related_name='create_by_base_user'
-                            )
+                            BaseUser,
+                            on_delete=models.PROTECT,
+                            related_name='create_by_base_user',
+                            blank=True,
+                            null=True
+                        )
     
     updated_by = models.ForeignKey(
                             BaseUser,
                             on_delete=models.PROTECT,
-                            related_name='update_by_base_user'
+                            related_name='update_by_base_user',
+                            blank=True,
+                            null=True
                         )
