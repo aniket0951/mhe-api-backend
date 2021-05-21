@@ -23,6 +23,11 @@ def generate_faq_picture_path(self, filename):
     obj_name = str(uuid.uuid4()) + str(obj_file_extension)
     return "static/faq/banners/{0}".format(obj_name)
 
+def generate_flyer_picture_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(uuid.uuid4()) + str(obj_file_extension)
+    return "static/flyers/{0}".format(obj_name)
+
 class DashboardBanner(MyBaseModel):
 
     BANNER_TYPE_CHOICES = (
@@ -159,3 +164,56 @@ class FlyerScheduler(MyBaseModel):
                             related_name='updated_by_base_user'
                         )
 
+class FlyerImages(MyBaseModel):
+
+    flyer_scheduler_id = models.ForeignKey(
+                                FlyerScheduler, 
+                                on_delete=models.PROTECT,
+                                related_name='Flyer_scheduler'
+                            )
+    
+    Sequence = models.IntegerField()
+    
+    image = models.ImageField(
+                        upload_to=generate_flyer_picture_path,
+                        storage=MediaStorage(),
+                        validators=[
+                            FileExtensionValidator(settings.VALID_IMAGE_FILE_EXTENSIONS), 
+                            validate_file_size,
+                            validate_file_authenticity,
+                            validate_file_infection
+                        ],
+                        blank=False,
+                        null=False,
+                        verbose_name='Flyer Picture'
+                    )
+    
+    learn_more_url = models.TextField(
+                                max_length=1000, 
+                                blank=True, 
+                                null=True
+                            )
+    
+    learn_more_url_text = models.CharField(
+                                    max_length=100,
+                                    blank=True,
+                                    null=True
+                                )
+    
+    learn_more_url_color = models.CharField(
+                                    max_length=100,
+                                    blank=True,
+                                    null=True
+                                )
+    
+    created_by = models.ForeignKey(
+                                BaseUser,
+                                on_delete=models.PROTECT,
+                                related_name='create_by_base_user'
+                            )
+    
+    updated_by = models.ForeignKey(
+                            BaseUser,
+                            on_delete=models.PROTECT,
+                            related_name='update_by_base_user'
+                        )

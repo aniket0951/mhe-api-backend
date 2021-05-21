@@ -1,3 +1,4 @@
+from apps.appointments import models
 from apps.dashboard.constants import DashboardConstants
 from apps.master_data.models import Configurations
 from apps.master_data.serializers import ComponentsSerializer, ConfigurationSerializer
@@ -19,14 +20,14 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from utils import custom_viewsets
-from utils.custom_permissions import IsManipalAdminUser
+from utils.custom_permissions import IsManipalAdminUser, IsPatientUser, BlacklistDestroyMethodPermission
 from utils.utils import (
                     get_appointment, 
                     manipal_admin_object,
                     patient_user_object
                 )
-from .models import DashboardBanner, FAQData
-from .serializers import DashboardBannerSerializer, FAQDataSerializer
+from .models import DashboardBanner, FAQData, FlyerScheduler
+from .serializers import DashboardBannerSerializer, FAQDataSerializer, FlyerSchedulerSerializer
 from .utils import DashboardUtils
 import logging
 
@@ -306,3 +307,29 @@ class RemoveUHIDAPIView(ListAPIView):
             _logger.error("Exception in RemoveUHIDAPIView: %s"%(str(e)))
             return Response({"error":"Invalid uhid_number provided!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message":"Your uhid_number has been unlinked successfully!"}, status=status.HTTP_200_OK)
+
+class FlyerSchedulerView(custom_viewsets.CreateDeleteViewSet):
+    permission_classes = [AllowAny]
+    queryset = FlyerScheduler.objects.all().order_by('-created_at')
+    model = FlyerScheduler
+    serializer_class = FlyerSchedulerSerializer
+    create_success_message = "Flyers added successfully!"
+    list_success_message = 'Flyers returned successfully!'
+    retrieve_success_message = 'Flyers returned successfully!'
+    update_success_message = 'Flyers updated successfuly!'
+    delete_success_message = 'Flyers deleted successfuly!'
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['list', 'retrieve', 'create','update']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
