@@ -1,3 +1,4 @@
+from apps.users.models import BaseUser
 import os
 import uuid
 
@@ -116,3 +117,45 @@ class FAQData(MyBaseModel):
                             null=True,
                             verbose_name='FAQ Picture'
                         )
+
+class FlyerScheduler(MyBaseModel):
+
+    flyer_name = models.CharField(
+                            max_length=150,
+                            blank=False,
+                            null=False,
+                            verbose_name='flyers_name'    
+                        )
+
+    start_date_time = models.DateTimeField(
+                                    blank=False,
+                                    null=False
+                                )
+
+    end_date_time = models.DateTimeField(
+                                    blank=False,
+                                    null=False
+                                )
+
+    frequency = models.CharField(
+                            max_length=100,
+                            blank=False,
+                            null=False
+                        )
+
+    is_active = models.BooleanField(
+                            default=True
+                        )
+
+    created_by = models.ForeignKey(
+                            BaseUser,
+                            on_delete=models.PROTECT,
+                            related_name='created_by_base_user'
+                        )
+
+    updated_by = models.ForeignKey(
+                            BaseUser,
+                            on_delete=models.PROTECT,
+                            related_name='updated_by_base_user'
+                        )
+
