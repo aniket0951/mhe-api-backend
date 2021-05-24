@@ -430,6 +430,8 @@ MID = env('MID')
 
 MANIPAL_WHATSAPP_CONTACT = env('MANIPAL_WHATSAPP_CONTACT')
 
+FLYER_ENABLED = True if env("FLYER_ENABLED") and str(env("FLYER_ENABLED"))=="True" else False
+
 # Logger configuration
 LOGGING = {
     'version': 1,
