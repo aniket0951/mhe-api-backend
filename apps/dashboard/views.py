@@ -15,7 +15,7 @@ from apps.notifications.models import MobileDevice
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import PatientSerializer
 from apps.payments.models import Payment
-from rest_framework import status
+from rest_framework import status, filters
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -30,6 +30,7 @@ from .models import DashboardBanner, FAQData, FlyerScheduler
 from .serializers import DashboardBannerSerializer, FAQDataSerializer, FlyerSchedulerSerializer
 from .utils import DashboardUtils
 import logging
+from django_filters.rest_framework import DjangoFilterBackend
 
 _logger = logging.getLogger("Django")
 
@@ -309,15 +310,19 @@ class RemoveUHIDAPIView(ListAPIView):
         return Response({"message":"Your uhid_number has been unlinked successfully!"}, status=status.HTTP_200_OK)
 
 class FlyerSchedulerViewSet(custom_viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
-    queryset = FlyerScheduler.objects.all().order_by('-created_at')
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
+    queryset = FlyerScheduler.objects.all()
     model = FlyerScheduler
     serializer_class = FlyerSchedulerSerializer
-    create_success_message = "Flyers added successfully!"
-    list_success_message = 'Flyers returned successfully!'
-    retrieve_success_message = 'Flyers returned successfully!'
-    update_success_message = 'Flyers updated successfuly!'
-    delete_success_message = 'Flyers deleted successfuly!'
+    create_success_message = "Flyer schedulers added successfully!"
+    list_success_message = 'Flyer schedulers returned successfully!'
+    retrieve_success_message = 'Flyer scheduler returned successfully!'
+    update_success_message = 'Flyer schedulers updated successfully!'
+    delete_success_message = 'Flyer schedulers deleted successfully!'
+    filter_backends = (DjangoFilterBackend,
+                        filters.OrderingFilter,)
+    ordering_fields = ('-created_at',)
+    
 
     def get_permissions(self):
 

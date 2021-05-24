@@ -1,4 +1,6 @@
 import logging
+
+from django.http import response
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 from .models import DashboardBanner, FAQData, FlyerImages, FlyerScheduler
@@ -41,6 +43,12 @@ class FlyerSchedulerSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = FlyerScheduler
         exclude = ('created_at', 'updated_at', 'created_by', 'updated_by')
+
+    def to_representation(self, instance):
+        response_opject = super().to_representation(instance)
+        flyer_image = FlyerImages.objects.filter(flyer_scheduler_id=instance.id)
+        response_opject['flyer_image'] = FlyerImagesSerializer(flyer_image,many=True).data
+        return response_opject
 
 class FlyerImagesSerializer(DynamicFieldsModelSerializer):
 

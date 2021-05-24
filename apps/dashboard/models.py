@@ -125,6 +125,11 @@ class FAQData(MyBaseModel):
 
 class FlyerScheduler(MyBaseModel):
 
+    FLYER_SCHEDULER_CHOICES = (
+                        ('Once-a-Day','Once-a-Day'),
+                        ('EveryTime','EveryTime')
+                    )
+
     flyer_name = models.CharField(
                             max_length=150,
                             blank=False,
@@ -143,7 +148,8 @@ class FlyerScheduler(MyBaseModel):
                                 )
 
     frequency = models.CharField(
-                            max_length=100,
+                            max_length=20,
+                            choices=FLYER_SCHEDULER_CHOICES,
                             blank=False,
                             null=False
                         )
@@ -176,7 +182,11 @@ class FlyerImages(MyBaseModel):
                                 related_name='Flyer_scheduler'
                             )
     
-    Sequence = models.IntegerField()
+    sequence = models.IntegerField(
+                            default=10,
+                            null=False,
+                            blank=False
+                        )
     
     image = models.ImageField(
                         upload_to=generate_flyer_picture_path,
@@ -189,23 +199,23 @@ class FlyerImages(MyBaseModel):
                         ],
                         blank=False,
                         null=False,
-                        verbose_name='Flyer Picture'
+                        verbose_name='Flyer_picture'
                     )
     
     learn_more_url = models.TextField(
-                                max_length=1000, 
+                                max_length=500, 
                                 blank=True, 
                                 null=True
                             )
     
     learn_more_url_text = models.CharField(
-                                    max_length=100,
+                                    max_length=30,
                                     blank=True,
                                     null=True
                                 )
     
     learn_more_url_color = models.CharField(
-                                    max_length=100,
+                                    max_length=10,
                                     blank=True,
                                     null=True
                                 )
