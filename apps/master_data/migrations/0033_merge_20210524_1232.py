@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('master_data', '0032_merge_20210521_1523'),
-        ('master_data', '0027_merge_20210412_1813'),
+        ('master_data', '0027_merge_20210414_1842'),
     ]
 
     operations = [
