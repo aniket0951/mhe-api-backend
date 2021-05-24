@@ -80,7 +80,8 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['upcoming_appointment'] = AppointmentSerializer(patient_appointment, many=True).data
                 dashboard_details["vaccination_age_error_message"] = settings.VACCINATION_AGE_ERROR_MESSAGE.format(str(settings.MIN_VACCINATION_AGE))
                 dashboard_details['manipal_whatsapp_contact'] = settings.MANIPAL_WHATSAPP_CONTACT
-                dashboard_details['flyers_images'] = DashboardUtils.get_all_todays_flyers()
+                if settings.FLYER_ENABLED:
+                    dashboard_details['flyers_images'] = DashboardUtils.get_all_todays_flyers()
 
             manipal_admin_obj = manipal_admin_object(request)
             if manipal_admin_obj:
