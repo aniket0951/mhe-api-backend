@@ -126,8 +126,8 @@ class FAQData(MyBaseModel):
 class FlyerScheduler(MyBaseModel):
 
     FLYER_SCHEDULER_CHOICES = (
-                        ('Once-a-Day','Once-a-Day'),
-                        ('EveryTime','EveryTime')
+                        ('onceaday','Once-a-Day'),
+                        ('everytime','EveryTime')
                     )
 
     flyer_name = models.CharField(
