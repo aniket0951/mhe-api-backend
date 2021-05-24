@@ -1,3 +1,4 @@
+from apps.doctors.models import Doctor
 import logging
 from rest_framework import permissions
 
