@@ -1,7 +1,7 @@
 import logging
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
-from .models import DashboardBanner, FAQData
+from .models import DashboardBanner, FAQData, FlyerImages, FlyerScheduler
 
 logger = logging.getLogger('django')
 
@@ -34,5 +34,27 @@ class FAQDataSerializer(DynamicFieldsModelSerializer):
                 response_object['image'] = generate_pre_signed_url(instance.image.url)
         except Exception as error:
             logger.info("Exception in FAQDataSerializer: %s"%(str(error)))
+            response_object['image'] = None
+        return response_object
+
+class FlyerSchedulerSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = FlyerScheduler
+        exclude = ('created_at', 'updated_at', 'created_by', 'updated_by')
+
+class FlyerImagesSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = FlyerImages
+        exclude = ('created_at', 'updated_at', 'created_by', 'updated_by')
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        try:
+            if instance.image:
+                response_object['image'] = generate_pre_signed_url(
+                    instance.image.url)
+        except Exception as error:
+            logger.info("Exception in FlyerImagesSerializer : %s"%(str(error)))
             response_object['image'] = None
         return response_object
