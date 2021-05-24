@@ -1,4 +1,8 @@
+from apps.dashboard.serializers import FlyerImagesSerializer
+from apps.dashboard.models import FlyerImages, FlyerScheduler
 from django.conf import settings
+from datetime import datetime
+
 class DashboardUtils:
 
     @staticmethod
@@ -39,3 +43,22 @@ class DashboardUtils:
             else:
                 force_update_required = True
         return force_update_required
+    
+    @staticmethod
+    def get_all_todays_flyers():
+        flyer_images = []
+        current_datetime = datetime.today()
+        flyer_scheduler_ids = FlyerScheduler.objects.filter(
+                                    start_date_time__gte=current_datetime,
+                                    end_date_time__lte=current_datetime
+                                ).order_by('-start_date_time')
+        for flyer_scheduler_id in flyer_scheduler_ids:
+            flyer_images.extend(
+                FlyerImagesSerializer(
+                    FlyerImages.objects.filter(
+                            flyer_scheduler_id=flyer_scheduler_id.id
+                    ).order_by('Sequence'),
+                    many = True
+                ).data
+            )
+        return flyer_images
