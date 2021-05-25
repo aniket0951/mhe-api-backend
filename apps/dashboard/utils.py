@@ -49,8 +49,8 @@ class DashboardUtils:
         flyer_images = []
         current_datetime = datetime.today()
         flyer_scheduler_ids = FlyerScheduler.objects.filter(
-                                    start_date_time__gte=current_datetime,
-                                    end_date_time__lte=current_datetime
+                                    start_date_time__lte=current_datetime,
+                                    end_date_time__gte=current_datetime
                                 ).order_by('-start_date_time')
         for flyer_scheduler_id in flyer_scheduler_ids:
             flyer_images.extend(
