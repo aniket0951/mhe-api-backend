@@ -61,8 +61,8 @@ class FlyerImagesSerializer(DynamicFieldsModelSerializer):
         try:
             if instance.image:
                 response_object['image'] = generate_pre_signed_url(instance.image.url)
-            response_object['frequency'] = ""
-            if instance.flyer_scheduler_id and instance.flyer_scheduler_id.frequency:
+            response_object['frequency'] = 0
+            if instance.flyer_scheduler_id:
                 response_object['frequency'] = instance.flyer_scheduler_id.frequency
         except Exception as error:
             logger.info("Exception in FlyerImagesSerializer : %s"%(str(error)))
