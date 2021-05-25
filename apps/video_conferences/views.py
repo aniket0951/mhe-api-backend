@@ -207,6 +207,7 @@ class CloseRoomView(APIView):
         param["set_status"] = "DEPARTED"
         status_param = create_room_parameters(param)
         SendStatus.as_view()(status_param)
+        send_silent_push_notification.delay(notification_data=notification_data)
         
         notification_data = {}
         notification_data["title"] = "Consultation Completed"
@@ -227,8 +228,6 @@ class CloseRoomView(APIView):
         notification_data["recipient"] = appointment.patient.id
         send_push_notification.delay(notification_data=notification_data)
         
-        send_silent_push_notification.delay(
-            notification_data=notification_data)
         client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).delete()
         return Response(status=status.HTTP_200_OK)
 
