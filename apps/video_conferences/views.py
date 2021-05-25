@@ -207,6 +207,26 @@ class CloseRoomView(APIView):
         param["set_status"] = "DEPARTED"
         status_param = create_room_parameters(param)
         SendStatus.as_view()(status_param)
+        
+        notification_data = {}
+        notification_data["title"] = "Consultation Completed"
+        notification_data["message"] = "Doctor has ended the call"
+        notification_data["notification_type"] = "COMPLETE_VC_NOTIFICATION"
+        notification_data["appointment_id"] = appointment.appointment_identifier
+        notification_data["doctor_name"] = appointment.doctor.name
+        
+        if appointment.family_member:
+            member = FamilyMember.objects.filter(
+                id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
+            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+                patient_member = Patient.objects.filter(
+                    uhid_number=member.uhid_number).first()
+                notification_data["recipient"] = patient_member.id
+                send_push_notification.delay(
+                    notification_data=notification_data)
+        notification_data["recipient"] = appointment.patient.id
+        send_push_notification.delay(notification_data=notification_data)
+        
         send_silent_push_notification.delay(
             notification_data=notification_data)
         client.chat.services(settings.TWILIO_CHAT_SERVICE_ID).channels(channel_sid).delete()
