@@ -46,7 +46,7 @@ class FlyerSchedulerSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_opject = super().to_representation(instance)
-        flyer_image_ids = FlyerImages.objects.filter(flyer_scheduler_id=instance.id)
+        flyer_image_ids = FlyerImages.objects.filter(flyer_scheduler_id=instance.id).order_by("sequence")
         response_opject['flyer_images'] = FlyerImagesSerializer(flyer_image_ids,many=True).data
         return response_opject
 
