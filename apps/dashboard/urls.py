@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import DashboardBannerViewSet, DashboardAPIView, FAQDataViewSet, FAQDataAPIView, FlyerSchedulerViewSet, IOSVersionCheck, RemoveAccountAPIView, RemoveUHIDAPIView
+from .views import DashboardBannerViewSet, DashboardAPIView, FAQDataViewSet, FAQDataAPIView, FlyerImagesViewSet, FlyerSchedulerViewSet, IOSVersionCheck, RemoveAccountAPIView, RemoveUHIDAPIView
 
 app_name = 'dashboard'
 
@@ -10,6 +10,7 @@ router = DefaultRouter(trailing_slash=False)
 router.register('banner', DashboardBannerViewSet)
 router.register('faq', FAQDataViewSet)
 router.register('flyers',FlyerSchedulerViewSet)
+router.register('flyer_image',FlyerImagesViewSet)
 
 urlpatterns = [
     path('details', DashboardAPIView.as_view()),
