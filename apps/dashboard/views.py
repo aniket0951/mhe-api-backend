@@ -26,8 +26,8 @@ from utils.utils import (
                     manipal_admin_object,
                     patient_user_object
                 )
-from .models import DashboardBanner, FAQData, FlyerScheduler
-from .serializers import DashboardBannerSerializer, FAQDataSerializer, FlyerSchedulerSerializer
+from .models import DashboardBanner, FAQData, FlyerImages, FlyerScheduler
+from .serializers import DashboardBannerSerializer, FAQDataSerializer, FlyerImagesSerializer, FlyerSchedulerSerializer
 from .utils import DashboardUtils
 import logging
 from django_filters.rest_framework import DjangoFilterBackend
@@ -344,3 +344,46 @@ class FlyerSchedulerViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
+
+    def perform_create(self, serializer):
+        
+        flyer_scheduler = serializer.save(is_active=True)
+        images = self.request.data.get('flyer_images')
+
+        for flyer_image in images:
+            flyer_images = dict()
+            flyer_images["flyer_scheduler_id"] = flyer_scheduler.id
+            flyer_images["sequence"] = flyer_image.get("sequence")
+            flyer_images["image"] = flyer_image.get("image")
+            flyer_images["learn_more_url"] = flyer_image.get("learn_more_url",None)
+            flyer_images["learn_more_url_text"] = flyer_image.get("learn_more_url_text",None)
+            flyer_images["learn_more_url_color"] = flyer_image.get("learn_more_url_color",None)
+            
+        flyer_image_serializer = FlyerImagesSerializer(data = flyer_images)
+        flyer_image_serializer.is_valid(raise_exception = True)
+        flyer_image_serializer.save()
+
+
+    def perform_update(self, serializer):
+
+        flyer_scheduler = self.get_object()
+        #flyer_images_ids = FlyerImages.objects.all()
+        flyer_images_ids = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler.id)
+        if not flyer_images_ids:
+            images = self.request.data.get('flyer_images')
+            for flyer_image in images:
+                flyer_images = dict()
+                flyer_images["flyer_scheduler_id"] = flyer_scheduler.id
+                flyer_images["sequence"] = flyer_image.get("sequence")
+                flyer_images["image"] = flyer_image.get("image")
+                flyer_images["learn_more_url"] = flyer_image.get("learn_more_url",None)
+                flyer_images["learn_more_url_text"] = flyer_image.get("learn_more_url_text",None)
+                flyer_images["learn_more_url_color"] = flyer_image.get("learn_more_url_color",None)
+                
+            flyer_image_serializer = FlyerImagesSerializer(data = flyer_images)
+            flyer_image_serializer.is_valid(raise_exception = True)
+            flyer_image_serializer.save()
+        flyer_image = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler.id,id__isnull=True)
+        if flyer_image:
+            flyer_image.delete()
+        flyer_scheduler = serializer.save()
