@@ -57,7 +57,7 @@ class DashboardUtils:
                 FlyerImagesSerializer(
                     FlyerImages.objects.filter(
                             flyer_scheduler_id=flyer_scheduler_id.id
-                    ).order_by('Sequence'),
+                    ).order_by('sequence'),
                     many = True
                 ).data
             )
