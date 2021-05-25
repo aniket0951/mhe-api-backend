@@ -126,8 +126,8 @@ class FAQData(MyBaseModel):
 class FlyerScheduler(MyBaseModel):
 
     FLYER_SCHEDULER_CHOICES = (
-                        ('onceaday','Once-a-Day'),
-                        ('everytime','EveryTime')
+                        (1,'Once-a-Day'),
+                        (0,'EveryTime')
                     )
 
     flyer_name = models.CharField(
@@ -147,11 +147,11 @@ class FlyerScheduler(MyBaseModel):
                                     null=False
                                 )
 
-    frequency = models.CharField(
-                            max_length=20,
+    frequency = models.IntegerField(
                             choices=FLYER_SCHEDULER_CHOICES,
                             blank=False,
-                            null=False
+                            null=False,
+                            default=0
                         )
 
     is_active = models.BooleanField(
