@@ -318,7 +318,7 @@ class RemoveUHIDAPIView(ListAPIView):
         return Response({"message":"Your uhid_number has been unlinked successfully!"}, status=status.HTTP_200_OK)
 
 
-class FlyerImagesViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+class FlyerImagesViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsManipalAdminUser]
     model = FlyerImages
     queryset = FlyerImages.objects.all()
@@ -334,7 +334,7 @@ class FlyerImagesViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id)
         
         if len(flyer_images) >= int(settings.MAX_FLYER_IMAGES):
-            raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT%(settings.MAX_FLYER_IMAGES))
+            raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT%(str(settings.MAX_FLYER_IMAGES)))
 
         serializer.save()
 
@@ -375,8 +375,8 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
         end_date_time = self.request.data.get('end_date_time')
         start_datetime = datetime.strptime(start_date_time,'%Y-%m-%dT%H:%M:%S')
         
-        if start_datetime.date() <= current_date:
-            raise ValidationError('Start date time should be greater than current datetime')
+        if start_datetime.date() < current_date:
+            raise ValidationError('Start date time should not be set as past date.')
         
         DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
         serializer.save(is_active=True)
