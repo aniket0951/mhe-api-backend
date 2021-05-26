@@ -432,6 +432,8 @@ MANIPAL_WHATSAPP_CONTACT = env('MANIPAL_WHATSAPP_CONTACT')
 
 FLYER_ENABLED = True if env("FLYER_ENABLED") and str(env("FLYER_ENABLED"))=="True" else False
 
+MAX_FLYER_IMAGES = env('MAX_FLYER_IMAGES')
+
 # Logger configuration
 LOGGING = {
     'version': 1,

@@ -2,6 +2,7 @@ from apps.dashboard.serializers import FlyerImagesSerializer
 from apps.dashboard.models import FlyerImages, FlyerScheduler
 from django.conf import settings
 from datetime import datetime
+from rest_framework.serializers import ValidationError
 
 class DashboardUtils:
 
@@ -62,3 +63,9 @@ class DashboardUtils:
                 ).data
             )
         return flyer_images
+    
+    def start_end_datetime_comparision(start_date,end_date):
+        start_date_time = datetime.strptime(start_date,'%Y-%m-%dT%H:%M:%S')
+        end_date_time = datetime.strptime(end_date,'%Y-%m-%dT%H:%M:%S')
+        if start_date_time > end_date_time:
+            raise ValidationError("Start date time should not be greater than End date time")

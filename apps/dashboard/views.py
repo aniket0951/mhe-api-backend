@@ -1,5 +1,5 @@
 import base64
-
+from datetime import date, datetime
 from apps.appointments import models
 from apps.dashboard.constants import DashboardConstants
 from apps.master_data.models import Configurations
@@ -21,6 +21,7 @@ from rest_framework import status, filters
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
 from utils.custom_permissions import IsManipalAdminUser, IsPatientUser, BlacklistDestroyMethodPermission
 from utils.utils import (
@@ -327,6 +328,15 @@ class FlyerImagesViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     retrieve_success_message = 'Flyer image returned successfully!'
     update_success_message = 'Flyer image updated successfully!'
     delete_success_message = 'Flyer image deleted successfully!'
+    
+    def perform_create(self, serializer):
+        flyer_scheduler_id = self.request.data.get('flyer_scheduler_id')
+        flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id)
+        
+        if len(flyer_images) >= int(settings.MAX_FLYER_IMAGES):
+            raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT)
+
+        serializer.save()
 
 class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     permission_classes = [IsPatientUser | IsManipalAdminUser]
@@ -359,54 +369,20 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
 
         return super().get_permissions()
 
-    # def perform_create(self, serializer):
+    def perform_create(self, serializer):
+        current_date = date.today()
+        start_date_time = self.request.data.get('start_date_time')
+        end_date_time = self.request.data.get('end_date_time')
+        start_datetime = datetime.strptime(start_date_time,'%Y-%m-%dT%H:%M:%S')
         
-    #     flyer_scheduler_id = serializer.save(is_active=True)
-    #     flyer_images_request = self.request.data.get('flyer_images')
-
-    #     for flyer_image in flyer_images_request:
-
-    #         flyer_images = dict()
-    #         flyer_images["flyer_scheduler_id"] = flyer_scheduler_id.id
-    #         flyer_images["sequence"] = flyer_image.get("sequence")
-    #         flyer_images["image"] = base64.b64decode(flyer_image.get("image"))
-    #         flyer_images["learn_more_url"] = flyer_image.get("learn_more_url",None)
-    #         flyer_images["learn_more_url_text"] = flyer_image.get("learn_more_url_text",None)
-    #         flyer_images["learn_more_url_color"] = flyer_image.get("learn_more_url_color",None)
-            
-    #         flyer_image_serializer = FlyerImagesSerializer(data = flyer_images)
-    #         flyer_image_serializer.is_valid(raise_exception = True)
-    #         flyer_image_serializer.save()
-
-    # def perform_update(self, serializer):
-
-    #     flyer_scheduler_id = self.get_object()
-    #     flyer_images_existing_ids = []
-    #     flyer_images_request = self.request.data.get('flyer_images')
-    #     for flyer_image in flyer_images_request:
-            
-    #         flyer_images_data = dict()
-    #         flyer_images_data["flyer_scheduler_id"] = flyer_scheduler_id.id
-    #         flyer_images_data["sequence"] = flyer_image.get("sequence")
-    #         flyer_images_data["image"] = base64.b64decode(flyer_image.get("image"))
-    #         flyer_images_data["learn_more_url"] = flyer_image.get("learn_more_url",None)
-    #         flyer_images_data["learn_more_url_text"] = flyer_image.get("learn_more_url_text",None)
-    #         flyer_images_data["learn_more_url_color"] = flyer_image.get("learn_more_url_color",None)
-            
-    #         if flyer_image.get("id"):
-    #             flyer_images_existing_ids.append(flyer_image.get("id"))
-    #             flyer_image_id = FlyerImages.objects.get(id=flyer_image.get("id"))
-    #             flyer_image_serializer = FlyerImagesSerializer(flyer_image_id, data = flyer_images_data, partial = True)
-    #             flyer_image_serializer.is_valid(raise_exception = True)
-    #             flyer_image_serializer.save()
-    #         else:
-    #             flyer_image_serializer = FlyerImagesSerializer(data = flyer_images_data)
-    #             flyer_image_serializer.is_valid(raise_exception = True)
-    #             flyer_image_id = flyer_image_serializer.save()
-    #             flyer_images_existing_ids.append(flyer_image_id.id)
-
-    #     flyer_images_delete_ids = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id.id).exclude(id__in=flyer_images_existing_ids)
-    #     if flyer_images_delete_ids:
-    #         flyer_images_delete_ids.delete()
+        if start_datetime.date() <= current_date:
+            raise ValidationError('Start date time should be greater than current datetime')
         
-    #     serializer.save()
+        DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
+        serializer.save(is_active=True)
+
+    def perform_update(self, serializer):
+        start_date_time = self.request.data.get('start_date_time')
+        end_date_time = self.request.data.get('end_date_time')
+        DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
+        serializer.save()
