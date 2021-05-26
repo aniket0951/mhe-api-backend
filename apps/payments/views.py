@@ -1,3 +1,4 @@
+from apps.payments.utils import PaymentUtils
 from apps.payments.constants import PaymentConstants
 import ast
 import json
@@ -66,16 +67,10 @@ class AppointmentPayment(APIView):
     def post(self, request, format=None):
         param = get_payment_param(request.data)
         location_code = request.data.get("location_code", None)
-        try:
-            hospital = Hospital.objects.filter(code=location_code).first()
-        except Exception:
-            raise HospitalDoesNotExistsValidationException
+        hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         appointment = request.data["appointment_id"]
         registration_payment = request.data.get("registration_payment", False)
-        appointment_instance = Appointment.objects.filter(
-            appointment_identifier=appointment).first()
-        if not appointment_instance:
-            raise ValidationError("Appointment is not available")
+        appointment_instance = PaymentUtils.get_appointment_instance(appointment)
         payment_data = {}
         param["token"]["appointment_id"] = appointment
         param["token"]["package_code"] = "NA"
@@ -95,15 +90,11 @@ class AppointmentPayment(APIView):
         if registration_payment:
             uhid = "None"
             payment_data["payment_for_uhid_creation"] = True
-            response = client.post('/api/master_data/items_tariff_price',
-                                   json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type=PaymentConstants.APPLICATION_JSON)
-
+            response = client.post('/api/master_data/items_tariff_price',json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type=PaymentConstants.APPLICATION_JSON)
             if response.status_code == 200 and response.data["success"] == True:
                 calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
-        response_doctor_charges = client.post('/api/master_data/consultation_charges',
-                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid, 'order_date': order_date}), content_type=PaymentConstants.APPLICATION_JSON)
-
+        response_doctor_charges = client.post('/api/master_data/consultation_charges',json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid, 'order_date': order_date}), content_type=PaymentConstants.APPLICATION_JSON)
 
         if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
             
@@ -303,153 +294,6 @@ class IPDepositPayment(APIView):
         payment.save()
         logger.info(param)
         return Response(data=param, status=status.HTTP_200_OK)
-
-
-class PaymentResponse(APIView):
-    permission_classes = (AllowAny,)
-    parser_classes = [FormParser, MultiPartParser, JSONParser]
-
-    def post(self, request, format=None):
-        logger.info(request.data)
-        response_token = request.data["responseToken"]
-        response_token_json = json.loads(response_token)
-        status_code = response_token_json["status_code"]
-        payment_response = response_token_json["payment_response"]
-        processing_id = response_token_json["processing_id"]
-        payment_account = response_token_json["accounts"]
-        try:
-            payment_instance = Payment.objects.get(
-                processing_id=processing_id)
-        except Exception:
-            raise ProcessingIdDoesNotExistsValidationException
-        uhid = "-1"
-        payment_instance.raw_info_from_salucro_response = response_token_json
-        payment_instance.save()
-        new_appointment_id = None
-        if status_code == 1200:
-            payment = {}
-            payment["uhid_number"] = payment_account["account_number"]
-            if payment["uhid_number"]:
-                payment["uhid_number"] = payment["uhid_number"].upper()
-
-            if payment_instance.appointment or payment_instance.payment_for_health_package:
-                payment_paydetail = payment_response["payDetailAPIResponse"]
-                if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(
-                        payment_paydetail["BillDetail"])[0]
-                    new_appointment_id = bill_detail["AppointmentId"]
-                    payment["receipt_number"] = bill_detail["ReceiptNo"]
-
-            if payment_instance.payment_for_uhid_creation:
-                if payment_instance.appointment or payment_instance.payment_for_health_package:
-                    payment_paydetail = payment_response["payDetailAPIResponse"]
-                    if payment_paydetail["BillDetail"]:
-                        bill_detail = json.loads(
-                            payment_paydetail["BillDetail"])[0]
-                        new_appointment_id = bill_detail["AppointmentId"]
-                        payment["receipt_number"] = bill_detail["ReceiptNo"]
-                else:
-                    payment_paydetail = payment_response["pre_registration_response"]
-                    payment["receipt_number"] = payment_paydetail["receiptNo"]
-
-            if payment_instance.payment_for_ip_deposit:
-                payment_paydetail = payment_response["onlinePatientDeposit"]
-                if payment_paydetail["RecieptNumber"]:
-                    bill_detail = json.loads(
-                        payment_paydetail["RecieptNumber"])[0]
-                    payment["receipt_number"] = bill_detail["ReceiptNo"]
-
-            if payment_instance.payment_for_op_billing:
-                payment_paydetail = payment_response["opPatientBilling"]
-                if payment_paydetail["BillDetail"]:
-                    bill_detail = json.loads(
-                        payment_paydetail["BillDetail"])[0]
-                    payment["receipt_number"] = bill_detail["BillNo"]
-                    payment["episode_number"] = bill_detail["EpisodeNo"]
-
-            payment["status"] = payment_response["status"]
-            payment["payment_method"] = payment_response["card_type"] + \
-                "-" + payment_response["mode"]
-            payment["transaction_id"] = payment_response["txnid"]
-            payment["amount"] = payment_response["net_amount_debit"]
-            payment_serializer = PaymentSerializer(
-                payment_instance, data=payment, partial=True)
-            payment_serializer.is_valid(raise_exception=True)
-            payment_serializer.save()
-            uhid_info = {}
-            if payment["uhid_number"] and (payment["uhid_number"][:2] == "MH" or payment["uhid_number"][:3] == "MMH"):
-                uhid_info["uhid_number"] = payment["uhid_number"]
-                uhid = payment["uhid_number"]
-            if (payment_instance.payment_for_uhid_creation):
-                if payment_instance.appointment:
-                    appointment = Appointment.objects.filter(
-                        id=payment_instance.appointment.id).first()
-                    appointment.status = 6
-                    appointment.save()
-                if payment_instance.payment_done_for_patient:
-                    patient = Patient.objects.filter(
-                        id=payment_instance.payment_done_for_patient.id).first()
-                    patient_serializer = PatientSpecificSerializer(
-                        patient, data=uhid_info, partial=True)
-                    patient_serializer.is_valid(raise_exception=True)
-                    patient_serializer.save()
-                if payment_instance.payment_done_for_family_member:
-                    family_member = FamilyMember.objects.filter(
-                        id=payment_instance.payment_done_for_family_member.id).first()
-                    patient_serializer = FamilyMemberSpecificSerializer(
-                        family_member, data=uhid_info, partial=True)
-                    patient_serializer.is_valid(raise_exception=True)
-                    patient_serializer.save()
-            if payment_instance.appointment:
-                appointment = Appointment.objects.filter(
-                    id=payment_instance.appointment.id).first()
-                update_data = {"payment_status": payment_response["status"]}
-                update_data["consultation_amount"] = payment_instance.amount
-                if payment_instance.payment_for_uhid_creation:
-                    update_data["appointment_identifier"] = new_appointment_id
-                    update_data["status"] = 1
-                    update_data["uhid"] = payment["uhid_number"]
-                appointment_serializer = AppointmentSerializer(
-                    appointment, data=update_data, partial=True)
-                appointment_serializer.is_valid(raise_exception=True)
-                appointment_serializer.save()
-
-            if payment_instance.payment_for_health_package:
-                appointment = HealthPackageAppointment.objects.filter(
-                    id=payment_instance.health_package_appointment.id).first()
-                update_data = {}
-                update_data["payment"] = payment_instance.id
-                package_name = ""
-                package_list = appointment.health_package.all()
-                for package in package_list:
-                    if not package_name:
-                        package_name = package.name
-                    else:
-                        package_name = package_name + "," + package.name
-
-                if payment_instance.payment_done_for_patient:
-                    patient = Patient.objects.filter(
-                        id=payment_instance.payment_done_for_patient.id).first()
-                if payment_instance.payment_done_for_family_member:
-                    family_member = FamilyMember.objects.filter(
-                        id=payment_instance.payment_done_for_family_member.id).first()
-                if payment_instance.payment_for_uhid_creation:
-                    update_data["appointment_identifier"] = new_appointment_id
-                appointment_serializer = HealthPackageAppointmentSerializer(
-                    appointment, data=update_data, partial=True)
-                appointment_serializer.is_valid(raise_exception=True)
-                appointment_serializer.save()
-        else:
-            payment_instance.status = "failure"
-            payment_instance.uhid_number = payment_account["account_number"]
-            payment_instance.save()
-        txnstatus = response_token_json["status_code"]
-        txnamount = payment_response["net_amount_debit"]
-        txnid = payment_response["txnid"]
-        param = "?txnid={0}&txnstatus={1}&txnamount={2}&uhidNumber={3}".format(
-            txnid, txnstatus, txnamount, uhid)
-        return HttpResponseRedirect(settings.REDIRECT_URL + param)
-
 
 class PaymentReturn(APIView):
     permission_classes = (AllowAny,)
@@ -781,16 +625,7 @@ class AppointmentPaymentView(ProxyView):
             if bill_detail and self.request.data:
                 app_id = self.request.data.get("app_id")
                 aap_list = ast.literal_eval(bill_detail)
-                if aap_list and len(aap_list)>0:
-                    appointment_identifier = aap_list[0].get("AppointmentId")
-                    appointment_instance = Appointment.objects.filter(
-                        appointment_identifier=app_id).first()
-                    if appointment_instance:
-                        success_status = True
-                        appointment_instance.payment_status = "success"
-                        if appointment_identifier:
-                            appointment_instance.appointment_identifier = appointment_identifier
-                        appointment_instance.save()
+                success_status = PaymentUtils.manage_appointment_payment(aap_list,app_id)
         return self.custom_success_response(message=message,
                                             success=success_status, data=data)
 

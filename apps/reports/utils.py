@@ -1,3 +1,4 @@
+from apps.reports.views import FreeTextReportDetailsViewSet, NumericReportDetailsViewSet, StringReportDetailsViewSet, TextReportDetailsViewSet
 import logging
 import base64
 import xml.etree.ElementTree as ET
@@ -6,32 +7,48 @@ from datetime import datetime
 from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 from rest_framework.test import APIRequestFactory
-
+from rest_framework.serializers import ValidationError
 from .exceptions import ReportExistsException
 from .models import Report, VisitReport
 from .serializers import VisitReportsSerializer
 
 logger = logging.getLogger('django')
 
+def cleanup_data(report_info,report_visit):
+    if Report.objects.filter(visit_id=report_info['VisitID'], place_order=report_info['place_order']).exists():
+        report_instances = Report.objects.filter(
+                                            visit_id=report_info['VisitID'], 
+                                            place_order=report_info['place_order'], 
+                                            code=report_info['ReportCode']
+                                        )
+        for report_instance in report_instances:
+            report_instance.text_report.all().delete()
+            report_instance.numeric_report.all().delete()
+            report_instance.string_report.all().delete()
+            report_instance.free_text_report.all().delete()
+            if report_visit:
+                report_visit.report_info.remove(report_instance)
+            report_instance.delete()
+
+def get_hospital_and_doctor_info(report_info,report_request_data):
+    hospital_info = Hospital.objects.filter(code=report_info['LocationCode']).first()
+    if hospital_info:
+        report_request_data['hospital'] = hospital_info.id
+        doctor_info = Doctor.objects.filter(code=report_info['DoctorCode'].split(',')[0], hospital=hospital_info).first()
+        if doctor_info:
+            report_request_data['doctor'] = doctor_info.id
+        else:
+            report_request_data['doctor_name'] = report_info['DoctorName']
+    return report_request_data
+
 def report_handler(report_info, factory=APIRequestFactory()):
 
     required_keys = ['UHID', 'ReportCode', 'ReportName', 'ReportDateTime']
 
-    if report_info and type(report_info) == dict and \
-            set(required_keys).issubset(set(report_info.keys())):
-        report_visit = VisitReport.objects.filter(
-            visit_id=report_info['VisitID']).first()
-        if Report.objects.filter(visit_id=report_info['VisitID'], place_order=report_info['place_order']).exists():
-            report_instances = Report.objects.filter(
-                visit_id=report_info['VisitID'], place_order=report_info['place_order'], code=report_info['ReportCode'])
-            for report_instance in report_instances:
-                report_instance.text_report.all().delete()
-                report_instance.numeric_report.all().delete()
-                report_instance.string_report.all().delete()
-                report_instance.free_text_report.all().delete()
-                if report_visit:
-                    report_visit.report_info.remove(report_instance)
-                report_instance.delete()
+    if report_info and type(report_info) == dict and set(required_keys).issubset(set(report_info.keys())):
+        report_visit = VisitReport.objects.filter(visit_id=report_info['VisitID']).first()
+        
+        cleanup_data(report_info,report_visit)
 
         report_request_data = {}
         report_request_data['uhid'] = report_info['UHID']
@@ -44,20 +61,10 @@ def report_handler(report_info, factory=APIRequestFactory()):
         report_request_data['name'] = report_info['ReportName']
         if report_info['ReportCode'] and report_info['ReportCode'].startswith("DRAD"):
             report_request_data['report_type'] = "Radiology"
-        report_request_data['visit_date_time'] = datetime.strptime(
-            report_info["VisitDateTime"], '%Y%m%d%H%M%S')
-        report_request_data['time'] = datetime.strptime(
-            report_info['ReportDateTime'], '%Y%m%d%H%M%S')
-        hospital_info = Hospital.objects.filter(
-            code=report_info['LocationCode']).first()
-        if hospital_info:
-            report_request_data['hospital'] = hospital_info.id
-            doctor_info = Doctor.objects.filter(code=report_info['DoctorCode'].split(',')[
-                                                0], hospital=hospital_info).first()
-            if doctor_info:
-                report_request_data['doctor'] = doctor_info.id
-            else:
-                report_request_data['doctor_name'] = report_info['DoctorName']
+        report_request_data['visit_date_time'] = datetime.strptime(report_info["VisitDateTime"], '%Y%m%d%H%M%S')
+        report_request_data['time'] = datetime.strptime(report_info['ReportDateTime'], '%Y%m%d%H%M%S')
+        
+        report_request_data = get_hospital_and_doctor_info(report_info,report_request_data)
 
         if not report_visit:
             data = dict()
@@ -165,3 +172,50 @@ def numeric_report_hanlder(report_detail, report_id, factory=APIRequestFactory()
         
         return factory.post(
             '', numeric_report_request_data, format='json')
+
+def validate_family_member(family_member):
+    if not family_member:
+        raise ValidationError("Family member not found!")
+
+    if not family_member.uhid_number:
+        raise ValidationError("UHID is not linked to your family member!")
+
+def create_visit_reports(report_response,report_info):
+    visit_id = report_response.data["data"]["visit_id"]
+    report_obj = Report.objects.filter(id=report_response.data['data']['id']).first()
+    if visit_id:
+        report_visit_obj = VisitReport.objects.filter(visit_id=visit_id).first()
+        if not report_visit_obj:
+            data = dict()
+            data["visit_id"] = visit_id
+            data["uhid"] = report_response.data["data"]["uhid"]
+            data["patient_class"] = report_response.data["data"]["patient_class"][0]
+            data["patient_name"] = report_info["PatientName"]
+            serializer = VisitReportsSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            report_visit_obj = serializer.save()
+        report_visit_obj.report_info.add(report_obj)
+    return report_info
+
+def create_all_reports(report_details,report_response):
+
+    for each_report_detail in report_details:
+        
+        if each_report_detail['ObxType'] == 'NM':
+            numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            NumericReportDetailsViewSet.as_view({'post': 'create'})(numeric_report_proxy_request)
+            continue
+
+        if each_report_detail['ObxType'] == 'ST':
+            string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            StringReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
+            continue
+
+        if each_report_detail['ObxType'] == 'TX':
+            text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            TextReportDetailsViewSet.as_view({'post': 'create'})(text_report_proxy_request)
+            continue
+
+        if each_report_detail['ObxType'] == 'FT':
+            string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            FreeTextReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)

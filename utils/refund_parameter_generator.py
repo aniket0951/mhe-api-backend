@@ -11,6 +11,22 @@ from apps.appointments.models import Appointment
 from apps.payments.models import PaymentHospitalKey
 from rest_framework.serializers import ValidationError
 
+def calculate_refund_amount(appointment_instance,param):
+    if appointment_instance.appointment_date >= datetime.now().date():
+        param["amount"] = appointment_instance.consultation_amount
+        if appointment_instance.appointment_date == datetime.now().date():
+            date_time_slot = datetime.combine(
+                datetime.now(), appointment_instance.appointment_slot)
+            date_time_now = datetime.combine(
+                datetime.now(), datetime.now().time())
+            time_delta = (
+                date_time_slot - date_time_now).total_seconds()/3600
+            if time_delta >= 2 and time_delta <= 4:
+                param["amount"] = appointment_instance.consultation_amount - 100
+
+            if time_delta < 2:
+                param["amount"] = 0.0
+    return param
 
 def get_refund_param(data=None):
     param = {}
@@ -39,20 +55,8 @@ def get_refund_param(data=None):
     param["username"] = patient.first_name.replace(" ", "")
     param["patient_name"] = patient.first_name.replace(" ", "")
     param["account_number"] = patient.uhid_number
-    if appointment_instance.appointment_date >= datetime.now().date():
-        param["amount"] = appointment_instance.consultation_amount
-        if appointment_instance.appointment_date == datetime.now().date():
-            date_time_slot = datetime.combine(
-                datetime.now(), appointment_instance.appointment_slot)
-            date_time_now = datetime.combine(
-                datetime.now(), datetime.now().time())
-            time_delta = (
-                date_time_slot - date_time_now).total_seconds()/3600
-            if time_delta >= 2 and time_delta <= 4:
-                param["amount"] = appointment_instance.consultation_amount - 100
-
-            if time_delta < 2:
-                param["amount"] = 0.0
+    
+    param = calculate_refund_amount(appointment_instance,param)
 
     param["email"] = patient.email
     instance = appointment_instance.payment_appointment.filter(status="success").first()

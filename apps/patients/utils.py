@@ -1,9 +1,12 @@
-from apps.patients.models import OtpGenerationCount
+from django.conf import settings
+from django.utils.crypto import get_random_string
+from apps.patients.serializers import FamilyMemberCorporateHistorySerializer
+from apps.patients.models import FamilyMember, FamilyMemberCorporateHistory, OtpGenerationCount, Patient
 from apps.master_data.models import Hospital
 from apps.master_data.views import LinkUhidView, ValidateOTPView
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
-from datetime import datetime
+from datetime import datetime, timedelta
 from .constants import PatientsConstants
 
 def check_max_otp_retries(user_obj):
@@ -88,3 +91,59 @@ def assign_hospital(request_data):
         raise ValidationError("Invalid hospital provided.")
     request_data["preferred_hospital"] = hospital_instance
     return request_data
+
+def validate_uhid_family_members(member,patient,family_member,uhid_number):
+    if not member:
+        raise ValidationError("Family Member not Available")
+
+    if patient.uhid_number == uhid_number:
+        raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
+
+    if family_member.filter(uhid_number=uhid_number).exists():
+        raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
+
+def validate_uhid_patients(patient,uhid_number):
+    if patient.uhid_number == uhid_number:
+        raise ValidationError("This UHID is already linked to your account!")
+        
+    if Patient.objects.filter(uhid_number=uhid_number).exists():
+        raise ValidationError("There is an exisiting user with different contact number on our platform with this UHID. Please contact our customer care for more information.")
+    
+    if FamilyMember.objects.filter(patient_info=patient,uhid_number=uhid_number,is_visible=True).exists():
+        raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
+
+def make_family_member_corporate(serializer,family_member_object):
+    if 'is_corporate' in serializer.validated_data and \
+        serializer.validated_data['is_corporate'] and \
+        family_member_object.patient_info and \
+        family_member_object.patient_info.company_info:
+
+        mapping_id = FamilyMemberCorporateHistory.objects.filter(family_member = family_member_object.id, company_info = family_member_object.patient_info.company_info.id)
+
+        if not mapping_id:
+            data = {
+                "family_member" : family_member_object.id,
+                "company_info"  : family_member_object.patient_info.company_info.id
+            }
+            FamilyMemberCorporateHistorySerializer(data=data)
+            FamilyMemberCorporateHistorySerializer.save()
+
+def process_is_email_to_be_verified(serializer,family_member_object,request_patient):
+    is_email_to_be_verified=False
+    
+    if 'email' in serializer.validated_data and not family_member_object.email == serializer.validated_data['email']:
+        is_email_to_be_verified=True
+        if serializer.validated_data['email'] == request_patient.email and request_patient.email_verified:
+            is_email_to_be_verified=False
+        family_member_object=serializer.save(email_verified=not is_email_to_be_verified)
+    else:
+        family_member_object=serializer.save()
+
+    if is_email_to_be_verified:
+        random_email_otp=get_random_string(length=settings.OTP_LENGTH, allowed_chars='0123456789')
+        otp_expiration_time=datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+
+        family_member_object.email_verified=False
+        family_member_object.email_verification_otp=random_email_otp
+        family_member_object.email_otp_expiration_time=otp_expiration_time
+        family_member_object.save()

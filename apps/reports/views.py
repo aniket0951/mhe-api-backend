@@ -7,12 +7,11 @@ from django.db.models import Q
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics, status, viewsets
+from rest_framework import filters, status
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from rest_framework.test import APIRequestFactory
 from utils import custom_viewsets
 from utils.custom_permissions import InternalAPICall, IsPatientUser
 from utils.utils import patient_user_object
@@ -26,8 +25,7 @@ from .serializers import (FreeTextReportDetailsSerializer,
                           ReportDocumentsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
                           TextReportDetailsSerializer, VisitReportsSerializer)
-from .utils import (free_text_report_hanlder, numeric_report_hanlder,
-                    report_handler, string_report_hanlder, text_report_hanlder)
+from .utils import (create_all_reports, create_visit_reports, report_handler, validate_family_member)
 
 logger = logging.getLogger('django')
 
@@ -59,23 +57,14 @@ class ReportViewSet(custom_viewsets.ListCreateViewSet):
         request_patient_obj = patient_user_object(self.request)
 
         if family_member_id:
-            family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,
-                                                        id=family_member_id).first()
-            if not family_member:
-                raise ValidationError("Family member not found!")
+            family_member = FamilyMember.objects.filter(patient_info=request_patient_obj,id=family_member_id).first()
+            validate_family_member(family_member)
+            qs = Report.objects.filter(uhid=family_member.uhid_number).distinct()
 
-            if not family_member.uhid_number:
-                raise ValidationError(
-                    "UHID is not linked to your family member!")
-
-            qs = Report.objects.filter(
-                uhid=family_member.uhid_number).distinct()
         else:
             if not request_patient_obj.uhid_number:
                 raise ValidationError("Your UHID is not linked!")
-
-            qs = Report.objects.filter(
-                uhid=request_patient_obj.uhid_number).distinct()
+            qs = Report.objects.filter(uhid=request_patient_obj.uhid_number).distinct()
 
         if filter_by:
             if filter_by == "current_week":
@@ -154,56 +143,13 @@ class ReportsSyncAPIView(CreateAPIView):
             except Exception as error:
                 logger.error("Exception in ReportsSyncAPIView %s"%(str(error)))
                 return Response({"data": report_response.data if report_response else str(error), "consumed": False},status=status.HTTP_200_OK)
-            visit_id = report_response.data["data"]["visit_id"]
-            report_obj = Report.objects.filter(
-                id=report_response.data['data']['id']).first()
-            if visit_id:
-                report_visit_obj = VisitReport.objects.filter(
-                    visit_id=visit_id).first()
-                if not report_visit_obj:
-                    data = dict()
-                    data["visit_id"] = visit_id
-                    data["uhid"] = report_response.data["data"]["uhid"]
-                    data["patient_class"] = report_response.data["data"]["patient_class"][0]
-                    data["patient_name"] = report_info["PatientName"]
-                    serializer = VisitReportsSerializer(data=data)
-                    serializer.is_valid(raise_exception=True)
-                    report_visit_obj = serializer.save()
-                report_visit_obj.report_info.add(report_obj)
+            
+            report_info = create_visit_reports(report_response,report_info)
 
-            if report_response.status_code == 201 and report_details and\
-                    type(report_details) == list:
+            if report_response.status_code == 201 and report_details and type(report_details) == list:
+                create_all_reports(report_details,report_response)
+                return Response({"data": None, "consumed": True},status=status.HTTP_201_CREATED)
 
-                for each_report_detail in report_details:
-                    if each_report_detail['ObxType'] == 'NM':
-                        numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,
-                                                                            report_id=report_response.data['data']['id'])
-                        NumericReportDetailsViewSet.as_view(
-                            {'post': 'create'})(numeric_report_proxy_request)
-                        continue
-
-                    if each_report_detail['ObxType'] == 'ST':
-                        string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,
-                                                                            report_id=report_response.data['data']['id'])
-                        StringReportDetailsViewSet.as_view(
-                            {'post': 'create'})(string_report_proxy_request)
-                        continue
-
-                    if each_report_detail['ObxType'] == 'TX':
-                        text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,
-                                                                        report_id=report_response.data['data']['id'])
-                        TextReportDetailsViewSet.as_view(
-                            {'post': 'create'})(text_report_proxy_request)
-                        continue
-
-                    if each_report_detail['ObxType'] == 'FT':
-                        string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,
-                                                                            report_id=report_response.data['data']['id'])
-                        FreeTextReportDetailsViewSet.as_view(
-                            {'post': 'create'})(string_report_proxy_request)
-
-                return Response({"data": None, "consumed": True},
-                                status=status.HTTP_201_CREATED)
         except Exception as error:
             logger.error("Exception in ReportsSyncAPIView %s"%(str(error)))
             return Response({"data": "Parameters are not sufficient", "consumed": False},

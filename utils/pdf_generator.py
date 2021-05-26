@@ -17,6 +17,20 @@ from apps.discharge_summaries.serializers import DischargeSummarysSerializer
 from rest_framework.test import APIClient
 client = APIClient()
 
+def determine_heading(tag,root):
+    heading = ""
+    if tag == "CM1":
+        heading = "PHYSICAL EXAMINATION"
+    elif tag == "CM2":
+        heading = "Other Laboratory Reports"
+    elif tag == "CM3":
+        heading = "RADIOLOGY INVESTIGATIONS"
+    elif tag == "CM4":
+        heading = "When to obtain Urgent Care"
+    else:
+        heading = root.find('OBX.3').find('OBX.3.2').text
+    return heading
+    
 
 def get_discharge_summary(discharge_info, discharge_details):
     name = discharge_info["PatientName"]
@@ -95,20 +109,7 @@ def get_discharge_summary(discharge_info, discharge_details):
         root = ET.fromstring(discharge_detail['msgObx'])
         tag = root.find('OBX.3').find('OBX.3.1').text
 
-        if tag == "CM1":
-            heading = "PHYSICAL EXAMINATION"
-
-        elif tag == "CM2":
-            heading = "Other Laboratory Reports"
-
-        elif tag == "CM3":
-            heading = "RADIOLOGY INVESTIGATIONS"
-
-        elif tag == "CM4":
-            heading = "When to obtain Urgent Care"
-
-        else:
-            heading = root.find('OBX.3').find('OBX.3.2').text
+        heading = determine_heading(tag,root)
 
         paragraph.append(Paragraph(heading, x))
         flowables.append(paragraph[count])

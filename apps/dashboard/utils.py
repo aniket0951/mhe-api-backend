@@ -65,6 +65,7 @@ class DashboardUtils:
             )
         return flyer_images
     
+    @staticmethod
     def start_end_datetime_comparision(start_date,end_date):
         start_date_time = datetime.strptime(start_date,'%Y-%m-%dT%H:%M:%S')
         end_date_time = datetime.strptime(end_date,'%Y-%m-%dT%H:%M:%S')

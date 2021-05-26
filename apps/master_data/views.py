@@ -607,53 +607,30 @@ class LabRadiologyItemsView(ProxyView):
                                            'price',
                                            ]
         for each_lab_radiology_item in response_content:
-            hospital_lab_radiology_item_details = dict()
-            for index, key in enumerate(sorted(each_lab_radiology_item.keys())):
-                if not each_lab_radiology_item[key]:
-                    each_lab_radiology_item[key] = None
 
-                if key in ['DateFrom', 'DateTo'] and each_lab_radiology_item[key]:
-                    each_lab_radiology_item[key] = datetime.strptime(
-                        each_lab_radiology_item[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
-
-                if key == 'ItemDesc' and each_lab_radiology_item[key]:
-                    each_lab_radiology_item[key] = each_lab_radiology_item[key].title(
-                    )
-
-                hospital_lab_radiology_item_details[lab_radiology_items_sorted_keys[index]
-                                                    ] = each_lab_radiology_item[key]
+            each_lab_radiology_item, hospital_lab_radiology_item_details = MasterDataUtils.process_lab_and_radiology_items(each_lab_radiology_item,lab_radiology_items_sorted_keys)
 
             lab_radiology_item_kwargs, lab_radiology_item_details, hospital_lab_radiology_item_kwargs = dict(), dict(), dict()
-
-            lab_radiology_item_details['billing_group'] = hospital_lab_radiology_item_details.pop(
-                'billing_group')
-            lab_radiology_item_details['billing_sub_group'] = hospital_lab_radiology_item_details.pop(
-                'billing_subgroup')
-            lab_radiology_item_details['description'] = hospital_lab_radiology_item_details.pop(
-                'description')
-            lab_radiology_item_kwargs['code'] = hospital_lab_radiology_item_details.pop(
-                'code')
+            lab_radiology_item_details['billing_group'] = hospital_lab_radiology_item_details.pop('billing_group')
+            lab_radiology_item_details['billing_sub_group'] = hospital_lab_radiology_item_details.pop('billing_subgroup')
+            lab_radiology_item_details['description'] = hospital_lab_radiology_item_details.pop('description')
+            lab_radiology_item_kwargs['code'] = hospital_lab_radiology_item_details.pop('code')
 
             if lab_radiology_item_details['billing_group']:
-                lab_radiology_item_details['billing_group'] = BillingGroup.objects.filter(
-                    description=lab_radiology_item_details['billing_group']).first()
+                lab_radiology_item_details['billing_group'] = BillingGroup.objects.filter(description=lab_radiology_item_details['billing_group']).first()
 
             if lab_radiology_item_details['billing_sub_group']:
-                lab_radiology_item_details['billing_sub_group'] = BillingSubGroup.objects.filter(
-                    description=lab_radiology_item_details['billing_sub_group']).first()
+                lab_radiology_item_details['billing_sub_group'] = BillingSubGroup.objects.filter(description=lab_radiology_item_details['billing_sub_group']).first()
 
-            lab_radiology_item, lab_radiology_item_created = LabRadiologyItem.objects.update_or_create(
-                **lab_radiology_item_kwargs, defaults=lab_radiology_item_details)
+            lab_radiology_item, lab_radiology_item_created = LabRadiologyItem.objects.update_or_create(**lab_radiology_item_kwargs, defaults=lab_radiology_item_details)
 
-            hospital_code = hospital_lab_radiology_item_details.pop(
-                'hospital_code')
+            hospital_code = hospital_lab_radiology_item_details.pop('hospital_code')
             hospital = Hospital.objects.filter(code=hospital_code).first()
 
             hospital_lab_radiology_item_kwargs['item'] = lab_radiology_item
             hospital_lab_radiology_item_kwargs['hospital'] = hospital
 
-            hospital_lab_radiology_item, hospital_lab_radiology_item_created = LabRadiologyItemPricing.objects.update_or_create(
-                **hospital_lab_radiology_item_kwargs, defaults=hospital_lab_radiology_item_details)
+            hospital_lab_radiology_item, hospital_lab_radiology_item_created = LabRadiologyItemPricing.objects.update_or_create(**hospital_lab_radiology_item_kwargs, defaults=hospital_lab_radiology_item_details)
 
             hospital_lab_radiology_item_details['hospital_lab_radiology_item_created'] = hospital_lab_radiology_item_created
             hospital_lab_radiology_item_details['lab_radiology_item_created'] = lab_radiology_item_created

@@ -38,7 +38,7 @@ from utils.custom_permissions import (InternalAPICall, IsDoctor,
 
 from .models import VideoConference
 from .serializers import VideoConferenceSerializer
-from .utils import create_room_parameters
+from .utils import create_room_and_channel, create_room_parameters
 from utils.custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
 
 client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_ACCOUNT_AUTH_KEY)
@@ -75,8 +75,7 @@ class RoomCreationView(APIView):
         if VideoConference.objects.filter(room_name=room_name).exists():
             if appointment.vc_appointment_status == 5:
                 if appointment.family_member:
-                    member = FamilyMember.objects.filter(
-                        id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
+                    member = FamilyMember.objects.filter(id=appointment.family_member.id, patient_info_id=appointment.patient.id).first()
                     if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                         patient_member = Patient.objects.filter(
                             uhid_number=member.uhid_number).first()
@@ -92,21 +91,9 @@ class RoomCreationView(APIView):
             return Response({
                         "message": VideoConferencesConstants.ROOM_ALREADY_EXISTS
                     }, status=status.HTTP_200_OK)
-        room = None
-        channel = None
-        try:
-            room = client.video.rooms.create(
-                                record_participants_on_connect=True, 
-                                type='group', 
-                                unique_name=room_name
-                            )
-            channel = client.chat.services(
-                                settings.TWILIO_CHAT_SERVICE_ID
-                            ).channels.create(
-                                unique_name=room_name
-                            )
-        except Exception as error:
-            logger.error("Exception in RoomCreationView %s"%(str(error)))
+        
+        room,channel = create_room_and_channel(client,room_name)
+        
         data["appointment"] = appointment.id
         data["room_name"] = room.unique_name
         data["room_sid"] = room.sid
@@ -123,8 +110,7 @@ class RoomCreationView(APIView):
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
+                send_push_notification.delay(notification_data=notification_data)
         notification_data["recipient"] = appointment.patient.id
         send_push_notification.delay(notification_data=notification_data)
         data["vc_appointment_status"] = 2

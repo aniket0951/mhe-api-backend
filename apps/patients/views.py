@@ -55,7 +55,7 @@ from .serializers import (
                     PatientAddressSerializer,
                     PatientSerializer, FamilyMemberCorporateHistorySerializer
                 )
-from .utils import check_max_otp_retries, check_max_otp_retries_from_mobile_number, covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid, link_uhid_from_uhid_number
+from .utils import check_max_otp_retries, check_max_otp_retries_from_mobile_number, covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid, link_uhid_from_uhid_number, make_family_member_corporate, process_is_email_to_be_verified, validate_uhid_family_members, validate_uhid_patients
 from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress, FamilyMemberCorporateHistory
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
@@ -755,14 +755,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
 
         if user_id:
             member=family_member.filter(id=user_id).first()
-            if not member:
-                raise ValidationError("Family Member not Available")
-
-            if patient.uhid_number == uhid_number:
-                raise ValidationError(PatientsConstants.CANT_ASSOCIATE_UHID_TO_FAMILY_MEMBER)
-
-            if family_member.filter(uhid_number=uhid_number).exists():
-                raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
+            
+            validate_uhid_family_members(member,patient,family_member,uhid_number)
 
             member.uhid_number = uhid_number
             member.first_name = request.data.get("first_name", None)
@@ -779,14 +773,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             serialize_data = FamilyMemberSerializer(family_member, many=True)
 
         else:
-            if patient.uhid_number == uhid_number:
-                raise ValidationError("This UHID is already linked to your account!")
-                
-            if self.model.objects.filter(uhid_number=uhid_number).exists():
-                raise ValidationError("There is an exisiting user with different contact number on our platform with this UHID. Please contact our customer care for more information.")
             
-            if FamilyMember.objects.filter(patient_info=patient,uhid_number=uhid_number,is_visible=True).exists():
-                raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
+            validate_uhid_patients(patient,uhid_number)
 
             patient.uhid_number = uhid_number
             patient.first_name = request.data.get("first_name", None)
@@ -932,25 +920,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 self.create_success_message='We are unable to send OTP to your family member. Please try after sometime.'
 
     def perform_update(self, serializer):
+
         request_patient=patient_user_object(self.request)
         family_member_object=self.get_object()
-        is_email_to_be_verified=False
         is_mobile_to_be_verified=False
 
-        if 'is_corporate' in serializer.validated_data and \
-            serializer.validated_data['is_corporate'] and \
-            family_member_object.patient_info and \
-            family_member_object.patient_info.company_info:
-
-            mapping_id = FamilyMemberCorporateHistory.objects.filter(family_member = family_member_object.id, company_info = family_member_object.patient_info.company_info.id)
-
-            if not mapping_id:
-                data = {
-                    "family_member" : family_member_object.id,
-                    "company_info"  : family_member_object.patient_info.company_info.id
-                }
-                FamilyMemberCorporateHistorySerializer(data=data)
-                FamilyMemberCorporateHistorySerializer.save()
+        make_family_member_corporate(serializer,family_member_object)
 
         if 'new_mobile' in serializer.validated_data and not family_member_object.mobile == serializer.validated_data['new_mobile']:
             if not serializer.validated_data['new_mobile'] == str(request_patient.mobile.raw_input):
@@ -958,40 +933,16 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             else:
                 serializer.validated_data['mobile']=serializer.validated_data['new_mobile']
 
-        if 'email' in serializer.validated_data and not family_member_object.email == serializer.validated_data['email']:
-
-            is_email_to_be_verified=True
-
-            if serializer.validated_data['email'] == request_patient.email and request_patient.email_verified:
-                is_email_to_be_verified=False
-
-            family_member_object=serializer.save(
-                email_verified=not is_email_to_be_verified)
-        else:
-            family_member_object=serializer.save()
-
-        if is_email_to_be_verified:
-            random_email_otp=get_random_string(
-                length=OTP_LENGTH, allowed_chars='0123456789')
-            otp_expiration_time=datetime.now(
-            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
-
-            family_member_object.email_verified=False
-            family_member_object.email_verification_otp=random_email_otp
-            family_member_object.email_otp_expiration_time=otp_expiration_time
-            family_member_object.save()
-
-            # send_family_member_email_activation_otp(
-            #     str(family_member_object.id), random_email_otp)
+        process_is_email_to_be_verified(serializer,family_member_object,request_patient)
+        
+        # send_family_member_email_activation_otp(str(family_member_object.id), random_email_otp)
 
         if is_mobile_to_be_verified:
             
             check_max_otp_retries(family_member_object)
       
-            random_mobile_password=get_random_string(
-                length=OTP_LENGTH, allowed_chars='0123456789')
-            otp_expiration_time=datetime.now(
-            ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+            random_mobile_password=get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
+            otp_expiration_time=datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
             family_member_object.mobile_verification_otp=random_mobile_password
             family_member_object.mobile_otp_expiration_time=otp_expiration_time
@@ -1000,12 +951,12 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             message="Your mobile number has been added on Manipal Hospital application by\
             {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 ValidationUtil.refine_text_only(request_patient.first_name),
-                random_mobile_password, settings.OTP_EXPIRATION_TIME)
-
+                random_mobile_password, 
+                settings.OTP_EXPIRATION_TIME
+            )
             if self.request.query_params.get('is_android', True):
                 message='<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
-            is_message_sent=send_sms(mobile_number=str(
-                family_member_object.new_mobile.raw_input), message=message)
+            is_message_sent=send_sms(mobile_number=str(family_member_object.new_mobile.raw_input), message=message)
             if is_message_sent:
                 self.update_success_message='Family member details updated successfully, please enter OTP which we have sent to your family member.'
             else:

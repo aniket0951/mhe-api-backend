@@ -970,6 +970,19 @@ class PaymentUtils:
 
 
 
+    @staticmethod
+    def manage_appointment_payment(aap_list,app_id):
+        success_status = False
+        if aap_list and len(aap_list)>0:
+            appointment_identifier = aap_list[0].get("AppointmentId")
+            appointment_instance = Appointment.objects.filter(appointment_identifier=app_id).first()
+            if appointment_instance:
+                success_status = True
+                appointment_instance.payment_status = "success"
+                if appointment_identifier:
+                    appointment_instance.appointment_identifier = appointment_identifier
+                appointment_instance.save()
+        return success_status
 
     @staticmethod
     def serialize_payment_response(bill_details_response):
