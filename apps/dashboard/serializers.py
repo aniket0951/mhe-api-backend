@@ -46,7 +46,7 @@ class FlyerSchedulerSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         response_opject = super().to_representation(instance)
-        flyer_image_ids = FlyerImages.objects.filter(flyer_scheduler_id=instance.id)
+        flyer_image_ids = FlyerImages.objects.filter(flyer_scheduler_id=instance.id).order_by("sequence")
         response_opject['flyer_images'] = FlyerImagesSerializer(flyer_image_ids,many=True).data
         return response_opject
 
@@ -61,8 +61,8 @@ class FlyerImagesSerializer(DynamicFieldsModelSerializer):
         try:
             if instance.image:
                 response_object['image'] = generate_pre_signed_url(instance.image.url)
-            response_object['frequency'] = ""
-            if instance.flyer_scheduler_id and instance.flyer_scheduler_id.frequency:
+            response_object['frequency'] = 0
+            if instance.flyer_scheduler_id:
                 response_object['frequency'] = instance.flyer_scheduler_id.frequency
         except Exception as error:
             logger.info("Exception in FlyerImagesSerializer : %s"%(str(error)))
