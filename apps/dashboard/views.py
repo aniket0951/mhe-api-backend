@@ -334,7 +334,7 @@ class FlyerImagesViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id)
         
         if len(flyer_images) >= int(settings.MAX_FLYER_IMAGES):
-            raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT)
+            raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT%(settings.MAX_FLYER_IMAGES))
 
         serializer.save()
 
