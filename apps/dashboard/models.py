@@ -214,7 +214,13 @@ class FlyerImages(MyBaseModel):
                                     null=True
                                 )
     
-    learn_more_url_color = models.CharField(
+    learn_more_url_button_color = models.CharField(
+                                    max_length=10,
+                                    blank=True,
+                                    null=True
+                                )
+    
+    learn_more_url_text_color = models.CharField(
                                     max_length=10,
                                     blank=True,
                                     null=True
