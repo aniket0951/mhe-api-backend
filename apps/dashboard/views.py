@@ -331,23 +331,17 @@ class FlyerImagesViewSet(custom_viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         flyer_scheduler_id = self.request.data.get('flyer_scheduler_id')
-        sequence = self.request.data.get('sequence')
-        flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id,sequence=sequence)
-        
-        if sequence == flyer_images:
-            raise ValidationError("You cannot add same sequence for multiple flyers")
-        if len(flyer_images) >= int(settings.MAX_FLYER_IMAGES):
-            raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT%(str(settings.MAX_FLYER_IMAGES)))
-
+        sequence = self.request.data.get('sequence')        
+        DashboardUtils.validate_flyers_sequence(flyer_scheduler_id,sequence)
+        DashboardUtils.validate_max_no_of_flyers(flyer_scheduler_id)
         serializer.save()
         
     def perform_update(self, serializer):
-        flyer_scheduler_id = self.request.data.get('flyer_scheduler_id') 
-        sequence = self.request.data.get('sequence')
-        flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id,sequence=sequence)
-
-        if sequence == flyer_images:
-            raise ValidationError("You cannot add same sequence for more than one flyers")
+        if 'sequence' in self.request.data and 'flyer_scheduler_id' in self.request.data:
+            flyer_scheduler_id = self.request.data.get('flyer_scheduler_id') 
+            sequence = self.request.data.get('sequence')
+            flyer_image_object = self.get_object()
+            DashboardUtils.validate_flyers_sequence(flyer_scheduler_id,sequence,flyer_image_object.id)
         serializer.save() 
 
 class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
@@ -361,7 +355,7 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
     update_success_message = 'Flyer schedulers updated successfully!'
     delete_success_message = 'Flyer schedulers deleted successfully!'
     filter_backends = (DjangoFilterBackend,filters.OrderingFilter,)
-    ordering_fields = ('-created_at',)
+    ordering_fields = ('-start_date_time','-end_date_time','-created_at',)
     
     def get_permissions(self):
 
@@ -396,11 +390,14 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
 
             if 'end_date_time' in self.request.data:
                 DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
+
         serializer.save(is_active=True)
 
     def perform_update(self, serializer):
         if 'start_date_time' in self.request.data and 'end_date_time' in self.request.data:
             start_date_time = self.request.data.get('start_date_time')
             end_date_time = self.request.data.get('end_date_time')
+
             DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
+            
         serializer.save()
