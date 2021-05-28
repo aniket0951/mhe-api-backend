@@ -1,4 +1,4 @@
-from apps.reports.views import FreeTextReportDetailsViewSet, NumericReportDetailsViewSet, StringReportDetailsViewSet, TextReportDetailsViewSet
+
 import logging
 import base64
 import xml.etree.ElementTree as ET
@@ -8,7 +8,6 @@ from apps.doctors.models import Doctor
 from apps.master_data.models import Hospital
 from rest_framework.test import APIRequestFactory
 from rest_framework.serializers import ValidationError
-from .exceptions import ReportExistsException
 from .models import Report, VisitReport
 from .serializers import VisitReportsSerializer
 
@@ -196,26 +195,3 @@ def create_visit_reports(report_response,report_info):
             report_visit_obj = serializer.save()
         report_visit_obj.report_info.add(report_obj)
     return report_info
-
-def create_all_reports(report_details,report_response):
-
-    for each_report_detail in report_details:
-        
-        if each_report_detail['ObxType'] == 'NM':
-            numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-            NumericReportDetailsViewSet.as_view({'post': 'create'})(numeric_report_proxy_request)
-            continue
-
-        if each_report_detail['ObxType'] == 'ST':
-            string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-            StringReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
-            continue
-
-        if each_report_detail['ObxType'] == 'TX':
-            text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-            TextReportDetailsViewSet.as_view({'post': 'create'})(text_report_proxy_request)
-            continue
-
-        if each_report_detail['ObxType'] == 'FT':
-            string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-            FreeTextReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)

@@ -25,7 +25,7 @@ from .serializers import (FreeTextReportDetailsSerializer,
                           ReportDocumentsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
                           TextReportDetailsSerializer, VisitReportsSerializer)
-from .utils import (create_all_reports, create_visit_reports, report_handler, validate_family_member)
+from .utils import ( create_visit_reports, free_text_report_hanlder, numeric_report_hanlder, report_handler, string_report_hanlder, text_report_hanlder, validate_family_member)
 
 logger = logging.getLogger('django')
 
@@ -147,7 +147,29 @@ class ReportsSyncAPIView(CreateAPIView):
             report_info = create_visit_reports(report_response,report_info)
 
             if report_response.status_code == 201 and report_details and type(report_details) == list:
-                create_all_reports(report_details,report_response)
+                
+                for each_report_detail in report_details:
+        
+                    if each_report_detail['ObxType'] == 'NM':
+                        numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+                        NumericReportDetailsViewSet.as_view({'post': 'create'})(numeric_report_proxy_request)
+                        continue
+
+                    if each_report_detail['ObxType'] == 'ST':
+                        string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+                        StringReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
+                        continue
+
+                    if each_report_detail['ObxType'] == 'TX':
+                        text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+                        TextReportDetailsViewSet.as_view({'post': 'create'})(text_report_proxy_request)
+                        continue
+
+                    if each_report_detail['ObxType'] == 'FT':
+                        string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+                        FreeTextReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
+
+
                 return Response({"data": None, "consumed": True},status=status.HTTP_201_CREATED)
 
         except Exception as error:
