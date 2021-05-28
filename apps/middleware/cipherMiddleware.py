@@ -1,6 +1,6 @@
 import json
 import logging
-
+from datetime import date
 from django.db.models.query import QuerySet
 from django.conf import settings
 from uuid import UUID
@@ -91,6 +91,8 @@ class CipherResponseMiddleware(object):
                 v = dict(v)
             elif isinstance(v, bytes):
                 v = v.decode('utf-8')
+            elif isinstance(v,date):
+                v = str(v)
             elif isinstance(v, QuerySet):
                 v = list(v.values())
                 v = self.list_replace_value(v)
@@ -105,6 +107,8 @@ class CipherResponseMiddleware(object):
             elif isinstance(e, dict):
                 e = self.dict_replace_value(e)
             elif isinstance(e, UUID):
+                e = str(e)
+            elif isinstance(e,date):
                 e = str(e)
             elif isinstance(e, OrderedDict):
                 e = dict(e)
