@@ -23,7 +23,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
-from utils.custom_permissions import IsManipalAdminUser, IsPatientUser, BlacklistDestroyMethodPermission
+from utils.custom_permissions import BlacklistUpdateMethodPermission, IsManipalAdminUser, IsPatientUser, BlacklistDestroyMethodPermission
 from utils.utils import (
                     get_appointment, 
                     manipal_admin_object,
@@ -348,19 +348,21 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
     retrieve_success_message = 'Flyer scheduler returned successfully!'
     update_success_message = 'Flyer schedulers updated successfully!'
     delete_success_message = 'Flyer schedulers deleted successfully!'
-    filter_backends = (DjangoFilterBackend,
-                        filters.OrderingFilter,)
+    filter_backends = (DjangoFilterBackend,filters.OrderingFilter,)
     ordering_fields = ('-created_at',)
     
-
     def get_permissions(self):
 
-        if self.action in ['create','update']:
+        if self.action in ['create','partial_update']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action in ['list', 'retrieve']:
             permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
             return [permission() for permission in permission_classes]
 
         if self.action == 'destroy':
@@ -371,18 +373,22 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
 
     def perform_create(self, serializer):
         current_date = date.today()
+
         start_date_time = self.request.data.get('start_date_time')
         end_date_time = self.request.data.get('end_date_time')
-        start_datetime = datetime.strptime(start_date_time,'%Y-%m-%dT%H:%M:%S')
         
-        if start_datetime.date() < current_date:
-            raise ValidationError('Start date time should not be set as past date.')
-        
-        DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
+        if 'start_date_time' in self.request.data:
+            start_datetime = datetime.strptime(start_date_time,'%Y-%m-%dT%H:%M:%S')
+            if start_datetime.date() < current_date:
+                raise ValidationError('Start date time should not be set as past date.')
+
+            if 'end_date_time' in self.request.data:
+                DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
         serializer.save(is_active=True)
 
     def perform_update(self, serializer):
-        start_date_time = self.request.data.get('start_date_time')
-        end_date_time = self.request.data.get('end_date_time')
-        DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
+        if 'start_date_time' in self.request.data and 'end_date_time' in self.request.data:
+            start_date_time = self.request.data.get('start_date_time')
+            end_date_time = self.request.data.get('end_date_time')
+            DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
         serializer.save()
