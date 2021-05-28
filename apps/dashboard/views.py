@@ -331,12 +331,24 @@ class FlyerImagesViewSet(custom_viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         flyer_scheduler_id = self.request.data.get('flyer_scheduler_id')
-        flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id)
+        sequence = self.request.data.get('sequence')
+        flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id,sequence=sequence)
         
+        if sequence == flyer_images:
+            raise ValidationError("You cannot add same sequence for multiple flyers")
         if len(flyer_images) >= int(settings.MAX_FLYER_IMAGES):
             raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT%(str(settings.MAX_FLYER_IMAGES)))
 
         serializer.save()
+        
+    def perform_update(self, serializer):
+        flyer_scheduler_id = self.request.data.get('flyer_scheduler_id') 
+        sequence = self.request.data.get('sequence')
+        flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id,sequence=sequence)
+
+        if sequence == flyer_images:
+            raise ValidationError("You cannot add same sequence for more than one flyers")
+        serializer.save() 
 
 class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     permission_classes = [IsPatientUser | IsManipalAdminUser]
