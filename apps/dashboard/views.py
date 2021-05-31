@@ -346,7 +346,7 @@ class FlyerImagesViewSet(custom_viewsets.ModelViewSet):
 
 class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     permission_classes = [IsPatientUser | IsManipalAdminUser]
-    queryset = FlyerScheduler.objects.all()
+    queryset = FlyerScheduler.objects.all().order_by('-start_date_time','-end_date_time','-created_at')
     model = FlyerScheduler
     serializer_class = FlyerSchedulerSerializer
     create_success_message = "Flyer schedulers added successfully!"
@@ -354,8 +354,6 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
     retrieve_success_message = 'Flyer scheduler returned successfully!'
     update_success_message = 'Flyer schedulers updated successfully!'
     delete_success_message = 'Flyer schedulers deleted successfully!'
-    filter_backends = (DjangoFilterBackend,filters.OrderingFilter,)
-    ordering_fields = ('-start_date_time','-end_date_time','-created_at',)
     
     def get_permissions(self):
 
