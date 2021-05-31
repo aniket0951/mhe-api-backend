@@ -76,7 +76,7 @@ logger = logging.getLogger('django')
 class HospitalViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     model = Hospital
-    queryset = Hospital.objects.all()
+    queryset = Hospital.objects.all().order_by('-created_at')
     serializer_class = HospitalSerializer
     create_success_message = 'Hospital information created successfully!'
     list_success_message = 'Hospitals list returned successfully!'
@@ -783,7 +783,7 @@ class CompanyViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     permission_classes = [IsManipalAdminUser]
     model = Company
     depth =1
-    queryset = Company.objects.all()
+    queryset = Company.objects.all().order_by('-created_at')
     serializer_class = CompanySerializer
     list_success_message = 'Company list returned successfully!'
     retrieve_success_message = 'Company returned successfully!'

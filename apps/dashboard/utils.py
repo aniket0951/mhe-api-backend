@@ -1,3 +1,4 @@
+from apps.dashboard.constants import DashboardConstants
 from apps.dashboard.serializers import FlyerImagesSerializer
 from apps.dashboard.models import FlyerImages, FlyerScheduler
 from django.conf import settings
@@ -71,3 +72,17 @@ class DashboardUtils:
         end_date_time = datetime.strptime(end_date,'%Y-%m-%dT%H:%M:%S')
         if start_date_time > end_date_time:
             raise ValidationError("Start date time should not be greater than End date time")
+
+    @staticmethod
+    def validate_max_no_of_flyers(flyer_scheduler_id):
+        flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id)
+        if len(flyer_images) >= int(settings.MAX_FLYER_IMAGES):
+            raise ValidationError(DashboardConstants.REACHED_FLYER_LIMIT%(str(settings.MAX_FLYER_IMAGES)))
+
+    @staticmethod
+    def validate_flyers_sequence(flyer_scheduler_id,sequence,id=None):
+        seq_flyer_images = FlyerImages.objects.filter(flyer_scheduler_id=flyer_scheduler_id,sequence=sequence)
+        if id:
+            seq_flyer_images = seq_flyer_images.exclude(id=id)
+        if len(seq_flyer_images)>0:
+            raise ValidationError("You cannot upload multiple flyers with the same sequence.")
