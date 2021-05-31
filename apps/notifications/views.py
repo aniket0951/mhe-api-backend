@@ -51,6 +51,17 @@ class MobileDeviceViewSet(APIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
+class ManagePushNotificationsViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = MobileNotification
+    queryset = MobileNotification.objects.all()
+    serializer_class = MobileNotificationSerializer
+    create_success_message = "Notification added successfully!"
+    list_success_message = 'Notifications returned successfully!'
+    retrieve_success_message = 'Notification returned successfully!'
+    update_success_message = 'Notification updated successfully!'
+    delete_success_message = 'Notification deleted successfully!'
+   
 class PushNotificationViewSet(APIView):
     permission_classes = (AllowAny,)
     queryset = MobileNotification.objects.all()
@@ -65,9 +76,6 @@ class PushNotificationViewSet(APIView):
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = None
         
-        if request.FILES.getlist('notification_image'):
-            notification_data["notification_image"] = request.FILES.getlist('notification_image')[0]
-
         if selected_all:
             device_qs = MobileDevice.objects.all()
             for each_device in device_qs:
