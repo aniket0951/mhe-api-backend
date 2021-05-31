@@ -45,7 +45,7 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     ordering = ('name',)
-    filter_fields = ('hospital_departments__department__id',)
+    filter_fields = ('hospital_departments__department__id','service',)
     create_success_message = None
     list_success_message = 'Doctors list returned successfully!'
     retrieve_success_message = 'Doctors information returned successfully!'
