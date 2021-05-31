@@ -64,7 +64,7 @@ class PushNotificationViewSet(APIView):
         notification_data["message"] = self.request.data.get("user_message")
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = None
-        notification_data["birthday_image"] = self.request.data.get("birthday_image")
+        notification_data["notification_image"] = self.request.data.get("notification_image")
         if selected_all:
             device_qs = MobileDevice.objects.all()
             for each_device in device_qs:

@@ -32,7 +32,7 @@ class MobileNotification(TimeStampedModel):
     title = models.CharField(max_length=512, null=True, blank=True)
     message = models.TextField()
     status = models.CharField(max_length=10, default='unread')
-    birthday_image = models.ImageField(
+    notification_image = models.ImageField(
                         upload_to=generate_birthday_picture_path,
                         storage=MediaStorage(),
                         validators=[
@@ -43,5 +43,5 @@ class MobileNotification(TimeStampedModel):
                         ],
                         blank=True,
                         null=True,
-                        verbose_name='Birthday Picture'
+                        verbose_name='Notification Picture'
                     )
