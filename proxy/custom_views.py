@@ -166,8 +166,6 @@ class ProxyView(BaseProxyView):
         data = self.get_request_data(request)
         headers = self.get_headers(request)
         verify_ssl = self.get_verify_ssl(request)
-        logger.error("REQUEST URL : %s"%(str(url)))
-        logger.error("REQUEST BODY : %s"%(str(data)))
         try:
             response = requests.request(request.method, url,
                                         data=data,
@@ -175,9 +173,10 @@ class ProxyView(BaseProxyView):
                                         timeout=self.proxy_settings['TIMEOUT'],
                                         verify=verify_ssl,
                                         )
-            logger.error("REQUEST DATA : %s"%(str(response.text)))
         except (ConnectionError, SSLError):
             status = requests.status_codes.codes.bad_gateway
+            logger.error("REQUEST URL : %s"%(str(url)))
+            logger.error("REQUEST BODY : %s"%(str(data)))
             logger.error("MANIPAL ERROR : Unable to reach our servers")
             return self.create_error_response({
                 'success': False,
@@ -187,6 +186,8 @@ class ProxyView(BaseProxyView):
 
         except (Timeout):
             status = requests.status_codes.codes.gateway_timeout
+            logger.error("REQUEST URL : %s"%(str(url)))
+            logger.error("REQUEST BODY : %s"%(str(data)))
             logger.error("MANIPAL ERROR : Gateway timed out")
             return self.create_error_response({
                 'success': False,
