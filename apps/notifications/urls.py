@@ -9,12 +9,11 @@ from .views import (ManagePushNotificationsViewSet, MobileDeviceViewSet, Notific
 router = DefaultRouter(trailing_slash=False)
 
 router.register('all_notifications', NotificationlistView)
-
+router.register('manage_push_notification', ManagePushNotificationsViewSet)
 
 urlpatterns = [
     path('device', MobileDeviceViewSet.as_view()),
     path('push_notification', PushNotificationViewSet.as_view()),
-    path('manage_push_notification', ManagePushNotificationsViewSet.as_view()),
     *router.urls
 
 ]
