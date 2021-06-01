@@ -45,7 +45,7 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     ordering = ('name',)
-    filter_fields = ('hospital_departments__department__id','service',)
+    filter_fields = ('hospital_departments__department__id',)
     create_success_message = None
     list_success_message = 'Doctors list returned successfully!'
     retrieve_success_message = 'Doctors information returned successfully!'
@@ -62,12 +62,24 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         location_id = self.request.query_params.get('location_id', None)
         date = self.request.query_params.get('date', None)
 
-        qs = Doctor.objects.filter(hospital_departments__hospital__id=location_id).filter(
-            (Q(end_date__gte=date) | Q(end_date__isnull=True)) &
-            Q(start_date__lte=date) & Q(is_online_appointment_enable=True)).distinct()
-        hospital_departments__department__id = self.request.query_params.get("hospital_departments__department__id", None)
-        if patient_user_object(self.request) and not hospital_departments__department__id:
-            qs = qs.exclude(Q(hospital_departments__service__in=[settings.COVID_SERVICE]))
+        qs = Doctor.objects.filter(
+                    hospital_departments__hospital__id=location_id
+                ).filter(
+                    (
+                        Q(end_date__gte=date) | Q(end_date__isnull=True)) &
+                        Q(start_date__lte=date) & Q(is_online_appointment_enable=True)
+                    ).distinct()
+
+        if patient_user_object(self.request):
+
+            hospital_departments__department__id = self.request.query_params.get("hospital_departments__department__id", None)
+            if not hospital_departments__department__id:
+                qs = qs.exclude(Q(hospital_departments__service__in=[settings.COVID_SERVICE]))
+        
+            service = self.request.query_params.get("service", None)
+            if service:
+                qs = qs.filter(service__icontains=service)
+
         return qs
 
 
