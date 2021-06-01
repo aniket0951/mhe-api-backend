@@ -60,7 +60,11 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             return super().get_queryset().distinct()
 
         location_id = self.request.query_params.get('location_id')
+        if not location_id:
+            raise ValidationError("location_id is mandatory.")
         date = self.request.query_params.get('date')
+        if not date:
+            raise ValidationError("date is mandatory.")
 
         qs = Doctor.objects.filter(
                     hospital_departments__hospital__id=location_id
