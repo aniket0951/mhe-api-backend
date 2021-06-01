@@ -59,8 +59,8 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return Doctor.objects.filter(hospital_departments__hospital__id=location_id).distinct()
             return super().get_queryset().distinct()
 
-        location_id = self.request.query_params.get('location_id', None)
-        date = self.request.query_params.get('date', None)
+        location_id = self.request.query_params.get('location_id')
+        date = self.request.query_params.get('date')
 
         qs = Doctor.objects.filter(
                     hospital_departments__hospital__id=location_id
