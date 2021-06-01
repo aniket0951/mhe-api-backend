@@ -32,16 +32,22 @@ class MobileNotification(TimeStampedModel):
     title = models.CharField(max_length=512, null=True, blank=True)
     message = models.TextField()
     status = models.CharField(max_length=10, default='unread')
-    notification_image = models.ImageField(
-                        upload_to=generate_birthday_picture_path,
-                        storage=MediaStorage(),
-                        validators=[
-                            FileExtensionValidator(settings.VALID_IMAGE_FILE_EXTENSIONS), 
-                            validate_file_size,
-                            validate_file_authenticity,
-                            validate_file_infection
-                        ],
-                        blank=True,
-                        null=True,
-                        verbose_name='Notification Picture'
-                    )
+    notification_image_url = models.CharField(
+                                        max_length=200,
+                                        blank=True,
+                                        null=True,
+                                        verbose_name='Notification Image Url'
+                                    )
+    # notification_image = models.ImageField(
+    #                     upload_to=generate_birthday_picture_path,
+    #                     storage=MediaStorage(),
+    #                     validators=[
+    #                         FileExtensionValidator(settings.VALID_IMAGE_FILE_EXTENSIONS), 
+    #                         validate_file_size,
+    #                         validate_file_authenticity,
+    #                         validate_file_infection
+    #                     ],
+    #                     blank=True,
+    #                     null=True,
+    #                     verbose_name='Notification Picture'
+    #                 )
