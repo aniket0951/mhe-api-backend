@@ -27,8 +27,7 @@ class MobileDevice(models.Model):
 
 
 class MobileNotification(TimeStampedModel):
-    recipient = models.ForeignKey(
-        Patient, related_name='user_device_notifications', on_delete=models.PROTECT)
+    recipient = models.ForeignKey(Patient, related_name='user_device_notifications', on_delete=models.PROTECT)
     title = models.CharField(max_length=512, null=True, blank=True)
     message = models.TextField()
     status = models.CharField(max_length=10, default='unread')
@@ -38,16 +37,3 @@ class MobileNotification(TimeStampedModel):
                                         null=True,
                                         verbose_name='Notification Image Url'
                                     )
-    # notification_image = models.ImageField(
-    #                     upload_to=generate_birthday_picture_path,
-    #                     storage=MediaStorage(),
-    #                     validators=[
-    #                         FileExtensionValidator(settings.VALID_IMAGE_FILE_EXTENSIONS), 
-    #                         validate_file_size,
-    #                         validate_file_authenticity,
-    #                         validate_file_infection
-    #                     ],
-    #                     blank=True,
-    #                     null=True,
-    #                     verbose_name='Notification Picture'
-    #                 )

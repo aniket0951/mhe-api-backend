@@ -332,6 +332,6 @@ app.conf.beat_schedule = {
     },
     "daily_auto_process_birthday_wishes": {
         "task": "tasks.birthday_wishing_scheduler",
-        "schedule": crontab(minute="*/5", hour="*")
+        "schedule": crontab(minute="0", hour="6")
     }
 }
