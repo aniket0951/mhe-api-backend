@@ -329,9 +329,5 @@ app.conf.beat_schedule = {
     "vc_daily_auto_appointment_cancellation": {
         "task": "tasks.daily_auto_appointment_cancellation",
         "schedule": crontab(minute="0", hour="3")
-    },
-    "daily_auto_process_birthday_wishes": {
-        "task": "tasks.birthday_wishing_scheduler",
-        "schedule": crontab(minute="0", hour="6")
     }
 }
