@@ -251,9 +251,9 @@ def daily_auto_appointment_cancellation():
 @app.task(name="tasks.birthday_wishing_scheduler")
 def birthday_wishing_scheduler():
     now = datetime.today()
-    
-    family_member_patient_ids = [family_member_id.patient_info.id for family_member_id in FamilyMember.objects.filter( Q(dob__isnull=False) & Q(dob=now.date()) ) if family_member_id.patient_info]
-    patient_ids = Patient.objects.filter(( Q(dob__isnull=False) & Q(dob=now.date()) ) | Q(id__in=family_member_patient_ids))
+    query = Q(dob__isnull=False) & Q(dob__day=now.date().day) & Q(dob__month=now.date().month)
+    family_member_patient_ids = [family_member_id.patient_info.id for family_member_id in FamilyMember.objects.filter( query ) if family_member_id.patient_info]
+    patient_ids = Patient.objects.filter( (query) | Q(id__in=family_member_patient_ids))
 
     for patient_id in patient_ids:
 
