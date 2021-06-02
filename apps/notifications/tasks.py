@@ -248,6 +248,24 @@ def daily_auto_appointment_cancellation():
         request_param = cancel_parameters(param)
         CancelMyAppointment.as_view()(request_param)
 
+@app.task(name="tasks.birthday_wishing_scheduler")
+def birthday_wishing_scheduler():
+    now = datetime.today()
+    query = Q(dob__isnull=False) & Q(dob__day=now.date().day) & Q(dob__month=now.date().month)
+    family_member_patient_ids = [family_member_id.patient_info.id for family_member_id in FamilyMember.objects.filter( query ) if family_member_id.patient_info]
+    patient_ids = Patient.objects.filter( (query) | Q(id__in=family_member_patient_ids))
+
+    for patient_id in patient_ids:
+
+        notification_data = {}
+        notification_data["title"] = "Wishing You A Very Happy Birthday"
+        user_message = "Happy birthday, %s! I hope this is the begining of your greatest, most wonderful year ever!"%(str(patient_id.first_name))
+        notification_data["message"] = user_message
+        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+        notification_data["recipient"] = patient_id.id
+        notification_data["notification_image_url"] = settings.BIRTHDAY_NOTIFICATION_IMAGE_URL
+        
+        send_push_notification.delay(notification_data=notification_data)
 
 @app.task(name="tasks.daily_update")
 def daily_update_scheduler():
