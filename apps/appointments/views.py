@@ -115,7 +115,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
-            uhid = self.request.query_params.get("uhid", None)
+            patient_id = self.request.query_params.get("patient_id", None)
+            family_member_id = self.request.query_params.get("family_member_id", None)
             
             if admin_object.hospital:
                 qs = qs.filter(hospital__id=admin_object.hospital.id)
@@ -125,8 +126,10 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return qs.filter(status=2)
             if is_cancelled == "false":
                 return qs.filter(appointment_date__gte=datetime.now().date(), status=1)
-            if uhid:
-                return qs.filter(uhid=uhid).order_by('-created_at').distinct()
+            if patient_id:
+                return qs.filter(patient__id=patient_id).order_by('-created_at').distinct()
+            if family_member_id:
+                return qs.filter(family_member__id=family_member_id).order_by('-created_at').distinct()
             return qs
 
         patient = Patient.objects.filter(id=self.request.user.id).first()
