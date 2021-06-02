@@ -115,6 +115,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
+            uhid = self.request.query_params.get("uhid", None)
+            
             if admin_object.hospital:
                 qs = qs.filter(hospital__id=admin_object.hospital.id)
             if date_from and date_to:
@@ -123,6 +125,8 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return qs.filter(status=2)
             if is_cancelled == "false":
                 return qs.filter(appointment_date__gte=datetime.now().date(), status=1)
+            if uhid:
+                return qs.filter(uhid=uhid).order_by('-created_at').distinct()
             return qs
 
         patient = Patient.objects.filter(id=self.request.user.id).first()
