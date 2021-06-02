@@ -434,6 +434,8 @@ FLYER_ENABLED = True if env("FLYER_ENABLED") and str(env("FLYER_ENABLED"))=="Tru
 
 MAX_FLYER_IMAGES = env('MAX_FLYER_IMAGES')
 
+BIRTHDAY_NOTIFICATION_IMAGE_URL = env("BIRTHDAY_NOTIFICATION_IMAGE_URL")
+
 # Logger configuration
 LOGGING = {
     'version': 1,
