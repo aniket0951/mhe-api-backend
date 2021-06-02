@@ -127,7 +127,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             if is_cancelled == "false":
                 return qs.filter(appointment_date__gte=datetime.now().date(), status=1)
             if patient_id:
-                return qs.filter(patient__id=patient_id).order_by('-created_at').distinct()
+                return qs.filter(patient__id=patient_id,family_member__isnull=True).order_by('-created_at').distinct()
             if family_member_id:
                 return qs.filter(family_member__id=family_member_id).order_by('-created_at').distinct()
             return qs
