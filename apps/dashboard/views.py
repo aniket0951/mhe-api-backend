@@ -354,6 +354,12 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
     retrieve_success_message = 'Flyer scheduler returned successfully!'
     update_success_message = 'Flyer schedulers updated successfully!'
     delete_success_message = 'Flyer schedulers deleted successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    search_fields = ('flyer_name','start_date_time','end_date_time',)
     
     def get_permissions(self):
 
@@ -375,6 +381,14 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
 
         return super().get_permissions()
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        date_from = self.request.query_params.get("date_from", None)
+        date_to = self.request.query_params.get("date_to", None)
+        if date_from and date_to:
+            qs = qs.filter(start_date_time__date__range=[date_from, date_to],end_date_time__date__range=[date_from,date_to])
+        return qs
+    
     def perform_create(self, serializer):
         current_date = date.today()
 
