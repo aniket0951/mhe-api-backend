@@ -107,7 +107,7 @@ def validate_uhid_patients(patient,uhid_number):
         raise ValidationError("This UHID is already linked to your account!")
         
     if Patient.objects.filter(uhid_number=uhid_number).exists():
-        raise ValidationError("There is an exisiting user with different contact number on our platform with this UHID. Please contact our customer care for more information.")
+        raise ValidationError("There is an existing user with different contact number on our platform with this UHID. Please contact our customer care for more information.")
     
     if FamilyMember.objects.filter(patient_info=patient,uhid_number=uhid_number,is_visible=True).exists():
         raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)

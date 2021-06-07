@@ -18,7 +18,7 @@ from pyfcm import FCMNotification
 from django.db.models import Q
 
 from .serializers import MobileNotificationSerializer
-from .utils import cancel_parameters
+from .utils import cancel_parameters, get_birthday_notification_data
 
 NOTIFICAITON_TYPE_MAP = {
     "HOLD_VC_NOTIFICATION":"2"
@@ -175,14 +175,11 @@ def appointment_reminder_scheduler():
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-                patient_member = Patient.objects.filter(
-                    uhid_number=member.uhid_number).first()
+                patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
+                send_push_notification.delay(notification_data=notification_data)
         notification_data["recipient"] = appointment_instance.patient.id
         send_push_notification.delay(notification_data=notification_data)
 
@@ -252,19 +249,15 @@ def daily_auto_appointment_cancellation():
 def birthday_wishing_scheduler():
     now = datetime.today()
     query = Q(dob__isnull=False) & Q(dob__day=now.date().day) & Q(dob__month=now.date().month)
-    family_member_patient_ids = [family_member_id.patient_info.id for family_member_id in FamilyMember.objects.filter( query ) if family_member_id.patient_info]
-    patient_ids = Patient.objects.filter( (query) | Q(id__in=family_member_patient_ids))
 
+    family_member_ids = FamilyMember.objects.filter( query )
+    for family_member_id in family_member_ids:
+        notification_data = get_birthday_notification_data(family_member_id.patient_info,family_member_id.first_name)
+        send_push_notification.delay(notification_data=notification_data)
+
+    patient_ids = Patient.objects.filter( (query) )
     for patient_id in patient_ids:
-
-        notification_data = {}
-        notification_data["title"] = "Wishing You A Very Happy Birthday"
-        user_message = "Happy birthday, %s! I hope this is the begining of your greatest, most wonderful year ever!"%(str(patient_id.first_name))
-        notification_data["message"] = user_message
-        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
-        notification_data["recipient"] = patient_id.id
-        notification_data["notification_image_url"] = settings.BIRTHDAY_NOTIFICATION_IMAGE_URL
-        
+        notification_data = get_birthday_notification_data(patient_id,patient_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
 
 @app.task(name="tasks.daily_update")
