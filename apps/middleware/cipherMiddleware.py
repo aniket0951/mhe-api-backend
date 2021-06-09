@@ -7,7 +7,8 @@ from uuid import UUID
 from .utils import MiddlewareUtils
 from utils.cipher import AESCipher
 from collections import OrderedDict
-
+from phonenumber_field.modelfields import PhoneNumberField as PhoneNumberFieldModel
+from phonenumber_field.serializerfields import PhoneNumberField as PhoneNumberFieldSerializer
 
 request_logger = logging.getLogger('django.request')
 response_logger = logging.getLogger('django.response')
@@ -95,7 +96,8 @@ class CipherResponseMiddleware(object):
                 v = dict(v)
             elif isinstance(v, bytes):
                 v = v.decode('utf-8')
-            
+            elif isinstance(v, PhoneNumberFieldModel):
+                v = PhoneNumberFieldSerializer(v)
             elif isinstance(v, QuerySet):
                 v = list(v.values())
                 v = self.list_replace_value(v)
@@ -119,6 +121,8 @@ class CipherResponseMiddleware(object):
                 e = dict(e)
             elif isinstance(e, bytes):
                 e = e.decode('utf-8')
+            elif isinstance(e, PhoneNumberFieldModel):
+                e = PhoneNumberFieldSerializer(e)
             elif isinstance(e, QuerySet):
                 e = list(e.values())
                 e = self.list_replace_value(e)
