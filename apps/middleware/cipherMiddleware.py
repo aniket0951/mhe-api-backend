@@ -44,6 +44,7 @@ class CipherRequestMiddleware(object):
                         request._body = AESCipher.decrypt(encrypted_request_body.get(ENCRYPTION_BODY_KEY))
                 except Exception as e:
                     request_logger.error("\n\nREQUEST BODY Parsing Failed: %s"%(e))
+                    request_logger.error("\n\nREQUEST BODY: %s"%(request_data))
 
         # request_logger.info("\n\nREQUEST BODY PLAIN: %s"%(log_data))
 
