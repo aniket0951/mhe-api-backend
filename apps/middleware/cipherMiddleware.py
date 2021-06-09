@@ -7,8 +7,7 @@ from uuid import UUID
 from .utils import MiddlewareUtils
 from utils.cipher import AESCipher
 from collections import OrderedDict
-from phonenumber_field.modelfields import PhoneNumberField as PhoneNumberFieldModel
-from phonenumber_field.serializerfields import PhoneNumberField as PhoneNumberFieldSerializer
+from phonenumber_field.modelfields import PhoneNumberField
 
 request_logger = logging.getLogger('django.request')
 response_logger = logging.getLogger('django.response')
@@ -96,7 +95,7 @@ class CipherResponseMiddleware(object):
                 v = dict(v)
             elif isinstance(v, bytes):
                 v = v.decode('utf-8')
-            elif isinstance(v, PhoneNumberFieldModel):
+            elif isinstance(v, PhoneNumberField):
                 v = str(v.raw_input)
             elif isinstance(v, QuerySet):
                 v = list(v.values())
@@ -121,7 +120,7 @@ class CipherResponseMiddleware(object):
                 e = dict(e)
             elif isinstance(e, bytes):
                 e = e.decode('utf-8')
-            elif isinstance(e, PhoneNumberFieldModel):
+            elif isinstance(e, PhoneNumberField):
                 e = str(e.raw_input)
             elif isinstance(e, QuerySet):
                 e = list(e.values())
@@ -144,5 +143,6 @@ class CipherResponseMiddleware(object):
                 response.data = { ENCRYPTION_BODY_KEY: AESCipher.encrypt(str_conv_response_data) }
             except Exception as e:
                 response_logger.error("\n\nRESPONSE BODY Parsing Failed: %s"%(e))
+                response_logger.error("\n\nRESPONSE BODY Data: %s"%(response.data))
         
         return response
