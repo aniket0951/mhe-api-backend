@@ -7,7 +7,6 @@ from uuid import UUID
 from .utils import MiddlewareUtils
 from utils.cipher import AESCipher
 from collections import OrderedDict
-from phonenumber_field.modelfields import PhoneNumberField
 
 request_logger = logging.getLogger('django.request')
 response_logger = logging.getLogger('django.response')
@@ -44,7 +43,7 @@ class CipherRequestMiddleware(object):
                         request._body = AESCipher.decrypt(encrypted_request_body.get(ENCRYPTION_BODY_KEY))
                 except Exception as e:
                     request_logger.error("\n\nREQUEST BODY Parsing Failed: %s"%(e))
-                    request_logger.error("\n\nREQUEST BODY: %s"%(request_data))
+                    request_logger.debug("\n\nREQUEST BODY: %s"%(request_data))
 
         # request_logger.info("\n\nREQUEST BODY PLAIN: %s"%(log_data))
 
@@ -96,8 +95,6 @@ class CipherResponseMiddleware(object):
                 v = dict(v)
             elif isinstance(v, bytes):
                 v = v.decode('utf-8')
-            elif isinstance(v, PhoneNumberField):
-                v = str(v.raw_input)
             elif isinstance(v, QuerySet):
                 v = list(v.values())
                 v = self.list_replace_value(v)
@@ -121,8 +118,6 @@ class CipherResponseMiddleware(object):
                 e = dict(e)
             elif isinstance(e, bytes):
                 e = e.decode('utf-8')
-            elif isinstance(e, PhoneNumberField):
-                e = str(e.raw_input)
             elif isinstance(e, QuerySet):
                 e = list(e.values())
                 e = self.list_replace_value(e)
@@ -144,6 +139,6 @@ class CipherResponseMiddleware(object):
                 response.data = { ENCRYPTION_BODY_KEY: AESCipher.encrypt(str_conv_response_data) }
             except Exception as e:
                 response_logger.error("\n\nRESPONSE BODY Parsing Failed: %s"%(e))
-                response_logger.error("\n\nRESPONSE BODY Data: %s"%(response.data))
+                response_logger.debug("\n\nRESPONSE BODY Data: %s"%(response.data))
         
         return response
