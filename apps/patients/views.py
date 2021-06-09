@@ -932,8 +932,8 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
                 is_mobile_to_be_verified=True
             else:
                 serializer.validated_data['mobile']=serializer.validated_data['new_mobile']
-
-        process_is_email_to_be_verified(serializer,family_member_object,request_patient)
+            
+        family_member_object = process_is_email_to_be_verified(serializer,family_member_object,request_patient)
         
         # send_family_member_email_activation_otp(str(family_member_object.id), random_email_otp)
 
@@ -956,6 +956,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             )
             if self.request.query_params.get('is_android', True):
                 message='<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
+
             is_message_sent=send_sms(mobile_number=str(family_member_object.new_mobile.raw_input), message=message)
             if is_message_sent:
                 self.update_success_message='Family member details updated successfully, please enter OTP which we have sent to your family member.'
