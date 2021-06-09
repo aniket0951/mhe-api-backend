@@ -97,7 +97,7 @@ class CipherResponseMiddleware(object):
             elif isinstance(v, bytes):
                 v = v.decode('utf-8')
             elif isinstance(v, PhoneNumberFieldModel):
-                v = PhoneNumberFieldSerializer(v)
+                v = str(v.raw_input)
             elif isinstance(v, QuerySet):
                 v = list(v.values())
                 v = self.list_replace_value(v)
@@ -122,7 +122,7 @@ class CipherResponseMiddleware(object):
             elif isinstance(e, bytes):
                 e = e.decode('utf-8')
             elif isinstance(e, PhoneNumberFieldModel):
-                e = PhoneNumberFieldSerializer(e)
+                e = str(e.raw_input)
             elif isinstance(e, QuerySet):
                 e = list(e.values())
                 e = self.list_replace_value(e)
