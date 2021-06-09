@@ -66,7 +66,7 @@ from .models import (Appointment, AppointmentDocuments,
 from .serializers import (AppointmentDocumentsSerializer,
                           AppointmentPrescriptionSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
-                          CancellationReasonSerializer, FeedbacksSerializer,
+                          CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
@@ -1388,7 +1388,7 @@ class FeedbackViewSet(custom_viewsets.ModelViewSet):
     retrieve_success_message = 'Feedbacks information returned successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, )
-
+    
     def create(self, request):
         user_id = request.user.id
         patient = Patient.objects.filter(id=user_id).first()
@@ -1530,3 +1530,20 @@ class CurrentAppointmentListView(ProxyView):
         return self.custom_success_response(message=message,
                                             success=True, data={"appointment_list": appointment_list, "today_count": today_count, "tomorrow_count": tomorrow_count})
 
+
+class FeedbackData(APIView):
+    permission_classes = [IsManipalAdminUser]
+    list_success_message = 'Feedbacks returned successfully!'
+
+    def get(self,request,*args,**kwargs):
+        date_from = self.request.query_params.get("date_from", None)
+        date_to = self.request.query_params.get("date_to", None)
+        if date_from and date_to:
+            qs =  Feedbacks.objects.filter(created_at__date__range=[date_from, date_to])
+        serializer = FeedbacksDataSerializer(qs,many=True)
+        
+        data = {
+            "data": serializer.data,
+            "message": self.list_success_message,
+        }
+        return Response(data,status=status.HTTP_200_OK)

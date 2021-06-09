@@ -1,3 +1,4 @@
+from apps.patients.models import Patient
 import logging
 from apps.doctors.serializers import (DoctorSerializer,
                                       HospitalSerializer)
@@ -201,3 +202,11 @@ class AppointmentPrescriptionSerializer(DynamicFieldsModelSerializer):
             response_object["episode_number"] = instance.appointment_info.episode_number
 
         return response_object
+
+
+class FeedbacksDataSerializer(DynamicFieldsModelSerializer):
+    user_id = PatientSerializer()
+
+    class Meta:
+        model = Feedbacks
+        fields = '__all__' 
