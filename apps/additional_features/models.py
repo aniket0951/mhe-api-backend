@@ -94,11 +94,6 @@ class Drive(MyBaseModel):
     
 class DriveInventory(MyBaseModel):
     
-    DOSE_TYPE_CHOICE = (
-        ("dose 1","DOSE_1"),
-        ("dose 2","DOSE_2")
-    )
-    
     drive = models.ForeignKey(
                             Drive,
                             on_delete=models.PROTECT,
@@ -116,8 +111,7 @@ class DriveInventory(MyBaseModel):
                             )
     
     dose = models.CharField(
-                        choices=DOSE_TYPE_CHOICE,
-                         max_length=8,
+                        max_length=8,
                         blank=False,
                         null=False
                     )  
