@@ -22,7 +22,7 @@ urlpatterns = [
     path('api/notifications/', include('apps.notifications.urls')),
     path('api/video_conferences/', include('apps.video_conferences.urls')),
     path('api/discharge_summaries/', include('apps.discharge_summaries.urls')),
-
+    path('api/additional_features/', include('apps.additional_features.urls')),
 
 
 

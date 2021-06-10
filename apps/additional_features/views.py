@@ -1,7 +1,7 @@
 from .serializers import StaticInstructionsSerializer
 from .models import StaticInstructions
 from utils import custom_viewsets
-from rest_framework.permissions import IsPatientUser
+from utils.custom_permissions import IsPatientUser
 
 
 class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):

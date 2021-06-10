@@ -5,3 +5,8 @@ from .views import StaticInstructionsViewSet
 router = DefaultRouter(trailing_slash=False)
 
 router.register('static_instructions', StaticInstructionsViewSet)
+
+urlpatterns = [
+     * router.urls
+
+]
