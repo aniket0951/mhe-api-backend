@@ -2,6 +2,7 @@ import os
 from django.contrib.gis.geos import Point
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+from django.contrib.postgres.fields import JSONField
 
 from apps.meta_app.models import MyBaseModel
 from django.contrib.gis.db import models
@@ -398,3 +399,22 @@ class Configurations(MyBaseModel):
 
     allowed_components = models.ManyToManyField(Components, blank=True,
                                              null=True,related_name='allowed_component_ids')
+    
+class Medicine(MyBaseModel):
+    
+    name = models.CharField(
+                        max_length=50,
+                        blank=False,
+                        null=False
+                    )
+    
+    additional_details = JSONField()
+    
+class Billing(MyBaseModel):
+    
+    name = models.CharField(
+                        max_length=50,
+                        blank=False,
+                        null=False
+                    )
+    
