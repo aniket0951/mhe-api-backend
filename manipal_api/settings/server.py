@@ -98,6 +98,7 @@ CUSTOM_APPS = [
     'apps.video_conferences',
     'apps.notifications.apps.NotificationsConfig',
     'apps.discharge_summaries',
+    'apps.additional_features',
     'apps.middleware'
 ]
 
