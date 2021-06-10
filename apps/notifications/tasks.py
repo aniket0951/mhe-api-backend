@@ -37,7 +37,12 @@ def send_push_notification(self, **kwargs):
             fcm = FCMNotification(api_key=settings.FCM_API_KEY)
             if notification_data.get("doctor_name"):
                 fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-                    "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"], "doctor_name": notification_data["doctor_name"]}, low_priority=False)
+                    "title": notification_instance.title, 
+                    "message": notification_instance.message, 
+                    "notification_type": notification_data["notification_type"], 
+                    "appointment_id": notification_data["appointment_id"], 
+                    "doctor_name": notification_data["doctor_name"]
+                }, low_priority=False)
             else:
                 fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
                     "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
@@ -66,19 +71,21 @@ def send_silent_push_notification(self, **kwargs):
         if (hasattr(patient_instance, 'device') and patient_instance.device.token):
             if patient_instance.device.platform == 'Android':
                 fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
-                    "notification_type": "SILENT_NOTIFICATION", "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+                    "notification_type": "SILENT_NOTIFICATION", 
+                    "appointment_id": notification_data["appointment_id"]
+                }, low_priority=False)
             elif patient_instance.device.platform == 'iOS':
                 client = APNSClient(certificate=settings.APNS_CERT_PATH)
                 token = patient_instance.device.token
                 alert = "Doctor completed this consultation"
                 client.send(token,
-                                  alert,
-                                  badge=1,
-                                  sound="default",
-                                  extra={'notification_type': '2',
-                                         'appointment_id': notification_data["appointment_id"]
-                                         }
-                                  )
+                            alert,
+                            badge=1,
+                            sound="default",
+                            extra={'notification_type': '2',
+                                    'appointment_id': notification_data["appointment_id"]
+                                    }
+                            )
 
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")

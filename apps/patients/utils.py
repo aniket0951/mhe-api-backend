@@ -147,3 +147,4 @@ def process_is_email_to_be_verified(serializer,family_member_object,request_pati
         family_member_object.email_verification_otp=random_email_otp
         family_member_object.email_otp_expiration_time=otp_expiration_time
         family_member_object.save()
+    return family_member_object
