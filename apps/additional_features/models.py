@@ -217,6 +217,13 @@ class DriveBooking(MyBaseModel):
                         )
 
 class StaticInstructions(MyBaseModel):
+    
+    title = models.CharField(
+                        max_length=50,
+                        blank=True,
+                        null=True
+                    )
+    
     instruction_type = models.CharField(
                                     max_length=50,
                                     blank=False,
