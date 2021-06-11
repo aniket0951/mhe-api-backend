@@ -6,7 +6,7 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
 from .models import (AmbulanceContact, Company, Department, EmergencyContact,
-                     Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations)
+                     Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations, Medicine, Billing)
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
 from ..patient_registration.serializers import RelationSerializer
@@ -160,3 +160,14 @@ class ConfigurationSerializer(DynamicFieldsModelSerializer):
         model = Configurations
         exclude = ('created_at', 'updated_at',)
         
+class MedicineSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = Medicine
+        exclude = ('created_at', 'updated_at',)
+        
+class BillingSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = Billing
+        exclude = ('created_at', 'updated_at')

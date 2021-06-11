@@ -22,9 +22,14 @@ from django.db import models
 def generate_qr_code_picture_path(self, filename):
     _, obj_file_extension = os.path.splitext(filename)
     obj_name = str(uuid.uuid4()) + str(obj_file_extension)
-    return "static/flyers/{0}".format(obj_name)
+    return "static/qr_code/{0}".format(obj_name)
 
 class Drive(MyBaseModel):
+    
+    TYPE_CHOICES = (
+        ('apartment','Apartment'),
+        ('corporate','Corporate')
+    )
     
     hospital = models.ForeignKey(
                         Hospital,
@@ -33,13 +38,17 @@ class Drive(MyBaseModel):
                         blank=False
                     )
     
-    description = models.TextField()
+    description = models.TextField(
+                                blank=False,
+                                null=False
+                            )
     
     type = models.CharField(
-                            max_length=100,
-                            blank=False,
-                            null=False
-                        )
+                        choices=TYPE_CHOICES,
+                        max_length=100,
+                        blank=False,
+                        null=False
+                    )
     
     domain = models.CharField(
                         max_length=100,
@@ -47,12 +56,22 @@ class Drive(MyBaseModel):
                         null=True       
                     )
     
-    date = models.DateField(blank=False,
-                            null=False,)
+    date = models.DateField(
+                        auto_now=True,
+                        blank=False,
+                        null=False,
+                    )
     
-    booking_start_time = models.DateTimeField()
+    booking_start_time = models.DateTimeField(
+                                        auto_now_add=True,
+                                        blank=False,
+                                        null=False,
+                                    )
     
-    booking_end_time = models.DateTimeField()
+    booking_end_time = models.DateTimeField(
+                                        blank=False,
+                                        null=False,
+                                    )
     
     code = models.SlugField(
                             unique=True,
@@ -76,22 +95,6 @@ class Drive(MyBaseModel):
     
     is_active = models.BooleanField(default=True)
     
-    created_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'drive_created_by_base_user'
-                        )
-
-    updated_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'drive_updated_by_base_user'
-                        )
-    
 class DriveInventory(MyBaseModel):
     
     drive = models.ForeignKey(
@@ -107,7 +110,7 @@ class DriveInventory(MyBaseModel):
                                 on_delete=models.PROTECT,
                                 blank=False,
                                 null=False,
-                                related_name="dose_name"   
+                                related_name="medicine_name"   
                             )
     
     dose = models.CharField(
@@ -122,25 +125,13 @@ class DriveInventory(MyBaseModel):
                             null=False
                         )
     
-    item_quantity = models.IntegerField()
+    item_quantity = models.IntegerField(
+                                    blank=False,
+                                    null=False,
+                                    default=0
+                                )    
     
     price = models.FloatField(default=0)
-    
-    created_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'inventory_created_by_base_user'
-                        )
-    
-    updated_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'inventory_updated_by_base_user'
-                        )
     
 class DriveBilling(MyBaseModel):
     
@@ -160,29 +151,13 @@ class DriveBilling(MyBaseModel):
                             related_name='drive_billing'
                         )
     price = models.FloatField(default=0)
-    
-    created_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'drive_billing_created_by_base_user'
-                        )
-    
-    updated_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'drive_billing_updated_by_base_user'
-                        )
 
 class DriveBooking(MyBaseModel):
     
     BOOKING_STATUS_CHOICES = (
-        ("Pending","Pending"),
-        ("Booked","Booked"),
-        ("Cancelled","Cancelled"),
+        ("pending","Pending"),
+        ("booked","Booked"),
+        ("cancelled","Cancelled"),
     )
         
     drive = models.ForeignKey(
@@ -233,23 +208,10 @@ class DriveBooking(MyBaseModel):
     
     status = models.CharField(
                         choices=BOOKING_STATUS_CHOICES,
-                        max_length=15
-                        )
-    
-    created_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'drive_booking_created_by_base_user'
-                        )
-    
-    updated_by = models.ForeignKey(
-                            BaseUser,
-                            on_delete=models.PROTECT,
-                            null=True,
-                            blank=True,
-                            related_name = 'drive_booking_updated_by_base_user'
+                        max_length=15,
+                        blank=False,
+                        null=False,
+                        default='pending'
                         )
 
 class StaticInstructions(MyBaseModel):
@@ -259,7 +221,13 @@ class StaticInstructions(MyBaseModel):
                                     null=False
                                 )
     
-    instruction = models.TextField()
+    instruction = models.TextField(
+                            blank=False,
+                            null=False
+                        )
     
-    sequence = models.IntegerField()
+    sequence = models.IntegerField(
+                            blank=False,
+                            null=False
+                        )
     

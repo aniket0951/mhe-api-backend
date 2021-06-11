@@ -403,6 +403,7 @@ class Configurations(MyBaseModel):
 class Medicine(MyBaseModel):
     
     name = models.CharField(
+                        unique=True,
                         max_length=50,
                         blank=False,
                         null=False
@@ -413,6 +414,7 @@ class Medicine(MyBaseModel):
 class Billing(MyBaseModel):
     
     name = models.CharField(
+                        unique=True,
                         max_length=50,
                         blank=False,
                         null=False

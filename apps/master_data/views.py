@@ -64,11 +64,11 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
                      Department, EmergencyContact, Hospital,
-                     HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations)
+                     HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations, Medicine, Billing)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
                           DepartmentSerializer, EmergencyContactSerializer,
                           HospitalDepartmentSerializer, HospitalSerializer,
-                          HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer, ConfigurationSerializer)
+                          HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer, ConfigurationSerializer, MedicineSerializer,BillingSerializer)
 
 logger = logging.getLogger('django')
 
@@ -1101,3 +1101,17 @@ class PatientDetailsByMobileView(ProxyView):
                                     message=message,
                                     data=response_content
                                 )
+        
+class MedicineViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    queryset = Medicine.objects.all()
+    serializer_class = MedicineSerializer
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
+    list_success_message = 'Medicines returned successfully!'
+    retrieve_success_message = 'Medicine information returned successfully!'
+    
+class BillingViewSet(custom_viewsets.ReadOnlyModelViewSet):
+    queryset = Billing.objects.all()
+    serializer_class = BillingSerializer
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
+    list_success_message = 'Billings returned successfully!'
+    retrieve_success_message = 'Billing information returned successfully!'
