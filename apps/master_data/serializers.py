@@ -169,8 +169,8 @@ class MedicineSerializer(DynamicFieldsModelSerializer):
     
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-        if instance.additional_details:
-            response_object["additional_details"] = json.load(instance.additional_details)
+        if response_object.get("additional_details"):
+            response_object["additional_details"] = json.load(response_object.get("additional_details"))
         return response_object
         
 class BillingSerializer(DynamicFieldsModelSerializer):
