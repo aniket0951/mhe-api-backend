@@ -1,4 +1,5 @@
 import logging
+import json
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point, fromstr
 
@@ -162,9 +163,17 @@ class ConfigurationSerializer(DynamicFieldsModelSerializer):
         
 class MedicineSerializer(DynamicFieldsModelSerializer):
 
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if "additional_details" in response_object and response_object.get("additional_details"):
+            response_object["additional_details"] = json.loads(response_object.get("additional_details"))
+        return response_object
+
     class Meta:
         model = Medicine
         exclude = ('created_at', 'updated_at',)
+    
+
         
 class BillingSerializer(DynamicFieldsModelSerializer):
 
