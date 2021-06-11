@@ -2,6 +2,8 @@ from .serializers import StaticInstructionsSerializer
 from .models import StaticInstructions
 from utils import custom_viewsets
 from utils.custom_permissions import IsPatientUser
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
 
 class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -10,3 +12,9 @@ class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsPatientUser]
     list_success_message = 'Static Instructions returned successfully!'
     retrieve_success_message = 'Static Instruction returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['instruction_type']

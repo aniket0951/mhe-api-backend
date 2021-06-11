@@ -1108,6 +1108,13 @@ class MedicineViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsPatientUser | IsManipalAdminUser]
     list_success_message = 'Medicines returned successfully!'
     retrieve_success_message = 'Medicine information returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['name']
+    search_fields = ['name']
     
 class BillingViewSet(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Billing.objects.all()
@@ -1115,3 +1122,10 @@ class BillingViewSet(custom_viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsPatientUser | IsManipalAdminUser]
     list_success_message = 'Billings returned successfully!'
     retrieve_success_message = 'Billing information returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['name']
+    search_fields = ['name']
