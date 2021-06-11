@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db.models.deletion import PROTECT
 from django.db.models.expressions import F
 from apps.payments.models import Payment
@@ -63,12 +64,13 @@ class Drive(MyBaseModel):
                     )
     
     booking_start_time = models.DateTimeField(
-                                        auto_now_add=True,
+                                        default=datetime.today(),
                                         blank=False,
                                         null=False,
                                     )
     
     booking_end_time = models.DateTimeField(
+                                        default=datetime.today(),
                                         blank=False,
                                         null=False,
                                     )
