@@ -64,13 +64,13 @@ class Drive(MyBaseModel):
                     )
     
     booking_start_time = models.DateTimeField(
-                                        default=datetime.today(),
+                                        default=datetime.now,
                                         blank=False,
                                         null=False,
                                     )
     
     booking_end_time = models.DateTimeField(
-                                        default=datetime.today(),
+                                        default=datetime.now,
                                         blank=False,
                                         null=False,
                                     )
