@@ -1,9 +1,12 @@
+from apps.additional_features.utils import AdditionalFeatures
 from datetime import date, datetime
 import json
 import ast
 
 from proxy.custom_views import ProxyView
 from utils.utils import start_end_datetime_comparision
+import logging
+from utils.utils import end_date_vaccination_date_comparision, manipal_admin_object, patient_user_object, start_end_datetime_comparision
 from .serializers import DriveSerializer, StaticInstructionsSerializer
 from .models import Drive, StaticInstructions
 from utils import custom_viewsets
@@ -19,6 +22,7 @@ from proxy.custom_serializables import \
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 
     
+logger = logging.getLogger("additional_features")
 
 class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
     queryset = StaticInstructions.objects.all()
@@ -33,7 +37,7 @@ class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
             )
     filter_fields = ['instruction_type']
     
-class DriveScheduleViewSet(custom_viewsets.ModelViewSet):
+class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     queryset = Drive.objects.all()
     serializer_class = DriveSerializer
     permission_classes = [IsManipalAdminUser | IsPatientUser]
@@ -69,6 +73,30 @@ class DriveScheduleViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
+
+    def get_queryset(self):
+
+        qs = super().get_queryset()
+
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            pass
+
+        code = self.request.query_params.get('code')
+        if patient_user_object(self.request):
+            drive_id = None
+            try:
+                drive_id = Drive.objects.get(code=code)
+            except Exception as e:
+                logger.debug("Exception in get_queryset -> patient_user_object : %s"%(str(e)))
+            if not drive_id:
+                raise ValidationError("No drive available for the entered code.")
+            current_date = datetime.today()
+            if drive_id.booking_start_time > current_date:
+                raise ValidationError('Bookings for the drive has not been started yet.')
+            if drive_id.booking_end_time < current_date:
+                raise ValidationError('Bookings for the drive has been closed.')
+        return qs
     
     def perform_create(self, serializer):
         current_date = date.today()
@@ -77,12 +105,19 @@ class DriveScheduleViewSet(custom_viewsets.ModelViewSet):
         booking_end_time = self.request.data.get('booking_end_time')
         
         if 'booking_start_time' in self.request.data:
+            
             start_date_time = datetime.strptime(booking_start_time,'%Y-%m-%dT%H:%M:%S')
             if start_date_time.date() < current_date:
                 raise ValidationError('Start date time should not be set as past date.')
 
             if 'booking_end_time' in self.request.data:
                 start_end_datetime_comparision(booking_start_time,booking_end_time)
+                date_of_vaccination_date = self.request.data.get('date')
+                end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_date)
+            
+        serializer.validated_data['code'] = AdditionalFeatures.generate_unique_drive_code(serializer.validated_data['description'])
+
+        serializer.save(is_active=True)
 
         serializer.save(is_active=True)    
         
@@ -119,3 +154,5 @@ class DriveItemCodePriceView(ProxyView):
                                         data=response_message
                                     )
         
+    def perform_update(self, serializer):
+        serializer.save() 

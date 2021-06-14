@@ -1,3 +1,5 @@
+from apps.additional_features.utils import AdditionalFeatures
+from apps.master_data.serializers import MedicineSerializer
 from apps.doctors.serializers import HospitalSerializer
 import logging
 
@@ -15,17 +17,21 @@ class DriveSerializer(DynamicFieldsModelSerializer):
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
+        response_object['qr_code'] = None
         try:
-            if instance.hospital:
-                response_object['hospital'] = HospitalSerializer(instance.hospital).data
             if instance.qr_code:
                 response_object['qr_code'] = generate_pre_signed_url(instance.qr_code.url)
+            if instance.hospital:
+                response_object['hospital'] = HospitalSerializer(instance.hospital).data
+            drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
+            response_object['drive_inventories'] = DriveInventorySerializer(drive_inventory_ids,many=True).data
         except Exception as error:
             logger.info("Exception in DriveSerializer: %s"%(str(error)))
-            response_object['qr_code'] = None
+            
         return response_object
 
 class DriveInventorySerializer(DynamicFieldsModelSerializer):
+    medicine = MedicineSerializer()
     class Meta:
         model = DriveInventory
         exclude = ('created_at', 'updated_at',)
