@@ -678,3 +678,15 @@ class UhidBasedConsultation:
         serializer.add_property('PromoCode', self.promo_code)
         serializer.add_property('OrderDate', self.order_date)
         
+class DriveItemPrice:
+    def __init__(self, location_code=None,item_code=None,order_date=None):
+        self.location_code = location_code
+        self.item_code = item_code
+        self.order_date = order_date
+        
+    def serialize(self, serializer):
+        serializer.start_object('OPItemPriceParam')
+        serializer.add_property('locationCode', self.location_code)
+        serializer.add_property('ItemCode', self.item_code)
+        serializer.add_property('OrdDate', self.order_date)
+        
