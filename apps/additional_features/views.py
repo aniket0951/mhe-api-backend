@@ -117,13 +117,13 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             
         serializer.validated_data['code'] = AdditionalFeatures.generate_unique_drive_code(serializer.validated_data['description'])
 
-        serializer.save(is_active=True)
-
-        serializer.save(is_active=True)    
+        serializer.save(is_active=True)   
         
+    def perform_update(self, serializer):
+        serializer.save() 
         
 class DriveItemCodePriceView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsManipalAdminUser]
     source = 'OPItemPrice'
 
     def get_request_data(self, request):
@@ -141,11 +141,10 @@ class DriveItemCodePriceView(ProxyView):
         message = "Could not fetch the price for the Item Code"
         success = False
         if status == "1":
-            item_prices = root.find("OPItemPriceDetails").text
-            if item_prices:
-                item_prices = ast.literal_eval(item_prices)
-                Item_price = item_prices[0]["ItemPrice"]
-                response_message = Item_price
+            item_price_details = root.find("OPItemPriceDetails").text
+            if item_price_details:
+                item_price_details_json = ast.literal_eval(item_price_details)
+                response_message = item_price_details_json
                 message = "success"
                 success = True
         return self.custom_success_response(
@@ -156,3 +155,4 @@ class DriveItemCodePriceView(ProxyView):
         
     def perform_update(self, serializer):
         serializer.save() 
+                                    
