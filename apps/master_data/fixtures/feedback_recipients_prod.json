@@ -62,6 +62,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "13959cb6-2a8f-4e96-836f-fe51698f1113",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHB",
+            "name":"Nayana Pai",
+            "type":"CC",
+            "email":"nayana.pai@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "24e9062f-e430-4239-b852-5b0b1ec87fcc",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -107,6 +119,18 @@
             "name":"Mr Arnab Mondal",
             "type":"CC",
             "email":"arnab.mondal@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "4f3f6b45-8124-47d4-9eba-743b5cc96587",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHW",
+            "name":"Nayana Pai",
+            "type":"CC",
+            "email":"nayana.pai@manipalhospitals.com"
         }
     },
     {
@@ -160,6 +184,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "5f32c69f-f59d-4cda-901f-17307b011e00",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MCB",
+            "name":"Nayana Pai",
+            "type":"CC",
+            "email":"nayana.pai@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "641f0f70-dcfc-4644-bf0f-238015cca8b5",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -193,6 +229,18 @@
             "name":"Mr Saghir Siddiqui",
             "type":"CC",
             "email":"saghir.siddiqui@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "6e087085-3937-441c-adf5-5a77c428b33f",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"KMC",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
         }
     },
     {
@@ -234,6 +282,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "7ea8d375-61c7-4914-b5f3-2dc358cf5735",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHD",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "22f83668-7213-4d78-96dc-635e1cd815d5",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -267,6 +327,18 @@
             "name":"Mr Ranjan Thakur",
             "type":"CC",
             "email":"ranjan.thakur@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "2934f5a4-d979-44fe-82a0-989d22baa293",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHJ",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
         }
     },
     {
@@ -308,6 +380,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "40f9666e-49cc-4aa7-8388-3049f9290c78",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHG",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "bb9f4e8f-d987-44e9-97f5-0233dde8a895",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -341,6 +425,18 @@
             "name":"Mr Mohan Hariharan",
             "type":"CC",
             "email":"mohan.hariharan@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "36164041-3dae-48d1-9572-2bc6a5f0b3b9",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MMH",
+            "name":"Nayana Pai",
+            "type":"CC",
+            "email":"nayana.pai@manipalhospitals.com"
         }
     },
     {
@@ -382,6 +478,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "f4661c22-7fca-43a3-b2aa-4c36fed50700",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHN",
+            "name":"Nayana Pai",
+            "type":"CC",
+            "email":"nayana.pai@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "2af06502-0198-482e-8685-9a277a247148",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -407,18 +515,6 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
-        "pk":"6e4badb5-8aed-4183-815f-35c499fed3e1",
-        "fields": {
-            "created_at": "2021-01-27T18:47:24.893Z",
-            "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MHV",
-            "name":"CE Vijayawada",
-            "type":"TO",
-            "email":"ce.vijayawada@manipalhospitals.com"
-        }
-    },
-    {
-        "model": "master_data.FeedbackRecipients",
         "pk": "6ac1b11f-e6d8-4691-899e-ef7b54eb3003",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -439,6 +535,18 @@
             "name":"Dr Sudhakar Kantipudi",
             "type":"CC",
             "email":"sudhakar@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "28572fba-263c-482a-bc2b-028fb32c294a",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHV",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
         }
     },
     {
@@ -504,6 +612,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d01",
+        "fields": {
+            "created_at": "2021-06-14T14:00:24.893Z",
+            "updated_at": "2021-06-14T14:00:24.893Z",
+            "hospital_code":"MHS",
+            "name":"Nayana Pai",
+            "type":"CC",
+            "email":"nayana.pai@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "ecac36e7-a487-433b-8a3c-8e1bfaf4eb5a",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -525,18 +645,6 @@
             "name":"Alexandra Chong Ching Ching",
             "type":"TO",
             "email":"alexandra.chong@manipalhospitals.com"
-        }
-    },
-    {
-        "model": "master_data.FeedbackRecipients",
-        "pk": "341292f1-f8ec-4291-93d5-0baf84b80663",
-        "fields": {
-            "created_at": "2021-01-27T18:47:24.893Z",
-            "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MHK",
-            "name":"Mr Gaurav Rekhi",
-            "type":"CC",
-            "email":"gaurav.rekhi@manipalhospitals.com"
         }
     },
     {
@@ -601,6 +709,18 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "22f3a8c2-2527-48b1-a01c-fd059c1b9529",
+        "fields": {
+            "created_at": "2021-06-14T14:47:24.893Z",
+            "updated_at": "2021-06-14T14:47:24.893Z",
+            "hospital_code":"ALL",
+            "name":"Sunil Bhattacharjee",
+            "type":"CC",
+            "email":"sunil.bhattacharjee@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "4cd2ed94-fa7a-4282-ab12-dff52f94adc9",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
@@ -621,18 +741,6 @@
             "name":"Kiran R",
             "type":"CC",
             "email":"kiran.r@manipalhospitals.com"
-        }
-    },
-    {
-        "model": "master_data.FeedbackRecipients",
-        "pk": "15d62967-ad78-415c-9fec-9b789c9876fc",
-        "fields": {
-            "created_at": "2021-01-27T18:47:24.893Z",
-            "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"ALL",
-            "name":"Akshatha B R",
-            "type":"CC",
-            "email":"akshatha.br@manipalhospitals.com"
         }
     }
 ]
