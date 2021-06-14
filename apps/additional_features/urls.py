@@ -1,8 +1,5 @@
 from django.urls.conf import path
 from rest_framework.routers import DefaultRouter
-
-from .views import DriveScheduleViewSet, StaticInstructionsViewSet
-from . import views
 from .views import DriveScheduleViewSet, StaticInstructionsViewSet, DriveItemCodePriceView
 
 router = DefaultRouter(trailing_slash=False)
