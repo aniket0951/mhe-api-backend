@@ -122,7 +122,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         serializer.save() 
         
 class DriveItemCodePriceView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsManipalAdminUser]
     source = 'OPItemPrice'
 
     def get_request_data(self, request):
