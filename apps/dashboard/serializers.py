@@ -45,10 +45,10 @@ class FlyerSchedulerSerializer(DynamicFieldsModelSerializer):
         exclude = ('created_at', 'updated_at', 'created_by', 'updated_by')
 
     def to_representation(self, instance):
-        response_opject = super().to_representation(instance)
+        response_object = super().to_representation(instance)
         flyer_image_ids = FlyerImages.objects.filter(flyer_scheduler_id=instance.id).order_by("sequence")
-        response_opject['flyer_images'] = FlyerImagesSerializer(flyer_image_ids,many=True).data
-        return response_opject
+        response_object['flyer_images'] = FlyerImagesSerializer(flyer_image_ids,many=True).data
+        return response_object
 
 class FlyerImagesSerializer(DynamicFieldsModelSerializer):
 

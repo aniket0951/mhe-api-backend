@@ -77,8 +77,8 @@ class Drive(MyBaseModel):
     
     code = models.SlugField(
                             unique=True,
-                            blank=False,
-                            null=False
+                            blank=True,
+                            null=True
                         )
     
     qr_code = models.ImageField(
@@ -90,8 +90,8 @@ class Drive(MyBaseModel):
                             validate_file_authenticity,
                             validate_file_infection
                         ],
-                        blank=False,
-                        null=False,
+                        blank=True,
+                        null=True,
                         verbose_name='display_QR_code'
                     )
     
