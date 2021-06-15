@@ -212,9 +212,12 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
     
     def perform_create(self, serializer):
+        drive = self.request.data.get('drive')
         drive_inventory = self.request.data.get('drive_inventory')
-        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory).count()
+        status = self.request.data.get('status')
        
+        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory,drive=drive,status=status).exclude(status="cancelled").count()
+        
         item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
         
         if drive_inventories_count > item_quantity:
