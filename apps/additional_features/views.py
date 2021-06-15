@@ -1,19 +1,17 @@
-from apps.additional_features.utils import AdditionalFeatures
+from apps.additional_features.utils import AdditionalFeaturesUtil
 from datetime import date, datetime
 import json
 import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import end_date_vaccination_date_comparision, manipal_admin_object, patient_user_object, start_end_datetime_comparision
+from utils.utils import manipal_admin_object, patient_user_object
 from .serializers import DriveSerializer, StaticInstructionsSerializer
 from .models import Drive, StaticInstructions
 from utils import custom_viewsets
 from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsPatientUser, IsManipalAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import AllowAny
 
-from rest_framework.serializers import ValidationError
 from rest_framework import filters
 import xml.etree.ElementTree as ET
 from proxy.custom_serializables import \
@@ -83,40 +81,21 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
 
         code = self.request.query_params.get('code')
         if patient_user_object(self.request):
-            drive_id = None
-            try:
-                drive_id = Drive.objects.get(code=code)
-            except Exception as e:
-                logger.debug("Exception in get_queryset -> patient_user_object : %s"%(str(e)))
-            if not drive_id:
-                raise ValidationError("No drive available for the entered code.")
-            current_date = datetime.today()
-            if drive_id.booking_start_time > current_date:
-                raise ValidationError('Bookings for the drive has not been started yet.')
-            if drive_id.booking_end_time < current_date:
-                raise ValidationError('Bookings for the drive has been closed.')
+            AdditionalFeaturesUtil.validate_drive_code(code)
+
         return qs
     
     def perform_create(self, serializer):
-        current_date = date.today()
+        request_data = self.request.data
 
-        booking_start_time = self.request.data.get('booking_start_time')
-        booking_end_time = self.request.data.get('booking_end_time')
+        AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
         
-        if 'booking_start_time' in self.request.data:
-            
-            start_date_time = datetime.strptime(booking_start_time,'%Y-%m-%dT%H:%M:%S')
-            if start_date_time.date() < current_date:
-                raise ValidationError('Start date time should not be set as past date.')
+        serializer.validated_data['code'] = AdditionalFeaturesUtil.generate_unique_drive_code(serializer.validated_data['description'])
 
-            if 'booking_end_time' in self.request.data:
-                start_end_datetime_comparision(booking_start_time,booking_end_time)
-                date_of_vaccination_date = self.request.data.get('date')
-                end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_date)
-            
-        serializer.validated_data['code'] = AdditionalFeatures.generate_unique_drive_code(serializer.validated_data['description'])
+        serializer.save(is_active=True)
 
-        serializer.save(is_active=True)   
+        AdditionalFeaturesUtil.create_drive_inventory(serializer.id,request_data)
+        
         
     def perform_update(self, serializer):
         serializer.save() 

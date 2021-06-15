@@ -119,7 +119,7 @@ class DriveInventory(MyBaseModel):
                         max_length=8,
                         blank=False,
                         null=False
-                    )  
+                    )
     
     mh_item_code = models.CharField(
                             max_length=100,
@@ -131,7 +131,7 @@ class DriveInventory(MyBaseModel):
                                     blank=False,
                                     null=False,
                                     default=0
-                                )    
+                                )
     
     price = models.FloatField(default=0)
     
