@@ -68,10 +68,6 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     
     def get_permissions(self):
 
-        if self.action in ['generate_drive_corporate_email_verification_otp','verify_corporate_email_otp' ]:
-            permission_classes = [IsPatientUser]
-            return [permission() for permission in permission_classes]
-
         if self.action in ['create','partial_update']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
@@ -111,21 +107,17 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         
         serializer.validated_data['code'] = AdditionalFeaturesUtil.generate_unique_drive_code(serializer.validated_data['description'])
 
-        serializer.save(is_active=True)
+        serializer_id = serializer.save(is_active=True)
 
-        AdditionalFeaturesUtil.create_drive_inventory(serializer.id,request_data)
+        AdditionalFeaturesUtil.create_drive_inventory(serializer_id.id,request_data)
         
         
     def perform_update(self, serializer):
-        if 'booking_start_time' in self.request.data and 'booking_end_time' in self.request.data:
-            
-            start_date_time = self.request.data.get('booking_start_time')
-            end_date_time = self.request.data.get('booking_end_time')
-
-            start_end_datetime_comparision(start_date_time,end_date_time)
-            
-        serializer.save()
-        
+        request_data = self.request.data
+        AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
+        serializer_id = serializer.save()
+        AdditionalFeaturesUtil.update_drive_inventory(serializer_id.id,request_data)
+    
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_drive_corporate_email_verification_otp(self, request):
@@ -180,7 +172,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             "message": "Your email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
-        
+
 class DriveItemCodePriceView(ProxyView):
     permission_classes = [IsManipalAdminUser]
     source = 'OPItemPrice'
