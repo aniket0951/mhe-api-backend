@@ -12,6 +12,7 @@ from utils import custom_viewsets
 from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsPatientUser, IsManipalAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
+from django.db.models import Q
 
 from rest_framework.serializers import ValidationError
 from rest_framework import filters
