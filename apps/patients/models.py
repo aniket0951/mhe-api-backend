@@ -156,8 +156,19 @@ class Patient(BaseUser):
     corporate_email_otp_expiration_time = models.DateTimeField(
         blank=True,
         null=True,
-        verbose_name='Corporatse Email OTP Key Expiration DateTime')
+        verbose_name='Corporate Email OTP Key Expiration DateTime')
 
+    drive_corporate_email = models.EmailField(null=True, blank=True)
+
+    drive_corporate_email_otp = models.CharField(max_length=6,
+                                           null=True,
+                                           blank=True)
+
+    drive_corporate_email_otp_expiration_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Drive Corporate Email OTP Key Expiration DateTime')
+    
     active_view = models.CharField(default="Normal",
                                    max_length=20)
 

@@ -131,6 +131,11 @@ class DriveInventory(MyBaseModel):
                                     blank=False,
                                     null=False,
                                     default=0
+                                ) 
+    
+    item_description = models.TextField(
+                                    blank=True,
+                                    null=True    
                                 )
     
     price = models.FloatField(default=0)
@@ -193,6 +198,11 @@ class DriveBooking(MyBaseModel):
                                     blank=True,
                                     related_name = 'family_member_vaccine_registration'
                                 )
+    
+    drive_corporate_email = models.EmailField(
+                                        blank=True,
+                                        null=True
+                                    )
     
     payment = models.ForeignKey(
                             Payment,

@@ -102,7 +102,62 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
         serializer_id = serializer.save()
         AdditionalFeaturesUtil.update_drive_inventory(serializer_id.id,request_data)
+	
+	@method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
+    @action(detail=False, methods=['POST'])
+    def generate_drive_corporate_email_verification_otp(self, request):
+        authenticated_patient = patient_user_object(request)
+        drive = self.request.data.get("drive")
+        drive_corporate_email = self.request.data.get("drive_corporate_email")
         
+        drive_email_domain = re.search('@.*', drive_corporate_email).group()
+        
+        domain = Drive.objects.filter(id=drive).values_list('domain', flat=True)[0]
+
+        if drive_email_domain != domain:
+            raise ValidationError("Invalid Corporate Email")
+        
+        random_email_otp = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+
+        send_corporate_email_activation_otp(str(authenticated_patient.id), drive_corporate_email, random_email_otp)
+
+        authenticated_patient.drive_corporate_email_otp = random_email_otp
+        authenticated_patient.drive_corporate_email_otp_expiration_time = otp_expiration_time
+        authenticated_patient.save()
+
+        data = {
+            "data": {"email": str(authenticated_patient.drive_corporate_email), },
+            "message": PatientsConstants.OTP_EMAIL_SENT,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
+    @action(detail=False, methods=['POST'])
+    def verify_drive_corporate_email_otp(self, request):
+        drive_email_otp = request.data.get('drive_email_otp')
+        authenticated_patient = patient_user_object(request)
+
+        if not authenticated_patient.drive_corporate_email_otp == drive_email_otp:
+            raise InvalidEmailOTPException
+
+        if datetime.now().timestamp() > \
+                authenticated_patient.drive_corporate_email_otp_expiration_time.timestamp():
+            raise OTPExpiredException
+
+        random_email_otp = get_random_string(
+            length=OTP_LENGTH, allowed_chars='0123456789')
+
+        authenticated_patient.drive_corporate_email_otp = random_email_otp
+        authenticated_patient.save()
+
+        data = {
+            "data": self.get_serializer(authenticated_patient).data,
+            "message": "Your email is verified successfully!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
 class DriveItemCodePriceView(ProxyView):
     permission_classes = [IsManipalAdminUser]
     source = 'OPItemPrice'

@@ -30,7 +30,6 @@ class DriveSerializer(DynamicFieldsModelSerializer):
         return response_object
 
 class DriveInventorySerializer(DynamicFieldsModelSerializer):
-    
     class Meta:
         model = DriveInventory
         exclude = ('created_at', 'updated_at',)
@@ -44,7 +43,7 @@ class DriveInventorySerializer(DynamicFieldsModelSerializer):
         except Exception as error:
             logger.info("Exception in DriveInventorySerializer: %s"%(str(error)))
         return response_object
-        
+            
 class DriveBillingSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = DriveBilling
