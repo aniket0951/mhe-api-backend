@@ -119,7 +119,7 @@ class DriveInventory(MyBaseModel):
                         max_length=8,
                         blank=False,
                         null=False
-                    )  
+                    )
     
     mh_item_code = models.CharField(
                             max_length=100,
@@ -198,6 +198,11 @@ class DriveBooking(MyBaseModel):
                                     blank=True,
                                     related_name = 'family_member_vaccine_registration'
                                 )
+    
+    drive_corporate_email = models.EmailField(
+                                        blank=True,
+                                        null=True
+                                    )
     
     payment = models.ForeignKey(
                             Payment,

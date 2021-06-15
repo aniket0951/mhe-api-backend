@@ -1,4 +1,3 @@
-from apps.additional_features.utils import AdditionalFeatures
 from apps.master_data.serializers import MedicineSerializer
 from apps.doctors.serializers import HospitalSerializer
 import logging

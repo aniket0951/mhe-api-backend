@@ -1,5 +1,6 @@
-from apps.additional_features.utils import AdditionalFeatures
-from datetime import date, datetime
+import re
+from .utils import AdditionalFeaturesUtil
+from datetime import date, datetime, timedelta
 import json
 import ast
 
@@ -9,18 +10,29 @@ from utils.utils import end_date_vaccination_date_comparision, manipal_admin_obj
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
 from .models import Drive, DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.utils.crypto import get_random_string
+
 from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsPatientUser, IsManipalAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.serializers import ValidationError
+from ratelimit.decorators import ratelimit
+from rest_framework import filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
-from rest_framework.serializers import ValidationError
-from rest_framework import filters
 import xml.etree.ElementTree as ET
 from proxy.custom_serializables import \
     DriveItemPrice as serializable_DriveItemPrice
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 
-    
+from apps.patients.emails import send_corporate_email_activation_otp
+from apps.patients.exceptions import InvalidEmailOTPException, OTPExpiredException
+from apps.patients.constants import PatientsConstants
+
+OTP_LENGTH = settings.OTP_LENGTH
 logger = logging.getLogger("additional_features")
 
 class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -55,6 +67,10 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     
     def get_permissions(self):
 
+        if self.action in ['generate_drive_corporate_email_verification_otp','verify_corporate_email_otp' ]:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
         if self.action in ['create','partial_update']:
             permission_classes = [IsManipalAdminUser]
             return [permission() for permission in permission_classes]
@@ -83,40 +99,21 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
 
         code = self.request.query_params.get('code')
         if patient_user_object(self.request):
-            drive_id = None
-            try:
-                drive_id = Drive.objects.get(code=code)
-            except Exception as e:
-                logger.debug("Exception in get_queryset -> patient_user_object : %s"%(str(e)))
-            if not drive_id:
-                raise ValidationError("No drive available for the entered code.")
-            current_date = datetime.today()
-            if drive_id.booking_start_time > current_date:
-                raise ValidationError('Bookings for the drive has not been started yet.')
-            if drive_id.booking_end_time < current_date:
-                raise ValidationError('Bookings for the drive has been closed.')
+            AdditionalFeaturesUtil.validate_drive_code(code)
+
         return qs
     
     def perform_create(self, serializer):
-        current_date = date.today()
+        request_data = self.request.data
 
-        booking_start_time = self.request.data.get('booking_start_time')
-        booking_end_time = self.request.data.get('booking_end_time')
+        AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
         
-        if 'booking_start_time' in self.request.data:
-            
-            start_date_time = datetime.strptime(booking_start_time,'%Y-%m-%dT%H:%M:%S')
-            if start_date_time.date() < current_date:
-                raise ValidationError('Start date time should not be set as past date.')
+        serializer.validated_data['code'] = AdditionalFeaturesUtil.generate_unique_drive_code(serializer.validated_data['description'])
 
-            if 'booking_end_time' in self.request.data:
-                start_end_datetime_comparision(booking_start_time,booking_end_time)
-                date_of_vaccination_date = self.request.data.get('date')
-                end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_date)
-            
-        serializer.validated_data['code'] = AdditionalFeatures.generate_unique_drive_code(serializer.validated_data['description'])
+        serializer.save(is_active=True)
 
-        serializer.save(is_active=True)   
+        AdditionalFeaturesUtil.create_drive_inventory(serializer.id,request_data)
+        
         
     def perform_update(self, serializer):
         if 'booking_start_time' in self.request.data and 'booking_end_time' in self.request.data:
@@ -127,6 +124,61 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             start_end_datetime_comparision(start_date_time,end_date_time)
             
         serializer.save()
+        
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
+    @action(detail=False, methods=['POST'])
+    def generate_drive_corporate_email_verification_otp(self, request):
+        authenticated_patient = patient_user_object(request)
+        drive = self.request.data.get("drive")
+        drive_corporate_email = self.request.data.get("drive_corporate_email")
+        
+        drive_email_domain = re.search('@.*', drive_corporate_email).group()
+        
+        domain = Drive.objects.filter(id=drive).values_list('domain', flat=True)[0]
+
+        if drive_email_domain != domain:
+            raise ValidationError("Invalid Corporate Email")
+        
+        random_email_otp = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
+        otp_expiration_time = datetime.now(
+        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+
+        send_corporate_email_activation_otp(str(authenticated_patient.id), drive_corporate_email, random_email_otp)
+
+        authenticated_patient.drive_corporate_email_otp = random_email_otp
+        authenticated_patient.drive_corporate_email_otp_expiration_time = otp_expiration_time
+        authenticated_patient.save()
+
+        data = {
+            "data": {"email": str(authenticated_patient.drive_corporate_email), },
+            "message": PatientsConstants.OTP_EMAIL_SENT,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
+    @action(detail=False, methods=['POST'])
+    def verify_drive_corporate_email_otp(self, request):
+        drive_email_otp = request.data.get('drive_email_otp')
+        authenticated_patient = patient_user_object(request)
+
+        if not authenticated_patient.drive_corporate_email_otp == drive_email_otp:
+            raise InvalidEmailOTPException
+
+        if datetime.now().timestamp() > \
+                authenticated_patient.drive_corporate_email_otp_expiration_time.timestamp():
+            raise OTPExpiredException
+
+        random_email_otp = get_random_string(
+            length=OTP_LENGTH, allowed_chars='0123456789')
+
+        authenticated_patient.drive_corporate_email_otp = random_email_otp
+        authenticated_patient.save()
+
+        data = {
+            "data": self.get_serializer(authenticated_patient).data,
+            "message": "Your email is verified successfully!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
         
 class DriveItemCodePriceView(ProxyView):
     permission_classes = [IsManipalAdminUser]
