@@ -75,7 +75,7 @@ class AdditionalFeaturesUtil:
     def create_drive_inventory(drive_id,request_data):
         if request_data.get('drive_inventories'):
             for drive_inventory in request_data['drive_inventories']:
-                drive_inventory.update({"drive_id":drive_id})
+                drive_inventory.update({"drive":drive_id})
                 drive_inventory_obj = DriveInventorySerializer(data=drive_inventory)
                 drive_inventory_obj.is_valid(raise_exception=True)
                 drive_inventory_obj.save()
@@ -83,16 +83,26 @@ class AdditionalFeaturesUtil:
     @staticmethod
     def update_drive_inventory(drive_id,request_data):
         if request_data.get('drive_inventories'):
+            
             valid_drive_inventories = []
+            
             for drive_inventory in request_data['drive_inventories']:
-                drive_inventory.update({"drive_id":drive_id})
+                
+                drive_inventory.update({"drive":drive_id})
+
                 if drive_inventory.get("id"):
-                    drive_inventory_obj = DriveInventorySerializer(data=drive_inventory)
-                else:
                     drive_inventory_instance = DriveInventory.objects.get(id=drive_inventory.get("id"))
                     drive_inventory_obj = DriveInventorySerializer(drive_inventory_instance, data=drive_inventory, partial=True)
-                drive_inventory_obj.is_valid(raise_exception=True)
-                drive_inventory_obj.save()
-                valid_drive_inventories.append(drive_inventory_obj.get("id"))
+                    drive_inventory_obj.is_valid(raise_exception=True)
+                    drive_inventory_obj.save()
+
+                    valid_drive_inventories.append(drive_inventory.get("id"))
+                else:
+                    drive_inventory_obj = DriveInventorySerializer(data=drive_inventory)
+                    drive_inventory_obj.is_valid(raise_exception=True)
+                    drive_inventory_id = drive_inventory_obj.save()
+
+                    valid_drive_inventories.append(drive_inventory_id.id)
+
             DriveInventory.objects.filter(drive_id=drive_id).exclude(id__in=valid_drive_inventories).delete()
             

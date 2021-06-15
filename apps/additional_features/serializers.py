@@ -30,10 +30,20 @@ class DriveSerializer(DynamicFieldsModelSerializer):
         return response_object
 
 class DriveInventorySerializer(DynamicFieldsModelSerializer):
-    medicine = MedicineSerializer()
+    
     class Meta:
         model = DriveInventory
         exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        try:
+            response_object['medicine'] = None
+            if instance.medicine:
+                response_object['medicine'] = MedicineSerializer(instance.medicine).data
+        except Exception as error:
+            logger.info("Exception in DriveInventorySerializer: %s"%(str(error)))
+        return response_object
         
 class DriveBillingSerializer(DynamicFieldsModelSerializer):
     class Meta:

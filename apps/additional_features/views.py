@@ -92,13 +92,16 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         
         serializer.validated_data['code'] = AdditionalFeaturesUtil.generate_unique_drive_code(serializer.validated_data['description'])
 
-        serializer.save(is_active=True)
+        serializer_id = serializer.save(is_active=True)
 
-        AdditionalFeaturesUtil.create_drive_inventory(serializer.id,request_data)
+        AdditionalFeaturesUtil.create_drive_inventory(serializer_id.id,request_data)
         
         
     def perform_update(self, serializer):
-        serializer.save() 
+        request_data = self.request.data
+        AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
+        serializer_id = serializer.save()
+        AdditionalFeaturesUtil.update_drive_inventory(serializer_id.id,request_data)
         
 class DriveItemCodePriceView(ProxyView):
     permission_classes = [IsManipalAdminUser]
