@@ -4,7 +4,6 @@ import json
 import ast
 
 from proxy.custom_views import ProxyView
-from utils.utils import start_end_datetime_comparision
 import logging
 from utils.utils import end_date_vaccination_date_comparision, manipal_admin_object, patient_user_object, start_end_datetime_comparision
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
