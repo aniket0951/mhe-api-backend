@@ -1,24 +1,38 @@
-from apps.additional_features.utils import AdditionalFeaturesUtil
-from datetime import date, datetime
+import re
+from .utils import AdditionalFeaturesUtil
+from datetime import date, datetime, timedelta
 import json
 import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import manipal_admin_object, patient_user_object
-from .serializers import DriveSerializer, StaticInstructionsSerializer
-from .models import Drive, StaticInstructions
+from utils.utils import end_date_vaccination_date_comparision, manipal_admin_object, patient_user_object, start_end_datetime_comparision
+from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
+from .models import Drive, DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.utils.crypto import get_random_string
+
 from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsPatientUser, IsManipalAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.serializers import ValidationError
+from ratelimit.decorators import ratelimit
+from rest_framework import filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
-from rest_framework import filters
 import xml.etree.ElementTree as ET
 from proxy.custom_serializables import \
     DriveItemPrice as serializable_DriveItemPrice
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 
-    
+from apps.patients.emails import send_corporate_email_activation_otp
+from apps.patients.exceptions import InvalidEmailOTPException, OTPExpiredException
+from apps.patients.constants import PatientsConstants
+
+OTP_LENGTH = settings.OTP_LENGTH
 logger = logging.getLogger("additional_features")
 
 class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
@@ -102,8 +116,8 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
         serializer_id = serializer.save()
         AdditionalFeaturesUtil.update_drive_inventory(serializer_id.id,request_data)
-	
-	@method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
+    
+    @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_drive_corporate_email_verification_otp(self, request):
         authenticated_patient = patient_user_object(request)
@@ -191,4 +205,67 @@ class DriveItemCodePriceView(ProxyView):
         
     def perform_update(self, serializer):
         serializer.save() 
+        
+class DriveInventoryViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = DriveInventory
+    queryset = DriveInventory.objects.all()
+    serializer_class = DriveInventorySerializer
+    create_success_message = 'Drive Inventory added successfully!'
+    list_success_message = 'Drive Inventories returned successfully!'
+    retrieve_success_message = 'Drive Inventory returned successfully!'
+    update_success_message = 'Drive Inventory updated successfully!'
+    delete_success_message = 'Drive Inventory deleted successfully!'
+    
+class DriveBookingViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser | IsPatientUser]
+    model = DriveBooking
+    queryset = DriveBooking.objects.all()
+    serializer_class = DriveBookingSerializer
+    create_success_message = 'Drive booked successfully!'
+    list_success_message = 'Drive Bookings returned successfully!'
+    retrieve_success_message = 'Drive Booking returned successfully!'
+    update_success_message = 'Drive Booking updated successfully!'
+    delete_success_message = 'Drive Booking deleted successfully!'
+    
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['status']
+    
+    def get_permissions(self):
+
+        if self.action in ['create','partial_update']:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+    
+    def perform_create(self, serializer):
+        drive = self.request.data.get('drive')
+        drive_inventory = self.request.data.get('drive_inventory')
+        status = self.request.data.get('status')
+       
+        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory,drive=drive,status=status).exclude(status="cancelled").count()
+        
+        item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
+        
+        if drive_inventories_count > item_quantity:
+            raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
+        
+        serializer.save()
                                     
