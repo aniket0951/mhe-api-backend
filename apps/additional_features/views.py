@@ -12,6 +12,7 @@ from utils import custom_viewsets
 from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsPatientUser, IsManipalAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
+from django.db.models import Q
 
 from rest_framework.serializers import ValidationError
 from rest_framework import filters
@@ -212,11 +213,16 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
     
     def perform_create(self, serializer):
+        drive = self.request.data.get('drive')
         drive_inventory = self.request.data.get('drive_inventory')
-        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory).count()
+        status = self.request.data.get('status')
        
+        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory,drive=drive,status=status).exclude(Q(status="cancelled")).count()
+        
+        print("Count ==",drive_inventories_count)
         item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
         
+        print("Quantity==", item_quantity)
         if drive_inventories_count > item_quantity:
             raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
         
