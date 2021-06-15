@@ -217,7 +217,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         drive_inventory = self.request.data.get('drive_inventory')
         status = self.request.data.get('status')
        
-        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory,drive=drive,status=status).exclude(Q(status="cancelled")).count()
+        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory,drive=drive,status=status).exclude(status="cancelled").count()
         
         print("Count ==",drive_inventories_count)
         item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
