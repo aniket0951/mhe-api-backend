@@ -9,7 +9,7 @@ app_name = 'additional_features'
 router = DefaultRouter(trailing_slash=False)
 
 router.register('static_instructions', StaticInstructionsViewSet)
-router.register('', DriveScheduleViewSet)
+router.register('drive_schedule', DriveScheduleViewSet)
 router.register('drive_inventory', DriveInventoryViewSet)
 router.register('drive_booking', DriveBookingViewSet)
 
