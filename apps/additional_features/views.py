@@ -1,3 +1,4 @@
+from apps.patients.serializers import PatientSerializer
 import re
 from .utils import AdditionalFeaturesUtil
 from datetime import date, datetime, timedelta
@@ -175,7 +176,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         authenticated_patient.save()
 
         data = {
-            "data": self.get_serializer(authenticated_patient).data,
+            "data": PatientSerializer(authenticated_patient).data,
             "message": "Your email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
