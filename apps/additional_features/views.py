@@ -7,8 +7,8 @@ from proxy.custom_views import ProxyView
 from utils.utils import start_end_datetime_comparision
 import logging
 from utils.utils import end_date_vaccination_date_comparision, manipal_admin_object, patient_user_object, start_end_datetime_comparision
-from .serializers import DriveSerializer, StaticInstructionsSerializer
-from .models import Drive, StaticInstructions
+from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
+from .models import Drive, DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
 from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsPatientUser, IsManipalAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
@@ -120,7 +120,14 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         serializer.save(is_active=True)   
         
     def perform_update(self, serializer):
-        serializer.save() 
+        if 'booking_start_time' in self.request.data and 'booking_end_time' in self.request.data:
+            
+            start_date_time = self.request.data.get('booking_start_time')
+            end_date_time = self.request.data.get('booking_end_time')
+
+            start_end_datetime_comparision(start_date_time,end_date_time)
+            
+        serializer.save()
         
 class DriveItemCodePriceView(ProxyView):
     permission_classes = [IsManipalAdminUser]
@@ -155,4 +162,64 @@ class DriveItemCodePriceView(ProxyView):
         
     def perform_update(self, serializer):
         serializer.save() 
+        
+class DriveInventoryViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = DriveInventory
+    queryset = DriveInventory.objects.all()
+    serializer_class = DriveInventorySerializer
+    create_success_message = 'Drive Inventory added successfully!'
+    list_success_message = 'Drive Inventories returned successfully!'
+    retrieve_success_message = 'Drive Inventory returned successfully!'
+    update_success_message = 'Drive Inventory updated successfully!'
+    delete_success_message = 'Drive Inventory deleted successfully!'
+    
+class DriveBookingViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser | IsPatientUser]
+    model = DriveBooking
+    queryset = DriveBooking.objects.all()
+    serializer_class = DriveBookingSerializer
+    create_success_message = 'Drive booked successfully!'
+    list_success_message = 'Drive Bookings returned successfully!'
+    retrieve_success_message = 'Drive Booking returned successfully!'
+    update_success_message = 'Drive Booking updated successfully!'
+    delete_success_message = 'Drive Booking deleted successfully!'
+    
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['status']
+    
+    def get_permissions(self):
+
+        if self.action in ['create','partial_update']:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+    
+    def perform_create(self, serializer):
+        drive_inventory = self.request.data.get('drive_inventory')
+        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory).count()
+       
+        item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
+        
+        if drive_inventories_count > item_quantity:
+            raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
+        
+        serializer.save()
                                     

@@ -131,7 +131,12 @@ class DriveInventory(MyBaseModel):
                                     blank=False,
                                     null=False,
                                     default=0
-                                )    
+                                ) 
+    
+    item_description = models.TextField(
+                                    blank=True,
+                                    null=True    
+                                )
     
     price = models.FloatField(default=0)
     
