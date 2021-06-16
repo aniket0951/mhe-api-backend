@@ -1,13 +1,13 @@
 from apps.patients.serializers import PatientSerializer
 import re
 from .utils import AdditionalFeaturesUtil
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 import json
 import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import end_date_vaccination_date_comparision, manipal_admin_object, patient_user_object, start_end_datetime_comparision
+from utils.utils import  manipal_admin_object, patient_user_object
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
 from .models import Drive, DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
@@ -22,11 +22,11 @@ from ratelimit.decorators import ratelimit
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+
+from django.db.models import Q
 
 import xml.etree.ElementTree as ET
-from proxy.custom_serializables import \
-    DriveItemPrice as serializable_DriveItemPrice
+from proxy.custom_serializables import DriveItemPrice as serializable_DriveItemPrice
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 
 from apps.patients.emails import send_corporate_email_activation_otp
@@ -127,14 +127,13 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         
         drive_email_domain = re.search('@.*', drive_corporate_email).group()
         
-        domain = Drive.objects.filter(id=drive).values_list('domain', flat=True)[0]
+        drive_id = Drive.objects.filter(id=drive).first()
 
-        if drive_email_domain != domain:
+        if drive_email_domain != drive_id.domain:
             raise ValidationError("Invalid Corporate Email")
         
         random_email_otp = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
-        otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+        otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         send_corporate_email_activation_otp(str(authenticated_patient.id), drive_corporate_email, random_email_otp)
 
@@ -157,12 +156,10 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         if not authenticated_patient.drive_corporate_email_otp == drive_email_otp:
             raise InvalidEmailOTPException
 
-        if datetime.now().timestamp() > \
-                authenticated_patient.drive_corporate_email_otp_expiration_time.timestamp():
+        if datetime.now().timestamp() > authenticated_patient.drive_corporate_email_otp_expiration_time.timestamp():
             raise OTPExpiredException
 
-        random_email_otp = get_random_string(
-            length=OTP_LENGTH, allowed_chars='0123456789')
+        random_email_otp = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
 
         authenticated_patient.drive_corporate_email_otp = random_email_otp
         authenticated_patient.save()
@@ -257,15 +254,18 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
     
     def perform_create(self, serializer):
-        drive = self.request.data.get('drive')
+        drive_id = self.request.data.get('drive')
         drive_inventory = self.request.data.get('drive_inventory')
-        status = self.request.data.get('status')
-       
-        drive_inventories_count = DriveBooking.objects.filter(drive_inventory=drive_inventory,drive=drive,status=status).exclude(status="cancelled").count()
+        
+        drive_inventories_consumed = DriveBooking.objects.filter(
+                                            Q(drive_inventory=drive_inventory) &
+                                            Q(drive__id=drive_id) &
+                                            Q(status__in=["pending","booked"])
+                                        ).count()
         
         item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
         
-        if drive_inventories_count > item_quantity:
+        if drive_inventories_consumed >= item_quantity:
             raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
         
         serializer.save()
