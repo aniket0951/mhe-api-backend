@@ -22,8 +22,13 @@ class DriveSerializer(DynamicFieldsModelSerializer):
                 response_object['qr_code'] = generate_pre_signed_url(instance.qr_code.url)
             if instance.hospital:
                 response_object['hospital'] = HospitalSerializer(instance.hospital).data
+
+            drive_billing_ids = DriveBilling.objects.filter(drive_id=instance.id)
+            response_object['drive_billings'] = DriveBillingSerializer(drive_billing_ids,many=True).data
+
             drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
             response_object['drive_inventories'] = DriveInventorySerializer(drive_inventory_ids,many=True).data
+
         except Exception as error:
             logger.info("Exception in DriveSerializer: %s"%(str(error)))
             

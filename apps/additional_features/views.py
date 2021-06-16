@@ -110,6 +110,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         serializer_id = serializer.save(is_active=True)
 
         AdditionalFeaturesUtil.create_drive_inventory(serializer_id.id,request_data)
+        AdditionalFeaturesUtil.create_drive_billing(serializer_id.id,request_data)
         
         
     def perform_update(self, serializer):
@@ -117,6 +118,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
         serializer_id = serializer.save()
         AdditionalFeaturesUtil.update_drive_inventory(serializer_id.id,request_data)
+        AdditionalFeaturesUtil.update_drive_billing(serializer_id.id,request_data)
     
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
@@ -188,13 +190,12 @@ class DriveItemCodePriceView(ProxyView):
         response_message = {}
         message = "Could not fetch the price for the Item Code"
         success = False
-        if status == "1":
-            item_price_details = root.find("OPItemPriceDetails").text
-            if item_price_details:
-                item_price_details_json = ast.literal_eval(item_price_details)
-                response_message = item_price_details_json
-                message = "success"
-                success = True
+        item_price_details = root.find("OPItemPriceDetails").text
+        if status == "1" and item_price_details:
+            item_price_details_json = ast.literal_eval(item_price_details)
+            response_message = item_price_details_json
+            message = "success"
+            success = True
         return self.custom_success_response(
                                         message=message,
                                         success=success, 

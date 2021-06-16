@@ -1,11 +1,11 @@
-from apps.additional_features.serializers import DriveInventorySerializer
+from apps.additional_features.serializers import DriveBillingSerializer, DriveInventorySerializer
 import logging
 import random
 import re
 
 from datetime import datetime,date
 from utils.utils import end_date_vaccination_date_comparision, start_end_datetime_comparision
-from apps.additional_features.models import Drive, DriveInventory
+from apps.additional_features.models import Drive, DriveBilling, DriveInventory
 from rest_framework.serializers import ValidationError
 
 
@@ -81,6 +81,15 @@ class AdditionalFeaturesUtil:
                 drive_inventory_obj.save()
 
     @staticmethod
+    def create_drive_billing(drive_id,request_data):
+        if request_data.get('drive_billings'):
+            for drive_billing in request_data['drive_billings']:
+                drive_billing.update({"drive":drive_id})
+                drive_billing_obj = DriveBillingSerializer(data=drive_billing)
+                drive_billing_obj.is_valid(raise_exception=True)
+                drive_billing_obj.save()
+
+    @staticmethod
     def update_drive_inventory(drive_id,request_data):
         if request_data.get('drive_inventories'):
             
@@ -105,4 +114,30 @@ class AdditionalFeaturesUtil:
                     valid_drive_inventories.append(drive_inventory_id.id)
 
             DriveInventory.objects.filter(drive_id=drive_id).exclude(id__in=valid_drive_inventories).delete()
+
+    @staticmethod
+    def update_drive_billing(drive_id,request_data):
+        if request_data.get('drive_billings'):
+            
+            valid_drive_billings = []
+            
+            for drive_billing in request_data['drive_billings']:
+                
+                drive_billing.update({"drive":drive_id})
+
+                if drive_billing.get("id"):
+                    drive_billing_instance = DriveBilling.objects.get(id=drive_billing.get("id"))
+                    drive_billing_obj = DriveBillingSerializer(drive_billing_instance, data=drive_billing, partial=True)
+                    drive_billing_obj.is_valid(raise_exception=True)
+                    drive_billing_obj.save()
+
+                    valid_drive_billings.append(drive_billing.get("id"))
+                else:
+                    drive_billing_obj = DriveBillingSerializer(data=drive_billing)
+                    drive_billing_obj.is_valid(raise_exception=True)
+                    drive_billing_id = drive_billing_obj.save()
+
+                    valid_drive_billings.append(drive_billing_id.id)
+
+            DriveBilling.objects.filter(drive_id=drive_id).exclude(id__in=valid_drive_billings).delete()
             
