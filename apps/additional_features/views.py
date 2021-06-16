@@ -199,7 +199,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             raise ValidationError("You already have registered for the drive.")
         
         data = {
-            "data": DriveSerializer(Drive.objects.get(id=request.data.get('drive'))).data,
+            "data": DriveSerializer(context = {'request':request},data=Drive.objects.get(id=request.data.get('drive'))).data,
             "message": "User details are verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)

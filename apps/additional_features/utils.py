@@ -39,6 +39,8 @@ class AdditionalFeaturesUtil:
 
     @staticmethod
     def validate_drive_code(code):
+        if not code:
+            raise ValidationError("Provide a valid drive code!")
         drive_id = None
         try:
             drive_id = Drive.objects.get(code=code,is_active=True)
