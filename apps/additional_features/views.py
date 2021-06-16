@@ -1,15 +1,15 @@
+from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
 from apps.patients.serializers import PatientSerializer
 import re
 from .utils import AdditionalFeaturesUtil
 from datetime import datetime, timedelta
-import json
 import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import  manipal_admin_object, patient_user_object
+from utils.utils import  calculate_age, manipal_admin_object, patient_user_object
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
-from .models import Drive, DriveBooking, DriveInventory, StaticInstructions
+from .models import Drive,  DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
 from django.conf import settings
 from django.utils.decorators import method_decorator
@@ -106,7 +106,6 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
         
         serializer.validated_data['code'] = AdditionalFeaturesUtil.generate_unique_drive_code(serializer.validated_data['description'])
-
         serializer_id = serializer.save(is_active=True)
 
         AdditionalFeaturesUtil.create_drive_inventory(serializer_id.id,request_data)
@@ -115,8 +114,11 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         
     def perform_update(self, serializer):
         request_data = self.request.data
+        
         AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
+        
         serializer_id = serializer.save()
+
         AdditionalFeaturesUtil.update_drive_inventory(serializer_id.id,request_data)
         AdditionalFeaturesUtil.update_drive_billing(serializer_id.id,request_data)
     
@@ -171,6 +173,27 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             "message": "Your email is verified successfully!"
         }
         return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['POST'])
+    def validate_user(self, request):
+
+        dob_date = None
+
+        try:
+            dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
+        except Exception as e:
+            logger.error("Error parsing date of birth! %s"%(str(e)))
+            raise InvalidDobFormatValidationException
+        if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
+            raise InvalidDobValidationException
+        
+        patient_user = patient_user_object(self.request)
+        if patient_user and request.data.get('drive') and DriveBooking.objects.filter(
+                                                                drive=request.data.get('drive'),
+                                                                patient__id=patient_user.id,
+                                                                status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED]
+                                                            ):
+            raise ValidationError("You already have registered for the drive.")
 
 class DriveItemCodePriceView(ProxyView):
     permission_classes = [IsManipalAdminUser]
@@ -261,7 +284,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         drive_inventories_consumed = DriveBooking.objects.filter(
                                             Q(drive_inventory=drive_inventory) &
                                             Q(drive__id=drive_id) &
-                                            Q(status__in=["pending","booked"])
+                                            Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
                                         ).count()
         
         item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]

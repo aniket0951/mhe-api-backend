@@ -161,10 +161,14 @@ class DriveBilling(MyBaseModel):
 
 class DriveBooking(MyBaseModel):
     
+    BOOKING_PENDING = "pending"
+    BOOKING_BOOKED = "booked"
+    BOOKING_CANCELLED = "cancelled"
+
     BOOKING_STATUS_CHOICES = (
-        ("pending","Pending"),
-        ("booked","Booked"),
-        ("cancelled","Cancelled"),
+        (BOOKING_PENDING,"Pending"),
+        (BOOKING_BOOKED,"Booked"),
+        (BOOKING_CANCELLED,"Cancelled"),
     )
         
     drive = models.ForeignKey(
