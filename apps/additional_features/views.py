@@ -63,7 +63,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
-    filter_fields = ['type','date','hospital__code']
+    filter_fields = ['type','date','hospital__code','code']
     search_fields = ['description','code']
     
     def get_permissions(self):
