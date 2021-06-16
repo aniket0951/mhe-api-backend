@@ -49,6 +49,7 @@ class DriveSerializer(DynamicFieldsModelSerializer):
                         "id":drive_inventory.get("id"),
                         "dose":drive_inventory.get("dose"),
                         "mh_item_code": drive_inventory.get("mh_item_code"),
+                        "item_description":drive_inventory.get("item_description"),
                         "item_quantity": drive_inventory.get("item_quantity"),
                         "price": drive_inventory.get("price")
                     })
