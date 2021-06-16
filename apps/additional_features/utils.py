@@ -41,13 +41,11 @@ class AdditionalFeaturesUtil:
     def validate_drive_code(code):
         drive_id = None
         try:
-            drive_id = Drive.objects.get(code=code)
+            drive_id = Drive.objects.get(code=code,is_active=True)
         except Exception as e:
             logger.debug("Exception in get_queryset -> patient_user_object : %s"%(str(e)))
         if not drive_id:
             raise ValidationError("No drive available for the entered code.")
-        if not drive_id.is_active:
-            raise ValidationError("The drive is not published.")
         current_date = datetime.today()
         if drive_id.booking_start_time > current_date:
             raise ValidationError('Bookings for the drive has not been started yet.')
