@@ -54,7 +54,12 @@ class DriveSerializer(DynamicFieldsModelSerializer):
                         "price": drive_inventory.get("price")
                     })
 
-                response_object['drive_inventories'] = [drive_inventories_combined[key] for key in drive_inventories_combined]
+                drive_inventories_combined_list = []
+                for key in drive_inventories_combined:
+                    if drive_inventories_combined[key].get("inventory"):
+                        drive_inventories_combined[key]["inventory"].sort(lambda x:x.get("dose"))
+                    drive_inventories_combined_list.append(drive_inventories_combined[key])
+                response_object['drive_inventories'] = drive_inventories_combined_list
 
         except Exception as error:
             logger.info("Exception in DriveSerializer -> to_representation: %s"%(str(error)))
