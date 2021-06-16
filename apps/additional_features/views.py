@@ -188,12 +188,21 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             raise InvalidDobValidationException
         
         patient_user = patient_user_object(self.request)
-        if patient_user and request.data.get('drive') and DriveBooking.objects.filter(
-                                                                drive=request.data.get('drive'),
-                                                                patient__id=patient_user.id,
-                                                                status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED]
-                                                            ):
+        if not patient_user or not request.data.get('drive'):
+            raise ValidationError("Provide a valid drive ID!")
+
+        if DriveBooking.objects.filter(
+                                drive=request.data.get('drive'),
+                                patient__id=patient_user.id,
+                                status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED]
+                            ):
             raise ValidationError("You already have registered for the drive.")
+        
+        data = {
+            "data": DriveSerializer(Drive.objects.get(id=request.data.get('drive'))).data,
+            "message": "User details are verified successfully!"
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 class DriveItemCodePriceView(ProxyView):
     permission_classes = [IsManipalAdminUser]
