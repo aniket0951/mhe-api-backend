@@ -57,7 +57,7 @@ class DriveSerializer(DynamicFieldsModelSerializer):
                 drive_inventories_combined_list = []
                 for key in drive_inventories_combined:
                     if drive_inventories_combined[key].get("inventory"):
-                        drive_inventories_combined[key]["inventory"].sort(lambda x:x.get("dose"))
+                        drive_inventories_combined[key]["inventory"].sort(key=lambda x:x.get("dose"))
                     drive_inventories_combined_list.append(drive_inventories_combined[key])
                 response_object['drive_inventories'] = drive_inventories_combined_list
 
