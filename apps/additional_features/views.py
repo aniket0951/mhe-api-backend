@@ -63,7 +63,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
-    filter_fields = ['type','booking_start_time','code']
+    filter_fields = ['type','date','hospital__code']
     search_fields = ['description','code']
     
     def get_permissions(self):
@@ -264,7 +264,8 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
-    filter_fields = ['status']
+    filter_fields = ['status','drive__hospital__code','drive_inventory__medicine__name','drive__date']
+    search_fields = ['patient__first_name','patient__uhid_number','drive__description']
     
     def get_permissions(self):
 
