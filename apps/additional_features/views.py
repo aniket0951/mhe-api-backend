@@ -34,7 +34,7 @@ from apps.patients.exceptions import InvalidEmailOTPException, OTPExpiredExcepti
 from apps.patients.constants import PatientsConstants
 
 OTP_LENGTH = settings.OTP_LENGTH
-logger = logging.getLogger("additional_features")
+logger = logging.getLogger("django")
 
 class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
     queryset = StaticInstructions.objects.all()
@@ -89,7 +89,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     def get_queryset(self):
 
         qs = super().get_queryset()
-
+        logger.info("***********DATA")
         admin_object = manipal_admin_object(self.request)
         if admin_object:
             pass
@@ -97,7 +97,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         code = self.request.query_params.get('code')
         if patient_user_object(self.request):
             AdditionalFeaturesUtil.validate_drive_code(code)
-
+        
         return qs
     
     def perform_create(self, serializer):
