@@ -5,7 +5,8 @@
         "fields": {
             "created_at": "2021-06-10T17:47:24.893Z",
             "updated_at": "2021-06-10T17:47:24.893Z",
-            "name": "Service"
+            "name": "Service",
+            "code": "service"
         }
     },
     {
@@ -14,7 +15,8 @@
         "fields": {
             "created_at": "2021-06-10T17:47:24.893Z",
             "updated_at": "2021-06-10T17:47:24.893Z",
-            "name": "Registration"
+            "name": "Registration",
+            "code": "registration"
         }
     }
 ]

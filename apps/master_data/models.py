@@ -409,6 +409,14 @@ class Medicine(MyBaseModel):
                         null=False
                     )
     
+    code = models.SlugField(
+                        max_length=20,
+                        unique=True,
+                        blank=False,
+                        null=False,
+                        default='medicine'
+                    )
+    
     additional_details = JSONField()
     
 class Billing(MyBaseModel):
@@ -419,4 +427,13 @@ class Billing(MyBaseModel):
                         blank=False,
                         null=False
                     )
+   
+    code = models.SlugField(
+                        max_length=20,
+                        unique=True,
+                        blank=False,
+                        null=False,
+                        default='bill'
+                    ) 
+    
     
