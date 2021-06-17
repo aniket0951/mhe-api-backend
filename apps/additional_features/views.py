@@ -264,8 +264,8 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
-    filter_fields = ['status','drive__hospital__code','drive_inventory__medicine__name','drive__date']
-    search_fields = ['patient__first_name','patient__uhid_number','drive__description']
+    filter_fields = ['status','drive__hospital__code','drive_inventory__medicine__name','drive__date','drive__id','drive__code']
+    search_fields = ['patient__first_name','patient__uhid_number','drive__description','drive__code']
     
     def get_permissions(self):
 

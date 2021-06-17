@@ -5,7 +5,9 @@ import logging
 from utils.utils import generate_pre_signed_url, manipal_admin_object, patient_user_object
 from utils.serializers import DynamicFieldsModelSerializer
 from .models import Drive, DriveBilling, DriveBooking, DriveInventory, StaticInstructions
-        
+from apps.patients.serializers import PatientSerializer,FamilyMemberSerializer
+from apps.payments.serializers import PaymentSerializer
+
 logger = logging.getLogger('django')
 
 
@@ -78,7 +80,7 @@ class DriveInventorySerializer(DynamicFieldsModelSerializer):
             if instance.medicine:
                 response_object['medicine'] = MedicineSerializer(instance.medicine).data
         except Exception as error:
-            logger.info("Exception in DriveInventorySerializer: %s"%(str(error)))
+            logger.info("Exception in DriveInventorySerializer -> to_representation: %s"%(str(error)))
         return response_object
             
 class DriveBillingSerializer(DynamicFieldsModelSerializer):
@@ -87,9 +89,29 @@ class DriveBillingSerializer(DynamicFieldsModelSerializer):
         exclude = ('created_at', 'updated_at',)
         
 class DriveBookingSerializer(DynamicFieldsModelSerializer):
+
     class Meta:
         model = DriveBooking
         exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        try:
+            
+            if instance.drive:
+                response_object['drive'] = DriveSerializer(instance.drive).data
+            if instance.drive_inventory:
+                response_object['drive_inventory'] = DriveInventorySerializer(instance.drive_inventory).data
+            if instance.patient:
+                response_object['patient'] = PatientSerializer(instance.patient).data
+            if instance.family_member:
+                response_object['family_member'] = FamilyMemberSerializer(instance.family_member).data
+            if instance.payment:
+                response_object['payment'] = PaymentSerializer(instance.payment).data
+
+        except Exception as error:
+            logger.info("Exception in DriveBookingSerializer -> to_representation: %s"%(str(error)))
+        return response_object
         
 class StaticInstructionsSerializer(DynamicFieldsModelSerializer):
     class Meta:

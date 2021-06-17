@@ -230,6 +230,12 @@ class DriveBooking(MyBaseModel):
                         default='pending'
                         )
 
+    dose = models.CharField(
+                        max_length=8,
+                        blank=True,
+                        null=True
+                    )
+
 class StaticInstructions(MyBaseModel):
     
     title = models.CharField(
