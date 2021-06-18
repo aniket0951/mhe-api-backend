@@ -445,7 +445,7 @@ class PaymentUtils:
 
         drive_billing_ids = DriveBilling.objects.filter(drive__id=drive_instance.id)
         for drive_billing_id  in drive_billing_ids:
-            if drive_billing_id.billing.name!="Registration" or is_registration_payment:
+            if drive_billing_id.billing.code!="registration" or is_registration_payment:
                 total_amount += drive_billing_id.price
         return total_amount
     

@@ -1,4 +1,5 @@
 import os
+import uuid
 from django.contrib.gis.geos import Point
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
@@ -410,11 +411,10 @@ class Medicine(MyBaseModel):
                     )
     
     code = models.SlugField(
-                        max_length=20,
-                        unique=True,
+                        max_length=50,
                         blank=False,
                         null=False,
-                        default='medicine'
+                        default=str(uuid.uuid4)
                     )
     
     additional_details = JSONField()
@@ -429,11 +429,10 @@ class Billing(MyBaseModel):
                     )
    
     code = models.SlugField(
-                        max_length=20,
-                        unique=True,
+                        max_length=50,
                         blank=False,
                         null=False,
-                        default='bill'
+                        default=str(uuid.uuid4)
                     ) 
     
     
