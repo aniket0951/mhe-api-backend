@@ -414,7 +414,7 @@ class Medicine(MyBaseModel):
                         max_length=50,
                         blank=False,
                         null=False,
-                        default=str(uuid.uuid4)
+                        default=uuid.uuid4
                     )
     
     additional_details = JSONField()
@@ -432,7 +432,7 @@ class Billing(MyBaseModel):
                         max_length=50,
                         blank=False,
                         null=False,
-                        default=str(uuid.uuid4)
+                        default=uuid.uuid4
                     ) 
     
     

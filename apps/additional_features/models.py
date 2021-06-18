@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,date
 from django.db.models.deletion import PROTECT
 from django.db.models.expressions import F
 from apps.payments.models import Payment
@@ -58,7 +58,7 @@ class Drive(MyBaseModel):
                     )
     
     date = models.DateField(
-                        auto_now=True,
+                        default=date.today,
                         blank=False,
                         null=False,
                     )
