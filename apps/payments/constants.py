@@ -6,6 +6,7 @@ class PaymentConstants:
     URL_CONSULTATION_CHARGES =  '/api/master_data/consultation_charges'
     URL_HEALTH_PACKAGE_PRICE = '/api/health_packages/health_package_price'
     URL_OP_BILL_DETAILS = '/api/payments/op_bill_details'
+    URL_GET_ITEM_PRICE = '/api/additional_features/item_price'
 
     APPLICATION_JSON = "application/json"
 
@@ -28,7 +29,7 @@ class PaymentConstants:
     MANIPAL_VC_CONS_CHARGES = "VCConsCharges"
     MANIPAL_PR_CONS_CHARGES = "PRConsCharges"
 
-    ERROR_MESSAGE_PRICE_UPDATED = "Price is Updated"
+    ERROR_MESSAGE_PRICE_UPDATED = "Price is not as per the expected amount."
     ERROR_MESSAGE_PAYMENT_PENDING = "Please complete the payment first!"
 
     BILL_INFORMATION_RETURNED = "Returned Bill Information Successfully"
@@ -40,6 +41,7 @@ class PaymentConstants:
     RAZORPAY_UHID_PURCHASE_DESCRIPTION = "Payment transaction for UHID purchase"
     RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION = "Payment transaction for OP BILL"
     RAZORPAY_IP_DEPOSIT_PAYMENT_DESCRIPTION = "Payment transaction for OP BILL"
+    RAZORPAY_DRIVE_BOOKING_PAYMENT_DESCRIPTION = "Payment transaction for drive booking"
 
     RAZORPAY_PAYMENT_STATUS_CREATED = "created"
     RAZORPAY_PAYMENT_STATUS_PAID = "paid"

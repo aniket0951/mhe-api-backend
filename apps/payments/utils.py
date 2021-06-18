@@ -1,3 +1,4 @@
+from apps.additional_features.models import Drive, DriveBilling, DriveBooking, DriveInventory
 from apps.doctors.serializers import DoctorChargesSerializer
 import time
 import json
@@ -87,6 +88,17 @@ class PaymentUtils:
         if not appointment_instance:
             raise ValidationError("Appointment is not available")
         return appointment_instance
+
+    @staticmethod
+    def get_drive_booking_instance(drive_booking):
+        if not drive_booking:
+            raise ValidationError("Please provide drive booking id!")
+        try:
+            return DriveBooking.objects.get(id=drive_booking)
+        except Exception as e:
+            logger.debug("Exception in PaymentUtils -> get_drive_booking_instance : %s"%(str(e)))
+            raise ValidationError("Drive booking is not available")
+        
 
     @staticmethod
     def get_health_package_appointment(appointment):
@@ -318,6 +330,14 @@ class PaymentUtils:
         param["token"]["package_code"] = PaymentConstants.APPOINTMENT_PACKAGE_CODE
         param["token"]["transaction_type"] = PaymentConstants.APPOINTMENT_TRANSACTION_TYPE
         return param
+    
+    @staticmethod
+    def set_param_for_drive_booking(param,drive):
+        if "token" not in param:
+            param["token"] = {}
+        param["token"]["drive_id"] = drive
+        param["token"]["transaction_type"] = PaymentConstants.APPOINTMENT_TRANSACTION_TYPE
+        return param
 
     @staticmethod
     def set_payment_data_for_appointment(request,param,appointment_instance,hospital):
@@ -330,6 +350,18 @@ class PaymentUtils:
         if appointment_instance.family_member:
             payment_data["payment_done_for_patient"] = None
             payment_data["payment_done_for_family_member"] = appointment_instance.family_member.id
+        return payment_data
+    
+    @staticmethod
+    def set_payment_data_for_drive_booking(request,param,drive_instance,hospital):
+        payment_data = {}
+        payment_data["processing_id"] = param["token"]["processing_id"]
+        payment_data["patient"] = request.user.id
+        payment_data["payment_done_for_patient"] = drive_instance.patient.id
+        payment_data["location"] = hospital.id
+        if drive_instance.family_member:
+            payment_data["payment_done_for_patient"] = None
+            payment_data["payment_done_for_family_member"] = drive_instance.family_member.id
         return payment_data
 
     @staticmethod
@@ -381,6 +413,50 @@ class PaymentUtils:
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
+    @staticmethod
+    def fetch_item_price(drive_instance,drive_inventory_instance,location_code):
+        response_item_price = client.post(
+                                        PaymentConstants.URL_GET_ITEM_PRICE,
+                                        json.dumps({
+                                            'location_code': location_code, 
+                                            'item_code': drive_inventory_instance.mh_item_code, 
+                                            'order_date': drive_instance.date.strftime("%d/%m/%Y")
+                                        }), 
+                                        content_type=PaymentConstants.JSON_CONTENT_TYPE
+                                    )
+        item_price = None
+        if  response_item_price and \
+            response_item_price.get("data") and \
+            response_item_price.get("data").get("OrderItemPrice") and \
+            response_item_price.get("data").get("OrderItemPrice")[0] and \
+            "ItemPrice" in response_item_price.get("data").get("OrderItemPrice")[0]:
+            item_price = response_item_price.get("data").get("OrderItemPrice")[0].get("ItemPrice")
+        
+        if item_price is None:
+            raise ValidationError("Could not fetch item price.")
+        
+        return item_price
+
+    @staticmethod
+    def calculate_amount_for_drive(drive_instance,drive_inventory_instance,location_code,is_registration_payment):
+        total_amount = 0
+        item_price = PaymentUtils.fetch_item_price(drive_instance,drive_inventory_instance,location_code)
+        total_amount += item_price
+
+        drive_billing_ids = DriveBilling.objects.filter(drive__id=drive_instance.id)
+        for drive_billing_id  in drive_billing_ids:
+            if drive_billing_id.billing.name!="Registration" or is_registration_payment:
+                total_amount += drive_billing_id.price
+        return total_amount
+    
+    @staticmethod
+    def validate_order_amount_for_drive_booking(request,drive_booking_instance,location_code,param):
+        is_registration_payment =  request.data.get("registration_payment", False)
+        drive_instance = drive_booking_instance.drive
+        drive_inventory_instance = drive_booking_instance.drive_inventory
+        calculated_amount = PaymentUtils.calculate_amount_for_drive(drive_instance,drive_inventory_instance,location_code,is_registration_payment)
+        if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
+            raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
     @staticmethod
     def calculate_amount_based_on_appointment_mode(calculated_amount,response_doctor_charges,appointment_instance):
@@ -424,7 +500,23 @@ class PaymentUtils:
         payment_data["razor_order_id"] = order_id
         return param,payment_data
 
-
+    @staticmethod
+    def set_order_id_for_drive_booking(param,payment_data):
+        hospital_key = param["token"]["auth"]["key"]
+        hospital_secret = param["token"]["auth"].pop("secret")
+        amount = int(float(param["token"]["accounts"][0]["amount"]))
+        description = PaymentConstants.RAZORPAY_DRIVE_BOOKING_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
+        order_id = PaymentUtils.create_razorpay_order_id(
+                                    hospital_key=hospital_key,
+                                    hospital_secret=hospital_secret,
+                                    amount=amount,
+                                    description=description,
+                                    currency=currency
+                                )
+        param["token"]["order_id"] = order_id
+        payment_data["razor_order_id"] = order_id
+        return param,payment_data
 
 
 

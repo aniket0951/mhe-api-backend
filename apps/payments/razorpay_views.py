@@ -170,6 +170,43 @@ class RazorIPDepositPayment(APIView):
         payment.save()
         return Response(data=param, status=status.HTTP_200_OK)
 
+
+class RazorDrivePayment(APIView):
+    permission_classes = (IsPatientUser,)
+
+    def post(self, request, format=None):
+        param = get_payment_param_for_razorpay(request.data)
+
+        location_code = request.data.get("location_code", None)
+        drive_booking = request.data.get("drive_booking_id")
+        
+        registration_payment = request.data.get("registration_payment", False)
+
+        hospital = PaymentUtils.get_hospital_from_location_code(location_code)
+        drive_booking_instance = PaymentUtils.get_drive_booking_instance(drive_booking)
+        drive_instance = drive_booking_instance.drive
+
+        param = PaymentUtils.set_param_for_drive_booking(param,drive_instance.id)
+        payment_data = PaymentUtils.set_payment_data_for_drive_booking(request,param,drive_instance,hospital)
+        
+        if registration_payment:
+            payment_data["payment_for_uhid_creation"] = True
+
+        PaymentUtils.validate_order_amount_for_drive_booking(request,drive_booking_instance,location_code,param)
+        
+        param,payment_data = PaymentUtils.set_order_id_for_drive_booking(param,payment_data)
+
+        payment = PaymentSerializer(data=payment_data)
+        payment.is_valid(raise_exception=True)
+        payment_id = payment.save()
+
+        drive_instance.payment = payment_id.id
+        drive_instance.save()
+
+        return Response(data=param, status=status.HTTP_200_OK)
+
+
+
 class RazorPaymentResponse(APIView):
     permission_classes = (AllowAny,)
 
@@ -201,6 +238,7 @@ class RazorPaymentResponse(APIView):
             PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
             PaymentUtils.payment_update_for_health_package(payment_instance,payment_response)
+            
         except Exception as e:
             logger.error("Error while processing payment : %s"%str(e))
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)

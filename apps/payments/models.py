@@ -99,6 +99,8 @@ class Payment(MyBaseModel):
 
     payment_for_health_package = models.BooleanField(default=False)
 
+    payment_for_drive = models.BooleanField(default=False)
+
     episode_number = models.CharField(max_length=20,
                                       blank=True,
                                       null=True)
