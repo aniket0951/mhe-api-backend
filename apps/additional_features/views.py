@@ -89,11 +89,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     def get_queryset(self):
 
         qs = super().get_queryset()
-        logger.info("***********DATA")
-        admin_object = manipal_admin_object(self.request)
-        if admin_object:
-            pass
-
+        
         code = self.request.query_params.get('code')
         if patient_user_object(self.request):
             AdditionalFeaturesUtil.validate_drive_code(code)
@@ -178,7 +174,6 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     def validate_user(self, request):
 
         dob_date = None
-
         try:
             dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
         except Exception as e:
