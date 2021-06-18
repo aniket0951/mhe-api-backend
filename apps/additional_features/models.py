@@ -235,6 +235,8 @@ class DriveBooking(MyBaseModel):
                         blank=True,
                         null=True
                     )
+    
+    beneficiary_reference_id = models.CharField(max_length=30,null=True,blank=True)
 
 class StaticInstructions(MyBaseModel):
     
