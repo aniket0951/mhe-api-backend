@@ -905,8 +905,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
             check_max_otp_retries(user_obj)
 
-            message="You have been added as a family member on Manipal Hospital application by\
-            {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
+            message="You have been added as a family member on Manipal Hospital application by {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
                 ValidationUtil.refine_text_only(request_patient.first_name),
                 random_mobile_password, settings.OTP_EXPIRATION_TIME)
 
@@ -1171,8 +1170,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
 
         request_patient=patient_user_object(self.request)
 
-        message="You have been added as a family member on Manipal Hospital application by\
-            {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
+        message="You have been added as a family member on Manipal Hospital application by {}, OTP to activate your account is {}, this OTP will expire in {} seconds".format(
             ValidationUtil.refine_text_only(request_patient.first_name),
             random_password, settings.OTP_EXPIRATION_TIME)
 
