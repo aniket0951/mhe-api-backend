@@ -1,3 +1,4 @@
+from apps.appointments.views import CancelAndRefundView
 import hashlib
 import random
 import time
@@ -126,3 +127,21 @@ def send_feedback_received_mail(feedback_serializer,patient_instance):
             raise UnablToSendEmailException
     except Exception as e:
         logger.info("Exception while sending feedback email: %s"%str(e))
+
+def cancel_and_refund_appointment_view(instance):
+    param = dict()
+    param["app_id"] = instance.appointment_identifier
+    param["cancel_remark"] = instance.reason.reason
+    param["location_code"] = instance.hospital.code
+    if instance.payment_appointment.exists():
+        payment_instance = instance.payment_appointment.filter(status="Refunded").first()
+        if payment_instance and payment_instance.payment_refund.exists():
+            refund_instance = payment_instance.payment_refund.filter(status="success").first()
+            if refund_instance:
+                param["refund_status"] = "Y"
+                param["refund_trans_id"] = refund_instance.transaction_id
+                param["refund_amount"] = str((int(refund_instance.amount)))
+                param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
+                param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
+    request_param = cancel_and_refund_parameters(param)
+    return request_param

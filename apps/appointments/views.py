@@ -69,7 +69,7 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
-from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
+from .utils import cancel_and_refund_appointment_view, cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
 from .constants import AppointmentsConstants
 
 client = APIClient()
@@ -528,14 +528,14 @@ class CancelMyAppointment(ProxyView):
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
         status = data.pop("status", None)
-        instance = Appointment.objects.filter(
-            appointment_identifier=appointment_id).first()
+
+        instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
         if not instance:
             raise AppointmentDoesNotExistsValidationException
+
         other_reason = data.pop("other", None)
         request.data["location_code"] = instance.hospital.code
-        cancel_appointment = serializable_CancelAppointmentRequest(
-            **request.data)
+        cancel_appointment = serializable_CancelAppointmentRequest(**request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
         data["reason_id"] = reason_id
         data["status"] = status
@@ -553,40 +553,31 @@ class CancelMyAppointment(ProxyView):
             root.find("Message").text
             response_message = status
             if status == "SUCCESS":
+                
                 instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
                 if not instance:
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
+
                 if self.request.data.get("status"):
                     instance.status = self.request.data.get("status")
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.other_reason = self.request.data.get("other_reason")
                 instance.save()
-                refund_param = cancel_and_refund_parameters(
-                    {"appointment_identifier": instance.appointment_identifier})
+
+                refund_param = cancel_and_refund_parameters({"appointment_identifier": instance.appointment_identifier})
                 RazorRefundView.as_view()(refund_param)
-                param = dict()
-                param["app_id"] = instance.appointment_identifier
-                param["cancel_remark"] = instance.reason.reason
-                param["location_code"] = instance.hospital.code
-                if instance.payment_appointment.exists():
-                    payment_instance = instance.payment_appointment.filter(status="Refunded").first()
-                    if payment_instance and payment_instance.payment_refund.exists():
-                        refund_instance = payment_instance.payment_refund.filter(
-                            status="success").first()
-                        if refund_instance:
-                            param["refund_status"] = "Y"
-                            param["refund_trans_id"] = refund_instance.transaction_id
-                            param["refund_amount"] = str((int(refund_instance.amount)))
-                            param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
-                            param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
-                request_param = cancel_and_refund_parameters(param)
+
+                request_param = cancel_and_refund_appointment_view(instance)
                 CancelAndRefundView.as_view()(request_param)
+
                 success_status = True
-                return self.custom_success_response(message=response_message,
-                                                    success=success_status, data=None)
-        raise ValidationError(
-            "Could not process the request. PLease try again")
+                return self.custom_success_response(
+                                            message=response_message,
+                                            success=success_status, 
+                                            data=None
+                                        )
+        raise ValidationError("Could not process the request. PLease try again")
 
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):

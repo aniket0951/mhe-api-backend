@@ -124,6 +124,29 @@ class StringReportDetailsViewSet(custom_viewsets.CreateViewSet):
     create_success_message = "New string report is added successfully."
 
 
+def process_reports_sync(report_details,report_response):
+
+    for each_report_detail in report_details:
+        
+        if each_report_detail['ObxType'] == 'NM':
+            numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            NumericReportDetailsViewSet.as_view({'post': 'create'})(numeric_report_proxy_request)
+            continue
+
+        if each_report_detail['ObxType'] == 'ST':
+            string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            StringReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
+            continue
+
+        if each_report_detail['ObxType'] == 'TX':
+            text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            TextReportDetailsViewSet.as_view({'post': 'create'})(text_report_proxy_request)
+            continue
+
+        if each_report_detail['ObxType'] == 'FT':
+            string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
+            FreeTextReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
+
 class ReportsSyncAPIView(CreateAPIView):
     permission_classes = [AllowAny]
 
@@ -148,27 +171,7 @@ class ReportsSyncAPIView(CreateAPIView):
 
             if report_response.status_code == 201 and report_details and type(report_details) == list:
                 
-                for each_report_detail in report_details:
-        
-                    if each_report_detail['ObxType'] == 'NM':
-                        numeric_report_proxy_request = numeric_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-                        NumericReportDetailsViewSet.as_view({'post': 'create'})(numeric_report_proxy_request)
-                        continue
-
-                    if each_report_detail['ObxType'] == 'ST':
-                        string_report_proxy_request = string_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-                        StringReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
-                        continue
-
-                    if each_report_detail['ObxType'] == 'TX':
-                        text_report_proxy_request = text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-                        TextReportDetailsViewSet.as_view({'post': 'create'})(text_report_proxy_request)
-                        continue
-
-                    if each_report_detail['ObxType'] == 'FT':
-                        string_report_proxy_request = free_text_report_hanlder(report_detail=each_report_detail,report_id=report_response.data['data']['id'])
-                        FreeTextReportDetailsViewSet.as_view({'post': 'create'})(string_report_proxy_request)
-
+                process_reports_sync(report_details,report_response)
 
                 return Response({"data": None, "consumed": True},status=status.HTTP_201_CREATED)
 
