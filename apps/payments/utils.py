@@ -1,4 +1,4 @@
-from apps.additional_features.models import Drive, DriveBilling, DriveBooking, DriveInventory
+from apps.additional_features.models import DriveBilling, DriveBooking
 from apps.doctors.serializers import DoctorChargesSerializer
 import time
 import json
@@ -332,10 +332,10 @@ class PaymentUtils:
         return param
     
     @staticmethod
-    def set_param_for_drive_booking(param,drive):
+    def set_param_for_drive_booking(param,drive_id):
         if "token" not in param:
             param["token"] = {}
-        param["token"]["drive_id"] = drive
+        param["token"]["drive_id"] = drive_id
         param["token"]["transaction_type"] = PaymentConstants.APPOINTMENT_TRANSACTION_TYPE
         return param
 
@@ -353,15 +353,16 @@ class PaymentUtils:
         return payment_data
     
     @staticmethod
-    def set_payment_data_for_drive_booking(request,param,drive_instance,hospital):
+    def set_payment_data_for_drive_booking(request,param,drive_booking_instance,hospital):
         payment_data = {}
         payment_data["processing_id"] = param["token"]["processing_id"]
-        payment_data["patient"] = request.user.id
-        payment_data["payment_done_for_patient"] = drive_instance.patient.id
+        payment_data["patient"] = drive_booking_instance.patient
+        payment_data["payment_done_for_patient"] = drive_booking_instance.patient
+        payment_data["payment_for_drive"] = True
         payment_data["location"] = hospital.id
-        if drive_instance.family_member:
+        if drive_booking_instance.family_member:
             payment_data["payment_done_for_patient"] = None
-            payment_data["payment_done_for_family_member"] = drive_instance.family_member.id
+            payment_data["payment_done_for_family_member"] = drive_booking_instance.family_member
         return payment_data
 
     @staticmethod
@@ -415,7 +416,7 @@ class PaymentUtils:
 
     @staticmethod
     def fetch_item_price(drive_instance,drive_inventory_instance,location_code):
-        response_item_price = client.post(
+        response_item_price_response = client.post(
                                         PaymentConstants.URL_GET_ITEM_PRICE,
                                         json.dumps({
                                             'location_code': location_code, 
@@ -425,6 +426,7 @@ class PaymentUtils:
                                         content_type=PaymentConstants.JSON_CONTENT_TYPE
                                     )
         item_price = None
+        response_item_price = response_item_price_response.data
         if  response_item_price and \
             response_item_price.get("data") and \
             response_item_price.get("data").get("OrderItemPrice") and \
@@ -455,6 +457,7 @@ class PaymentUtils:
         drive_instance = drive_booking_instance.drive
         drive_inventory_instance = drive_booking_instance.drive_inventory
         calculated_amount = PaymentUtils.calculate_amount_for_drive(drive_instance,drive_inventory_instance,location_code,is_registration_payment)
+        
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 

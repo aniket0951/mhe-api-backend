@@ -7,7 +7,6 @@ from datetime import date, datetime, timedelta
 
 import requests
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -38,9 +37,8 @@ from proxy.custom_serializables import CheckAppointmentPaymentStatus as serializ
 from proxy.custom_serializables import DrivePaymentStatus as serializable_DrivePaymentStatus
 
 from rest_framework import filters, status
-from rest_framework.decorators import (api_view, parser_classes,permission_classes)
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIClient
@@ -49,12 +47,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from utils import custom_viewsets
 from utils.utils import manipal_admin_object
-from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
+from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
 from utils.payment_parameter_generator import get_payment_param
 from utils.refund_parameter_generator import get_refund_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
-from .models import Payment, PaymentReceipts, PaymentRefund
+from .models import Payment, PaymentReceipts
 from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer, PaymentSerializer)
 
 logger = logging.getLogger('django')
@@ -924,7 +922,7 @@ class CheckAppointmentPaymentStatusView(ProxyView):
                             )
 
 class DriveRegistrationPaymentStatusView(ProxyView):
-    permission_classes = [AllowAny]
+    permission_classes = [InternalAPICall]
     source = 'SaveVaccineRegistration'
 
     def get_request_data(self, request):

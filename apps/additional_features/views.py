@@ -1,3 +1,5 @@
+from apps.appointments.utils import cancel_and_refund_parameters
+from apps.payments.razorpay_views import RazorDrivePayment
 from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
 from apps.patients.serializers import PatientSerializer
 import re
@@ -7,7 +9,7 @@ import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import  calculate_age, manipal_admin_object, patient_user_object
+from utils.utils import  calculate_age, patient_user_object
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
 from .models import Drive,  DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
@@ -22,6 +24,7 @@ from ratelimit.decorators import ratelimit
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
 from django.db.models import Q
 
@@ -200,7 +203,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         return Response(data, status=status.HTTP_200_OK)
 
 class DriveItemCodePriceView(ProxyView):
-    permission_classes = [IsManipalAdminUser]
+    permission_classes = [AllowAny,]
     source = 'OPItemPrice'
 
     def get_request_data(self, request):
@@ -283,9 +286,16 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         return super().get_permissions()
     
     def perform_create(self, serializer):
-        drive_id = self.request.data.get('drive')
-        drive_inventory = self.request.data.get('drive_inventory')
-        
+        drive_id,drive_inventory,amount = None,None,None
+
+        try:
+            drive_id = self.request.data['drive']
+            drive_inventory = self.request.data['drive_inventory']
+            amount = self.request.data['amount']
+        except Exception as e:
+            logger.error("Error while booking an appointment : %s"%(str(e)))
+            raise ValidationError("Required field : %s"%str(e))
+
         drive_inventories_consumed = DriveBooking.objects.filter(
                                             Q(drive_inventory=drive_inventory) &
                                             Q(drive__id=drive_id) &
@@ -297,5 +307,26 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         if drive_inventories_consumed >= item_quantity:
             raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
         
-        serializer.save()
-                                    
+        drive_booking = serializer.save()
+
+        validate_payment_request_data = {
+            "location_code":drive_booking.drive.hospital.code,
+            "drive_booking_id":str(drive_booking.id),
+            "registration_payment":self.request.data.get('registration_payment',False),
+            "account":{
+                "amount":amount,
+                "email":""
+            }
+        }
+
+        logger.info("Request Data in DriveBookingViewSet -> perform_create : %s"%(str(validate_payment_request_data)))
+
+        validate_payment_response = RazorDrivePayment.as_view()(cancel_and_refund_parameters(validate_payment_request_data))
+
+        logger.info("Response Data in DriveBookingViewSet -> perform_create : %s"%(str(validate_payment_response.data)))
+
+        if validate_payment_response.status_code!=200:
+            drive_booking.delete()
+            raise ValidationError("Could not book drive for you.")
+
+        print("validate_payment_response.get(\"payment_id\")",validate_payment_response.data.get("payment_id"))

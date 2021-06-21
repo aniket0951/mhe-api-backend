@@ -1,21 +1,9 @@
 
-import json
 import logging
-import xml.etree.ElementTree as ET
-from datetime import date, datetime, timedelta
-from random import randint
 
-import requests
-from django.conf import settings
-from django.db.models import Q
-from django.http import HttpResponseRedirect
-
-from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.appointments.models import Appointment
 from apps.appointments.serializers import (HealthPackageAppointmentDetailSerializer,)
 from apps.appointments.utils import cancel_and_refund_parameters
-from apps.manipal_admin.models import ManipalAdmin
-from apps.patients.models import Patient
-from django_filters.rest_framework import DjangoFilterBackend
 
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_serializables import EpisodeItems as serializable_EpisodeItems
@@ -34,7 +22,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import APIException
 from utils import custom_viewsets
 
-from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
+from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
 from utils.custom_sms import send_sms
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
@@ -172,7 +160,7 @@ class RazorIPDepositPayment(APIView):
 
 
 class RazorDrivePayment(APIView):
-    permission_classes = (IsPatientUser,)
+    permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
         param = get_payment_param_for_razorpay(request.data)
@@ -184,10 +172,9 @@ class RazorDrivePayment(APIView):
 
         hospital = PaymentUtils.get_hospital_from_location_code(location_code)
         drive_booking_instance = PaymentUtils.get_drive_booking_instance(drive_booking)
-        drive_instance = drive_booking_instance.drive
-
-        param = PaymentUtils.set_param_for_drive_booking(param,drive_instance.id)
-        payment_data = PaymentUtils.set_payment_data_for_drive_booking(request,param,drive_instance,hospital)
+        
+        param = PaymentUtils.set_param_for_drive_booking(param,drive_booking_instance.drive.id)
+        payment_data = PaymentUtils.set_payment_data_for_drive_booking(request,param,drive_booking_instance,hospital)
         
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
@@ -200,8 +187,10 @@ class RazorDrivePayment(APIView):
         payment.is_valid(raise_exception=True)
         payment_id = payment.save()
 
-        drive_instance.payment = payment_id.id
-        drive_instance.save()
+        drive_booking_instance.payment = payment_id
+        drive_booking_instance.save()
+
+        param["payment_id"] = payment_id.id
 
         return Response(data=param, status=status.HTTP_200_OK)
 
@@ -266,8 +255,7 @@ class RazorRefundView(APIView):
                 razor_payment_data = PaymentUtils.get_razorpay_payment_data_from_order_id(param.get("key"),param.get("secret"),payment_instance.razor_order_id)
                 razor_payment_id = razor_payment_data.get("id")
             else:
-                refund_param = cancel_and_refund_parameters(
-                    {"appointment_identifier": appointment_identifier})
+                refund_param = cancel_and_refund_parameters({"appointment_identifier": appointment_identifier})
                 RefundView.as_view()(refund_param)
                 return Response(status=status.HTTP_200_OK)
             
