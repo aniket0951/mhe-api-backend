@@ -404,6 +404,33 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+
+    def validate_request_data_for_generate_login_otp(self,mobile,facebook_id,google_id,apple_id,sign_up):
+        if not (mobile or facebook_id or google_id or apple_id):
+            raise PatientDoesNotExistsValidationException
+
+        if mobile:
+            request_patient = self.get_queryset().filter(mobile=mobile).first()
+            if not request_patient:
+                raise PatientMobileDoesNotExistsValidationException
+
+            check_max_otp_retries_from_mobile_number(mobile)
+
+        if facebook_id:
+            request_patient = self.get_queryset().filter(facebook_id=facebook_id).first()
+        if google_id:
+            request_patient = self.get_queryset().filter(google_id=google_id).first()
+        if apple_id:
+            request_patient = self.get_queryset().filter(apple_id=apple_id).first()
+
+        if not request_patient:
+            raise PatientDoesNotExistsValidationException
+
+        if request_patient.mobile_verified == False and not sign_up:
+            raise PatientMobileDoesNotExistsValidationException
+        
+        return request_patient
+
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_login_otp(self, request):
@@ -425,32 +452,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         apple_email = request.data.get("apple_email")
         sign_up = request.data.get("sign_up")
 
-        if not (mobile or facebook_id or google_id or apple_id):
-            raise PatientDoesNotExistsValidationException
-
-        if mobile:
-            request_patient = self.get_queryset().filter(
-                mobile=mobile).first()
-            if not request_patient:
-                raise PatientMobileDoesNotExistsValidationException
-
-            check_max_otp_retries_from_mobile_number(mobile)
-
-        if facebook_id:
-            request_patient = self.get_queryset().filter(
-                facebook_id=facebook_id).first()
-        if google_id:
-            request_patient = self.get_queryset().filter(
-                google_id=google_id).first()
-        if apple_id:
-            request_patient = self.get_queryset().filter(
-                apple_id=apple_id).first()
-
-        if not request_patient:
-            raise PatientDoesNotExistsValidationException
-
-        if request_patient.mobile_verified == False and not sign_up:
-            raise PatientMobileDoesNotExistsValidationException
+        request_patient = self.validate_request_data_for_generate_login_otp(mobile,facebook_id,google_id,apple_id,sign_up)    
 
         if (facebook_id or google_id or apple_id):
 
