@@ -9,11 +9,9 @@ from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import render
 
-import rest_framework
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.exceptions import FeatureNotAvailableException
-from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.exceptions import (
     AadharMandatoryValidationException, BeneficiaryReferenceIDValidationException, DepartmentDoesNotExistsValidationException, DobMandatoryValidationException,
     HospitalDoesNotExistsValidationException, InvalidDobFormatValidationException, InvalidDobValidationException)
@@ -43,10 +41,8 @@ from proxy.custom_serializables import \
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 
-from rest_framework import filters, generics, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import filters, status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
@@ -69,7 +65,7 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
-from .utils import cancel_and_refund_appointment_view, cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
+from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
 from .constants import AppointmentsConstants
 
 client = APIClient()
@@ -518,6 +514,23 @@ class CreateMyAppointment(ProxyView):
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
 
+def cancel_and_refund_appointment_view(instance):
+    param = dict()
+    param["app_id"] = instance.appointment_identifier
+    param["cancel_remark"] = instance.reason.reason
+    param["location_code"] = instance.hospital.code
+    if instance.payment_appointment.exists():
+        payment_instance = instance.payment_appointment.filter(status="Refunded").first()
+        if payment_instance and payment_instance.payment_refund.exists():
+            refund_instance = payment_instance.payment_refund.filter(status="success").first()
+            if refund_instance:
+                param["refund_status"] = "Y"
+                param["refund_trans_id"] = refund_instance.transaction_id
+                param["refund_amount"] = str((int(refund_instance.amount)))
+                param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
+                param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
+    request_param = cancel_and_refund_parameters(param)
+    return request_param
 
 class CancelMyAppointment(ProxyView):
     source = 'cancelAppointment'
