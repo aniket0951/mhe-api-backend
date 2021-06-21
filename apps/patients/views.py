@@ -4,7 +4,6 @@ import hashlib
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from django.contrib.gis.geos import Point
 from django.utils.crypto import get_random_string
@@ -13,7 +12,7 @@ from apps.master_data.models import Company
 from apps.master_data.views import ValidateMobileView, ValidateUHIDView
 from apps.dashboard.utils import DashboardUtils
 from apps.patient_registration.models import Relation
-from axes.models import AccessAttempt
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
 from rest_framework.decorators import action
@@ -55,7 +54,7 @@ from .serializers import (
                     PatientAddressSerializer,
                     PatientSerializer, FamilyMemberCorporateHistorySerializer
                 )
-from .utils import check_max_otp_retries, check_max_otp_retries_from_mobile_number, covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid, link_uhid_from_uhid_number, make_family_member_corporate, process_is_email_to_be_verified, validate_uhid_family_members, validate_uhid_patients
+from .utils import check_max_otp_retries, check_max_otp_retries_from_mobile_number, covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid, link_uhid_from_uhid_number, make_family_member_corporate, process_is_email_to_be_verified, save_authentication_type, validate_access_attempts, validate_uhid_family_members, validate_uhid_patients
 from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress, FamilyMemberCorporateHistory
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
@@ -238,42 +237,13 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         apple_email = self.request.data.get("apple_email")
         email = self.request.data.get("email")
 
-        if not (username and password):
-            raise InvalidCredentialsException
-
-        authenticated_patient = authenticate(request=request, username=username,
-                                             password=password)
-
-        access_log = AccessAttempt.objects.filter(username=username).first()
-        if not authenticated_patient:
-            if access_log:
-                attempt = access_log.failures_since_start
-                if attempt < 3:
-                    message = settings.WRONG_OTP_ATTEMPT_ERROR.format(attempt)
-                    raise ValidationError(message)
-                if attempt >= 3:
-                    message = settings.MAX_WRONG_OTP_ATTEMPT_ERROR
-                    raise ValidationError(message)
-            raise InvalidCredentialsException
-
-        if access_log:
-            access_log.delete()
+        authenticated_patient = validate_access_attempts(username,password,request)
 
         if datetime.now().timestamp() > authenticated_patient.otp_expiration_time.timestamp():
             raise OTPExpiredException
         message = "Login successful!"
 
-        if authenticated_patient.mobile_verified:
-            if email:
-                authenticated_patient.email = email
-            if facebook_id:
-                authenticated_patient.facebook_id = facebook_id
-            if google_id:
-                authenticated_patient.google_id = google_id
-            if apple_id:
-                authenticated_patient.apple_id = apple_id
-                authenticated_patient.apple_email = apple_email
-            authenticated_patient.save()
+        save_authentication_type(authenticated_patient,email,facebook_id,google_id,apple_id,apple_email)
 
         update_last_login(None, authenticated_patient)
         if not authenticated_patient.mobile_verified:
