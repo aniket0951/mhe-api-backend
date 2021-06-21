@@ -35,6 +35,7 @@ from proxy.custom_serializables import UHIDPaymentUpdate as serializable_UHIDPay
 from proxy.custom_serializables import OPBillingPaymentUpdate as serializable_OPBillingPaymentUpdate
 from proxy.custom_serializables import IPDepositPaymentUpdate as serializable_IPDepositPaymentUpdate
 from proxy.custom_serializables import CheckAppointmentPaymentStatus as serializable_CheckAppointmentPaymentStatus
+from proxy.custom_serializables import DrivePaymentStatus as serializable_DrivePaymentStatus
 
 from rest_framework import filters, status
 from rest_framework.decorators import (api_view, parser_classes,permission_classes)
@@ -892,5 +893,31 @@ class CheckAppointmentPaymentStatusView(ProxyView):
         return self.custom_success_response(
                                 message="checkAppPaymentStatus",
                                 success=True,
+                                data=data
+                            )
+
+class DriveRegistrationPaymentStatusView(ProxyView):
+    permission_classes = [AllowAny]
+    source = 'SaveVaccineRegistration'
+
+    def get_request_data(self, request):
+        request_xml = serializable_DrivePaymentStatus(request.data)
+        request_data = custom_serializer().serialize(request_xml, 'XML')
+        return request_data
+
+    def post(self, request, *args, **kwargs):
+        return self.proxy(request, *args, **kwargs)
+
+    def parse_proxy_response(self, response):
+        root = ET.fromstring(response.content)
+        status = root.find("Status").text
+        message = root.find("Message").text
+        data = dict()
+        if status == "Success":
+            drive_payment_response = root.find("VacRegistrationResponse").text
+            data = json.loads(drive_payment_response)
+        return self.custom_success_response(
+                                message=message,
+                                success=status,
                                 data=data
                             )
