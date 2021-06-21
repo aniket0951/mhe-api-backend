@@ -1,3 +1,6 @@
+
+from django.contrib.auth import authenticate
+from apps.patients.exceptions import InvalidCredentialsException
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from apps.patients.serializers import FamilyMemberCorporateHistorySerializer
@@ -6,6 +9,7 @@ from apps.master_data.models import Hospital
 from apps.master_data.views import LinkUhidView, ValidateOTPView
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
+from axes.models import AccessAttempt
 from datetime import datetime, timedelta
 from .constants import PatientsConstants
 
@@ -148,3 +152,39 @@ def process_is_email_to_be_verified(serializer,family_member_object,request_pati
         family_member_object.email_otp_expiration_time=otp_expiration_time
         family_member_object.save()
     return family_member_object
+
+def save_authentication_type(authenticated_patient,email,facebook_id,google_id,apple_id,apple_email):
+    if authenticated_patient.mobile_verified:
+        if email:
+            authenticated_patient.email = email
+        if facebook_id:
+            authenticated_patient.facebook_id = facebook_id
+        if google_id:
+            authenticated_patient.google_id = google_id
+        if apple_id:
+            authenticated_patient.apple_id = apple_id
+            authenticated_patient.apple_email = apple_email
+        authenticated_patient.save()
+
+def validate_access_attempts(username,password,request):
+    if not (username and password):
+        raise InvalidCredentialsException
+
+    authenticated_patient = authenticate(request=request, username=username,password=password)
+
+    access_log = AccessAttempt.objects.filter(username=username).first()
+    if not authenticated_patient:
+        if access_log:
+            attempt = access_log.failures_since_start
+            if attempt < 3:
+                message = settings.WRONG_OTP_ATTEMPT_ERROR.format(attempt)
+                raise ValidationError(message)
+            if attempt >= 3:
+                message = settings.MAX_WRONG_OTP_ATTEMPT_ERROR
+                raise ValidationError(message)
+        raise InvalidCredentialsException
+
+    if access_log:
+        access_log.delete()
+    
+    return authenticated_patient

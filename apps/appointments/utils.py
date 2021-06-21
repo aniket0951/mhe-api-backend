@@ -126,3 +126,4 @@ def send_feedback_received_mail(feedback_serializer,patient_instance):
             raise UnablToSendEmailException
     except Exception as e:
         logger.info("Exception while sending feedback email: %s"%str(e))
+

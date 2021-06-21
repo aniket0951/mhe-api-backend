@@ -18,6 +18,7 @@ from apps.patients.models import FamilyMember, Patient
 from apps.payments.models import Payment
 from rest_framework.serializers import ValidationError
 logger = logging.getLogger('django')
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 def generate_pre_signed_url(image_url):
     try:
@@ -189,13 +190,13 @@ def check_code(mobile):
     return result
 
 def start_end_datetime_comparision(start_date,end_date):
-    start_date_time = datetime.strptime(start_date,'%Y-%m-%dT%H:%M:%S')
-    end_date_time = datetime.strptime(end_date,'%Y-%m-%dT%H:%M:%S')
+    start_date_time = datetime.strptime(start_date,DATETIME_FORMAT)
+    end_date_time = datetime.strptime(end_date,DATETIME_FORMAT)
     if start_date_time > end_date_time:
         raise ValidationError("Start date time should not be greater than End date time")
 
 def end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_date):
-    end_date_time = datetime.strptime(booking_end_time,'%Y-%m-%dT%H:%M:%S')
+    end_date_time = datetime.strptime(booking_end_time,DATETIME_FORMAT)
     date_of_vaccination_date_time = datetime.strptime(date_of_vaccination_date,'%Y-%m-%d')
     if end_date_time.date()!=date_of_vaccination_date_time.date():
         raise ValidationError('End date should be the same as the vaccination date.')

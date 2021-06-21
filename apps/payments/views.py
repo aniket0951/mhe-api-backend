@@ -61,6 +61,40 @@ logger = logging.getLogger('django')
 client = APIClient()
 
 
+def prepare_params_and_payment_data(param,appointment,appointment_instance):
+    payment_data = {}
+    param["token"]["appointment_id"] = appointment
+    param["token"]["package_code"] = "NA"
+    payment_data["processing_id"] = param["token"]["processing_id"]
+    param["token"]["transaction_type"] = "APP"
+    payment_data["appointment"] = appointment_instance.id
+    
+    payment_data["payment_done_for_patient"] = appointment_instance.patient.id
+    if appointment_instance.family_member:
+        payment_data["payment_done_for_patient"] = None
+        payment_data["payment_done_for_family_member"] = appointment_instance.family_member.id
+
+    return param,payment_data    
+
+def validate_appointment_payment_amount(response_doctor_charges,appointment_instance,calculated_amount,param):
+    if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
+            
+        if appointment_instance.appointment_mode == "HV":
+            calculated_amount = calculated_amount + \
+                int(float(response_doctor_charges.data["data"]["OPDConsCharges"]))
+
+        if appointment_instance.appointment_mode == "VC":
+            calculated_amount = calculated_amount + \
+                int(float(response_doctor_charges.data["data"]["VCConsCharges"]))
+
+        if appointment_instance.appointment_mode == "PR":
+            calculated_amount = calculated_amount + \
+                int(float(response_doctor_charges.data["data"]["PRConsCharges"]))
+
+    if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
+        raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
+
+
 class AppointmentPayment(APIView):
     permission_classes = (IsPatientUser,)
 
@@ -73,55 +107,47 @@ class AppointmentPayment(APIView):
             raise HospitalDoesNotExistsValidationException
         appointment = request.data["appointment_id"]
         registration_payment = request.data.get("registration_payment", False)
-        appointment_instance = Appointment.objects.filter(
-            appointment_identifier=appointment).first()
+        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment).first()
         if not appointment_instance:
             raise ValidationError("Appointment is not available")
-        payment_data = {}
-        param["token"]["appointment_id"] = appointment
-        param["token"]["package_code"] = "NA"
-        payment_data["processing_id"] = param["token"]["processing_id"]
-        param["token"]["transaction_type"] = "APP"
-        payment_data["appointment"] = appointment_instance.id
+            
+        param,payment_data = prepare_params_and_payment_data(param,appointment,appointment_instance)
         payment_data["patient"] = request.user.id
-        payment_data["payment_done_for_patient"] = appointment_instance.patient.id
-        if appointment_instance.family_member:
-            payment_data["payment_done_for_patient"] = None
-            payment_data["payment_done_for_family_member"] = appointment_instance.family_member.id
+        payment_data["location"] = hospital.id
 
         calculated_amount = 0
-        payment_data["location"] = hospital.id
         uhid = appointment_instance.uhid
         order_date = appointment_instance.appointment_date.strftime("%d%m%Y")
         if registration_payment:
             uhid = "None"
             payment_data["payment_for_uhid_creation"] = True
-            response = client.post('/api/master_data/items_tariff_price',
-                                   json.dumps({'item_code': 'AREG001', 'location_code': location_code}), content_type=PaymentConstants.APPLICATION_JSON)
+            response = client.post(
+                            '/api/master_data/items_tariff_price',
+                            json.dumps({'item_code': 'AREG001', 'location_code': location_code}), 
+                            content_type=PaymentConstants.APPLICATION_JSON
+                        )
 
             if response.status_code == 200 and response.data["success"] == True:
                 calculated_amount += int(float(response.data["data"][0]["ItemPrice"]))
 
-        response_doctor_charges = client.post('/api/master_data/consultation_charges',
-                                              json.dumps({'location_code': location_code, 'specialty_code': appointment_instance.department.code, 'doctor_code': appointment_instance.doctor.code, "uhid":uhid, 'order_date': order_date}), content_type=PaymentConstants.APPLICATION_JSON)
+        response_doctor_charges = client.post(
+                                '/api/master_data/consultation_charges',
+                                json.dumps({
+                                    'location_code': location_code, 
+                                    'specialty_code': appointment_instance.department.code, 
+                                    'doctor_code': appointment_instance.doctor.code, 
+                                    "uhid":uhid, 
+                                    'order_date': order_date
+                                }), 
+                                content_type=PaymentConstants.APPLICATION_JSON
+                            )
 
-
-        if response_doctor_charges.status_code == 200 and response_doctor_charges.data["success"] == True:
-            
-            if appointment_instance.appointment_mode == "HV":
-                calculated_amount = calculated_amount + \
-                    int(float(response_doctor_charges.data["data"]["OPDConsCharges"]))
-
-            if appointment_instance.appointment_mode == "VC":
-                calculated_amount = calculated_amount + \
-                    int(float(response_doctor_charges.data["data"]["VCConsCharges"]))
-
-            if appointment_instance.appointment_mode == "PR":
-                calculated_amount = calculated_amount + \
-                    int(float(response_doctor_charges.data["data"]["PRConsCharges"]))
-
-        if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
-            raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
+        validate_appointment_payment_amount(
+                            response_doctor_charges,
+                            appointment_instance,
+                            calculated_amount,
+                            param
+                        )
 
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
@@ -782,18 +808,19 @@ class AppointmentPaymentView(ProxyView):
             if bill_detail and self.request.data:
                 app_id = self.request.data.get("app_id")
                 aap_list = ast.literal_eval(bill_detail)
-                if aap_list and len(aap_list)>0:
+                appointment_instance = Appointment.objects.filter(appointment_identifier=app_id).first()
+                if aap_list and len(aap_list)>0 and appointment_instance:
                     appointment_identifier = aap_list[0].get("AppointmentId")
-                    appointment_instance = Appointment.objects.filter(
-                        appointment_identifier=app_id).first()
-                    if appointment_instance:
-                        success_status = True
-                        appointment_instance.payment_status = "success"
-                        if appointment_identifier:
-                            appointment_instance.appointment_identifier = appointment_identifier
-                        appointment_instance.save()
-        return self.custom_success_response(message=message,
-                                            success=success_status, data=data)
+                    success_status = True
+                    appointment_instance.payment_status = "success"
+                    if appointment_identifier:
+                        appointment_instance.appointment_identifier = appointment_identifier
+                    appointment_instance.save()
+        return self.custom_success_response(
+                                        message=message,
+                                        success=success_status, 
+                                        data=data
+                                    )
 
 class UHIDPaymentView(ProxyView):
     permission_classes = [AllowAny]

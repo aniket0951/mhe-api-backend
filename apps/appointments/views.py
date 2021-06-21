@@ -9,11 +9,9 @@ from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import render
 
-import rest_framework
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.exceptions import FeatureNotAvailableException
-from apps.manipal_admin.models import ManipalAdmin
 from apps.master_data.exceptions import (
     AadharMandatoryValidationException, BeneficiaryReferenceIDValidationException, DepartmentDoesNotExistsValidationException, DobMandatoryValidationException,
     HospitalDoesNotExistsValidationException, InvalidDobFormatValidationException, InvalidDobValidationException)
@@ -43,10 +41,8 @@ from proxy.custom_serializables import \
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
 
-from rest_framework import filters, generics, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import filters, status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
@@ -233,6 +229,50 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                         )
                     ).filter(corporate_appointment=False)
 
+def validate_request_data_for_create_appointment(request,patient_id):
+    patient = Patient.objects.filter(id=patient_id).first()
+    
+    if not patient:
+        raise PatientDoesNotExistsValidationException
+
+    hospital = Hospital.objects.filter(id=request.data.pop("hospital_id")).first()
+    if not hospital:
+        raise HospitalDoesNotExistsValidationException
+
+    doctor = Doctor.objects.filter(id=request.data.pop("doctor_id")).first()
+    if not doctor:
+        raise DoctorDoesNotExistsValidationException
+
+    department = Department.objects.filter(id=request.data.pop("department_id")).first()
+    if not department:
+        raise DepartmentDoesNotExistsValidationException
+
+    hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
+    if not hospital_department:
+        raise DepartmentDoesNotExistsValidationException
+
+    return patient, hospital, doctor, department, hospital_department
+
+def validate_dob_for_covid_appointment(request):
+    dob_date = None
+    try:
+        dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
+    except Exception as e:
+        logger.error("Error parsing date of birth! %s"%(str(e)))
+        raise InvalidDobFormatValidationException
+    if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
+        raise InvalidDobValidationException
+
+def validate_request_data_for_covid_appointment(hospital_department,request):
+    if hospital_department.service in [settings.COVID_SERVICE]:
+        request.data['appointment_service'] = settings.COVID_SERVICE
+        if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
+            raise AadharMandatoryValidationException
+        if 'dob' not in request.data or not request.data.get('dob'):
+            raise DobMandatoryValidationException
+        if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
+            raise BeneficiaryReferenceIDValidationException
+        validate_dob_for_covid_appointment(request)
 
 class CreateMyAppointment(ProxyView):
     permission_classes = [IsPatientUser | InternalAPICall]
@@ -245,43 +285,11 @@ class CreateMyAppointment(ProxyView):
         amount = request.data.pop("amount", None)
         corporate = request.data.pop("corporate", None)
 
-        patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(id=family_member_id).first()
-        if not patient:
-            raise PatientDoesNotExistsValidationException
-
-        hospital = Hospital.objects.filter(id=request.data.pop("hospital_id")).first()
-        if not hospital:
-            raise HospitalDoesNotExistsValidationException
-
-        doctor = Doctor.objects.filter(id=request.data.pop("doctor_id")).first()
-        if not doctor:
-            raise DoctorDoesNotExistsValidationException
-
-        department = Department.objects.filter(id=request.data.pop("department_id")).first()
-        if not department:
-            raise DepartmentDoesNotExistsValidationException
-
-        hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
-        if not hospital_department:
-            raise DepartmentDoesNotExistsValidationException
-
-        if hospital_department.service in [settings.COVID_SERVICE]:
-            request.data['appointment_service'] = settings.COVID_SERVICE
-            if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
-                raise AadharMandatoryValidationException
-            if 'dob' not in request.data or not request.data.get('dob'):
-                raise DobMandatoryValidationException
-            if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
-                raise BeneficiaryReferenceIDValidationException
-            dob_date = None
-            try:
-                dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
-            except Exception as e:
-                logger.error("Error parsing date of birth! %s"%(str(e)))
-                raise InvalidDobFormatValidationException
-            if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
-                raise InvalidDobValidationException
+        
+        patient, hospital, doctor, department, hospital_department = validate_request_data_for_create_appointment(request,patient_id)
+        
+        validate_request_data_for_covid_appointment(hospital_department,request)        
 
         if family_member:
             user = family_member
@@ -518,6 +526,23 @@ class CreateMyAppointment(ProxyView):
         return self.custom_success_response(message=response_message,
                                             success=response_success, data=response_data)
 
+def cancel_and_refund_appointment_view(instance):
+    param = dict()
+    param["app_id"] = instance.appointment_identifier
+    param["cancel_remark"] = instance.reason.reason
+    param["location_code"] = instance.hospital.code
+    if instance.payment_appointment.exists():
+        payment_instance = instance.payment_appointment.filter(status="Refunded").first()
+        if payment_instance and payment_instance.payment_refund.exists():
+            refund_instance = payment_instance.payment_refund.filter(status="success").first()
+            if refund_instance:
+                param["refund_status"] = "Y"
+                param["refund_trans_id"] = refund_instance.transaction_id
+                param["refund_amount"] = str((int(refund_instance.amount)))
+                param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
+                param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
+    request_param = cancel_and_refund_parameters(param)
+    return request_param
 
 class CancelMyAppointment(ProxyView):
     source = 'cancelAppointment'
@@ -528,14 +553,14 @@ class CancelMyAppointment(ProxyView):
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
         status = data.pop("status", None)
-        instance = Appointment.objects.filter(
-            appointment_identifier=appointment_id).first()
+
+        instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
         if not instance:
             raise AppointmentDoesNotExistsValidationException
+
         other_reason = data.pop("other", None)
         request.data["location_code"] = instance.hospital.code
-        cancel_appointment = serializable_CancelAppointmentRequest(
-            **request.data)
+        cancel_appointment = serializable_CancelAppointmentRequest(**request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
         data["reason_id"] = reason_id
         data["status"] = status
@@ -553,40 +578,31 @@ class CancelMyAppointment(ProxyView):
             root.find("Message").text
             response_message = status
             if status == "SUCCESS":
+                
                 instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
                 if not instance:
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
+
                 if self.request.data.get("status"):
                     instance.status = self.request.data.get("status")
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.other_reason = self.request.data.get("other_reason")
                 instance.save()
-                refund_param = cancel_and_refund_parameters(
-                    {"appointment_identifier": instance.appointment_identifier})
+
+                refund_param = cancel_and_refund_parameters({"appointment_identifier": instance.appointment_identifier})
                 RazorRefundView.as_view()(refund_param)
-                param = dict()
-                param["app_id"] = instance.appointment_identifier
-                param["cancel_remark"] = instance.reason.reason
-                param["location_code"] = instance.hospital.code
-                if instance.payment_appointment.exists():
-                    payment_instance = instance.payment_appointment.filter(status="Refunded").first()
-                    if payment_instance and payment_instance.payment_refund.exists():
-                        refund_instance = payment_instance.payment_refund.filter(
-                            status="success").first()
-                        if refund_instance:
-                            param["refund_status"] = "Y"
-                            param["refund_trans_id"] = refund_instance.transaction_id
-                            param["refund_amount"] = str((int(refund_instance.amount)))
-                            param["refund_time"] = refund_instance.created_at.time().strftime("%H:%M")
-                            param["refund_date"] = refund_instance.created_at.date().strftime("%d/%m/%Y")
-                request_param = cancel_and_refund_parameters(param)
+
+                request_param = cancel_and_refund_appointment_view(instance)
                 CancelAndRefundView.as_view()(request_param)
+
                 success_status = True
-                return self.custom_success_response(message=response_message,
-                                                    success=success_status, data=None)
-        raise ValidationError(
-            "Could not process the request. PLease try again")
+                return self.custom_success_response(
+                                            message=response_message,
+                                            success=success_status, 
+                                            data=None
+                                        )
+        raise ValidationError("Could not process the request. PLease try again")
 
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
