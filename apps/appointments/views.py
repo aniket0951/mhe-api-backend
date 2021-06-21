@@ -229,6 +229,50 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                         )
                     ).filter(corporate_appointment=False)
 
+def validate_request_data_for_create_appointment(request,patient_id):
+    patient = Patient.objects.filter(id=patient_id).first()
+    
+    if not patient:
+        raise PatientDoesNotExistsValidationException
+
+    hospital = Hospital.objects.filter(id=request.data.pop("hospital_id")).first()
+    if not hospital:
+        raise HospitalDoesNotExistsValidationException
+
+    doctor = Doctor.objects.filter(id=request.data.pop("doctor_id")).first()
+    if not doctor:
+        raise DoctorDoesNotExistsValidationException
+
+    department = Department.objects.filter(id=request.data.pop("department_id")).first()
+    if not department:
+        raise DepartmentDoesNotExistsValidationException
+
+    hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
+    if not hospital_department:
+        raise DepartmentDoesNotExistsValidationException
+
+    return patient, hospital, doctor, department, hospital_department
+
+def validate_dob_for_covid_appointment(request):
+    dob_date = None
+    try:
+        dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
+    except Exception as e:
+        logger.error("Error parsing date of birth! %s"%(str(e)))
+        raise InvalidDobFormatValidationException
+    if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
+        raise InvalidDobValidationException
+
+def validate_request_data_for_covid_appointment(hospital_department,request):
+    if hospital_department.service in [settings.COVID_SERVICE]:
+        request.data['appointment_service'] = settings.COVID_SERVICE
+        if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
+            raise AadharMandatoryValidationException
+        if 'dob' not in request.data or not request.data.get('dob'):
+            raise DobMandatoryValidationException
+        if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
+            raise BeneficiaryReferenceIDValidationException
+        validate_dob_for_covid_appointment(request)
 
 class CreateMyAppointment(ProxyView):
     permission_classes = [IsPatientUser | InternalAPICall]
@@ -241,43 +285,11 @@ class CreateMyAppointment(ProxyView):
         amount = request.data.pop("amount", None)
         corporate = request.data.pop("corporate", None)
 
-        patient = Patient.objects.filter(id=patient_id).first()
         family_member = FamilyMember.objects.filter(id=family_member_id).first()
-        if not patient:
-            raise PatientDoesNotExistsValidationException
-
-        hospital = Hospital.objects.filter(id=request.data.pop("hospital_id")).first()
-        if not hospital:
-            raise HospitalDoesNotExistsValidationException
-
-        doctor = Doctor.objects.filter(id=request.data.pop("doctor_id")).first()
-        if not doctor:
-            raise DoctorDoesNotExistsValidationException
-
-        department = Department.objects.filter(id=request.data.pop("department_id")).first()
-        if not department:
-            raise DepartmentDoesNotExistsValidationException
-
-        hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
-        if not hospital_department:
-            raise DepartmentDoesNotExistsValidationException
-
-        if hospital_department.service in [settings.COVID_SERVICE]:
-            request.data['appointment_service'] = settings.COVID_SERVICE
-            if 'aadhar_number' not in request.data or not request.data.get('aadhar_number'):
-                raise AadharMandatoryValidationException
-            if 'dob' not in request.data or not request.data.get('dob'):
-                raise DobMandatoryValidationException
-            if hospital_department.sub_service in [settings.COVID_SUB_SERVICE_DOSE2] and ('beneficiary_reference_id' not in request.data or not request.data.get('beneficiary_reference_id')):
-                raise BeneficiaryReferenceIDValidationException
-            dob_date = None
-            try:
-                dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
-            except Exception as e:
-                logger.error("Error parsing date of birth! %s"%(str(e)))
-                raise InvalidDobFormatValidationException
-            if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
-                raise InvalidDobValidationException
+        
+        patient, hospital, doctor, department, hospital_department = validate_request_data_for_create_appointment(request,patient_id)
+        
+        validate_request_data_for_covid_appointment(hospital_department,request)        
 
         if family_member:
             user = family_member
