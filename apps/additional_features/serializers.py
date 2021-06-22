@@ -1,4 +1,4 @@
-from apps.master_data.serializers import MedicineSerializer
+from apps.master_data.serializers import BillingSerializer, MedicineSerializer
 from apps.doctors.serializers import HospitalSerializer
 import logging
 
@@ -87,6 +87,17 @@ class DriveBillingSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = DriveBilling
         exclude = ('created_at', 'updated_at',)
+
+    def to_representation(self,instance):
+        response_object = super().to_representation(instance)
+        try:
+            if instance.drive:
+                response_object['drive'] = DriveSerializer(instance.drive).data
+            if instance.billing:
+                response_object['billing'] = BillingSerializer(instance.billing).data
+        except Exception as error:
+            logger.info("Exception in DriveBillingSerializer -> to_representation: %s"%(str(error)))
+        return response_object
         
 class DriveBookingSerializer(DynamicFieldsModelSerializer):
 
