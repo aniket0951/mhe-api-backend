@@ -91,6 +91,7 @@ class DriveBillingSerializer(DynamicFieldsModelSerializer):
     def to_representation(self,instance):
         response_object = super().to_representation(instance)
         try:
+            response_object['billing'] = None
             if instance.billing:
                 response_object['billing'] = BillingSerializer(instance.billing).data
         except Exception as error:
