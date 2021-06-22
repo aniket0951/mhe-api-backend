@@ -17,7 +17,7 @@ from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.utils.crypto import get_random_string
 
-from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsPatientUser, IsManipalAdminUser
+from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, BlacklistCreateMethodPermission,IsPatientUser, IsManipalAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.serializers import ValidationError
 from ratelimit.decorators import ratelimit
@@ -267,12 +267,16 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
     
     def get_permissions(self):
 
-        if self.action in ['create','partial_update']:
+        if self.action in ['partial_update']:
             permission_classes = [IsPatientUser]
             return [permission() for permission in permission_classes]
 
         if self.action in ['list', 'retrieve']:
             permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'create':
+            permission_classes = [BlacklistCreateMethodPermission]
             return [permission() for permission in permission_classes]
         
         if self.action == 'update':
@@ -283,11 +287,16 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             permission_classes = [BlacklistDestroyMethodPermission]
             return [permission() for permission in permission_classes]
 
-        return super().get_permissions()
-    
-    def perform_create(self, serializer):
-        drive_id,drive_inventory,amount = None,None,None
+        return super().get_permissions()    
+        
 
+    @action(detail=False, methods=['POST'])
+    def book_drive(self,request):
+        
+        patient = patient_user_object(self.request)  
+        
+        drive_id,drive_inventory,amount = None,None,None
+      
         try:
             drive_id = self.request.data['drive']
             drive_inventory = self.request.data['drive_inventory']
@@ -295,7 +304,24 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         except Exception as e:
             logger.error("Error while booking an appointment : %s"%(str(e)))
             raise ValidationError("Required field : %s"%str(e))
-
+                
+        if self.request.data.get("family_member"):
+            is_already_booked = DriveBooking.objects.filter(
+                                                Q(family_member__id=self.request.data.get("family_member")) &
+                                                Q(drive__id=drive_id) &
+                                                Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
+                                            )
+            
+        else:
+            is_already_booked = DriveBooking.objects.filter(
+                                                Q(patient__id=patient.id) &
+                                                Q(drive__id=drive_id) &
+                                                Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
+                                            )
+        
+        if is_already_booked.exists():
+            raise ValidationError("You have already registered for the selected patient")
+                
         drive_inventories_consumed = DriveBooking.objects.filter(
                                             Q(drive_inventory=drive_inventory) &
                                             Q(drive__id=drive_id) &
@@ -306,20 +332,23 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         
         if drive_inventories_consumed >= item_quantity:
             raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
-        
-        drive_booking = serializer.save()
+                
+        if not patient:
+            raise ValidationError("Not authorizied")
+        request.data['patient'] = patient.id
+        drive_serializer = DriveBookingSerializer(data=request.data)
+        drive_serializer.is_valid(raise_exception=True)
+        drive_booking = drive_serializer.save()
 
         validate_payment_request_data = {
             "location_code":drive_booking.drive.hospital.code,
             "drive_booking_id":str(drive_booking.id),
             "registration_payment":self.request.data.get('registration_payment',False),
             "account":{
-                "amount":amount,
+                "amount": amount,
                 "email":""
             }
         }
-
-        logger.info("Request Data in DriveBookingViewSet -> perform_create : %s"%(str(validate_payment_request_data)))
 
         validate_payment_response = RazorDrivePayment.as_view()(cancel_and_refund_parameters(validate_payment_request_data))
 
@@ -328,5 +357,5 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         if validate_payment_response.status_code!=200:
             drive_booking.delete()
             raise ValidationError("Could not book drive for you.")
-
-        print("validate_payment_response.get(\"payment_id\")",validate_payment_response.data.get("payment_id"))
+        
+        return Response(data=DriveBookingSerializer(DriveBooking.objects.get(id=drive_booking.id)).data, status=status.HTTP_200_OK)

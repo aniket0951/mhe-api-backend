@@ -190,8 +190,6 @@ class RazorDrivePayment(APIView):
         drive_booking_instance.payment = payment_id
         drive_booking_instance.save()
 
-        param["payment_id"] = payment_id.id
-
         return Response(data=param, status=status.HTTP_200_OK)
 
 

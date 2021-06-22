@@ -362,7 +362,7 @@ class PaymentUtils:
         payment_data["location"] = hospital.id
         if drive_booking_instance.family_member:
             payment_data["payment_done_for_patient"] = None
-            payment_data["payment_done_for_family_member"] = drive_booking_instance.family_member
+            payment_data["payment_done_for_family_member"] = drive_booking_instance.family_member.id
         return payment_data
 
     @staticmethod

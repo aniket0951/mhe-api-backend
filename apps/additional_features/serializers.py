@@ -1,4 +1,3 @@
-from django.db.models.query_utils import Q
 from apps.master_data.serializers import MedicineSerializer
 from apps.doctors.serializers import HospitalSerializer
 import logging
@@ -21,20 +20,20 @@ class DriveSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
         response_object['qr_code'] = None
         try:
-            
             if instance.qr_code:
                 response_object['qr_code'] = generate_pre_signed_url(instance.qr_code.url)
-            
             if instance.hospital:
-                response_object['hospital'] = HospitalSerializer(instance.hospital).data
+                    response_object['hospital'] = HospitalSerializer(instance.hospital).data
 
             drive_billing_ids = DriveBilling.objects.filter(drive_id=instance.id)
             response_object['drive_billings'] = DriveBillingSerializer(drive_billing_ids,many=True).data
 
-            drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
-            response_object['drive_inventories'] = DriveInventorySerializer(drive_inventory_ids,many=True).data
+            admin_object = manipal_admin_object(self.context['request'])
+            if admin_object:
+                drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
+                response_object['drive_inventories'] = DriveInventorySerializer(drive_inventory_ids,many=True).data
 
-            if 'request' in self.context and patient_user_object(self.context['request']):
+            if patient_user_object(self.context['request']):
                 drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
                 drive_inventories_list = DriveInventorySerializer(drive_inventory_ids,many=True).data
             
@@ -77,18 +76,9 @@ class DriveInventorySerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         try:
-            
-            drive_inventories_consumed = DriveBooking.objects.filter(
-                                            Q(drive_inventory=instance.id) &
-                                            Q(drive__id=instance.drive.id) &
-                                            Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
-                                        ).count()
-            response_object['item_quantity_available'] = instance.item_quantity-drive_inventories_consumed
-
             response_object['medicine'] = None
             if instance.medicine:
                 response_object['medicine'] = MedicineSerializer(instance.medicine).data
-                
         except Exception as error:
             logger.info("Exception in DriveInventorySerializer -> to_representation: %s"%(str(error)))
         return response_object
@@ -117,7 +107,15 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
             if instance.family_member:
                 response_object['family_member'] = FamilyMemberSerializer(instance.family_member).data
             if instance.payment:
-                response_object['payment'] = PaymentSerializer(instance.payment).data
+                response_object['payment'] = {
+                                    "id":instance.payment.id,
+                                    "razor_order_id":instance.payment.razor_order_id,
+                                    "razor_payment_id": instance.payment.razor_payment_id,
+                                    "transaction_id":instance.payment.transaction_id,
+                                    "processing_id":instance.payment.processing_id,
+                                    "status":instance.payment.status,
+                                    "payment_for_drive":instance.payment.payment_for_drive
+                                }
 
         except Exception as error:
             logger.info("Exception in DriveBookingSerializer -> to_representation: %s"%(str(error)))
