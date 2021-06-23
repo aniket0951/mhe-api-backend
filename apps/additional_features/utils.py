@@ -1,3 +1,9 @@
+from apps.patients.models import FamilyMember
+from django.conf import settings
+from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
+from apps.payments.razorpay_views import RazorDrivePayment
+from apps.appointments.utils import cancel_and_refund_parameters
+from django.db.models.query_utils import Q
 from apps.additional_features.serializers import DriveBillingSerializer, DriveInventorySerializer
 import logging
 import random
@@ -5,8 +11,8 @@ import re
 import string
 
 from datetime import datetime,date
-from utils.utils import end_date_vaccination_date_comparision, start_end_datetime_comparision
-from apps.additional_features.models import Drive, DriveBilling, DriveInventory
+from utils.utils import calculate_age, end_date_vaccination_date_comparision, start_end_datetime_comparision
+from apps.additional_features.models import Drive, DriveBilling, DriveBooking, DriveInventory
 from rest_framework.serializers import ValidationError
 
 
@@ -16,16 +22,16 @@ class AdditionalFeaturesUtil:
 
     @staticmethod
     def generate_unique_booking_number():
-        try:
-            letters = string.ascii_letters
-            str_part = ''.join(random.choice(letters) for i in range(5)).upper()
-            digits = string.digits
-            int_part = ''.join(random.choice(digits) for i in range(5))
-            booking_number = str_part + int_part
-            Drive.objects.get(booking_number=booking_number)
-        except Exception as e:
-            logger.debug("Exception generate_unique_booking_number: %s"%(str(e)))
-            return booking_number
+        booking_number = ""
+        while True:
+            try:
+                str_part = ''.join(random.choice(string.ascii_letters) for i in range(5)).upper()
+                int_part = ''.join(random.choice(string.digits) for i in range(5))
+                booking_number = str_part + int_part
+                Drive.objects.get(booking_number=booking_number)
+            except Exception as e:
+                logger.debug("Exception generate_unique_booking_number: %s"%(str(e)))
+                return booking_number
     
     @staticmethod
     def generate_unique_drive_code(description):
@@ -154,4 +160,77 @@ class AdditionalFeaturesUtil:
                     valid_drive_billings.append(drive_billing_id.id)
 
             DriveBilling.objects.filter(drive_id=drive_id).exclude(id__in=valid_drive_billings).delete()
-            
+
+    @staticmethod
+    def update_user_data(request,dob,aadhar_number,patient):
+        user = None
+        if request.data.get("family_member"):
+            user = FamilyMember.get(id=request.data.get("family_member"))
+        else:
+            user = patient
+        user.dob = dob
+        user.aadhar_number = aadhar_number
+        user.save()
+
+    @staticmethod
+    def validate_patient_age(request):
+        dob_date = None
+        try:
+            dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
+        except Exception as e:
+            logger.error("Error parsing date of birth! %s"%(str(e)))
+            raise InvalidDobFormatValidationException
+        if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
+            raise InvalidDobValidationException
+
+    @staticmethod
+    def validate_if_the_drive_is_already_booked(request,drive_id,patient):
+        if request.data.get("family_member"):
+            is_already_booked = DriveBooking.objects.filter(
+                                                Q(family_member__id=request.data.get("family_member")) &
+                                                Q(drive__id=drive_id) &
+                                                Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
+                                            )
+        else:
+            is_already_booked = DriveBooking.objects.filter(
+                                                Q(patient__id=patient.id) &
+                                                Q(drive__id=drive_id) &
+                                                Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
+                                            )
+        
+        if is_already_booked.exists():
+            raise ValidationError("You have already registered for the selected patient.")
+    
+    @staticmethod
+    def validate_inventory(drive_inventory,drive_id):
+        drive_inventories_consumed = DriveBooking.objects.filter(
+                                            Q(drive_inventory=drive_inventory) &
+                                            Q(drive__id=drive_id) &
+                                            Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
+                                        ).count()
+        
+        item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
+        
+        if drive_inventories_consumed >= item_quantity:
+            raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
+
+    @staticmethod
+    def validate_and_prepare_payment_data(request,drive_booking,amount):
+
+        validate_payment_request_data = {
+            "location_code":drive_booking.drive.hospital.code,
+            "drive_booking_id":str(drive_booking.id),
+            "registration_payment":request.data.get('registration_payment',False),
+            "account":{
+                "amount": amount,
+                "email":""
+            }
+        }
+
+        validate_payment_response = RazorDrivePayment.as_view()(cancel_and_refund_parameters(validate_payment_request_data))
+
+        logger.info("Response Data in DriveBookingViewSet -> perform_create : %s"%(str(validate_payment_response.data)))
+
+        if validate_payment_response.status_code!=200:
+            drive_booking.delete()
+            raise ValidationError("Could not book drive for you.")
