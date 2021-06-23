@@ -173,10 +173,10 @@ class AdditionalFeaturesUtil:
         user.save()
 
     @staticmethod
-    def validate_patient_age(request):
+    def validate_patient_age(dob):
         dob_date = None
         try:
-            dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
+            dob_date = datetime.strptime(dob,"%Y-%m-%d")
         except Exception as e:
             logger.error("Error parsing date of birth! %s"%(str(e)))
             raise InvalidDobFormatValidationException

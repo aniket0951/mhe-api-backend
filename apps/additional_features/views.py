@@ -177,7 +177,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     @action(detail=False, methods=['POST'])
     def validate_user(self, request):
 
-        AdditionalFeaturesUtil.validate_patient_age(request)
+        AdditionalFeaturesUtil.validate_patient_age(request.data.get('dob'))
         
         patient_user = patient_user_object(self.request)
         if not patient_user or not request.data.get('drive'):
@@ -300,7 +300,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             logger.error("Error while booking an appointment : %s"%(str(e)))
             raise ValidationError("Required field : %s"%str(e))
         
-        AdditionalFeaturesUtil.validate_patient_age(request)
+        AdditionalFeaturesUtil.validate_patient_age(dob)
         AdditionalFeaturesUtil.validate_if_the_drive_is_already_booked(request,drive_id,patient)
         AdditionalFeaturesUtil.validate_inventory(drive_inventory,drive_id)
         AdditionalFeaturesUtil.update_user_data(request,dob,aadhar_number,patient)
