@@ -165,7 +165,7 @@ class AdditionalFeaturesUtil:
     def update_user_data(request,dob,aadhar_number,patient):
         user = None
         if request.data.get("family_member"):
-            user = FamilyMember.get(id=request.data.get("family_member"))
+            user = FamilyMember.objects.get(id=request.data.get("family_member"))
         else:
             user = patient
         user.dob = dob
