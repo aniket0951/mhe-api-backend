@@ -28,12 +28,11 @@ class DriveSerializer(DynamicFieldsModelSerializer):
             drive_billing_ids = DriveBilling.objects.filter(drive_id=instance.id)
             response_object['drive_billings'] = DriveBillingSerializer(drive_billing_ids,many=True).data
 
-            admin_object = manipal_admin_object(self.context['request'])
-            if admin_object:
-                drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
-                response_object['drive_inventories'] = DriveInventorySerializer(drive_inventory_ids,many=True).data
+            
+            drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
+            response_object['drive_inventories'] = DriveInventorySerializer(drive_inventory_ids,many=True).data
 
-            if patient_user_object(self.context['request']):
+            if 'request' in self.context and patient_user_object(self.context['request']):
                 drive_inventory_ids = DriveInventory.objects.filter(drive_id=instance.id)
                 drive_inventories_list = DriveInventorySerializer(drive_inventory_ids,many=True).data
             
