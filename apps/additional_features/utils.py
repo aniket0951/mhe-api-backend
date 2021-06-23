@@ -2,6 +2,7 @@ from apps.additional_features.serializers import DriveBillingSerializer, DriveIn
 import logging
 import random
 import re
+import string
 
 from datetime import datetime,date
 from utils.utils import end_date_vaccination_date_comparision, start_end_datetime_comparision
@@ -13,6 +14,19 @@ logger = logging.getLogger("AdditionalFeaturesUtil")
 
 class AdditionalFeaturesUtil:
 
+    @staticmethod
+    def generate_unique_booking_number():
+        try:
+            letters = string.ascii_letters
+            str_part = ''.join(random.choice(letters) for i in range(5)).upper()
+            digits = string.digits
+            int_part = ''.join(random.choice(digits) for i in range(5))
+            booking_number = str_part + int_part
+            Drive.objects.get(booking_number=booking_number)
+        except Exception as e:
+            logger.debug("Exception generate_unique_booking_number: %s"%(str(e)))
+            return booking_number
+    
     @staticmethod
     def generate_unique_drive_code(description):
         if not description or len(description)<3:

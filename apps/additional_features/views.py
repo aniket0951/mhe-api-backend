@@ -301,10 +301,12 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             drive_id = self.request.data['drive']
             drive_inventory = self.request.data['drive_inventory']
             amount = self.request.data['amount']
+            self.request.data['booking_number'] = AdditionalFeaturesUtil.generate_unique_booking_number()
         except Exception as e:
             logger.error("Error while booking an appointment : %s"%(str(e)))
             raise ValidationError("Required field : %s"%str(e))
                 
+        
         if self.request.data.get("family_member"):
             is_already_booked = DriveBooking.objects.filter(
                                                 Q(family_member__id=self.request.data.get("family_member")) &
@@ -332,9 +334,9 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         
         if drive_inventories_consumed >= item_quantity:
             raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
-                
+                                
         if not patient:
-            raise ValidationError("Not authorizied")
+            raise ValidationError("Not authorized")
         request.data['patient'] = patient.id
         drive_serializer = DriveBookingSerializer(data=request.data)
         drive_serializer.is_valid(raise_exception=True)
