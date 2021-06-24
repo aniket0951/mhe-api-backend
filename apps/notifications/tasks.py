@@ -1,3 +1,4 @@
+from apps.additional_features.serializers import DriveBookingSerializer
 from apps.additional_features.models import DriveBooking
 from apps.payments.razorpay_views import RazorPaymentResponse
 from apps.payments.models import Payment
@@ -255,19 +256,17 @@ def daily_auto_appointment_cancellation():
         
 @app.task(name="tasks.daily_auto_drive_bookings_cancellation")
 def daily_auto_drive_bookings_cancellation():
-    now = datetime.now() - timedelta(minutes=10)
-    
-    drive_bookings = DriveBooking.objects.filter(
-        Q(created_at__date=now.date()) &
-        Q(status="pending") 
-    )
-
-    for drive_booking in drive_bookings:
-        param = dict()
-        param["booking_number"] = drive_booking.booking_number
-        param["status"] = "pending"
-        request_param = cancel_parameters(param)
-        CancelMyAppointment.as_view()(request_param)
+    now = datetime.now()
+    end_time = now - timedelta(minutes=5)
+    start_time = now - timedelta(minutes=30)
+    drive_booking_ids = DriveBooking.objects.filter(
+            Q(status__in=[DriveBooking.BOOKING_PENDING])
+        ).filter(
+            created_at__time__gte=start_time, 
+            created_at__time__lte=end_time
+        )
+    if drive_booking_ids:
+        drive_booking_ids.update(status=DriveBooking.BOOKING_CANCELLED)
 
 @app.task(name="tasks.birthday_wishing_scheduler")
 def birthday_wishing_scheduler():
@@ -349,6 +348,6 @@ app.conf.beat_schedule = {
     },
     "daily_auto_drive_booking_cancellation": {
         "task": "tasks.daily_auto_drive_bookings_cancellation",
-        "schedule": crontab(minute="0", hour="3")
+        "schedule": crontab(minute="*/5", hour="*")
     }
 }

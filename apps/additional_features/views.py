@@ -1,3 +1,4 @@
+from apps.patients.models import FamilyMember
 from apps.appointments.utils import cancel_and_refund_parameters
 from apps.payments.razorpay_views import RazorDrivePayment
 from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
@@ -176,25 +177,13 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     @action(detail=False, methods=['POST'])
     def validate_user(self, request):
 
-        dob_date = None
-        try:
-            dob_date = datetime.strptime(request.data.get('dob'),"%Y-%m-%d")
-        except Exception as e:
-            logger.error("Error parsing date of birth! %s"%(str(e)))
-            raise InvalidDobFormatValidationException
-        if not dob_date or (calculate_age(dob_date)<settings.MIN_VACCINATION_AGE):
-            raise InvalidDobValidationException
+        AdditionalFeaturesUtil.validate_patient_age(request.data.get('dob'))
         
         patient_user = patient_user_object(self.request)
         if not patient_user or not request.data.get('drive'):
             raise ValidationError("Provide a valid drive ID!")
 
-        if DriveBooking.objects.filter(
-                                drive=request.data.get('drive'),
-                                patient__id=patient_user.id,
-                                status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED]
-                            ):
-            raise ValidationError("You already have registered for the drive.")
+        AdditionalFeaturesUtil.validate_if_the_drive_is_already_booked(request,request.data.get('drive'),patient_user)
         
         data = {
             "data": DriveSerializer(Drive.objects.get(id=request.data.get('drive')),context = {'request':request}).data,
@@ -293,71 +282,34 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def book_drive(self,request):
         
-        patient = patient_user_object(self.request)  
+        patient = patient_user_object(self.request)
+        if not patient:
+            raise ValidationError("Not authorized")
         
-        drive_id,drive_inventory,amount = None,None,None
+        drive_id,drive_inventory,amount,dob,aadhar_number = None,None,None,None,None
       
         try:
-            drive_id = self.request.data['drive']
-            drive_inventory = self.request.data['drive_inventory']
-            amount = self.request.data['amount']
-            self.request.data['booking_number'] = AdditionalFeaturesUtil.generate_unique_booking_number()
+            drive_id = request.data['drive']
+            drive_inventory = request.data['drive_inventory']
+            amount = request.data['amount']
+            dob = request.data.pop('dob')
+            aadhar_number = request.data.pop('aadhar_number')
+            request.data['beneficiary_reference_id']
+            request.data['booking_number'] = AdditionalFeaturesUtil.generate_unique_booking_number()
         except Exception as e:
             logger.error("Error while booking an appointment : %s"%(str(e)))
             raise ValidationError("Required field : %s"%str(e))
-                
         
-        if self.request.data.get("family_member"):
-            is_already_booked = DriveBooking.objects.filter(
-                                                Q(family_member__id=self.request.data.get("family_member")) &
-                                                Q(drive__id=drive_id) &
-                                                Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
-                                            )
-            
-        else:
-            is_already_booked = DriveBooking.objects.filter(
-                                                Q(patient__id=patient.id) &
-                                                Q(drive__id=drive_id) &
-                                                Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
-                                            )
-        
-        if is_already_booked.exists():
-            raise ValidationError("You have already registered for the selected patient")
-                
-        drive_inventories_consumed = DriveBooking.objects.filter(
-                                            Q(drive_inventory=drive_inventory) &
-                                            Q(drive__id=drive_id) &
-                                            Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
-                                        ).count()
-        
-        item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
-        
-        if drive_inventories_consumed >= item_quantity:
-            raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
-                                
-        if not patient:
-            raise ValidationError("Not authorized")
+        AdditionalFeaturesUtil.validate_patient_age(dob)
+        AdditionalFeaturesUtil.validate_if_the_drive_is_already_booked(request,drive_id,patient)
+        AdditionalFeaturesUtil.validate_inventory(drive_inventory,drive_id)
+        AdditionalFeaturesUtil.update_user_data(request,dob,aadhar_number,patient)
+
         request.data['patient'] = patient.id
         drive_serializer = DriveBookingSerializer(data=request.data)
         drive_serializer.is_valid(raise_exception=True)
         drive_booking = drive_serializer.save()
 
-        validate_payment_request_data = {
-            "location_code":drive_booking.drive.hospital.code,
-            "drive_booking_id":str(drive_booking.id),
-            "registration_payment":self.request.data.get('registration_payment',False),
-            "account":{
-                "amount": amount,
-                "email":""
-            }
-        }
-
-        validate_payment_response = RazorDrivePayment.as_view()(cancel_and_refund_parameters(validate_payment_request_data))
-
-        logger.info("Response Data in DriveBookingViewSet -> perform_create : %s"%(str(validate_payment_response.data)))
-
-        if validate_payment_response.status_code!=200:
-            drive_booking.delete()
-            raise ValidationError("Could not book drive for you.")
+        AdditionalFeaturesUtil.validate_and_prepare_payment_data(self.request,drive_booking,amount)
         
         return Response(data=DriveBookingSerializer(DriveBooking.objects.get(id=drive_booking.id)).data, status=status.HTTP_200_OK)
