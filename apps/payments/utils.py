@@ -1,10 +1,11 @@
+from apps.additional_features.serializers import DriveBookingSerializer
 from apps.additional_features.models import DriveBilling, DriveBooking
 from apps.doctors.serializers import DoctorChargesSerializer
 import time
 import json
 import logging
 from os import stat
-from datetime import datetime
+from datetime import date, datetime
 
 from django.conf import settings
 
@@ -17,7 +18,7 @@ from apps.appointments.models import Appointment,HealthPackageAppointment
 from apps.appointments.serializers import AppointmentSerializer,HealthPackageAppointmentSerializer
 from apps.appointments.utils import cancel_and_refund_parameters
 from apps.payments.models import Payment
-from apps.payments.views import AppointmentPaymentView,UHIDPaymentView,OPBillingPaymentView,IPDepositPaymentView,CheckAppointmentPaymentStatusView
+from apps.payments.views import AppointmentPaymentView, DriveRegistrationPaymentStatusView,UHIDPaymentView,OPBillingPaymentView,IPDepositPaymentView,CheckAppointmentPaymentStatusView
 from apps.payments.exceptions import (
                         InvalidGeneratedUHIDException, 
                         ProcessingIdDoesNotExistsValidationException,
@@ -860,6 +861,16 @@ class PaymentUtils:
     def get_patients_mobile_number(payment_instance):
         patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
         return str(patient_instance.mobile) if patient_instance and patient_instance.mobile else ""
+    
+    @staticmethod
+    def get_patients_email_id(payment_instance):
+        patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
+        return str(patient_instance.email) if patient_instance and patient_instance.email else ""
+    
+    @staticmethod
+    def get_patients_name(payment_instance):
+        patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
+        return str(patient_instance.first_name) if patient_instance and patient_instance.first_name else ""
 
     @staticmethod
     def get_appointment_type(payment_instance):
@@ -911,6 +922,14 @@ class PaymentUtils:
         aadhar_number = ""
         patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
         if patient_instance and payment_instance.appointment and patient_instance.aadhar_number:
+            aadhar_number = str(patient_instance.aadhar_number)
+        return aadhar_number
+    
+    @staticmethod
+    def get_drive_patients_aadhar_number(payment_instance):
+        aadhar_number = ""
+        patient_instance = PaymentUtils.get_patient_instance_from_payment_instance(payment_instance)
+        if patient_instance and patient_instance.aadhar_number:
             aadhar_number = str(patient_instance.aadhar_number)
         return aadhar_number
 
@@ -1062,7 +1081,18 @@ class PaymentUtils:
             appointment_serializer.is_valid(raise_exception=True)
             appointment_serializer.save()
 
-
+    @staticmethod
+    def payment_update_for_drive_booking(payment_instance,payment_response):
+        if payment_instance.payment_for_drive:
+            drive_booking_instance = DriveBooking.objects.get(payment__id=payment_instance).first()
+            update_data = {
+                "payment" : payment_instance.id,
+                "uhid_number":payment_response.get("uhid_number"),
+                "status":PaymentConstants.DRIVE_BOOKING_STATUS_BOOKED
+            }
+            drive_booking_serializer = DriveBookingSerializer(drive_booking_instance, data=update_data, partial=True)
+            drive_booking_serializer.is_valid(raise_exception=True)
+            drive_booking_serializer.save()
 
 
     @staticmethod
@@ -1132,6 +1162,25 @@ class PaymentUtils:
             payment_response.update({"hospital_code" :bill_details_response.get("Hosp")})
         if bill_details_response.get("DepositAmount"):
             payment_response.update({"DepositAmount" :bill_details_response.get("DepositAmount")})
+            
+        payment_response.update({
+            "uhid_number"   : bill_details_response.get("HospitalNo"),
+            "ReceiptNo"     : bill_details_response.get("ReceiptNo")
+        })
+        return payment_response
+    
+    @staticmethod
+    def serialize_drive_booking_payment_response(bill_details_response):
+        payment_response = dict()
+        if not bill_details_response.get("HospitalNo"):
+            raise UHIDRegistrationFailedException
+        if not PaymentUtils.validate_uhid_number(bill_details_response.get("HospitalNo")):
+            raise InvalidGeneratedUHIDException
+        if not bill_details_response.get("ReceiptNo"):
+            raise ReceiptGenerationFailedException
+
+        if bill_details_response.get("Hosp"):
+            payment_response.update({"hospital_code" :bill_details_response.get("Hosp")})
             
         payment_response.update({
             "uhid_number"   : bill_details_response.get("HospitalNo"),
@@ -1270,6 +1319,43 @@ class PaymentUtils:
         bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"RecieptNumber","payDetailAPIResponse")
         return PaymentUtils.serialize_ipdeposit_payment_response(bill_details_response)
 
+    @staticmethod
+    def update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
+        drive_booking = DriveBooking.objects.get(payment__id=payment_instance)        
+        
+        payment_update_request = {
+            "HospCode":payment_instance.location.code,
+            "UHID":PaymentUtils.get_uhid_number(payment_instance),
+            "email_id":PaymentUtils.get_patients_email_id(payment_instance),
+            "mobile_no":PaymentUtils.get_patients_mobile_number(payment_instance),
+            "transaction_id":payment_instance.transaction_id,
+            "payment_status":payment_instance.status,
+            "Payment_date":date.now(),
+            "order_id":payment_instance.razor_order_id,
+            "aadhar_number":PaymentUtils.get_drive_patients_aadhar_number(payment_instance),
+            "cowin_number":drive_booking.beneficiary_reference_id,
+            "vaccination_date":drive_booking.drive.date,
+            "vaccination_dose":drive_booking.dose,
+            "vaccination_name":drive_booking.drive_inventory.medicine.name,
+            "apartment_name":drive_booking.drive.description,
+            "vaccination_item_code":drive_booking.drive_inventory.mh_item_code,
+            "vaccination_charges":drive_booking.drive_inventory.price,
+            "Medical_ServiceCharges":drive_booking.drive.drive_billings.price,
+            "totalPaidAmt":str(PaymentUtils.get_payment_amount(order_details)),
+            "post_flag":0,
+            "resource":"",
+            "Name":PaymentUtils.get_patients_name(payment_instance)
+        }
+        payment_update_response = DriveRegistrationPaymentStatusView.as_view()(cancel_and_refund_parameters(payment_update_request))
+        if payment_update_response and payment_update_response.data:
+            payment_instance.raw_info_from_manipal_response = json.dumps(payment_update_response.data)
+            payment_instance.save()
+        if  not payment_update_response.status_code==200 or \
+            not payment_update_response.data or \
+            not payment_update_response.data.get("data"):
+            raise InvalidResponseFromManipalServers
+        bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"RecieptNumber","payDetailAPIResponse")
+        return PaymentUtils.serialize_drive_booking_payment_response(bill_details_response)
 
     @staticmethod
     def wait_for_manipal_response(payment_instance,order_details):
@@ -1299,6 +1385,8 @@ class PaymentUtils:
             return PaymentUtils.update_op_bill_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.payment_for_ip_deposit:
             return PaymentUtils.update_ip_deposit_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
+        elif payment_instance.payment_for_drive:
+            return PaymentUtils.update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         
 
 

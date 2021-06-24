@@ -12,6 +12,7 @@ from .views import (AppointmentPayment, CorporateUhidRegistration,
 
 from .razorpay_views import (
                         RazorAppointmentPayment,
+                        RazorDrivePayment,
                         RazorHealthPackagePayment,
                         RazorUHIDPayment,
                         RazorOPBillPayment,
@@ -40,7 +41,7 @@ urlpatterns = [
     path('razor_ip_deposit_payment', RazorIPDepositPayment.as_view()),
     path('razor_payment_response', RazorPaymentResponse.as_view()),
     path('razor_refund', RazorRefundView.as_view()),
-
+    path('razor_drive_booking_payment', RazorDrivePayment.as_view()),
     path('payment_return', PaymentReturn.as_view()),
     path('ip_bill_details', PayBillView.as_view()),
     path('op_bill_details', PayBillOpView.as_view()),
