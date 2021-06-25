@@ -23,7 +23,7 @@ class PaymentConstants:
     
     HEALTH_PACKAGE_APPOINTMENT_STATUS_BOOKED = "Booked"
     
-    DRIVE_BOOKING_STATUS_BOOKED = "Booked"
+    DRIVE_BOOKING_STATUS_BOOKED = "booked"
 
     TERRIF_PRICE_ITEM_CODE = 'AREG001'
 
