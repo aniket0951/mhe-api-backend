@@ -247,4 +247,4 @@ class AdditionalFeaturesUtil:
             drive_booking.delete()
             raise ValidationError("Could not book drive for you.")
 
-        return validate_payment_response.data.get("data")
+        return validate_payment_response.data

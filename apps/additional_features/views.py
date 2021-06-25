@@ -301,7 +301,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             request.data['beneficiary_reference_id']
             request.data['booking_number'] = AdditionalFeaturesUtil.generate_unique_booking_number()
         except Exception as e:
-            logger.error("Error while booking an appointment : %s"%(str(e)))
+            logger.error("DriveBookingViewSet -> book_drive : Error while booking an appointment : %s"%(str(e)))
             raise ValidationError("Required field : %s"%str(e))
         
         AdditionalFeaturesUtil.validate_patient_age(dob)
