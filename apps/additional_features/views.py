@@ -288,7 +288,10 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             raise ValidationError("Not authorized")
         
         drive_id,drive_inventory,amount,dob,aadhar_number = None,None,None,None,None
-      
+        for filter_field in ["status","booking_number","payment"]:
+            if filter_field in request.data:
+                request.data.pop(filter_field)
+
         try:
             drive_id = request.data['drive']
             drive_inventory = request.data['drive_inventory']
