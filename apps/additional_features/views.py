@@ -142,6 +142,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
 
         send_corporate_email_activation_otp(str(authenticated_patient.id), drive_corporate_email, random_email_otp)
 
+        authenticated_patient.drive_corporate_email = drive_corporate_email
         authenticated_patient.drive_corporate_email_otp = random_email_otp
         authenticated_patient.drive_corporate_email_otp_expiration_time = otp_expiration_time
         authenticated_patient.save()
