@@ -125,6 +125,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     @method_decorator(ratelimit(key=settings.RATELIMIT_KEY_USER_OR_IP, rate=settings.RATELIMIT_OTP_GENERATION, block=True, method=ratelimit.ALL))
     @action(detail=False, methods=['POST'])
     def generate_drive_corporate_email_verification_otp(self, request):
+
         authenticated_patient = patient_user_object(request)
         drive = self.request.data.get("drive")
         drive_corporate_email = self.request.data.get("drive_corporate_email")
@@ -306,10 +307,14 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         AdditionalFeaturesUtil.update_user_data(request,dob,aadhar_number,patient)
 
         request.data['patient'] = patient.id
-        drive_serializer = DriveBookingSerializer(data=request.data)
-        drive_serializer.is_valid(raise_exception=True)
-        drive_booking = drive_serializer.save()
+        drive_booking_serializer = DriveBookingSerializer(data=request.data)
+        drive_booking_serializer.is_valid(raise_exception=True)
+        drive_booking = drive_booking_serializer.save()
 
-        AdditionalFeaturesUtil.validate_and_prepare_payment_data(self.request,drive_booking,amount)
+        payment_params = AdditionalFeaturesUtil.validate_and_prepare_payment_data(request,patient,drive_booking,amount)
         
-        return Response(data=DriveBookingSerializer(DriveBooking.objects.get(id=drive_booking.id)).data, status=status.HTTP_200_OK)
+        return Response(data={
+                "drive_booking":DriveBookingSerializer(DriveBooking.objects.get(id=drive_booking.id)).data,
+                "params":payment_params
+            }, 
+            status=status.HTTP_200_OK)

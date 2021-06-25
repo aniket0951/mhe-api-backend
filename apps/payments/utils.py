@@ -944,6 +944,15 @@ class PaymentUtils:
         return appointment_instance.beneficiary_reference_id if payment_instance.appointment and appointment_instance and appointment_instance.beneficiary_reference_id else ""
     
     @staticmethod
+    def get_total_service_charges(drive_booking):
+        total_price = 0
+        drive_billing_ids = DriveBilling.objects.filter(drive__id=drive_booking.drive.id)
+        if drive_billing_ids.exists():
+            for drive_billing_id in drive_billing_ids:
+                total_price += drive_billing_id.price
+        return total_price
+
+    @staticmethod
     def get_payment_appointment_date(payment_instance):
         date_time = None
         if payment_instance.appointment and payment_instance.appointment.appointment_date and payment_instance.appointment.appointment_slot:
@@ -1084,10 +1093,9 @@ class PaymentUtils:
     @staticmethod
     def payment_update_for_drive_booking(payment_instance,payment_response):
         if payment_instance.payment_for_drive:
-            drive_booking_instance = DriveBooking.objects.get(payment__id=payment_instance).first()
+            drive_booking_instance = DriveBooking.objects.get(payment__id=payment_instance.id)
             update_data = {
                 "payment" : payment_instance.id,
-                "uhid_number":payment_response.get("uhid_number"),
                 "status":PaymentConstants.DRIVE_BOOKING_STATUS_BOOKED
             }
             drive_booking_serializer = DriveBookingSerializer(drive_booking_instance, data=update_data, partial=True)
@@ -1321,30 +1329,30 @@ class PaymentUtils:
 
     @staticmethod
     def update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
-        drive_booking = DriveBooking.objects.get(payment__id=payment_instance)        
+        drive_booking = DriveBooking.objects.get(payment__id=payment_instance.id)
         
         payment_update_request = {
-            "HospCode":payment_instance.location.code,
-            "UHID":PaymentUtils.get_uhid_number(payment_instance),
+            "location_code":payment_instance.location.code,
+            "uhid":PaymentUtils.get_uhid_number(payment_instance),
             "email_id":PaymentUtils.get_patients_email_id(payment_instance),
             "mobile_no":PaymentUtils.get_patients_mobile_number(payment_instance),
-            "transaction_id":payment_instance.transaction_id,
-            "payment_status":payment_instance.status,
-            "Payment_date":date.now(),
-            "order_id":payment_instance.razor_order_id,
+            "transaction_id":order_payment_details.get('id'),
+            "payment_status":"captured",
+            "Payment_date":date.today().strftime("%Y-%m-%d"),
+            "order_id":order_details.get("id"),
             "aadhar_number":PaymentUtils.get_drive_patients_aadhar_number(payment_instance),
             "cowin_number":drive_booking.beneficiary_reference_id,
-            "vaccination_date":drive_booking.drive.date,
+            "vaccination_date":drive_booking.drive.date.strftime("%Y-%m-%d"),
             "vaccination_dose":drive_booking.dose,
             "vaccination_name":drive_booking.drive_inventory.medicine.name,
             "apartment_name":drive_booking.drive.description,
             "vaccination_item_code":drive_booking.drive_inventory.mh_item_code,
             "vaccination_charges":drive_booking.drive_inventory.price,
-            "Medical_ServiceCharges":drive_booking.drive.drive_billings.price,
-            "totalPaidAmt":str(PaymentUtils.get_payment_amount(order_details)),
+            "medical_service_charges":PaymentUtils.get_total_service_charges(drive_booking),
+            "total_paid_amt":str(PaymentUtils.get_payment_amount(order_details)),
             "post_flag":0,
-            "resource":"",
-            "Name":PaymentUtils.get_patients_name(payment_instance)
+            "resource":"PatientApp",
+            "name":PaymentUtils.get_patients_name(payment_instance)
         }
         payment_update_response = DriveRegistrationPaymentStatusView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if payment_update_response and payment_update_response.data:
@@ -1354,8 +1362,7 @@ class PaymentUtils:
             not payment_update_response.data or \
             not payment_update_response.data.get("data"):
             raise InvalidResponseFromManipalServers
-        bill_details_response = PaymentUtils.get_bill_details(payment_update_response.data.get("data"),"RecieptNumber","payDetailAPIResponse")
-        return PaymentUtils.serialize_drive_booking_payment_response(bill_details_response)
+        return payment_update_response.data
 
     @staticmethod
     def wait_for_manipal_response(payment_instance,order_details):

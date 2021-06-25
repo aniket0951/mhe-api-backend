@@ -162,12 +162,17 @@ class AdditionalFeaturesUtil:
             DriveBilling.objects.filter(drive_id=drive_id).exclude(id__in=valid_drive_billings).delete()
 
     @staticmethod
-    def update_user_data(request,dob,aadhar_number,patient):
+    def get_user_data(request,patient):
         user = None
         if request.data.get("family_member"):
             user = FamilyMember.objects.get(id=request.data.get("family_member"))
         else:
             user = patient
+        return user
+
+    @staticmethod
+    def update_user_data(request,dob,aadhar_number,patient):
+        user = AdditionalFeaturesUtil.get_user_data(request,patient)
         user.dob = dob
         user.aadhar_number = aadhar_number
         user.save()
@@ -215,7 +220,9 @@ class AdditionalFeaturesUtil:
             raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
 
     @staticmethod
-    def validate_and_prepare_payment_data(request,drive_booking,amount):
+    def validate_and_prepare_payment_data(request,patient,drive_booking,amount):
+
+        user = AdditionalFeaturesUtil.get_user_data(request,patient)
 
         validate_payment_request_data = {
             "location_code":drive_booking.drive.hospital.code,
@@ -223,7 +230,7 @@ class AdditionalFeaturesUtil:
             "registration_payment":request.data.get('registration_payment',False),
             "account":{
                 "amount": amount,
-                "email":""
+                "email":user.email
             }
         }
 
@@ -234,3 +241,5 @@ class AdditionalFeaturesUtil:
         if validate_payment_response.status_code!=200:
             drive_booking.delete()
             raise ValidationError("Could not book drive for you.")
+
+        return validate_payment_response.data.get("data")
