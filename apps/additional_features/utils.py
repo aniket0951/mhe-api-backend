@@ -213,8 +213,13 @@ class AdditionalFeaturesUtil:
                                             Q(drive__id=drive_id) &
                                             Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
                                         ).count()
-        
-        item_quantity  = DriveInventory.objects.filter(id=drive_inventory).values_list('item_quantity',flat=True)[0]
+        item_quantity = 0
+        try:
+            drive_inventory_id = DriveInventory.objects.get(id=drive_inventory)
+            item_quantity  = drive_inventory_id.item_quantity
+        except Exception as e:
+            logger.info("AdditionalFeaturesUtil -> validate_inventory : %s"%(str(e)))
+            raise ValidationError("Invalid Drive Inventory ID.")
         
         if drive_inventories_consumed >= item_quantity:
             raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
