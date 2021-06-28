@@ -164,6 +164,7 @@ class AdminMenuView(custom_viewsets.ReadOnlyModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter,)
     search_fields = ['name', ]
     ordering_fields = ('-created_at',)
+    pagination_class = None
 
 class AdminRoleView(custom_viewsets.ModelViewSet):
     permission_classes = [IsPlatformAdmin]
