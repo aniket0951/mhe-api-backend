@@ -53,7 +53,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj
+from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj, patient_user_object
 from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -65,6 +65,8 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
+from apps.additional_features.models import DriveBooking
+from apps.additional_features.serializers import DriveBookingSerializer
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
 from .constants import AppointmentsConstants
 
@@ -228,6 +230,27 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                             (Q(patient_id=patient.id)) & Q(family_member__isnull=True)
                         )
                     ).filter(corporate_appointment=False)
+
+
+    def list(self, request, *args, **kwargs):
+        list_data = self.get_serializer(self.get_queryset(),many=True).data
+        family_member = self.request.query_params.get("user_id", None)
+        is_upcoming =   self.request.query_params.get("is_upcoming", False)
+        if request.user and not is_upcoming:
+            patient_obj = patient_user_object(request)
+            if patient_obj:
+                drive_bookings = DriveBooking.objects.filter(patient__id=patient_obj.id)
+            if family_member:
+                drive_bookings = DriveBooking.objects.filter(family_member__id=family_member)
+        
+            list_data.extend(DriveBookingSerializer(drive_bookings, many=True).data)
+        
+        data = {
+            "data": list_data,
+            "message": self.list_success_message,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
 
 def validate_request_data_for_create_appointment(request,patient_id):
     patient = Patient.objects.filter(id=patient_id).first()
