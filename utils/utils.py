@@ -89,7 +89,8 @@ def get_appointment(patient_id):
         family_appointment = Appointment.objects.filter(
                 Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & 
                 (
-                    (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | Q(family_member_id=member.id)
+                    (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
+                    Q(family_member_id=member.id)
                 )
             ).exclude(
                 (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & (

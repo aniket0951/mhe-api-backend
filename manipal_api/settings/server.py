@@ -49,17 +49,17 @@ S3_CLIENT = S3_SESSION.client(
 
 
 # AWS SNS Settings
-AWS_SNS_CLIENT = boto3.client(
-    "sns",
-    aws_access_key_id=None,
-    aws_secret_access_key=None,
-    region_name=env('AWS_SNS_REGION_NAME')
-)
-AWS_SNS_CLIENT.set_sms_attributes(
-    attributes={
-        'DefaultSMSType': 'Transactional'
-    }
-)
+# AWS_SNS_CLIENT = boto3.client(
+#     "sns",
+#     aws_access_key_id=None,
+#     aws_secret_access_key=None,
+#     region_name=env('AWS_SNS_REGION_NAME')
+# )
+# AWS_SNS_CLIENT.set_sms_attributes(
+#     attributes={
+#         'DefaultSMSType': 'Transactional'
+#     }
+# )
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
