@@ -1105,7 +1105,6 @@ class PaymentUtils:
         if payment_instance.payment_for_drive:
             drive_booking_instance = DriveBooking.objects.get(payment__id=payment_instance.id)
             update_data = {
-                "payment" : payment_instance.id,
                 "status":PaymentConstants.DRIVE_BOOKING_STATUS_BOOKED
             }
             drive_booking_serializer = DriveBookingSerializer(drive_booking_instance, data=update_data, partial=True)
