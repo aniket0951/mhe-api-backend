@@ -115,12 +115,6 @@ class DriveInventory(MyBaseModel):
                                 related_name="medicine_name"   
                             )
     
-    dose = models.CharField(
-                        max_length=8,
-                        blank=False,
-                        null=False
-                    )
-    
     mh_item_code = models.CharField(
                             max_length=100,
                             blank=False,
