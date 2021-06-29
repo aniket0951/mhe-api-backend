@@ -1,5 +1,6 @@
 
 import logging
+from time import sleep
 
 from apps.appointments.models import Appointment
 from apps.appointments.serializers import (HealthPackageAppointmentDetailSerializer,)
@@ -205,6 +206,14 @@ class RazorPaymentResponse(APIView):
             is_requested_from_mobile = True
         
         payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
+        if payment_instance.payment_for_drive and is_requested_from_mobile:
+            counter = 0
+            while payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_INITIATED:
+                sleep(3)
+                payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
+                counter+=1
+                if counter==5:
+                    break
 
         if payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED]:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)

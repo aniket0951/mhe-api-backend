@@ -181,22 +181,17 @@ class UHIDRegistrationView(ProxyView):
             response_status = True
             response_message = message
             response_data["pre_registration_number"] = pre_registration_number
-            logger.info("request_dob :" + self.request.data["dob"])
             dob_obj = datetime.strptime(self.request.data["dob"], "%m%d%Y")
-            logger.info("dob_obj : %s"%(str(dob_obj)))
             response_data["dob"] = dob_obj.date()
 
             if user_id:
                 family_member = FamilyMember.objects.filter(id=user_id).first()
-                family_serializer = FamilyMemberSpecificSerializer(
-                    family_member, data=response_data, partial=True)
+                family_serializer = FamilyMemberSpecificSerializer(family_member, data=response_data, partial=True)
                 family_serializer.is_valid(raise_exception=True)
                 family_serializer.save()
             else:
-                patient = Patient.objects.filter(
-                    id=self.request.user.id).first()
-                patient_serializer = PatientSpecificSerializer(
-                    patient, data=response_data, partial=True)
+                patient = Patient.objects.filter(id=self.request.user.id).first()
+                patient_serializer = PatientSpecificSerializer(patient, data=response_data, partial=True)
                 patient_serializer.is_valid(raise_exception=True)
                 patient_serializer.save()
         return self.custom_success_response(message=response_message,
