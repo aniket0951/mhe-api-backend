@@ -1373,7 +1373,7 @@ class PaymentUtils:
         #     not payment_update_response.data or \
         #     not payment_update_response.data.get("data"):
         #     raise InvalidResponseFromManipalServers
-        return payment_update_response.data.get("data")        return payment_update_response.data
+        return payment_update_response.data.get("data")
 
     @staticmethod
     def wait_for_manipal_response(payment_instance,order_details):
