@@ -119,17 +119,17 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
                 response_object['drive'] = DriveSerializer(instance.drive).data
                 response_object['drive'] = {
                     "id":instance.drive,
-                    "description":instance.description,
-                    "type":instance.type,
-                    "domain":instance.domain,
-                    "date":instance.date,
-                    "code":instance.code,
-                    "booking_start_time":instance.booking_start_time,
-                    "booking_end_time":instance.booking_end_time,
+                    "description":instance.drive.description,
+                    "type":instance.drive.type,
+                    "domain":instance.drive.domain,
+                    "date":instance.drive.date,
+                    "code":instance.drive.code,
+                    "booking_start_time":instance.drive.booking_start_time,
+                    "booking_end_time":instance.drive.booking_end_time,
                     "hospital":{
-                        "id":instance.hospital.id,
-                        "code":instance.hospital.code,
-                        "description":instance.hospital.description,
+                        "id":instance.drive.hospital.id,
+                        "code":instance.drive.hospital.code,
+                        "description":instance.drive.hospital.description,
                     }
                 }
             if instance.drive_inventory:
