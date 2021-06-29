@@ -123,6 +123,7 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
                                     "transaction_id":instance.payment.transaction_id,
                                     "processing_id":instance.payment.processing_id,
                                     "status":instance.payment.status,
+                                    "amount":instance.payment.amount,
                                     "payment_for_drive":instance.payment.payment_for_drive
                                 }
             

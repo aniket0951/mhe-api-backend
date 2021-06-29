@@ -361,6 +361,7 @@ class PaymentUtils:
         payment_data["payment_done_for_patient"] = drive_booking_instance.patient
         payment_data["payment_for_drive"] = True
         payment_data["location"] = hospital.id
+        payment_data["amount"] = param["token"]["accounts"][0]["amount"]
         if drive_booking_instance.family_member:
             payment_data["payment_done_for_patient"] = None
             payment_data["payment_done_for_family_member"] = drive_booking_instance.family_member.id
@@ -968,6 +969,7 @@ class PaymentUtils:
         if  payment_instance.payment_for_uhid_creation and \
             not payment_instance.appointment and \
             not payment_instance.payment_for_health_package and \
+            not payment_instance.payment_for_drive and \
             bill_details.get("ReceiptNo"):
 
             payment["receipt_number"] = bill_details.get("ReceiptNo")
@@ -1000,11 +1002,18 @@ class PaymentUtils:
         return payment
     
     @staticmethod
-    def set_receipt_number(payment_instance,bill_details,payment,is_requested_from_mobile):
+    def set_receipt_number_for_drive(payment_instance,order_payment_details,payment):
+        if payment_instance.payment_for_drive:
+            payment["receipt_number"] = order_payment_details.get("invoice_id")
+        return payment
+
+    @staticmethod
+    def set_receipt_number(payment_instance,bill_details,payment,is_requested_from_mobile,order_payment_details):
 
         payment = PaymentUtils.set_receipt_number_for_only_uhid(payment_instance,bill_details,payment)
         payment = PaymentUtils.set_receipt_number_for_app_hp_ip(payment_instance,bill_details,payment,is_requested_from_mobile)
         payment = PaymentUtils.set_receipt_number_for_op(payment_instance,bill_details,payment)
+        payment = PaymentUtils.set_receipt_number_for_drive(payment_instance,order_payment_details,payment)
 
         return payment
 
@@ -1014,7 +1023,7 @@ class PaymentUtils:
     @staticmethod
     def update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile):
         payment = {}
-        payment = PaymentUtils.set_receipt_number(payment_instance,payment_response,payment,is_requested_from_mobile)
+        payment = PaymentUtils.set_receipt_number(payment_instance,payment_response,payment,is_requested_from_mobile,order_payment_details)
         payment["uhid_number"] = payment_response.get("uhid_number")
         payment["razor_payment_id"] = order_payment_details.get("id")
         payment["razor_invoice_id"] = order_payment_details.get("invoice_id")
@@ -1091,7 +1100,7 @@ class PaymentUtils:
             appointment_serializer.save()
 
     @staticmethod
-    def payment_update_for_drive_booking(payment_instance,payment_response):
+    def payment_update_for_drive_booking(payment_instance):
         if payment_instance.payment_for_drive:
             drive_booking_instance = DriveBooking.objects.get(payment__id=payment_instance.id)
             update_data = {
@@ -1236,14 +1245,15 @@ class PaymentUtils:
         return PaymentUtils.serialize_check_appointment_payment_status_response(payment_response,appointment_id)
 
     @staticmethod
-    def update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
+    def update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=""):
         payment_update_request = {
             "location_code":payment_instance.location.code,
             "temp_id":PaymentUtils.get_pre_registration_number(payment_instance),
             "transaction_number":order_details.get("id"),
             "gateway_id":order_payment_details.get("id"),
             "amt":str(PaymentUtils.get_payment_amount(order_details)),
-            "mobile":PaymentUtils.get_patients_mobile_number(payment_instance)
+            "mobile":PaymentUtils.get_patients_mobile_number(payment_instance),
+            "pay_mode":pay_mode
         }
         payment_update_response = UHIDPaymentView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if payment_update_response and payment_update_response.data:
@@ -1358,10 +1368,10 @@ class PaymentUtils:
         if payment_update_response and payment_update_response.data:
             payment_instance.raw_info_from_manipal_response = json.dumps(payment_update_response.data)
             payment_instance.save()
-        if  not payment_update_response.status_code==200 or \
-            not payment_update_response.data or \
-            not payment_update_response.data.get("data"):
-            raise InvalidResponseFromManipalServers
+        # if  not payment_update_response.status_code==200 or \
+        #     not payment_update_response.data or \
+        #     not payment_update_response.data.get("data"):
+        #     raise InvalidResponseFromManipalServers
         return payment_update_response.data
 
     @staticmethod
@@ -1381,7 +1391,7 @@ class PaymentUtils:
 
     @staticmethod
     def update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details,order_payment_details):
-        if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
+        if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package and not payment_instance.payment_for_drive:
             return PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.appointment or payment_instance.payment_for_health_package:
             payment_check_response = PaymentUtils.wait_for_manipal_response(payment_instance,order_details) if is_requested_from_mobile else PaymentUtils.check_appointment_payment_status(payment_instance)
@@ -1393,15 +1403,17 @@ class PaymentUtils:
         elif payment_instance.payment_for_ip_deposit:
             return PaymentUtils.update_ip_deposit_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.payment_for_drive:
-            return PaymentUtils.update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
-        
-
+            payment_response = {"uhid_number":PaymentUtils.get_uhid_number(payment_instance)}
+            if payment_instance.payment_for_uhid_creation:
+                payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID)
+            PaymentUtils.update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
+            return payment_response
 
 
     @staticmethod
     def get_successful_payment_response(payment_instance):
         response_data = dict()
-        if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package:
+        if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package and not payment_instance.payment_for_drive:
             response_data.update({
                 "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
                 "ReceiptNo": payment_instance.receipt_number
@@ -1421,6 +1433,12 @@ class PaymentUtils:
                 "StatusMessage": payment_instance.status
             })
         elif payment_instance.payment_for_ip_deposit:
+            response_data.update({
+                "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
+                "ReceiptNo": payment_instance.receipt_number,
+                "StatusMessage": payment_instance.status
+            })
+        elif payment_instance.payment_for_drive:
             response_data.update({
                 "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
                 "ReceiptNo": payment_instance.receipt_number,
