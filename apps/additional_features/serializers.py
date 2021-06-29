@@ -1,3 +1,4 @@
+from django.db.models.query_utils import Q
 from apps.master_data.serializers import BillingSerializer, MedicineSerializer
 from apps.doctors.serializers import HospitalSerializer
 import logging
@@ -75,6 +76,13 @@ class DriveInventorySerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         try:
+            drive_inventories_consumed = DriveBooking.objects.filter(
+                                            Q(drive_inventory=instance.id) &
+                                            Q(drive__id=instance.drive.id) &
+                                            Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
+                                        ).count()
+            response_object['available_item_quantity'] = instance.item_quantity-drive_inventories_consumed
+
             response_object['medicine'] = None
             if instance.medicine:
                 response_object['medicine'] = MedicineSerializer(instance.medicine).data
