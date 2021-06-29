@@ -115,6 +115,13 @@ class DriveInventory(MyBaseModel):
                                 related_name="medicine_name"   
                             )
     
+    dose = models.CharField(
+                        max_length=8,
+                        blank=False,
+                        null=False,
+                        default='dose'
+                    )
+    
     mh_item_code = models.CharField(
                             max_length=100,
                             blank=False,
@@ -224,12 +231,6 @@ class DriveBooking(MyBaseModel):
                         default='pending'
                         )
 
-    dose = models.CharField(
-                        max_length=8,
-                        blank=True,
-                        null=True
-                    )
-    
     beneficiary_reference_id = models.CharField(max_length=30,null=True,blank=True)
 
 class StaticInstructions(MyBaseModel):
