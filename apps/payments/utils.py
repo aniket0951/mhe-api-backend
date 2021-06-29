@@ -951,7 +951,7 @@ class PaymentUtils:
         if drive_billing_ids.exists():
             for drive_billing_id in drive_billing_ids:
                 total_price += drive_billing_id.price
-        return total_price
+        return int(total_price)
 
     @staticmethod
     def get_payment_appointment_date(payment_instance):
@@ -1357,7 +1357,7 @@ class PaymentUtils:
             "vaccination_name":drive_booking.drive_inventory.medicine.name,
             "apartment_name":drive_booking.drive.description,
             "vaccination_item_code":drive_booking.drive_inventory.mh_item_code,
-            "vaccination_charges":drive_booking.drive_inventory.price,
+            "vaccination_charges":int(drive_booking.drive_inventory.price),
             "medical_service_charges":PaymentUtils.get_total_service_charges(drive_booking),
             "total_paid_amt":str(PaymentUtils.get_payment_amount(order_details)),
             "post_flag":0,
