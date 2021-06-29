@@ -118,33 +118,9 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
         try:
             
             if instance.drive:
-                response_object['drive'] = {
-                    "id":instance.drive.id,
-                    "description":instance.drive.description,
-                    "type":instance.drive.type,
-                    "domain":instance.drive.domain,
-                    "date":str(instance.drive.date),
-                    "code":instance.drive.code,
-                    "booking_start_time":instance.drive.booking_start_time,
-                    "booking_end_time":instance.drive.booking_end_time,
-                    "hospital":{
-                        "id":instance.drive.hospital.id,
-                        "code":instance.drive.hospital.code,
-                        "description":instance.drive.hospital.description,
-                    }
-                }
+                response_object['drive'] = DriveSerializer(instance.drive).data
             if instance.drive_inventory:
-                response_object['drive_inventory'] = {
-                    "id":instance.drive_inventory.id,
-                    "dose":instance.drive_inventory.dose,
-                    "mh_item_code":instance.drive_inventory.mh_item_code,
-                    "price":instance.drive_inventory.price,
-                    "medicine":{
-                        "id":instance.drive_inventory.medicine.id,
-                        "name":instance.drive_inventory.medicine.name,
-                        "code":instance.drive_inventory.medicine.code,
-                    },
-                }
+                response_object['drive_inventory'] = DriveInventorySerializer(instance.drive_inventory).data
             if instance.patient:
                 response_object['patient'] = PatientSerializer(instance.patient).data
             if instance.family_member:
@@ -160,7 +136,7 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
                                     "amount":instance.payment.amount,
                                     "payment_for_drive":instance.payment.payment_for_drive
                                 }
-            
+            response_object['dose'] = None
             response_object['appointment_service'] = "drive"
         except Exception as error:
             logger.info("Exception in DriveBookingSerializer -> to_representation: %s"%(str(error)))
