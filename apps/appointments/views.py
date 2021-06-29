@@ -233,21 +233,32 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 
     def list(self, request, *args, **kwargs):
-        list_data = self.get_serializer(self.get_queryset(),many=True).data
+        
         family_member = self.request.query_params.get("user_id", None)
-        is_upcoming =   self.request.query_params.get("is_upcoming", False)
-        if request.user and not is_upcoming:
+
+        pagination_data = None
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            pagination_data = self.get_paginated_response(None)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+
+        list_data = serializer.data
+
+        if request.user:
             patient_obj = patient_user_object(request)
             if patient_obj:
                 drive_bookings = DriveBooking.objects.filter(patient__id=patient_obj.id)
             if family_member:
                 drive_bookings = DriveBooking.objects.filter(family_member__id=family_member)
-        
             list_data.extend(DriveBookingSerializer(drive_bookings, many=True).data)
         
         data = {
             "data": list_data,
             "message": self.list_success_message,
+            "pagination_data": pagination_data
         }
         return Response(data, status=status.HTTP_200_OK)
     
