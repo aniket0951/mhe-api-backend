@@ -1341,7 +1341,7 @@ class PaymentUtils:
     @staticmethod
     def update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
         drive_booking = DriveBooking.objects.get(payment__id=payment_instance.id)
-        import pdb; pdb.set_trace()
+        
         payment_update_request = {
             "location_code":payment_instance.location.code,
             "uhid":PaymentUtils.get_uhid_number(payment_instance),
@@ -1367,13 +1367,14 @@ class PaymentUtils:
         }
         payment_update_response = DriveRegistrationPaymentStatusView.as_view()(cancel_and_refund_parameters(payment_update_request))
         if payment_update_response and payment_update_response.data:
-            payment_instance.raw_info_from_manipal_response = json.dumps(payment_update_response.data)
+            payment_instance.raw_info_from_manipal_response = payment_update_response.data
             payment_instance.save()
 
         # if  not payment_update_response.status_code==200 or \
         #     not payment_update_response.data or \
         #     not payment_update_response.data.get("data"):
         #     raise InvalidResponseFromManipalServers
+
         return payment_update_response.data
 
     @staticmethod
