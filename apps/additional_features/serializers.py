@@ -116,7 +116,6 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
         try:
             
             if instance.drive:
-                response_object['drive'] = DriveSerializer(instance.drive).data
                 response_object['drive'] = {
                     "id":instance.drive,
                     "description":instance.drive.description,
