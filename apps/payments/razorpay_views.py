@@ -218,7 +218,6 @@ class RazorPaymentResponse(APIView):
 
         payment_response = dict()
         try:
-            import pdb; pdb.set_trace()
             
             payment_response = PaymentUtils.update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details,order_payment_details)
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)

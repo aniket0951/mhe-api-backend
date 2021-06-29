@@ -1341,7 +1341,7 @@ class PaymentUtils:
     @staticmethod
     def update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
         drive_booking = DriveBooking.objects.get(payment__id=payment_instance.id)
-        
+        import pdb; pdb.set_trace()
         payment_update_request = {
             "location_code":payment_instance.location.code,
             "uhid":PaymentUtils.get_uhid_number(payment_instance),
@@ -1361,7 +1361,7 @@ class PaymentUtils:
             "vaccination_charges":str(int(drive_booking.drive_inventory.price)),
             "medical_service_charges":str(PaymentUtils.get_total_service_charges(drive_booking,payment_instance)),
             "total_paid_amt":str(PaymentUtils.get_payment_amount(order_details)),
-            "post_flag":str(0),
+            "post_flag":"0",
             "resource":"PatientApp",
             "name":PaymentUtils.get_patients_name(payment_instance)
         }
