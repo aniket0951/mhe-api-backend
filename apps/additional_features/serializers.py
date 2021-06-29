@@ -1,13 +1,15 @@
-from django.db.models.query_utils import Q
-from apps.master_data.serializers import BillingSerializer, MedicineSerializer
-from apps.doctors.serializers import HospitalSerializer
+
 import logging
+from django.db.models.query_utils import Q
 
 from utils.utils import generate_pre_signed_url, manipal_admin_object, patient_user_object
 from utils.serializers import DynamicFieldsModelSerializer
 from .models import Drive, DriveBilling, DriveBooking, DriveInventory, StaticInstructions
 from apps.patients.serializers import PatientSerializer,FamilyMemberSerializer
 from apps.payments.serializers import PaymentSerializer
+
+from apps.master_data.serializers import BillingSerializer, MedicineSerializer
+from apps.doctors.serializers import HospitalSerializer
 
 logger = logging.getLogger('django')
 
@@ -117,11 +119,11 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
             
             if instance.drive:
                 response_object['drive'] = {
-                    "id":instance.drive,
+                    "id":instance.drive.id,
                     "description":instance.drive.description,
                     "type":instance.drive.type,
                     "domain":instance.drive.domain,
-                    "date":instance.drive.date,
+                    "date":str(instance.drive.date),
                     "code":instance.drive.code,
                     "booking_start_time":instance.drive.booking_start_time,
                     "booking_end_time":instance.drive.booking_end_time,
