@@ -198,7 +198,6 @@ class RazorPaymentResponse(APIView):
 
     def post(self, request, format=None):
 
-        logger.info("request : %s"%str(request))
         logger.info("request data: %s"%str(request.data))
 
         is_requested_from_mobile = False

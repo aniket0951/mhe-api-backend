@@ -945,12 +945,13 @@ class PaymentUtils:
         return appointment_instance.beneficiary_reference_id if payment_instance.appointment and appointment_instance and appointment_instance.beneficiary_reference_id else ""
     
     @staticmethod
-    def get_total_service_charges(drive_booking):
+    def get_total_service_charges(drive_booking,payment_instance):
         total_price = 0
         drive_billing_ids = DriveBilling.objects.filter(drive__id=drive_booking.drive.id)
         if drive_billing_ids.exists():
             for drive_billing_id in drive_billing_ids:
-                total_price += drive_billing_id.price
+                if drive_billing_id.billing.code!="registration" or payment_instance.payment_for_drive:
+                    total_price += drive_billing_id.price
         return int(total_price)
 
     @staticmethod
@@ -1348,7 +1349,7 @@ class PaymentUtils:
             "mobile_no":PaymentUtils.get_patients_mobile_number(payment_instance),
             "transaction_id":order_payment_details.get('id'),
             "payment_status":"captured",
-            "Payment_date":date.today().strftime("%Y-%m-%d"),
+            "payment_date":date.today().strftime("%Y-%m-%d"),
             "order_id":order_details.get("id"),
             "aadhar_number":PaymentUtils.get_drive_patients_aadhar_number(payment_instance),
             "cowin_number":drive_booking.beneficiary_reference_id,
@@ -1373,7 +1374,7 @@ class PaymentUtils:
         #     not payment_update_response.data or \
         #     not payment_update_response.data.get("data"):
         #     raise InvalidResponseFromManipalServers
-        return payment_update_response.data.get("data")
+        return payment_update_response.data
 
     @staticmethod
     def wait_for_manipal_response(payment_instance,order_details):

@@ -722,7 +722,7 @@ class DrivePaymentStatus:
         serializer.add_property('email_id', self.email_id)
         serializer.add_property('mobile_no', self.mobile_no)
         serializer.add_property('transaction_id', self.transaction_id)
-        serializer.add_property('payment_status', self.payment_date)
+        serializer.add_property('payment_status', self.payment_status)
         serializer.add_property('Payment_date', self.payment_date)
         serializer.add_property('order_id', self.order_id)
         serializer.add_property('aadhar_number', self.aadhar_number)
