@@ -940,7 +940,7 @@ class DriveRegistrationPaymentStatusView(ProxyView):
         data = dict()
         if status == "Success":
             drive_payment_response = root.find("VacRegistrationResponse").text
-            data = json.loads(drive_payment_response)
+            data = drive_payment_response
         return self.custom_success_response(
                                 message=message,
                                 success=status,
