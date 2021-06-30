@@ -69,7 +69,9 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             )
     filter_fields = ['type','date','hospital__code','code']
     search_fields = ['description','code']
-    
+    ordering = ('-date','-created_at')
+    ordering_fields = ('-date','-created_at')
+
     def get_permissions(self):
 
         if self.action in ['create','partial_update']:
@@ -260,7 +262,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
     filter_fields = ['status','drive__hospital__code','drive_inventory__medicine__name','drive__date','drive__id','drive__code']
     search_fields = ['patient__first_name','family_member__first_name','patient__uhid_number','family_member__uhid_number','drive__description','drive__code','beneficiary_reference_id','booking_number']
     ordering = ('-drive__date','-created_at')
-    ordering_fields = ('-drive__date','-created_at')    
+    ordering_fields = ('-drive__date','-created_at')
     
     def get_permissions(self):
 
