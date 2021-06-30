@@ -1376,7 +1376,7 @@ class PaymentUtils:
             "aadhar_number":PaymentUtils.get_drive_patients_aadhar_number(payment_instance),
             "cowin_number":drive_booking.beneficiary_reference_id,
             "vaccination_date":drive_booking.drive.date.strftime("%Y-%m-%d"),
-            "vaccination_dose":drive_booking.dose,
+            "vaccination_dose":drive_booking.drive_inventory.dose,
             "vaccination_name":drive_booking.drive_inventory.medicine.name,
             "apartment_name":drive_booking.drive.description,
             "vaccination_item_code":drive_booking.drive_inventory.mh_item_code,
