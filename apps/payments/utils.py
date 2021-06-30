@@ -1381,7 +1381,7 @@ class PaymentUtils:
             "apartment_name":drive_booking.drive.description,
             "vaccination_item_code":drive_booking.drive_inventory.mh_item_code,
             "vaccination_charges":str(int(drive_booking.drive_inventory.price)),
-            "medical_service_charges":str(PaymentUtils.get_total_service_charges(drive_booking,payment_instance)),
+            "medical_service_charges":str(PaymentUtils.get_total_service_charges(drive_booking)),
             "total_paid_amt":str(PaymentUtils.get_payment_amount(order_details)),
             "post_flag":"0",
             "resource":"PatientApp",
