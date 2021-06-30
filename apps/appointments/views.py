@@ -232,37 +232,6 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                     ).filter(corporate_appointment=False)
 
 
-    def list(self, request, *args, **kwargs):
-        
-        family_member = self.request.query_params.get("user_id", None)
-
-        pagination_data = None
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            pagination_data = self.get_paginated_response(None)
-        else:
-            serializer = self.get_serializer(queryset, many=True)
-
-        list_data = serializer.data
-
-        if request.user:
-            patient_obj = patient_user_object(request)
-            if patient_obj:
-                drive_bookings = DriveBooking.objects.filter(patient__id=patient_obj.id)
-            if family_member:
-                drive_bookings = DriveBooking.objects.filter(family_member__id=family_member)
-            list_data.extend(DriveBookingSerializer(drive_bookings, many=True).data)
-        
-        data = {
-            "data": list_data,
-            "message": self.list_success_message,
-            "pagination_data": pagination_data
-        }
-        return Response(data, status=status.HTTP_200_OK)
-    
-
 def validate_request_data_for_create_appointment(request,patient_id):
     patient = Patient.objects.filter(id=patient_id).first()
     

@@ -282,6 +282,25 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
 
         return super().get_permissions()    
         
+    def get_queryset(self):
+        qs = super().get_queryset()
+        is_upcoming = self.request.query_params.get("is_upcoming", False)
+        family_member = self.request.query_params.get("user_id", None)
+        patient_instace = patient_user_object(self.request)
+
+        if patient_instace:
+            
+            if family_member:
+                qs = qs.filter(Q(family_member__id=family_member))
+            else:
+                qs = qs.filter(Q(patient__id=patient_instace.id))
+
+            if is_upcoming:
+                qs = qs.filter(Q(drive__date__gte=datetime.now().date()))
+            else:
+                qs = qs.filter(Q(drive__date__lt=datetime.now().date()))
+
+        return qs
 
     @action(detail=False, methods=['POST'])
     def book_drive(self,request):
