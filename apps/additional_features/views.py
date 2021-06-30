@@ -10,7 +10,7 @@ import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import  calculate_age, patient_user_object
+from utils.utils import  calculate_age, manipal_admin_object, patient_user_object
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
 from .models import Drive,  DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
@@ -97,6 +97,10 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         code = self.request.query_params.get('code')
         if patient_user_object(self.request):
             AdditionalFeaturesUtil.validate_drive_code(code)
+
+        admin_object = manipal_admin_object(self.request)
+        if admin_object and admin_object.hospital:
+            qs = qs.filter(hospital__id=admin_object.hospital.id)
         
         return qs
     
@@ -299,6 +303,10 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
                 qs = qs.filter(Q(drive__date__gte=datetime.now().date()))
             else:
                 qs = qs.filter(Q(drive__date__lt=datetime.now().date()))
+
+        admin_object = manipal_admin_object(self.request)
+        if admin_object and admin_object.hospital:
+            qs = qs.filter(drive__hospital__id=admin_object.hospital.id)
 
         return qs
 
