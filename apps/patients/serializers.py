@@ -113,7 +113,7 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                 instance.display_picture.url:
                 response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
         except Exception as error:
-            logger.info("Exception in PatientSerializer: %s"%(str(error)))
+            logger.error("Exception in PatientSerializer: %s"%(str(error)))
 
         if instance.company_info:
             response_object['company_info'] = CompanySerializer(instance.company_info).data
@@ -229,7 +229,7 @@ class FamilyMemberSerializer(DynamicFieldsModelSerializer):
                 instance.display_picture.url:
                 response_object['display_picture'] = generate_pre_signed_url(instance.display_picture.url)
         except Exception as error:
-            logger.info("Exception in FamilyMemberSerializer: %s"%(str(error)))
+            logger.error("Exception in FamilyMemberSerializer: %s"%(str(error)))
 
         return response_object
 

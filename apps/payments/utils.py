@@ -190,6 +190,19 @@ class PaymentUtils:
         return payment_instance
 
     @staticmethod
+    def validate_and_wait_for_mobile_request(request,is_requested_from_mobile):
+        payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
+        if payment_instance.payment_for_drive and is_requested_from_mobile:
+            counter = 0
+            while payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_INITIATED:
+                time.sleep(5)
+                payment_instance = PaymentUtils.validate_request_get_payment_instance(request)
+                counter+=1
+                if counter==5:
+                    break
+        return payment_instance
+
+    @staticmethod
     def get_hospital_key_info_from_payment_instance(payment_instance):
         if not payment_instance or not payment_instance.location or not payment_instance.location.code:
             raise HospitalDoesNotExistsValidationException
@@ -451,6 +464,7 @@ class PaymentUtils:
         for drive_billing_id  in drive_billing_ids:
             if drive_billing_id.billing.code!="registration" or is_registration_payment:
                 total_amount += drive_billing_id.price
+                
         return total_amount
     
     @staticmethod
@@ -945,12 +959,22 @@ class PaymentUtils:
         return appointment_instance.beneficiary_reference_id if payment_instance.appointment and appointment_instance and appointment_instance.beneficiary_reference_id else ""
     
     @staticmethod
-    def get_total_service_charges(drive_booking,payment_instance):
+    def get_total_service_charges(drive_booking):
         total_price = 0
         drive_billing_ids = DriveBilling.objects.filter(drive__id=drive_booking.drive.id)
         if drive_billing_ids.exists():
             for drive_billing_id in drive_billing_ids:
-                if drive_billing_id.billing.code!="registration" or payment_instance.payment_for_drive:
+                if drive_billing_id.billing.code!="registration":
+                    total_price += drive_billing_id.price
+        return int(total_price)
+
+    @staticmethod
+    def get_registration_charges(drive_booking):
+        total_price = 0
+        drive_billing_ids = DriveBilling.objects.filter(drive__id=drive_booking.drive.id)
+        if drive_billing_ids.exists():
+            for drive_billing_id in drive_billing_ids:
+                if drive_billing_id.billing.code=="registration":
                     total_price += drive_billing_id.price
         return int(total_price)
 
@@ -1245,13 +1269,13 @@ class PaymentUtils:
         return PaymentUtils.serialize_check_appointment_payment_status_response(payment_response,appointment_id)
 
     @staticmethod
-    def update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=""):
+    def update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode="",amount=None):
         payment_update_request = {
             "location_code":payment_instance.location.code,
             "temp_id":PaymentUtils.get_pre_registration_number(payment_instance),
             "transaction_number":order_details.get("id"),
             "gateway_id":order_payment_details.get("id"),
-            "amt":str(PaymentUtils.get_payment_amount(order_details)),
+            "amt":str(amount) if amount is not None else str(PaymentUtils.get_payment_amount(order_details)),
             "mobile":PaymentUtils.get_patients_mobile_number(payment_instance),
             "pay_mode":pay_mode
         }
@@ -1338,8 +1362,7 @@ class PaymentUtils:
         return PaymentUtils.serialize_ipdeposit_payment_response(bill_details_response)
 
     @staticmethod
-    def update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details):
-        drive_booking = DriveBooking.objects.get(payment__id=payment_instance.id)
+    def update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details,drive_booking):
         
         payment_update_request = {
             "location_code":payment_instance.location.code,
@@ -1406,9 +1429,14 @@ class PaymentUtils:
             return PaymentUtils.update_ip_deposit_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.payment_for_drive:
             payment_response = {"uhid_number":PaymentUtils.get_uhid_number(payment_instance)}
+            drive_booking = DriveBooking.objects.get(payment__id=payment_instance.id)
             if payment_instance.payment_for_uhid_creation:
-                payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID)
-            PaymentUtils.update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
+                registration_amount = PaymentUtils.get_registration_charges(drive_booking)
+                pay_mode = None
+                if not registration_amount:
+                    pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID
+                payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=pay_mode,amount=registration_amount)
+            PaymentUtils.update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details,drive_booking)
             return payment_response
 
 

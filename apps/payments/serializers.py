@@ -101,6 +101,6 @@ class PaymentReceiptsSerializer(DynamicFieldsModelSerializer):
                 response_object['receipt'] = generate_pre_signed_url(
                     instance.receipt.url)
         except Exception as error:
-            logger.info("Exception in PaymentReceiptsSerializer: %s"%(str(error)))
+            logger.error("Exception in PaymentReceiptsSerializer: %s"%(str(error)))
             response_object['receipt'] = None
         return response_object

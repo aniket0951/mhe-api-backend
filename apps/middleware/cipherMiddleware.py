@@ -45,8 +45,6 @@ class CipherRequestMiddleware(object):
                     request_logger.error("\n\nREQUEST BODY Parsing Failed: %s"%(e))
                     request_logger.debug("\n\nREQUEST BODY: %s"%(request_data))
 
-        # request_logger.info("\n\nREQUEST BODY PLAIN: %s"%(log_data))
-
         return None
 
     def process_exception(self, request, exception):

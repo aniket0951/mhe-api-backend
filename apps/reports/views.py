@@ -151,7 +151,6 @@ class ReportsSyncAPIView(CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
-        logger.info(request.data)
         try:
             report_info = request.data.get('ORUMessage', None)
             root = ET.fromstring(report_info['msgORB'])
