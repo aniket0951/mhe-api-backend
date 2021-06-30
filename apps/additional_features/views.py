@@ -119,7 +119,7 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     def perform_update(self, serializer):
         request_data = self.request.data
         
-        AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
+        AdditionalFeaturesUtil.datetime_validation_on_updation(request_data)
         
         serializer_id = serializer.save()
 

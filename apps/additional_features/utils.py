@@ -92,6 +92,16 @@ class AdditionalFeaturesUtil:
                 end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_date)
 
     @staticmethod
+    def datetime_validation_on_updation(request_data):
+        booking_start_time = request_data.get('booking_start_time')
+        booking_end_time = request_data.get('booking_end_time')
+        
+        if 'booking_start_time' in request_data and 'booking_end_time' in request_data:
+            start_end_datetime_comparision(booking_start_time,booking_end_time)
+            date_of_vaccination_date = request_data.get('date')
+            end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_date)
+
+    @staticmethod
     def create_drive_inventory(drive_id,request_data):
         if request_data.get('drive_inventories'):
             for drive_inventory in request_data['drive_inventories']:

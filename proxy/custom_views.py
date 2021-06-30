@@ -166,8 +166,8 @@ class ProxyView(BaseProxyView):
         data = self.get_request_data(request)
         headers = self.get_headers(request)
         verify_ssl = self.get_verify_ssl(request)
-        logger.error("MANIPAL REQUEST URL : %s"%(str(url)))
-        logger.error("MANIPAL REQUEST BODY : %s"%(str(data)))
+        logger.info("MANIPAL REQUEST URL : %s"%(str(url)))
+        logger.info("MANIPAL REQUEST BODY : %s"%(str(data)))
         try:
             response = requests.request(request.method, url,
                                         data=data,
@@ -175,7 +175,7 @@ class ProxyView(BaseProxyView):
                                         timeout=self.proxy_settings['TIMEOUT'],
                                         verify=verify_ssl,
                                         )
-            logger.error("MANIPAL RESPONSE DATA : %s"%(str(response.text)))
+            logger.info("MANIPAL RESPONSE DATA : %s"%(str(response.text)))
         except (ConnectionError, SSLError):
             status = requests.status_codes.codes.bad_gateway
             logger.error("MANIPAL ERROR : Unable to reach our servers")
