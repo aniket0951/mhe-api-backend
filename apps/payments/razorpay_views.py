@@ -182,7 +182,12 @@ class RazorDrivePayment(APIView):
 
         PaymentUtils.validate_order_amount_for_drive_booking(request,drive_booking_instance,location_code,param)
         
-        param,payment_data = PaymentUtils.set_order_id_for_drive_booking(param,payment_data)
+        param['is_completed'] = False
+        if int(float(param["token"]["accounts"][0]["amount"])) == 0:
+            param['is_completed'] = True
+            payment_data['status'] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS
+        else:
+            param,payment_data = PaymentUtils.set_order_id_for_drive_booking(param,payment_data)
 
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
