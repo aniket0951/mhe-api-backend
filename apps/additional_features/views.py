@@ -294,17 +294,16 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         family_member = self.request.query_params.get("user_id", None)
         patient_instace = patient_user_object(self.request)
 
-        if patient_instace:
-            
-            if family_member:
-                qs = qs.filter(Q(family_member__id=family_member))
-            else:
-                qs = qs.filter(Q(patient__id=patient_instace.id))
-
+        if family_member:
             if is_upcoming:
-                qs = qs.filter(Q(drive__date__gte=datetime.now().date()))
+                qs = qs.filter(Q(drive__date__gte=datetime.now().date()) & Q(family_member__id=family_member))
             else:
-                qs = qs.filter(Q(drive__date__lt=datetime.now().date()))
+                qs = qs.filter(Q(drive__date__lt=datetime.now().date()) & Q(family_member__id=family_member))
+        else:
+            if is_upcoming:
+                qs = qs.filter(Q(drive__date__gte=datetime.now().date()) & Q(patient__id=patient_instace.id) & Q(family_member__isnull=True))
+            else:
+                qs = qs.filter(Q(drive__date__lt=datetime.now().date()) & Q(patient__id=patient_instace.id) & Q(family_member__isnull=True))
 
         admin_object = manipal_admin_object(self.request)
         if admin_object and admin_object.hospital:
