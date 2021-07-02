@@ -183,7 +183,7 @@ class RazorDrivePayment(APIView):
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
 
-        # PaymentUtils.validate_order_amount_for_drive_booking(request,drive_booking_instance,location_code,param)
+        PaymentUtils.validate_order_amount_for_drive_booking(request,drive_booking_instance,location_code,param)
         
         drive_update_data = {}
         param['is_completed'] = False
