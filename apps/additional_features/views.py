@@ -299,7 +299,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             if family_member:
                 qs = qs.filter(Q(family_member__id=family_member))
             else:
-                qs = qs.filter(Q(patient__id=patient_instace.id))
+                qs = qs.filter(Q(patient__id=patient_instace.id) & Q(family_member__isnull=True))
 
             if is_upcoming:
                 qs = qs.filter(Q(drive__date__gte=datetime.now().date()))
