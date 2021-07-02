@@ -54,10 +54,8 @@ class AdditionalFeaturesUtil:
 
     @staticmethod
     def remove_whitespaces(string):
-        string = ''.join(filter(str.isalpha, string))
-        pattern = re.compile(r'\s+')
-        return re.sub(pattern, '', string)
-
+        return ''.join(filter(str.isalpha, string))
+        
     @staticmethod
     def validate_drive_code(code):
         if not code:
