@@ -54,6 +54,7 @@ class AdditionalFeaturesUtil:
 
     @staticmethod
     def remove_whitespaces(string):
+        string = ''.join(filter(str.isalpha, string))
         pattern = re.compile(r'\s+')
         return re.sub(pattern, '', string)
 
