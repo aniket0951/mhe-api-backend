@@ -40,6 +40,7 @@ class Drive(MyBaseModel):
                     )
     
     description = models.TextField(
+                                unique=True,
                                 blank=False,
                                 null=False
                             )
