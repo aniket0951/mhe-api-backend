@@ -159,8 +159,6 @@ class DriveBookingSerializer(DynamicFieldsModelSerializer):
                                     "amount":instance.payment.amount,
                                     "payment_for_drive":instance.payment.payment_for_drive
                                 }
-            response_object['dose'] = None
-            response_object['appointment_service'] = "drive"
         except Exception as error:
             logger.info("Exception in DriveBookingSerializer -> to_representation: %s"%(str(error)))
         return response_object
