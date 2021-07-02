@@ -1,4 +1,5 @@
 
+from apps.additional_features.serializers import DriveBookingSerializer
 import logging
 from time import sleep
 
@@ -193,8 +194,9 @@ class RazorDrivePayment(APIView):
         payment.is_valid(raise_exception=True)
         payment_id = payment.save()
 
-        drive_booking_instance.payment = payment_id
-        drive_booking_instance.save()
+        drive_booking_serializer = DriveBookingSerializer(drive_booking_instance.id,data={'payment':payment_id.id}, partial=True)
+        drive_booking_serializer.is_valid(raise_exception=True)
+        drive_booking = drive_booking_serializer.save()
 
         return Response(data=param, status=status.HTTP_200_OK)
 

@@ -349,10 +349,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         payment_params = AdditionalFeaturesUtil.validate_and_prepare_payment_data(request,patient,drive_booking,amount)
         
         if payment_params['is_completed']:
-            drive_booking_update = {}
-            drive_booking_update['status'] = DriveBooking.BOOKING_BOOKED
-            
-            drive_booking_serializer = DriveBookingSerializer(data=drive_booking_update, partial=True)
+            drive_booking_serializer = DriveBookingSerializer(drive_booking.id,data={'status':DriveBooking.BOOKING_BOOKED}, partial=True)
             drive_booking_serializer.is_valid(raise_exception=True)
             drive_booking = drive_booking_serializer.save()
 
