@@ -187,7 +187,7 @@ class RazorDrivePayment(APIView):
         
         drive_update_data = {}
         param['is_completed'] = False
-        
+
         if int(float(param["token"]["accounts"][0]["amount"])) == 0:
             param['is_completed'] = True
             payment_data['status'] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS
@@ -202,7 +202,7 @@ class RazorDrivePayment(APIView):
         payment.is_valid(raise_exception=True)
         payment_id = payment.save()
 
-        drive_update_data.update({'payment':payment_id})
+        drive_update_data.update({'payment':payment_id.id})
 
         drive_booking_serializer = DriveBookingSerializer(drive_booking_instance,data=drive_update_data, partial=True)
         drive_booking_serializer.is_valid(raise_exception=True)
