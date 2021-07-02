@@ -195,7 +195,7 @@ class RazorDrivePayment(APIView):
         payment.is_valid(raise_exception=True)
         payment_id = payment.save()
 
-        drive_booking_serializer = DriveBookingSerializer(drive_booking_instance.id,data={'payment':payment_id.id}, partial=True)
+        drive_booking_serializer = DriveBookingSerializer(drive_booking_instance,data={'payment':payment_id.id}, partial=True)
         drive_booking_serializer.is_valid(raise_exception=True)
         drive_booking = drive_booking_serializer.save()
 
