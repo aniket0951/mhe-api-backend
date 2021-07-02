@@ -188,6 +188,8 @@ class RazorDrivePayment(APIView):
         if int(float(param["token"]["accounts"][0]["amount"])) == 0:
             param['is_completed'] = True
             payment_data['status'] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS
+            payment_data['amount'] = 0
+            payment_data['amount'] = param["token"]["processing_id"]
         else:
             param,payment_data = PaymentUtils.set_order_id_for_drive_booking(param,payment_data)
 
