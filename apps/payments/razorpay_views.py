@@ -1,4 +1,6 @@
 
+
+from apps.additional_features.models import DriveBooking
 import logging
 from time import sleep
 
@@ -35,6 +37,7 @@ from .utils import PaymentUtils
 
 from apps.payments.constants import PaymentConstants
 from apps.payments.views import RefundView
+from apps.additional_features.serializers import DriveBookingSerializer
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -182,10 +185,16 @@ class RazorDrivePayment(APIView):
 
         PaymentUtils.validate_order_amount_for_drive_booking(request,drive_booking_instance,location_code,param)
         
+        drive_update_data = {}
         param['is_completed'] = False
+
         if int(float(param["token"]["accounts"][0]["amount"])) == 0:
             param['is_completed'] = True
             payment_data['status'] = PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS
+            payment_data['amount'] = 0
+            payment_data['transaction_id'] = param["token"]["processing_id"]
+            drive_update_data.update({'status':DriveBooking.BOOKING_BOOKED})
+
         else:
             param,payment_data = PaymentUtils.set_order_id_for_drive_booking(param,payment_data)
 
@@ -193,8 +202,11 @@ class RazorDrivePayment(APIView):
         payment.is_valid(raise_exception=True)
         payment_id = payment.save()
 
-        drive_booking_instance.payment = payment_id
-        drive_booking_instance.save()
+        drive_update_data.update({'payment':payment_id.id})
+
+        drive_booking_serializer = DriveBookingSerializer(drive_booking_instance,data=drive_update_data, partial=True)
+        drive_booking_serializer.is_valid(raise_exception=True)
+        drive_booking = drive_booking_serializer.save()
 
         return Response(data=param, status=status.HTTP_200_OK)
 

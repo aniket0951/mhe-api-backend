@@ -294,16 +294,17 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         family_member = self.request.query_params.get("user_id", None)
         patient_instace = patient_user_object(self.request)
 
-        if family_member:
-            if is_upcoming:
-                qs = qs.filter(Q(drive__date__gte=datetime.now().date()) & Q(family_member__id=family_member))
+        if patient_instace:
+            
+            if family_member:
+                qs = qs.filter(Q(family_member__id=family_member))
             else:
-                qs = qs.filter(Q(drive__date__lt=datetime.now().date()) & Q(family_member__id=family_member))
-        else:
+                qs = qs.filter(Q(patient__id=patient_instace.id) & Q(family_member__isnull=True))
+
             if is_upcoming:
-                qs = qs.filter(Q(drive__date__gte=datetime.now().date()) & Q(patient__id=patient_instace.id) & Q(family_member__isnull=True))
+                qs = qs.filter(Q(drive__date__gte=datetime.now().date()))
             else:
-                qs = qs.filter(Q(drive__date__lt=datetime.now().date()) & Q(patient__id=patient_instace.id) & Q(family_member__isnull=True))
+                qs = qs.filter(Q(drive__date__lt=datetime.now().date()))
 
         admin_object = manipal_admin_object(self.request)
         if admin_object and admin_object.hospital:
@@ -324,6 +325,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
                 request.data.pop(filter_field)
 
         try:
+            
             drive_id = request.data['drive']
             drive_inventory = request.data['drive_inventory']
             amount = request.data['amount']
@@ -331,6 +333,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             aadhar_number = request.data.pop('aadhar_number')
             request.data['beneficiary_reference_id']
             request.data['booking_number'] = AdditionalFeaturesUtil.generate_unique_booking_number()
+
         except Exception as e:
             logger.error("DriveBookingViewSet -> book_drive : Error while booking an appointment : %s"%(str(e)))
             raise ValidationError("Required field : %s"%str(e))
@@ -347,16 +350,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
 
         payment_params = AdditionalFeaturesUtil.validate_and_prepare_payment_data(request,patient,drive_booking,amount)
         
-        if payment_params['is_completed']:
-            drive_booking_update = {}
-            drive_booking_update['status'] = DriveBooking.BOOKING_BOOKED
-            
-            drive_booking_serializer = DriveBookingSerializer(data=drive_booking_update, partial=True)
-            drive_booking_serializer.is_valid(raise_exception=True)
-            drive_booking = drive_booking_serializer.save()
-
         return Response(data={
                 "drive_booking":DriveBookingSerializer(DriveBooking.objects.get(id=drive_booking.id)).data,
                 "params":payment_params
-            }, 
-            status=status.HTTP_200_OK)
+            }, status=status.HTTP_200_OK)
