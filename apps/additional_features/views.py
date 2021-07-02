@@ -325,6 +325,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
                 request.data.pop(filter_field)
 
         try:
+            
             drive_id = request.data['drive']
             drive_inventory = request.data['drive_inventory']
             amount = request.data['amount']
@@ -332,6 +333,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             aadhar_number = request.data.pop('aadhar_number')
             request.data['beneficiary_reference_id']
             request.data['booking_number'] = AdditionalFeaturesUtil.generate_unique_booking_number()
+
         except Exception as e:
             logger.error("DriveBookingViewSet -> book_drive : Error while booking an appointment : %s"%(str(e)))
             raise ValidationError("Required field : %s"%str(e))
@@ -356,5 +358,4 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         return Response(data={
                 "drive_booking":DriveBookingSerializer(DriveBooking.objects.get(id=drive_booking.id)).data,
                 "params":payment_params
-            }, 
-            status=status.HTTP_200_OK)
+            }, status=status.HTTP_200_OK)

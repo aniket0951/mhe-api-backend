@@ -2,12 +2,10 @@
 import logging
 from django.db.models.query_utils import Q
 
-from utils.utils import generate_pre_signed_url, manipal_admin_object, patient_user_object
+from utils.utils import generate_pre_signed_url, patient_user_object
 from utils.serializers import DynamicFieldsModelSerializer
 from .models import Drive, DriveBilling, DriveBooking, DriveInventory, StaticInstructions
 from apps.patients.serializers import PatientSerializer,FamilyMemberSerializer
-from apps.payments.serializers import PaymentSerializer
-
 from apps.master_data.serializers import BillingSerializer, MedicineSerializer
 from apps.doctors.serializers import HospitalSerializer
 
