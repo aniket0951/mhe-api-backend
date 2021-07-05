@@ -149,7 +149,7 @@ def get_vaccination_drive_bookings(patient_id):
                 )
             )
         patient_appointment = patient_appointment.union(family_appointment)
-    return patient_appointment.order_by('drive__date')
+    return patient_appointment.order_by('created_at')
 
 
 def get_report_info(hospital_code=None,specific_date=None):
