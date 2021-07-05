@@ -1129,7 +1129,19 @@ class PaymentUtils:
         if payment_instance.payment_for_drive:
             drive_booking_instance = DriveBooking.objects.get(payment__id=payment_instance.id)
             update_data = {
-                "status":PaymentConstants.DRIVE_BOOKING_STATUS_BOOKED
+                "status":DriveBooking.BOOKING_BOOKED
+            }
+            drive_booking_serializer = DriveBookingSerializer(drive_booking_instance, data=update_data, partial=True)
+            drive_booking_serializer.is_valid(raise_exception=True)
+            drive_booking_serializer.save()
+
+
+    @staticmethod
+    def cancel_drive_booking_on_failure(payment_instance):
+        if payment_instance.payment_for_drive:
+            drive_booking_instance = DriveBooking.objects.get(payment__id=payment_instance.id)
+            update_data = {
+                "status":DriveBooking.BOOKING_CANCELLED
             }
             drive_booking_serializer = DriveBookingSerializer(drive_booking_instance, data=update_data, partial=True)
             drive_booking_serializer.is_valid(raise_exception=True)

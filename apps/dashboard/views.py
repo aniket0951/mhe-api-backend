@@ -1,3 +1,4 @@
+from apps.additional_features.serializers import DriveBookingSerializer
 import base64
 from datetime import date, datetime
 from apps.appointments import models
@@ -25,7 +26,8 @@ from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
 from utils.custom_permissions import BlacklistUpdateMethodPermission, IsManipalAdminUser, IsPatientUser, BlacklistDestroyMethodPermission
 from utils.utils import (
-                    get_appointment, 
+                    get_appointment,
+                    get_vaccination_drive_bookings, 
                     manipal_admin_object,
                     patient_user_object
                 )
@@ -81,6 +83,8 @@ class DashboardAPIView(ListAPIView):
                 dashboard_details['patient'] = PatientSerializer(patient_obj).data
                 patient_appointment = get_appointment(patient_obj.id)
                 dashboard_details['upcoming_appointment'] = AppointmentSerializer(patient_appointment, many=True).data
+                drive_bookings = get_vaccination_drive_bookings(patient_obj.id)
+                dashboard_details['upcoming_drive_bookings'] = DriveBookingSerializer(drive_bookings, many=True).data
                 dashboard_details["vaccination_age_error_message"] = settings.VACCINATION_AGE_ERROR_MESSAGE.format(str(settings.MIN_VACCINATION_AGE))
                 dashboard_details['manipal_whatsapp_contact'] = settings.MANIPAL_WHATSAPP_CONTACT
                 if settings.FLYER_ENABLED:

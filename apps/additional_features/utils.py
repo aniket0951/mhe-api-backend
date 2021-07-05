@@ -1,3 +1,4 @@
+from apps.additional_features.constants import AdditionalFeaturesConstants
 from apps.patients.models import FamilyMember
 from django.conf import settings
 from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
@@ -214,7 +215,7 @@ class AdditionalFeaturesUtil:
                                             )
         
         if is_already_booked.exists():
-            raise ValidationError("You have already registered for the selected patient.")
+            raise ValidationError(AdditionalFeaturesConstants.ALREADY_REGISTERED)
     
     @staticmethod
     def validate_inventory(drive_inventory,drive_id):
@@ -229,10 +230,10 @@ class AdditionalFeaturesUtil:
             item_quantity  = drive_inventory_id.item_quantity
         except Exception as e:
             logger.info("AdditionalFeaturesUtil -> validate_inventory : %s"%(str(e)))
-            raise ValidationError("Invalid Drive Inventory ID.")
+            raise ValidationError(AdditionalFeaturesConstants.INVALID_DRIVE_INVENTORY_ID)
         
         if drive_inventories_consumed >= item_quantity:
-            raise ValidationError("Sorry! All vaccines are consumed for the selected vaccine, You can book with another Vaccine")
+            raise ValidationError(AdditionalFeaturesConstants.ALL_VACCINES_CONSUMED)
 
     @staticmethod
     def validate_and_prepare_payment_data(request,patient,drive_booking,amount):
@@ -255,6 +256,6 @@ class AdditionalFeaturesUtil:
 
         if validate_payment_response.status_code!=200:
             drive_booking.delete()
-            raise ValidationError("Could not book drive for you.")
+            raise ValidationError(AdditionalFeaturesConstants.DRIVE_BOOKING_FAILED)
 
         return validate_payment_response.data

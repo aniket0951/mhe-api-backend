@@ -246,6 +246,7 @@ class RazorPaymentResponse(APIView):
 
         except Exception as e:
             logger.error("Error while processing payment : %s"%str(e))
+            PaymentUtils.cancel_drive_booking_on_failure(payment_instance)
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
             
         return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
