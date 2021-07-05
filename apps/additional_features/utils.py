@@ -207,7 +207,8 @@ class AdditionalFeaturesUtil:
                                             )
         else:
             is_already_booked = DriveBooking.objects.filter(
-                                                Q(patient__id=patient.id) &
+                                                Q(patient__id=patient.id) & 
+                                                Q(family_member__isnull=True) &
                                                 Q(drive__id=drive_id) &
                                                 Q(status__in=[DriveBooking.BOOKING_PENDING,DriveBooking.BOOKING_BOOKED])
                                             )
