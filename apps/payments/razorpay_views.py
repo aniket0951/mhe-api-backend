@@ -1,6 +1,8 @@
 
 
-from apps.additional_features.models import DriveBooking
+
+
+
 import logging
 from time import sleep
 
@@ -34,6 +36,7 @@ from .exceptions import ProcessingIdDoesNotExistsValidationException,IncompleteP
 from .models import Payment, PaymentReceipts
 from .serializers import (PaymentReceiptsSerializer, PaymentSerializer)
 from .utils import PaymentUtils
+from apps.additional_features.models import DriveBooking
 
 from apps.payments.constants import PaymentConstants
 from apps.payments.views import RefundView
@@ -202,25 +205,34 @@ class RazorDrivePayment(APIView):
         payment.is_valid(raise_exception=True)
         payment_id = payment.save()
 
-        if int(float(param["token"]["accounts"][0]["amount"])) == 0:
-            order_details = {"id":param["token"]["processing_id"]}
-            payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(
-                                                    payment_id,
-                                                    order_details,
-                                                    order_details,
-                                                    pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID,
-                                                    amount=0
-                                                )
-            PaymentUtils.payment_for_uhid_creation(payment_id,payment_response)
-            payment = PaymentSerializer(payment_id,data=payment_response,partial=True)
-            payment.is_valid(raise_exception=True)
-            payment.save()
-
         drive_update_data.update({'payment':payment_id.id})
 
         drive_booking_serializer = DriveBookingSerializer(drive_booking_instance,data=drive_update_data, partial=True)
         drive_booking_serializer.is_valid(raise_exception=True)
         drive_booking = drive_booking_serializer.save()
+
+        
+        if int(float(param["token"]["accounts"][0]["amount"])) == 0:
+            order_details = {"id":param["token"]["processing_id"]}
+            try:
+                payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(
+                                                        payment_id,
+                                                        order_details,
+                                                        order_details,
+                                                        pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID,
+                                                        amount=0
+                                                    )
+                PaymentUtils.payment_for_uhid_creation(payment_id,payment_response)
+                payment = PaymentSerializer(payment_id,data=payment_response,partial=True)
+                payment.is_valid(raise_exception=True)
+                payment.save()
+            except Exception as e:
+                logger.error("Error while processing payment : %s"%str(e))
+                PaymentUtils.cancel_drive_booking_on_failure(payment_id)
+                payment = PaymentSerializer(payment_id,data={"status":PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED},partial=True)
+                payment.is_valid(raise_exception=True)
+                payment.save()
+                raise ValidationError("UHID Creation failed!")
 
         return Response(data=param, status=status.HTTP_200_OK)
 
