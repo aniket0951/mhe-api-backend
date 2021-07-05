@@ -194,13 +194,27 @@ class RazorDrivePayment(APIView):
             payment_data['amount'] = 0
             payment_data['transaction_id'] = param["token"]["processing_id"]
             drive_update_data.update({'status':DriveBooking.BOOKING_BOOKED})
-
+            
         else:
             param,payment_data = PaymentUtils.set_order_id_for_drive_booking(param,payment_data)
 
         payment = PaymentSerializer(data=payment_data)
         payment.is_valid(raise_exception=True)
         payment_id = payment.save()
+
+        if int(float(param["token"]["accounts"][0]["amount"])) == 0:
+            order_details = {"id":param["token"]["processing_id"]}
+            payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(
+                                                    payment_id,
+                                                    order_details,
+                                                    order_details,
+                                                    pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID,
+                                                    amount=0
+                                                )
+            PaymentUtils.payment_for_uhid_creation(payment_id,payment_response)
+            payment = PaymentSerializer(payment_id,data=payment_response,partial=True)
+            payment.is_valid(raise_exception=True)
+            payment.save()
 
         drive_update_data.update({'payment':payment_id.id})
 
