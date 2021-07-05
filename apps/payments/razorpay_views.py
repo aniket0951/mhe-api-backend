@@ -212,7 +212,7 @@ class RazorDrivePayment(APIView):
         drive_booking = drive_booking_serializer.save()
 
         
-        if int(float(param["token"]["accounts"][0]["amount"])) == 0:
+        if int(float(param["token"]["accounts"][0]["amount"])) == 0 and payment_data.get("payment_for_uhid_creation"):
             order_details = {"id":param["token"]["processing_id"]}
             try:
                 payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(
