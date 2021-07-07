@@ -246,7 +246,8 @@ class AdditionalFeaturesUtil:
             "registration_payment":request.data.get('registration_payment',False),
             "account":{
                 "amount": amount,
-                "email":user.email
+                "email":user.email,
+                "phone": str(user.mobile),
             }
         }
 
