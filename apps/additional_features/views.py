@@ -295,7 +295,6 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
         patient_instace = patient_user_object(self.request)
 
         if patient_instace:
-            
             if family_member:
                 qs = qs.filter(Q(family_member__id=family_member))
             else:
