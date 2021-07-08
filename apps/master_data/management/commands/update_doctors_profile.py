@@ -62,5 +62,4 @@ class Command(BaseCommand):
                     code=each_doctor_record['DoctorCode']).update(**doctor_details)
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while loading doctors- {0}".format(e))
+            print("Unexpected error occurred while loading doctors- {0}".format(e))

@@ -18,15 +18,9 @@ class Command(BaseCommand):
         try:
             all_hospitals = Hospital.objects.all()
             for each_hospital in all_hospitals:
-                print("Started loading doctors of {} hospital.".format(
-                    each_hospital.code))
-                
-                client.post('/api/master_data/doctors',
-                                       json.dumps({'location_code': each_hospital.code}), content_type='application/json')
-                print(
-                    "Completed loading doctors of {} hospital.\n------------".
-                    format(each_hospital.code))
+                print("Started loading doctors of {} hospital.".format(each_hospital.code))
+                client.post('/api/master_data/doctors',json.dumps({'location_code': each_hospital.code}), content_type='application/json')
+                print("Completed loading doctors of {} hospital.\n------------".format(each_hospital.code))
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while loading doctors- {0}".format(e))
+            print("Unexpected error occurred while loading doctors- {0}".format(e))

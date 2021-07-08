@@ -32,10 +32,7 @@ class Command(BaseCommand):
                                                 'hospital_code': each_hospital.code,
                                                 "specific_date": specific_date
                                             }), content_type='application/json')
-                    print(
-                        "Completed pushing statistics for {} hospital.\n------------".
-                        format(each_hospital.code))
+                    print("Completed pushing statistics for {} hospital.\n------------".format(each_hospital.code))
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while loading doctors- {0}".format(e))
+            print("Unexpected error occurred while loading doctors- {0}".format(e))

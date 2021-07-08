@@ -77,5 +77,4 @@ class Command(BaseCommand):
                         print(e)
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while loading health package prices- {0}".format(e))
+            print("Unexpected error occurred while loading health package prices- {0}".format(e))

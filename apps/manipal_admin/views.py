@@ -213,7 +213,6 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
         admin_object.save()
         if request.data.get('password'):
             user_object = ManipalAdmin.objects.filter(email=request.data.get("email")).first()
-            print(user_object)
             user_object.set_password(request.data.get('password'))
             user_object.save()
         return Response(status=status.HTTP_200_OK)

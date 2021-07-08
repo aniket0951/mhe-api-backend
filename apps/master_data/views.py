@@ -761,7 +761,6 @@ class PatientAppointmentStatus(ProxyView):
         param = get_report_info(hospital_code=hospital_code,specific_date=specific_date)
         request_param = serializable_patient_app_status(param)
         request_data = custom_serializer().serialize(request_param, 'XML')
-        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -770,7 +769,6 @@ class PatientAppointmentStatus(ProxyView):
     def parse_proxy_response(self, response):
         response_message = "Report could not pushed"
         response_success = False
-        print(response.content)
         if response.status_code == 200:
             root = ET.fromstring(response.content)
             response_message = root.find("PatAppStatsResponse").text
@@ -937,7 +935,6 @@ class UhidConsultationPricingView(ProxyView):
     def get_request_data(self, request):
         consultation_obj = serializable_uhid_based_consultation(**request.data)
         request_data = custom_serializer().serialize(consultation_obj, 'XML')
-        print(request_data)
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -945,7 +942,6 @@ class UhidConsultationPricingView(ProxyView):
 
     def parse_proxy_response(self, response):
         root = ET.fromstring(response._content)
-        print(response.content)
         message = "Something went Wrong!!"
         success = False
         item = root.find('consultchargesResp')
@@ -1074,7 +1070,6 @@ class PatientDetailsByMobileView(ProxyView):
         data = request.data
         mobile_number = data.get("mobile")
         data["check_code"] = check_code(mobile_number)
-        print(data)
         patient = serializable_patient_details_by_mobile(**request.data)
         request_data = custom_serializer().serialize(patient, 'XML')
         return request_data

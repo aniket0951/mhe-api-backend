@@ -48,5 +48,4 @@ class Command(BaseCommand):
                 print("Unable to import Specialisation data!")
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while import Specialisation - {0}".format(e))
+            print("Unexpected error occurred while import Specialisation - {0}".format(e))

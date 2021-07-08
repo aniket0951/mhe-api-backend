@@ -145,6 +145,7 @@ def get_vaccination_drive_bookings(patient_id):
                     #     Q(patient__uhid_number__isnull=False) & 
                     #     Q(patient__uhid_number=member_uhid)
                     # ) | 
+                    Q(family_member__isnull=False) &
                     Q(family_member_id=member.id)
                 )
             )

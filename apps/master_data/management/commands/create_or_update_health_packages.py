@@ -23,10 +23,7 @@ class Command(BaseCommand):
                 
                 client.post('/api/master_data/health_packages',
                                        json.dumps({'location_code': each_hospital.code}), content_type='application/json')
-                print(
-                    "Completed loading health packages of {} hospital.\n------------".
-                    format(each_hospital.code))
+                print("Completed loading health packages of {} hospital.\n------------".format(each_hospital.code))
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while loading health packages- {0}".format(e))
+            print("Unexpected error occurred while loading health packages- {0}".format(e))
