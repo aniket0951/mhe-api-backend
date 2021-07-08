@@ -307,8 +307,7 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             else:
                 qs = qs.filter((
                                 Q(patient__uhid_number__isnull=False) & 
-                                Q(patient__uhid_number=patient_instace.uhid_number) &
-                                Q(family_member__isnull=True)
+                                Q(patient__uhid_number=patient_instace.uhid_number) 
                             ) | 
                             (
                                 Q(patient_id=patient_instace.id) & 
