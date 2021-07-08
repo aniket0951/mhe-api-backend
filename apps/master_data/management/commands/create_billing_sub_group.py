@@ -52,5 +52,4 @@ class Command(BaseCommand):
                 print("Unable to import Billing Sub Group data!")
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while import Billing Sub Group - {0}".format(e))
+            print("Unexpected error occurred while import Billing Sub Group - {0}".format(e))

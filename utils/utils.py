@@ -107,27 +107,14 @@ def get_vaccination_drive_bookings(patient_id):
     if not patient:
         raise ValidationError("Patient does not Exist")
     member_uhid = patient.uhid_number
-
     patient_appointment = DriveBooking.objects.filter(
             Q(drive__date__gte=datetime.now().date()) & 
-            Q(status=DriveBooking.BOOKING_BOOKED) & 
+            Q(status__in=[DriveBooking.BOOKING_BOOKED]) &
             (
-                # (
-                #     Q(family_member__isnull=False) &
-                #     Q(family_member__uhid_number__isnull=False) & 
-                #     Q(family_member__uhid_number=member_uhid)
-                # ) | 
-                (
-                    Q(patient__isnull=False) &
-                    Q(patient__uhid_number__isnull=False) & 
-                    Q(patient__uhid_number=member_uhid) &
-                    Q(patient_id=patient.id) &
-                    Q(family_member__isnull=True)
-                ) | 
-                (
-                    Q(patient_id=patient.id) & 
-                    Q(family_member__isnull=True)
-                )
+		        Q(patient__uhid_number__isnull=False) & 
+                Q(patient__uhid_number=member_uhid) | 
+                Q(patient_id=patient.id) & 
+                Q(family_member__isnull=True)
             )
         )
     family_members = patient.patient_family_member_info.filter(is_visible=True)
@@ -135,19 +122,11 @@ def get_vaccination_drive_bookings(patient_id):
         member_uhid = member.uhid_number
         family_appointment = DriveBooking.objects.filter(
                 Q(drive__date__gte=datetime.now().date()) & 
-                Q(status=DriveBooking.BOOKING_BOOKED) & 
-                (
-                    (
-                        Q(family_member__isnull=False) &
-                        Q(family_member__uhid_number__isnull=False) & 
-                        Q(family_member__uhid_number=member_uhid) &
-                        Q(family_member_id=member.id)
-                    ) | 
-                    # (
-                    #     Q(patient__isnull=False) &
-                    #     Q(patient__uhid_number__isnull=False) & 
-                    #     Q(patient__uhid_number=member_uhid) 
-                    # ) | 
+                Q(status__in=[DriveBooking.BOOKING_BOOKED]) &
+                ( 
+                    Q(family_member__uhid_number__isnull=False) & 
+                    Q(family_member__uhid_number=member_uhid) |
+                    Q(family_member__isnull=False) &
                     Q(family_member_id=member.id)
                 )
             )

@@ -1484,23 +1484,25 @@ class CurrentAppointmentListView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        
         root = ET.fromstring(response.content)
         status = root.find("Status").text
         message = root.find("Message").text
         appointment_list = []
         today_count = 0
         tomorrow_count = 0
+
         if status == '1':
 
             app_list = json.loads(root.find("applist").text)
             today_count = app_list["TodaysCount"]
             tomorrow_count = app_list["TomorrowCount"]
             appointment_list = app_list["AppointmentList"]
+
             for appointment in appointment_list:
 
                 appointment_identifier = appointment["AppId"]
-                appointment_instance = Appointment.objects.filter(
-                    appointment_identifier=appointment_identifier).first()
+                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
                 appointment["enable_vc"] = False
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
@@ -1525,29 +1527,44 @@ class CurrentAppointmentListView(ProxyView):
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
+                appointment["uhid_linked"] = False
+                appointment["mobile"] = None
+                user = Patient.objects.filter(uhid_number=appointment["HospNo"]).first()
+                if not user:
+                    user = FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).first()
+                if user:
+                    appointment["uhid_linked"] = True
+                    appointment["mobile"] = user.mobile
+
+                appointment["app_user"] = False
                 if appointment_instance:
+                    
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
+
                     if appointment_instance.status == 1 and appointment_instance.appointment_mode == "VC" and appointment_instance.payment_status == "success":
                         appointment["enable_vc"] = True
+
                         if appointment_instance.vc_appointment_status == 4:
                             appointment["enable_vc"] = False
+
                         if appointment_instance.appointment_vitals.exists():
                             appointment["vitals_available"] = True
 
                         if appointment_instance.appointment_prescription.exists():
                             appointment["prescription_available"] = True
 
-                    else:
-                        appointment["enable_vc"] = False
-
-                else:
-                    appointment["app_user"] = False
-
-        return self.custom_success_response(message=message,
-                                            success=True, data={"appointment_list": appointment_list, "today_count": today_count, "tomorrow_count": tomorrow_count})
+        return self.custom_success_response(
+                                    message=message,
+                                    success=True, 
+                                    data={
+                                        "appointment_list": appointment_list, 
+                                        "today_count": today_count, 
+                                        "tomorrow_count": tomorrow_count
+                                    }
+                                )
 
 
 class FeedbackData(APIView):

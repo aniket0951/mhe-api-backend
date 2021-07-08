@@ -296,6 +296,8 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
 
         if patient_instace:
             
+            qs = qs.filter(Q(status__in=[DriveBooking.BOOKING_BOOKED]))
+
             if family_member:
                 qs = qs.filter((
                                 Q(family_member__uhid_number__isnull=False) & 

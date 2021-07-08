@@ -35,5 +35,4 @@ class Command(BaseCommand):
                     health_package_instance.save()
 
         except Exception as e:
-            print(
-                "Unexpected error occurred while loading health package images- {0}".format(e))
+            print("Unexpected error occurred while loading health package images- {0}".format(e))
