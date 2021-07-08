@@ -299,20 +299,20 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             qs = qs.filter(Q(status__in=[DriveBooking.BOOKING_BOOKED]))
 
             if family_member:
-                qs = qs.filter((
+                qs = qs.filter(
                                 Q(family_member__uhid_number__isnull=False) & 
-                                Q(family_member__uhid_number=family_member.uhid_number)
-                            ) | 
-                            Q(family_member_id=family_member.id))
+                                Q(family_member__uhid_number=family_member.uhid_number) |
+                                Q(family_member__isnull=False) &
+                                Q(family_member_id=family_member.id)
+                            )
             else:
-                qs = qs.filter((
+                qs = qs.filter(
                                 Q(patient__uhid_number__isnull=False) & 
-                                Q(patient__uhid_number=patient_instace.uhid_number) 
-                            ) | 
-                            (
+                                Q(patient__uhid_number=patient_instace.uhid_number) &
+                                Q(family_member__isnull=True) | 
                                 Q(patient_id=patient_instace.id) & 
                                 Q(family_member__isnull=True)
-                            ))
+                            )
 
             if is_upcoming:
                 qs = qs.filter(Q(drive__date__gte=datetime.now().date()))
