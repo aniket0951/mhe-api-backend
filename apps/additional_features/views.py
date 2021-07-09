@@ -291,14 +291,15 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         is_upcoming = self.request.query_params.get("is_upcoming", False)
-        family_member = self.request.query_params.get("user_id", None)
+        family_member_id = self.request.query_params.get("user_id", None)
         patient_instace = patient_user_object(self.request)
+        family_member = FamilyMember.objects.filter(id=family_member_id).first()
 
         if patient_instace:
             
             qs = qs.filter(Q(status__in=[DriveBooking.BOOKING_BOOKED]))
 
-            uhid_number = patient_instace.uhid_number
+            uhid_number = patient_instace.uhid_number 
             if family_member:
                 family_member_instance = FamilyMember.objects.get(id=family_member)
                 uhid_number = family_member_instance.uhid_number
