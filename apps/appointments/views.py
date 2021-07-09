@@ -1534,7 +1534,7 @@ class CurrentAppointmentListView(ProxyView):
                     user = FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).first()
                 if user:
                     appointment["uhid_linked"] = True
-                    appointment["mobile"] = user.mobile
+                    appointment["mobile"] = str(user.mobile)
 
                 appointment["app_user"] = False
                 if appointment_instance:
