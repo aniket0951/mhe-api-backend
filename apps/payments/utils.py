@@ -1448,6 +1448,7 @@ class PaymentUtils:
                 if not registration_amount:
                     pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID
                 payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=pay_mode,amount=registration_amount)
+                PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
             PaymentUtils.update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details,drive_booking)
             return payment_response
 
