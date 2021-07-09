@@ -10,7 +10,7 @@ import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import  calculate_age, manipal_admin_object, patient_user_object
+from utils.utils import  calculate_age, get_uhid_number_queryset, manipal_admin_object, patient_user_object
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
 from .models import Drive,  DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
@@ -301,21 +301,9 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
 
             uhid_number = patient_instace.uhid_number 
             if family_member:
-                family_member_instance = FamilyMember.objects.get(id=family_member)
-                uhid_number = family_member_instance.uhid_number
+                uhid_number = family_member.uhid_number
 
-            uhid_number_queryset = (
-                            (
-                                Q(family_member__isnull=True) & 
-                                Q(patient__uhid_number__isnull=False) & 
-                                Q(patient__uhid_number=uhid_number)
-                            ) | 
-                            (
-                                Q(family_member__isnull=False) & 
-                                Q(family_member__uhid_number__isnull=False) & 
-                                Q(family_member__uhid_number=uhid_number)
-                            )
-                        )
+            uhid_number_queryset = get_uhid_number_queryset(uhid_number)
 
             if family_member:
                 qs = qs.filter(
