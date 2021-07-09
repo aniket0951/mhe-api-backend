@@ -101,36 +101,56 @@ def get_appointment(patient_id):
         patient_appointment = patient_appointment.union(family_appointment)
     return patient_appointment.order_by('appointment_date', 'appointment_slot')
 
+def get_uhid_number_queryset(member_uhid):
+    return (
+        (
+            Q(family_member__isnull=True) & 
+            Q(patient__uhid_number__isnull=False) & 
+            Q(patient__uhid_number=member_uhid)
+        ) | 
+        (
+            Q(family_member__isnull=False) & 
+            Q(family_member__uhid_number__isnull=False) & 
+            Q(family_member__uhid_number=member_uhid)
+        )
+    )
 
 def get_vaccination_drive_bookings(patient_id):
     patient = Patient.objects.filter(id=patient_id).first()
     if not patient:
         raise ValidationError("Patient does not Exist")
     member_uhid = patient.uhid_number
+    
+    uhid_number_queryset = get_uhid_number_queryset(member_uhid)
     patient_appointment = DriveBooking.objects.filter(
             Q(drive__date__gte=datetime.now().date()) & 
             Q(status__in=[DriveBooking.BOOKING_BOOKED]) &
             (
-		        Q(patient__uhid_number__isnull=False) & 
-                Q(patient__uhid_number=member_uhid) | 
-                Q(patient_id=patient.id) & 
-                Q(family_member__isnull=True)
+		        uhid_number_queryset |
+                (
+                    Q(patient_id=patient.id) & 
+                    Q(family_member__isnull=True)
+                )
             )
         )
+
     family_members = patient.patient_family_member_info.filter(is_visible=True)
     for member in family_members:
         member_uhid = member.uhid_number
+        uhid_number_queryset = get_uhid_number_queryset(member_uhid)
         family_appointment = DriveBooking.objects.filter(
                 Q(drive__date__gte=datetime.now().date()) & 
                 Q(status__in=[DriveBooking.BOOKING_BOOKED]) &
                 ( 
-                    Q(family_member__uhid_number__isnull=False) & 
-                    Q(family_member__uhid_number=member_uhid) |
-                    Q(family_member__isnull=False) &
-                    Q(family_member_id=member.id)
+                    uhid_number_queryset |
+                    (
+                        Q(family_member__isnull=False) &
+                        Q(family_member_id=member.id)
+                    )
                 )
             )
         patient_appointment = patient_appointment.union(family_appointment)
+        
     return patient_appointment.order_by('created_at')
 
 
