@@ -1,4 +1,4 @@
-from apps.doctors.serializers import DoctorChargesSerializer
+
 import ast
 import json
 import logging
@@ -53,7 +53,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj, patient_user_object
+from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj
 from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -65,8 +65,8 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
-from apps.additional_features.models import DriveBooking
-from apps.additional_features.serializers import DriveBookingSerializer
+
+from apps.doctors.serializers import DoctorChargesSerializer
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
 from .constants import AppointmentsConstants
 

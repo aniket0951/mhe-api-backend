@@ -1,23 +1,22 @@
-from apps.additional_features.models import DriveBooking
 import logging
 import urllib
 import hashlib
 from datetime import datetime, timedelta, date
 from utils.exceptions import UserNotRegisteredException
-from django.db.models import Count, Sum
+from django.db.models import Sum
 
 from django.conf import settings
 from django.db.models import Q
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
-from apps.doctors.models import Doctor
-from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
-                                                 PatientServiceAppointment)
+from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,PatientServiceAppointment)
 from apps.manipal_admin.models import ManipalAdmin
 from apps.notifications.models import MobileDevice
 from apps.patients.models import FamilyMember, Patient
 from apps.payments.models import Payment
+from apps.additional_features.models import DriveBooking
 from rest_framework.serializers import ValidationError
+
 logger = logging.getLogger('django')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 

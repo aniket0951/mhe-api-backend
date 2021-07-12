@@ -1,8 +1,4 @@
-from apps.patients.models import FamilyMember
-from apps.appointments.utils import cancel_and_refund_parameters
-from apps.payments.razorpay_views import RazorDrivePayment
-from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
-from apps.patients.serializers import PatientSerializer
+
 import re
 from .utils import AdditionalFeaturesUtil
 from datetime import datetime, timedelta
@@ -10,7 +6,7 @@ import ast
 
 from proxy.custom_views import ProxyView
 import logging
-from utils.utils import  calculate_age, get_uhid_number_queryset, manipal_admin_object, patient_user_object
+from utils.utils import get_uhid_number_queryset, manipal_admin_object, patient_user_object
 from .serializers import DriveBookingSerializer, DriveInventorySerializer, DriveSerializer, StaticInstructionsSerializer
 from .models import Drive,  DriveBooking, DriveInventory, StaticInstructions
 from utils import custom_viewsets
@@ -36,6 +32,8 @@ from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from apps.patients.emails import send_corporate_email_activation_otp
 from apps.patients.exceptions import InvalidEmailOTPException, OTPExpiredException
 from apps.patients.constants import PatientsConstants
+from apps.patients.models import FamilyMember
+from apps.patients.serializers import PatientSerializer
 
 OTP_LENGTH = settings.OTP_LENGTH
 logger = logging.getLogger("django")
