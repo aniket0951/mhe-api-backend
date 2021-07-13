@@ -1404,11 +1404,6 @@ class PaymentUtils:
             payment_instance.raw_info_from_manipal_response = payment_update_response.data
             payment_instance.save()
 
-        # if  not payment_update_response.status_code==200 or \
-        #     not payment_update_response.data or \
-        #     not payment_update_response.data.get("data"):
-        #     raise InvalidResponseFromManipalServers
-
         return payment_update_response.data
 
     @staticmethod
@@ -1476,13 +1471,7 @@ class PaymentUtils:
                 "EpisodeNo":payment_instance.episode_number,
                 "StatusMessage": payment_instance.status
             })
-        elif payment_instance.payment_for_ip_deposit:
-            response_data.update({
-                "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
-                "ReceiptNo": payment_instance.receipt_number,
-                "StatusMessage": payment_instance.status
-            })
-        elif payment_instance.payment_for_drive:
+        elif payment_instance.payment_for_ip_deposit or payment_instance.payment_for_drive:
             response_data.update({
                 "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
                 "ReceiptNo": payment_instance.receipt_number,
