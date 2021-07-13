@@ -568,11 +568,20 @@ class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
+            patient_id = self.request.query_params.get("patient_id", None)
+            family_member_id = self.request.query_params.get("family_member_id", None)
             if date_from and date_to:
                 qs = qs.filter(payment_id__status="success",appointment_date__date__range=[date_from, date_to])
             if admin_object.hospital:
                 qs = qs.filter(hospital__id=admin_object.hospital.id)
+            if uhid:
+                return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
+            if patient_id:
+                qs = qs.filter(patient__id=patient_id,family_member__isnull=True).order_by('-created_at').distinct()
+            if family_member_id:
+                qs =  qs.filter(family_member__id=family_member_id).order_by('-created_at').distinct()
             return qs.filter(payment_id__status="success")
+        
         if is_booked:
             return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success", appointment_status="Booked")
         return qs.filter(payment_id__uhid_number=uhid, payment_id__uhid_number__isnull=False, payment_id__status="success").filter(Q(appointment_status="Booked") | Q(appointment_status="Cancelled"))
