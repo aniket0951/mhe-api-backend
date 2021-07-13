@@ -4,10 +4,10 @@ from rest_framework.response import Response
 
 from apps.master_data.models import Hospital
 from utils import custom_viewsets
-from utils.custom_permissions import (IsPatientUser,
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfHealthPackageCartItem,
                                       IsSelfHomeCollectionCartItem)
-from utils.utils import patient_user_object
+from utils.utils import manipal_admin_object, patient_user_object
 
 from .models import HealthPackageCart, HomeCollectionCart
 from .serializers import (HealthPackageCartSerializer,
@@ -27,7 +27,7 @@ class HealthPackageCartViewSet(custom_viewsets.ListUpdateViewSet):
 
     def get_permissions(self):
         if self.action in ['list', ]:
-            permission_classes = [IsPatientUser]
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action in ['partial_update', ]:
@@ -43,6 +43,21 @@ class HealthPackageCartViewSet(custom_viewsets.ListUpdateViewSet):
         patient_user = patient_user_object(request)
         cart_obj = self.get_queryset().filter(patient_info=patient_user,).first()
 
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            patient_id = self.request.query_params.get("patient_id", None)
+            
+            if admin_object.hospital:
+                cart_obj = self.get_queryset().filter(hospital__id=admin_object.hospital.id)
+            if patient_id:
+                cart_obj = self.get_queryset().filter(patient_info__id=patient_id).order_by('-created_at').distinct()
+        
+            data = {
+                "data": self.get_serializer(cart_obj, many=True).data,
+                "message": self.list_success_message,
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        
         if not cart_obj:
             cart_obj = self.model.objects.create(
                 patient_info=patient_user,
@@ -66,7 +81,7 @@ class HomeCollectionCartViewSet(custom_viewsets.ListUpdateViewSet):
 
     def get_permissions(self):
         if self.action in ['list', ]:
-            permission_classes = [IsPatientUser]
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action in ['partial_update', ]:
@@ -82,6 +97,21 @@ class HomeCollectionCartViewSet(custom_viewsets.ListUpdateViewSet):
         patient_user = patient_user_object(request)
         cart_obj = self.get_queryset().filter(patient_info=patient_user,).first()
 
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            patient_id = self.request.query_params.get("patient_id", None)
+            
+            if admin_object.hospital:
+                cart_obj = self.get_queryset().filter(hospital__id=admin_object.hospital.id)
+            if patient_id:
+                cart_obj = self.get_queryset().filter(patient_info__id=patient_id).order_by('-created_at').distinct()
+        
+            data = {
+                "data": self.get_serializer(cart_obj, many=True).data,
+                "message": self.list_success_message,
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        
         if not cart_obj:
             cart_obj = self.model.objects.create(
                 patient_info=patient_user,

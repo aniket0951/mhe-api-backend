@@ -146,10 +146,16 @@ class PatientServiceAppointmentViewSet(custom_viewsets.ModelViewSet):
         if admin_object:
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
+            patient_id = self.request.query_params.get("patient_id", None)
+            family_member_id = self.request.query_params.get("family_member_id", None)
             if date_from and date_to:
                 qs = qs.filter(appointment_date__range=[date_from, date_to])
             if admin_object.hospital:
                 qs = qs.filter(hospital__id=admin_object.hospital.id)
+            if patient_id:
+                qs = qs.filter(patient__id=patient_id,family_member__isnull=True).order_by('-created_at').distinct()
+            if family_member_id:
+                qs =  qs.filter(family_member__id=family_member_id).order_by('-created_at').distinct()
             return qs  
         
 
