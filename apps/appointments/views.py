@@ -726,7 +726,7 @@ class OfflineAppointment(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
-        logger.info(request.data)
+        
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
                          'locationCode', 'status', 'payment_status', 'department']
         data = request.data
