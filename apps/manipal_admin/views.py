@@ -1,3 +1,5 @@
+from django.db.models.query_utils import Q
+from apps.patients.models import Patient
 import json
 from datetime import datetime
 
@@ -205,14 +207,20 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
     ordering_fields = ('-created_at',)
 
     def create(self, request):
-        if not request.data.get('mobile'):
+        mobile = request.data.get('mobile')
+        email = request.data.get("email")
+        if not mobile:
             raise ValidationError("Mobile is mandatory")
+        if Patient.objects.filter(mobile=mobile).exists():
+            raise ValidationError("Patient with the same mobile number already exists, please try with another number!")
+        if Patient.objects.filter(email=email).exists():
+            raise ValidationError("Patient with the same email already exists, please try with another email!")
         request.data['is_active'] = True
         admin_object = self.serializer_class(data = request.data)
         admin_object.is_valid(raise_exception=True)
         admin_object.save()
         if request.data.get('password'):
-            user_object = ManipalAdmin.objects.filter(email=request.data.get("email")).first()
+            user_object = ManipalAdmin.objects.filter(email=email).first()
             user_object.set_password(request.data.get('password'))
             user_object.save()
         return Response(status=status.HTTP_200_OK)
