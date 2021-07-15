@@ -98,8 +98,14 @@ def appointment_next_day_reminder_scheduler():
     for appointment_instance in appointments:
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment"
+        appointment_time_slot = appointment_instance.appointment_slot
+        appointment_slot = appointment_time_slot.strftime("%I:%M %p")
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, tomorrow at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
-            appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address, appointment_instance.appointment_slot)
+                            appointment_instance.doctor.name, 
+                            appointment_instance.department.name, 
+                            appointment_instance.hospital.address, 
+                            appointment_slot
+                        )
         notification_data["message"] = user_message
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
@@ -127,7 +133,9 @@ def health_package_next_day_appointment_reminder():
             id=appointment_instance.patient.id).first()
         notification_data["title"] = "Reminder: Health Package Appointment Reminder"
         notification_data["message"] = "Reminder: You have a Health Check appointment appointment at {0}, tomorrow at {1}. For assistance, call Appointment Helpline 1800 102 5555.".format(
-            appointment_instance.hospital.address, appointment_instance.appointment_date.time())
+                                            appointment_instance.hospital.address, 
+                                            appointment_instance.appointment_date.time()
+                                        )
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
@@ -178,8 +186,14 @@ def appointment_reminder_scheduler():
     for appointment_instance in appointments:
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment"
+        appointment_time_slot = appointment_instance.appointment_slot
+        appointment_slot = appointment_time_slot.strftime("%I:%M %p")
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
-            appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address, appointment_instance.appointment_slot)
+                            appointment_instance.doctor.name, 
+                            appointment_instance.department.name, 
+                            appointment_instance.hospital.address, 
+                            appointment_slot
+                        )
         notification_data["message"] = user_message
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
@@ -202,9 +216,13 @@ def pre_appointment_reminder_scheduler():
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment Alert"
         appointment_time_slot = appointment_instance.appointment_slot
-        appointment_slot = datetime.strptime(appointment_time_slot, "%H:%M:%S %p").strftime("%I:%M %p")
+        appointment_slot = appointment_time_slot.strftime("%I:%M %p")
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
-            appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address, appointment_slot)
+                            appointment_instance.doctor.name, 
+                            appointment_instance.department.name, 
+                            appointment_instance.hospital.address, 
+                            appointment_slot
+                        )
         notification_data["message"] = user_message
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
