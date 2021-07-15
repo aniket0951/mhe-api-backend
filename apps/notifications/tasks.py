@@ -202,7 +202,7 @@ def pre_appointment_reminder_scheduler():
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment Alert"
         appointment_time_slot = appointment_instance.appointment_slot
-        appointment_slot = datetime.strptime(appointment_time_slot, "%H:%M:%S").strftime("%I:%M %p")
+        appointment_slot = datetime.strptime(appointment_time_slot, "%H:%M:%S %p").strftime("%I:%M %p")
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
             appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address, appointment_slot)
         notification_data["message"] = user_message
