@@ -211,10 +211,10 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
         email = request.data.get("email")
         if not mobile:
             raise ValidationError("Mobile is mandatory")
-        if Patient.objects.filter(mobile=mobile).exists():
-            raise ValidationError("Patient with the same mobile number already exists, please try with another number!")
-        if Patient.objects.filter(email=email).exists():
-            raise ValidationError("Patient with the same email already exists, please try with another email!")
+        if not email:
+            raise ValidationError("Email is mandatory")
+        if Patient.objects.filter(Q(mobile=mobile)|Q(email=email)).exists():
+            raise ValidationError("Patient with the same mobile number or email id already exists!")
         request.data['is_active'] = True
         admin_object = self.serializer_class(data = request.data)
         admin_object.is_valid(raise_exception=True)
