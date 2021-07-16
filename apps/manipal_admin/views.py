@@ -225,9 +225,34 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
             user_object.save()
         return Response(status=status.HTTP_200_OK)
     
+    def update(self, request, *args, **kwargs):
+        admin = self.get_object()
+        data = request.data
+        mobile = data.get('mobile')
+        email = data.get("email")
+        password = data.get("password")
+        if Patient.objects.filter(Q(mobile=mobile)|Q(email=email)).exists():
+            raise ValidationError("Patient with the same mobile number or email id already exists!")
         
+        if mobile:
+            admin.mobile = mobile        
+        if email:
+            admin.email = email
+        if password:    
+            admin.set_password(password)
+        admin.save()
+        
+        admin_object = self.serializer_class(admin, data=request.data, partial=True)
+        admin_object.is_valid(raise_exception=True)
+        admin_object.save()
 
+        return Response("Information updated successfully!", status=status.HTTP_200_OK)
     
+
+        
+            
+
+        
 
     
     
