@@ -55,7 +55,7 @@ def send_push_notification(self, **kwargs):
             client.send(token,
                         alert,
                         badge=1,
-                        sound="default",
+                        sound=settings.APNS_SOUND,
                         extra={
                             'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
                             'appointment_id': notification_data["appointment_id"]
