@@ -231,8 +231,6 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
         mobile = data.get('mobile')
         email = data.get("email")
         password = data.get("password")
-        #if Patient.objects.filter(Q(mobile=mobile)|Q(email=email)).exists():
-        #     raise ValidationError("Patient with the same mobile number or email id already exists!")
         
         if mobile:
             admin.mobile = mobile        
