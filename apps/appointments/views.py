@@ -1548,7 +1548,8 @@ class CurrentAppointmentListView(ProxyView):
                         user = appointment_instance.patient
                 
                 if user:
-                    appointment["uhid_linked"] = True
+                    if user.uhid_number:
+                        appointment["uhid_linked"] = True
                     appointment["mobile"] = user.mobile.raw_input 
 
                 appointment["app_user"] = False
