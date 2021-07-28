@@ -27,8 +27,8 @@ class AdditionalFeaturesUtil:
         booking_number = ""
         while True:
             try:
-                str_part = ''.join(random.choice(string.ascii_letters) for i in range(5)).upper()
-                int_part = ''.join(random.choice(string.digits) for i in range(5))
+                str_part = ''.join(random.choice(string.ascii_letters) for _ in range(5)).upper()
+                int_part = ''.join(random.choice(string.digits) for _ in range(5))
                 booking_number = str_part + int_part
                 Drive.objects.get(booking_number=booking_number)
             except Exception as e:

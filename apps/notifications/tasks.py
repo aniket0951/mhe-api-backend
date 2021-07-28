@@ -26,6 +26,8 @@ NOTIFICAITON_TYPE_MAP = {
     "HOLD_VC_NOTIFICATION":"2"
 }
 
+TIME_FORMAT = "%I:%M %p"
+
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
     notification_data = kwargs["notification_data"]
@@ -55,7 +57,7 @@ def send_push_notification(self, **kwargs):
             client.send(token,
                         alert,
                         badge=1,
-                        sound="default",
+                        sound=settings.APNS_SOUND,
                         extra={
                             'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
                             'appointment_id': notification_data["appointment_id"]
@@ -99,7 +101,7 @@ def appointment_next_day_reminder_scheduler():
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment"
         appointment_time_slot = appointment_instance.appointment_slot
-        appointment_slot = appointment_time_slot.strftime("%I:%M %p")
+        appointment_slot = appointment_time_slot.strftime(TIME_FORMAT)
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, tomorrow at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
                             appointment_instance.doctor.name, 
                             appointment_instance.department.name, 
@@ -187,7 +189,7 @@ def appointment_reminder_scheduler():
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment"
         appointment_time_slot = appointment_instance.appointment_slot
-        appointment_slot = appointment_time_slot.strftime("%I:%M %p")
+        appointment_slot = appointment_time_slot.strftime(TIME_FORMAT)
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
                             appointment_instance.doctor.name, 
                             appointment_instance.department.name, 
@@ -216,7 +218,7 @@ def pre_appointment_reminder_scheduler():
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment Alert"
         appointment_time_slot = appointment_instance.appointment_slot
-        appointment_slot = appointment_time_slot.strftime("%I:%M %p")
+        appointment_slot = appointment_time_slot.strftime(TIME_FORMAT)
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
                             appointment_instance.doctor.name, 
                             appointment_instance.department.name, 
