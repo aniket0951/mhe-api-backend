@@ -833,13 +833,14 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             date_to = self.request.query_params.get("date_to", None)
             uhid = self.request.query_params.get("uhid", None)
             
+            upcoming_appointment = qs.filter(appointment_date__gte=datetime.now().date(), status=1)
             if admin_object.hospital:
-                qs = qs.filter(appointment_date__gte=datetime.now().date(), status=1).filter(hospital__id=admin_object.hospital.id)
+                upcoming_appointment = upcoming_appointment.filter(hospital__id=admin_object.hospital.id)
             if date_from and date_to:
-                qs = qs.filter(appointment_date__gte=datetime.now().date(), status=1).filter(appointment_date__range=[date_from, date_to])
+                upcoming_appointment = upcoming_appointment.filter(appointment_date__range=[date_from, date_to])
             if uhid:
-                qs = qs.filter(appointment_date__gte=datetime.now().date(), status=1).filter(Q(uhid=uhid) & Q(uhid__isnull=False))
-            return qs
+                upcoming_appointment = upcoming_appointment.filter(Q(uhid=uhid) & Q(uhid__isnull=False))
+            return upcoming_appointment
         
         patient_appointment = super().get_queryset().filter(
             appointment_date__gte=datetime.now().date(), status=1).filter(
