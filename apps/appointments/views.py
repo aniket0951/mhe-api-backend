@@ -834,7 +834,7 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             uhid = self.request.query_params.get("uhid", None)
             
             if admin_object.hospital:
-                qs = qs.filter(hospital__id=admin_object.hospital.id)
+                qs = qs.filter(appointment_date__gte=datetime.now().date(), status=1).filter(hospital__id=admin_object.hospital.id)
             if date_from and date_to:
                 qs = qs.filter(appointment_date__gte=datetime.now().date(), status=1).filter(appointment_date__range=[date_from, date_to])
             if uhid:
