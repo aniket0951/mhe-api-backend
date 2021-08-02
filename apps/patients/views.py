@@ -1207,7 +1207,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     def onboard_family_members(self, request):
 
         patient_info = patient_user_object(request)
-        family_members = FamilyMember.objects.filter(patient_info=patient_info).count()
+        family_members = FamilyMember.objects.filter(patient_info=patient_info,is_visible=True).count()
 
         request_data = request.data
         response_data = request_data.get('Data')
