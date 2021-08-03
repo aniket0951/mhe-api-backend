@@ -1093,7 +1093,7 @@ class PatientDetailsByMobileView(ProxyView):
                 
                 response_data["linkedPatient"] = PatientSerializer(patient_instance,many=False).data if patient_instance.uhid_number and patient_instance.uhid_number==response_data.get("HospNo") else None
                 
-                linked_family_member = FamilyMember.objects.filter(uhid_number=response_data.get("HospNo"),patient_info__id=patient_instance.id).first()
+                linked_family_member = FamilyMember.objects.filter(uhid_number=response_data.get("HospNo"),patient_info__id=patient_instance.id,is_visible=True).first()
                 response_data["linkedFamilyMember"] = FamilyMemberSerializer(linked_family_member,many=False).data if linked_family_member else None
 
         return self.custom_success_response(
