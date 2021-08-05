@@ -222,7 +222,7 @@ class RazorDrivePayment(APIView):
                                                             pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID,
                                                             amount=0
                                                         )
-                    PaymentUtils.payment_for_uhid_creation(payment_id,payment_response)
+                    PaymentUtils.payment_for_uhid_creation_method(payment_id,payment_response)
                     payment = PaymentSerializer(payment_id,data=payment_response,partial=True)
                     payment.is_valid(raise_exception=True)
                     payment.save()
@@ -271,7 +271,7 @@ class RazorPaymentResponse(APIView):
             
             payment_response = PaymentUtils.update_manipal_on_payment(is_requested_from_mobile,payment_instance,order_details,order_payment_details)
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)
-            PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
+            PaymentUtils.payment_for_uhid_creation_method(payment_instance,payment_response)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details)
             PaymentUtils.payment_update_for_health_package(payment_instance,payment_response)
             PaymentUtils.payment_update_for_drive_booking(payment_instance)

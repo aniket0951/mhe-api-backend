@@ -1089,7 +1089,7 @@ class PaymentUtils:
             patient_serializer.save()
 
     @staticmethod
-    def payment_for_uhid_creation(payment_instance,payment_response):
+    def payment_for_uhid_creation_method(payment_instance,payment_response):
         uhid_info = {"uhid_number":payment_response.get("uhid_number")}
         if payment_instance and payment_instance.payment_for_uhid_creation:
             PaymentUtils.payment_for_uhid_creation_appointment(payment_instance)
@@ -1404,11 +1404,6 @@ class PaymentUtils:
             payment_instance.raw_info_from_manipal_response = payment_update_response.data
             payment_instance.save()
 
-        # if  not payment_update_response.status_code==200 or \
-        #     not payment_update_response.data or \
-        #     not payment_update_response.data.get("data"):
-        #     raise InvalidResponseFromManipalServers
-
         return payment_update_response.data
 
     @staticmethod
@@ -1442,18 +1437,21 @@ class PaymentUtils:
         elif payment_instance.payment_for_drive:
             payment_response = {"uhid_number":PaymentUtils.get_uhid_number(payment_instance)}
             drive_booking = DriveBooking.objects.get(payment__id=payment_instance.id)
-            if payment_instance.payment_for_uhid_creation:
-                registration_amount = PaymentUtils.get_registration_charges(drive_booking)
-                pay_mode = None
-                if not registration_amount:
-                    pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID
-                payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=pay_mode,amount=registration_amount)
-                PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
+            payment_response = PaymentUtils.process_prepayment_uhid_registration_for_drive_booking(payment_instance,drive_booking,order_details,order_payment_details,payment_response)
             PaymentUtils.update_drive_booking_payment_details_with_manipal(payment_instance,order_details,order_payment_details,drive_booking)
             return payment_response
 
-
-
+    @staticmethod
+    def process_prepayment_uhid_registration_for_drive_booking(payment_instance,drive_booking,order_details,order_payment_details,payment_response):
+        if payment_instance.payment_for_uhid_creation:
+            registration_amount = PaymentUtils.get_registration_charges(drive_booking)
+            pay_mode = None
+            if not registration_amount:
+                pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID
+            payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=pay_mode,amount=registration_amount)
+            PaymentUtils.payment_for_uhid_creation_method(payment_instance,payment_response)
+        return payment_response
+        
     @staticmethod
     def get_successful_payment_response(payment_instance):
         response_data = dict()
@@ -1476,13 +1474,7 @@ class PaymentUtils:
                 "EpisodeNo":payment_instance.episode_number,
                 "StatusMessage": payment_instance.status
             })
-        elif payment_instance.payment_for_ip_deposit:
-            response_data.update({
-                "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
-                "ReceiptNo": payment_instance.receipt_number,
-                "StatusMessage": payment_instance.status
-            })
-        elif payment_instance.payment_for_drive:
+        elif payment_instance.payment_for_ip_deposit or payment_instance.payment_for_drive:
             response_data.update({
                 "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
                 "ReceiptNo": payment_instance.receipt_number,

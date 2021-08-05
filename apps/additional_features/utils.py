@@ -1,21 +1,22 @@
-from apps.additional_features.constants import AdditionalFeaturesConstants
-from apps.patients.models import FamilyMember
-from django.conf import settings
-from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
-from apps.payments.razorpay_views import RazorDrivePayment
-from apps.appointments.utils import cancel_and_refund_parameters
-from django.db.models.query_utils import Q
-from apps.additional_features.serializers import DriveBillingSerializer, DriveInventorySerializer
 import logging
 import random
 import re
 import string
-
-from datetime import datetime,date
-from utils.utils import calculate_age, end_date_vaccination_date_comparision, start_end_datetime_comparision
-from apps.additional_features.models import Drive, DriveBilling, DriveBooking, DriveInventory
+from django.conf import settings
+from django.db.models.query_utils import Q
 from rest_framework.serializers import ValidationError
 
+from datetime import datetime,date
+
+from apps.patients.models import FamilyMember
+from apps.master_data.exceptions import InvalidDobFormatValidationException, InvalidDobValidationException
+from apps.payments.razorpay_views import RazorDrivePayment
+from apps.appointments.utils import cancel_and_refund_parameters
+from apps.additional_features.models import Drive, DriveBilling, DriveBooking, DriveInventory
+from apps.additional_features.constants import AdditionalFeaturesConstants
+from apps.additional_features.serializers import DriveBillingSerializer, DriveInventorySerializer
+
+from utils.utils import calculate_age, end_date_vaccination_date_comparision, start_end_datetime_comparision
 
 logger = logging.getLogger("AdditionalFeaturesUtil")
 
@@ -26,8 +27,8 @@ class AdditionalFeaturesUtil:
         booking_number = ""
         while True:
             try:
-                str_part = ''.join(random.choice(string.ascii_letters) for i in range(5)).upper()
-                int_part = ''.join(random.choice(string.digits) for i in range(5))
+                str_part = ''.join(random.choice(string.ascii_letters) for _ in range(5)).upper()
+                int_part = ''.join(random.choice(string.digits) for _ in range(5))
                 booking_number = str_part + int_part
                 Drive.objects.get(booking_number=booking_number)
             except Exception as e:

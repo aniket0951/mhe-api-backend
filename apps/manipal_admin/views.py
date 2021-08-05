@@ -1,3 +1,5 @@
+from django.db.models.query_utils import Q
+from apps.patients.models import Patient
 import json
 from datetime import datetime
 
@@ -205,21 +207,50 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
     ordering_fields = ('-created_at',)
 
     def create(self, request):
-        if not request.data.get('mobile'):
+        mobile = request.data.get('mobile')
+        email = request.data.get("email")
+        if not mobile:
             raise ValidationError("Mobile is mandatory")
+        if not email:
+            raise ValidationError("Email is mandatory")
+        if Patient.objects.filter(Q(mobile=mobile)|Q(email=email)).exists():
+            raise ValidationError("Patient with the same mobile number or email id already exists!")
         request.data['is_active'] = True
         admin_object = self.serializer_class(data = request.data)
         admin_object.is_valid(raise_exception=True)
         admin_object.save()
         if request.data.get('password'):
-            user_object = ManipalAdmin.objects.filter(email=request.data.get("email")).first()
+            user_object = ManipalAdmin.objects.filter(email=email).first()
             user_object.set_password(request.data.get('password'))
             user_object.save()
         return Response(status=status.HTTP_200_OK)
     
+    def update(self, request, *args, **kwargs):
+        admin = self.get_object()
+        data = request.data
+        mobile = data.get('mobile')
+        email = data.get("email")
+        password = data.get("password")
         
+        if mobile:
+            admin.mobile = mobile        
+        if email:
+            admin.email = email
+        if password:    
+            admin.set_password(password)
+        admin.save()
+        
+        admin_object = self.serializer_class(admin, data=request.data, partial=True)
+        admin_object.is_valid(raise_exception=True)
+        admin_object.save()
 
+        return Response("Information updated successfully!", status=status.HTTP_200_OK)
     
+
+        
+            
+
+        
 
     
     

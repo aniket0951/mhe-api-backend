@@ -26,6 +26,8 @@ NOTIFICAITON_TYPE_MAP = {
     "HOLD_VC_NOTIFICATION":"2"
 }
 
+TIME_FORMAT = "%I:%M %p"
+
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
     notification_data = kwargs["notification_data"]
@@ -55,7 +57,7 @@ def send_push_notification(self, **kwargs):
             client.send(token,
                         alert,
                         badge=1,
-                        sound="default",
+                        sound=settings.APNS_SOUND,
                         extra={
                             'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
                             'appointment_id': notification_data["appointment_id"]
@@ -98,8 +100,14 @@ def appointment_next_day_reminder_scheduler():
     for appointment_instance in appointments:
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment"
+        appointment_time_slot = appointment_instance.appointment_slot
+        appointment_slot = appointment_time_slot.strftime(TIME_FORMAT)
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, tomorrow at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
-            appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address, appointment_instance.appointment_slot)
+                            appointment_instance.doctor.name, 
+                            appointment_instance.department.name, 
+                            appointment_instance.hospital.address, 
+                            appointment_slot
+                        )
         notification_data["message"] = user_message
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
@@ -127,7 +135,9 @@ def health_package_next_day_appointment_reminder():
             id=appointment_instance.patient.id).first()
         notification_data["title"] = "Reminder: Health Package Appointment Reminder"
         notification_data["message"] = "Reminder: You have a Health Check appointment appointment at {0}, tomorrow at {1}. For assistance, call Appointment Helpline 1800 102 5555.".format(
-            appointment_instance.hospital.address, appointment_instance.appointment_date.time())
+                                            appointment_instance.hospital.address, 
+                                            appointment_instance.appointment_date.time()
+                                        )
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
@@ -178,8 +188,43 @@ def appointment_reminder_scheduler():
     for appointment_instance in appointments:
         notification_data = {}
         notification_data["title"] = "Reminder: Doctor Appointment"
+        appointment_time_slot = appointment_instance.appointment_slot
+        appointment_slot = appointment_time_slot.strftime(TIME_FORMAT)
         user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
-            appointment_instance.doctor.name, appointment_instance.department.name, appointment_instance.hospital.address, appointment_instance.appointment_slot)
+                            appointment_instance.doctor.name, 
+                            appointment_instance.department.name, 
+                            appointment_instance.hospital.address, 
+                            appointment_slot
+                        )
+        notification_data["message"] = user_message
+        notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+        notification_data["appointment_id"] = appointment_instance.appointment_identifier
+        if appointment_instance.family_member:
+            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+                patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
+                notification_data["recipient"] = patient_member.id
+                send_push_notification.delay(notification_data=notification_data)
+        notification_data["recipient"] = appointment_instance.patient.id
+        send_push_notification.delay(notification_data=notification_data)
+
+@app.task(name="tasks.pre_appointment_reminder")
+def pre_appointment_reminder_scheduler():
+    current_time = datetime.today()
+    after_time = current_time + timedelta(hours=1)
+    appointments = Appointment.objects.filter(
+        appointment_date=current_time.date(),appointment_slot__range=[current_time.time(), after_time.time()], status="1")
+    for appointment_instance in appointments:
+        notification_data = {}
+        notification_data["title"] = "Reminder: Doctor Appointment Alert"
+        appointment_time_slot = appointment_instance.appointment_slot
+        appointment_slot = appointment_time_slot.strftime(TIME_FORMAT)
+        user_message = "Reminder: You have an appointment with {0}, {1}, {2}, today at {3}. For assistance, call Appointment Helpline 1800 102 5555.".format(
+                            appointment_instance.doctor.name, 
+                            appointment_instance.department.name, 
+                            appointment_instance.hospital.address, 
+                            appointment_slot
+                        )
         notification_data["message"] = user_message
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
@@ -312,7 +357,6 @@ def update_doctor():
 def update_item():
     call_command("create_or_update_lab_and_radiology_items", verbosity=0)
 
-
 app.conf.beat_schedule = {
     "appointment_reminder": {
         "task": "tasks.appointment_reminder",
@@ -349,5 +393,9 @@ app.conf.beat_schedule = {
     "daily_auto_drive_booking_cancellation": {
         "task": "tasks.daily_auto_drive_bookings_cancellation",
         "schedule": crontab(minute="*/5", hour="*")
-    }
+    },
+    "pre_appointment_reminder": {
+        "task": "tasks.pre_appointment_reminder",
+        "schedule": crontab(minute="*/30", hour='*')
+    },
 }

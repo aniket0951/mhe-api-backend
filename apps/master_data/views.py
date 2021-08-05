@@ -1,5 +1,5 @@
 from apps.master_data.utils import MasterDataUtils
-from apps.patients.models import Patient
+from apps.patients.models import FamilyMember, Patient
 from apps.master_data.constants import MasterDataConstants
 import json
 import logging
@@ -8,7 +8,6 @@ from datetime import timedelta
 
 from django.contrib.gis.db.models.functions import Distance as Django_Distance
 from django.contrib.gis.geos import Point
-from django.core.management import call_command
 from django.db.models import Q
 from django.utils.timezone import datetime
 from django.conf import settings
@@ -16,11 +15,10 @@ from django.conf import settings
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.models import HealthPackage, HealthPackagePricing
-from apps.health_packages.serializers import (HealthPackage,
-                                              HealthPackagePricing)
+from apps.health_packages.serializers import (HealthPackage, HealthPackagePricing)
 from apps.health_tests.models import HealthTest
-from apps.lab_and_radiology_items.models import (LabRadiologyItem,
-                                                 LabRadiologyItemPricing)
+from apps.lab_and_radiology_items.models import (LabRadiologyItem, LabRadiologyItemPricing)
+from apps.patients.serializers import PatientSerializer,FamilyMemberSerializer
 from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
                                       update_health_package, update_item)
 from utils.utils import check_code
@@ -1088,8 +1086,15 @@ class PatientDetailsByMobileView(ProxyView):
             response_content[0]:
             success = True
             message = self.success_msg
+            patient_instance = patient_user_object(self.request)
             for response_data in response_content:
+
                 response_data["isExistingPrimaryUser"] = Patient.objects.filter(uhid_number=response_data.get("HospNo")).exists()
+                
+                response_data["linkedPatient"] = PatientSerializer(patient_instance,many=False).data if patient_instance.uhid_number and patient_instance.uhid_number==response_data.get("HospNo") else None
+                
+                linked_family_member = FamilyMember.objects.filter(uhid_number=response_data.get("HospNo"),patient_info__id=patient_instance.id,is_visible=True).first()
+                response_data["linkedFamilyMember"] = FamilyMemberSerializer(linked_family_member,many=False).data if linked_family_member else None
 
         return self.custom_success_response(
                                     success=success, 

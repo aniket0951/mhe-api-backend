@@ -1206,14 +1206,17 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def onboard_family_members(self, request):
 
+        patient_info = patient_user_object(request)
+        family_members = FamilyMember.objects.filter(patient_info=patient_info,is_visible=True).count()
+
         request_data = request.data
         response_data = request_data.get('Data')
 
         if not response_data:
             raise ValidationError(PatientsConstants.INVALID_REQUEST)
 
-        if len(response_data) > int(settings.MAX_FAMILY_MEMBER_COUNT):
-            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBERS)
+        if (len(response_data)+family_members) > int(settings.MAX_FAMILY_MEMBER_COUNT):
+            raise ValidationError(PatientsConstants.REACHED_LIMIT_FAMILY_MEMBERS%(str(family_members),str(int(settings.MAX_FAMILY_MEMBER_COUNT)-family_members)))
             
         for family_member in response_data:
 
@@ -1234,7 +1237,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             relationship = family_member.get('relationship')
             
             uhid_user_info=dict()
-            uhid_user_info['relationship'] = Relation.objects.get(code=relationship)
+            if relationship:
+                uhid_user_info['relationship'] = Relation.objects.get(code=relationship)
+                
             uhid_user_info['first_name'] = family_member.get("first_name")
             uhid_user_info['mobile'] = family_member.get("mobile")
             uhid_user_info['age'] = family_member.get("age")

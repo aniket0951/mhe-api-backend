@@ -1,4 +1,4 @@
-from apps.doctors.serializers import DoctorChargesSerializer
+
 import ast
 import json
 import logging
@@ -53,7 +53,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj, patient_user_object
+from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj
 from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -65,8 +65,8 @@ from .serializers import (AppointmentDocumentsSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
                           PrescriptionDocumentsSerializer)
-from apps.additional_features.models import DriveBooking
-from apps.additional_features.serializers import DriveBookingSerializer
+
+from apps.doctors.serializers import DoctorChargesSerializer
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
 from .constants import AppointmentsConstants
 
@@ -726,7 +726,7 @@ class OfflineAppointment(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, format=None):
-        logger.info(request.data)
+        
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
                          'locationCode', 'status', 'payment_status', 'department']
         data = request.data
@@ -736,15 +736,21 @@ class OfflineAppointment(APIView):
                             status=status.HTTP_200_OK)
         uhid = data["UHID"]
         deparmtment_code = data["department"]
-        if not (uhid and deparmtment_code and data["doctorCode"] and
-                data["locationCode"] and data["appointmentDatetime"] and data["appointmentIdentifier"]):
-            return Response({"message": "Mandatory parameter is missing"},
-                            status=status.HTTP_200_OK)
-        patient = Patient.objects.filter(uhid_number=uhid).first()
-        family_member = FamilyMember.objects.filter(uhid_number=uhid).first()
-        doctor = Doctor.objects.filter(code=data["doctorCode"].upper(),hospital__code=data["locationCode"]).first()
-        hospital = Hospital.objects.filter(code=data["locationCode"]).first()
-        department = Department.objects.filter(code=deparmtment_code).first()
+        if not (
+                uhid and \
+                deparmtment_code and \
+                data["doctorCode"] and \
+                data["locationCode"] and \
+                data["appointmentDatetime"] and \
+                data["appointmentIdentifier"]
+            ):
+            return Response({"message": "Mandatory parameter is missing"},status=status.HTTP_200_OK)
+
+        patient         = Patient.objects.filter(uhid_number=uhid).order_by('-created_at').first()
+        family_member   = FamilyMember.objects.filter(uhid_number=uhid).order_by('-created_at').first()
+        doctor          = Doctor.objects.filter(code=data["doctorCode"].upper(),hospital__code=data["locationCode"]).first()
+        hospital        = Hospital.objects.filter(code=data["locationCode"]).first()
+        department      = Department.objects.filter(code=deparmtment_code).first()
         if not (doctor and hospital and department):
             return Response({"message": "Hospital/doctor/department is not available"}, status=status.HTTP_200_OK)
         hospital_department = HospitalDepartment.objects.filter(hospital__id=hospital.id,department__id=department.id).first()
@@ -785,6 +791,11 @@ class OfflineAppointment(APIView):
             if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
                 appointment_data["booked_via_app"] = True
             if appointment_instance:
+
+                if datetime_object.year < 1900:
+                    appointment_data.pop("appointment_date")
+                    appointment_data.pop("appointment_slot")
+
                 if appointment_instance.payment_status == "success":
                     appointment_data.pop("payment_status")
                     appointment_data.pop("patient")
@@ -818,7 +829,24 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     retrieve_success_message = AppointmentsConstants.APPOINTMENT_INFO_RETURNED
 
     def get_queryset(self):
+        qs = super().get_queryset()
         patient = Patient.objects.filter(id=self.request.user.id).first()
+        
+        admin_object = manipal_admin_object(self.request)
+        if admin_object:
+            date_from = self.request.query_params.get("date_from", None)
+            date_to = self.request.query_params.get("date_to", None)
+            uhid = self.request.query_params.get("uhid", None)
+            
+            upcoming_appointment = qs.filter(appointment_date__gte=datetime.now().date(), status=1)
+            if admin_object.hospital:
+                upcoming_appointment = upcoming_appointment.filter(hospital__id=admin_object.hospital.id)
+            if date_from and date_to:
+                upcoming_appointment = upcoming_appointment.filter(appointment_date__range=[date_from, date_to])
+            if uhid:
+                upcoming_appointment = upcoming_appointment.filter(Q(uhid=uhid) & Q(uhid__isnull=False))
+            return upcoming_appointment
+        
         patient_appointment = super().get_queryset().filter(
             appointment_date__gte=datetime.now().date(), status=1).filter(
                 (Q(uhid=patient.uhid_number) & Q(uhid__isnull=False)) | (Q(patient_id=patient.id) & Q(family_member__isnull=True)) | (Q(family_member_id__uhid_number__isnull=False) & Q(family_member_id__uhid_number=patient.patient.uhid_number)))
@@ -1316,7 +1344,7 @@ class PrescriptionDocumentsViewSet(custom_viewsets.ModelViewSet):
             appointment_identifier=request.data.get("appointment_identifier")).first()
         if not appointment_instance:
             raise ValidationError(AppointmentsConstants.APPOINTMENT_DOESNT_EXIST)
-        for i, f in enumerate(request.FILES.getlist('prescription')):
+        for _, f in enumerate(request.FILES.getlist('prescription')):
             document_param["appointment_info"] = appointment_instance.id
             document_param["prescription"] = f
             document_param["name"] = f.name
@@ -1524,17 +1552,27 @@ class CurrentAppointmentListView(ProxyView):
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
                 appointment["uhid_linked"] = False
                 appointment["mobile"] = None
-                user = Patient.objects.filter(uhid_number=appointment["HospNo"]).first()
+
+                user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
                 if not user:
-                    user = FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).first()
+                    user = FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
+
+                if appointment_instance:
+                    if appointment_instance.family_member:
+                        user = appointment_instance.family_member
+                    else:
+                        user = appointment_instance.patient
+                
                 if user:
-                    appointment["uhid_linked"] = True
-                    appointment["mobile"] = user.mobile.raw_input
+                    if user.uhid_number:
+                        appointment["uhid_linked"] = True
+                    appointment["mobile"] = user.mobile.raw_input 
 
                 appointment["app_user"] = False
                 if appointment_instance:
