@@ -1089,7 +1089,7 @@ class PaymentUtils:
             patient_serializer.save()
 
     @staticmethod
-    def payment_for_uhid_creation(payment_instance,payment_response):
+    def payment_for_uhid_creation_method(payment_instance,payment_response):
         uhid_info = {"uhid_number":payment_response.get("uhid_number")}
         if payment_instance and payment_instance.payment_for_uhid_creation:
             PaymentUtils.payment_for_uhid_creation_appointment(payment_instance)
@@ -1449,7 +1449,7 @@ class PaymentUtils:
             if not registration_amount:
                 pay_mode=PaymentConstants.DRIVE_BOOKING_PAY_MODE_FOR_UHID
             payment_response = PaymentUtils.update_uhid_payment_details_with_manipal(payment_instance,order_details,order_payment_details,pay_mode=pay_mode,amount=registration_amount)
-            PaymentUtils.payment_for_uhid_creation(payment_instance,payment_response)
+            PaymentUtils.payment_for_uhid_creation_method(payment_instance,payment_response)
         return payment_response
         
     @staticmethod
