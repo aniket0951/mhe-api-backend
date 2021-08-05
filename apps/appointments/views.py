@@ -791,6 +791,11 @@ class OfflineAppointment(APIView):
             if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
                 appointment_data["booked_via_app"] = True
             if appointment_instance:
+
+                if datetime_object.year < 1900:
+                    appointment_data.pop("appointment_date")
+                    appointment_data.pop("appointment_slot")
+
                 if appointment_instance.payment_status == "success":
                     appointment_data.pop("payment_status")
                     appointment_data.pop("patient")
