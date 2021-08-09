@@ -393,9 +393,5 @@ app.conf.beat_schedule = {
     "daily_auto_drive_booking_cancellation": {
         "task": "tasks.daily_auto_drive_bookings_cancellation",
         "schedule": crontab(minute="*/5", hour="*")
-    },
-    "pre_appointment_reminder": {
-        "task": "tasks.pre_appointment_reminder",
-        "schedule": crontab(minute="*/30", hour='*')
-    },
+    }
 }
