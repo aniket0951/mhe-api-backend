@@ -6,7 +6,7 @@ from django.contrib.gis.geos import Point, fromstr
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import (AmbulanceContact, Company, Department, EmergencyContact,
+from .models import (AmbulanceContact, Company, Department, EmergencyContact, HelplineNumbers,
                      Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations, Medicine, Billing)
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
@@ -172,11 +172,26 @@ class MedicineSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Medicine
         exclude = ('created_at', 'updated_at',)
-    
-
         
 class BillingSerializer(DynamicFieldsModelSerializer):
 
     class Meta:
         model = Billing
         exclude = ('created_at', 'updated_at')
+        
+class HelplineNumbersSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = HelplineNumbers
+        exclude = ('created_at', 'updated_at',)
+    
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.hospital_id:
+            response_object['hospital_id'] = HospitalSerializer(instance.hospital_id).data
+        if instance.company_id:
+            response_object['company_id'] = CompanySerializer(instance.company_id).data
+        if instance.component_id:
+            response_object["component_id"] = ComponentsSerializer(instance.component_id).data
+        
+        return response_object

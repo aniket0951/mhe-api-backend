@@ -435,4 +435,26 @@ class Billing(MyBaseModel):
                         default=uuid.uuid4
                     ) 
     
+class HelplineNumbers(MyBaseModel):
+    
+    hospital_id = models.ForeignKey(Hospital,
+                                    on_delete=models.PROTECT,
+                                    blank=False,
+                                    null=False)
+    
+    company_id = models.ForeignKey(Company,
+                                   on_delete=models.PROTECT,
+                                   blank=True,
+                                   null=True)
+    
+    component_id = models.ForeignKey(Components,
+                                     on_delete=models.PROTECT,
+                                     blank=False,
+                                     null=False)
+    
+    contact_number = PhoneNumberField(
+                                    blank=False,
+                                    null=False)
+    
+    is_active = models.BooleanField(default=True)
     
