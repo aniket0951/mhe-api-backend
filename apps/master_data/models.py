@@ -437,8 +437,7 @@ class Billing(MyBaseModel):
     
 class HelplineNumbers(MyBaseModel):
     
-    hospital_id = models.ForeignKey(Hospital,
-                                    on_delete=models.PROTECT,
+    hospital_ids = models.ManyToManyField(Hospital,
                                     blank=False,
                                     null=False)
     
@@ -452,9 +451,10 @@ class HelplineNumbers(MyBaseModel):
                                      blank=False,
                                      null=False)
     
-    contact_number = PhoneNumberField(
+    contact_number = models.CharField(
                                     blank=False,
-                                    null=False)
+                                    null=False,
+                                    max_length=11)
     
     is_active = models.BooleanField(default=True)
     

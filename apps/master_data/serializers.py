@@ -187,8 +187,8 @@ class HelplineNumbersSerializer(DynamicFieldsModelSerializer):
     
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-        if instance.hospital_id:
-            response_object['hospital_id'] = HospitalSerializer(instance.hospital_id).data
+        if instance.hospital_ids:
+            response_object['hospital_ids'] = HospitalSerializer(instance.hospital_ids, many=True).data
         if instance.company_id:
             response_object['company_id'] = CompanySerializer(instance.company_id).data
         if instance.component_id:
