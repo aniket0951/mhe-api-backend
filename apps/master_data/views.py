@@ -1145,7 +1145,7 @@ class HelplineNumbersViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSe
             )
     filter_fields = ['hospital_ids','hospital_ids__code','company_id','company_id__name','component_id__code']
     search_fields = ['contact_number','hospital_ids__code','hospital_ids__description','company_id__name','component_id__code']
-    ordering_fields = ('hospital_id','company_id','component_id','-created_at')
+    ordering_fields = ('hospital_ids','company_id','component_id','-created_at',)
     
     def get_permissions(self):
 
