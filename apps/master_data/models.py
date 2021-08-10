@@ -437,6 +437,11 @@ class Billing(MyBaseModel):
     
 class HelplineNumbers(MyBaseModel):
     
+    title = models.CharField(max_length=255,
+                             blank=False,
+                             null=False,
+                             default='Helpline Numbers')
+    
     hospital_ids = models.ManyToManyField(Hospital,
                                     blank=False,
                                     null=False)
