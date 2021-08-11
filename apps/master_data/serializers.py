@@ -190,7 +190,7 @@ class HelplineNumbersSerializer(DynamicFieldsModelSerializer):
         if instance.hospital_ids:
             response_object['hospital_ids'] = HospitalSerializer(instance.hospital_ids, many=True).data
         if instance.company_id:
-            response_object['company_id'] = CompanySerializer(instance.company_id).data
+            response_object['company_id'] = CompanySerializer(instance.company_id,fields=("id","name","domain")).data
         if instance.component_id:
             response_object["component_id"] = ComponentsSerializer(instance.component_id).data
         
