@@ -1,27 +1,28 @@
-from utils.push_notification import ApnsPusher
-from apps.additional_features.serializers import DriveBookingSerializer
-from apps.additional_features.models import DriveBooking
-from apps.payments.razorpay_views import RazorPaymentResponse
-from apps.payments.models import Payment
+import logging
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management import call_command
 from pushjack import APNSClient
 
-from apps.appointments.models import Appointment, HealthPackageAppointment
-from apps.appointments.views import CancelMyAppointment
-from apps.lab_and_radiology_items.models import (HomeCollectionAppointment,
-                                                 PatientServiceAppointment)
-from apps.patients.models import FamilyMember, Patient
 from celery.schedules import crontab
-from fcm_django.models import FCMDevice
 from manipal_api.celery import app
 from pyfcm import FCMNotification
 from django.db.models import Q
 
+
+from apps.appointments.models import Appointment, HealthPackageAppointment
+from apps.appointments.views import CancelMyAppointment
+from apps.patients.models import FamilyMember, Patient
+from utils.push_notification import ApnsPusher
+from apps.additional_features.models import DriveBooking
+from apps.payments.razorpay_views import RazorPaymentResponse
+from apps.payments.models import Payment
+
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters, get_birthday_notification_data
+
+logger = logging.getLogger("django")
 
 NOTIFICAITON_TYPE_MAP = {
     "HOLD_VC_NOTIFICATION":"2"
@@ -69,10 +70,15 @@ def send_push_notification(self, **kwargs):
                         }
                 }
             }
-            apns_pusher.send_single_push(
+            
+            response = apns_pusher.send_single_push(
                 device_token    =   token,
                 payload         =   payload
             )
+            
+            logger.info("Notification response status code : %s"%(str(response.status)))
+            logger.info("Notification response data : %s"%(str(response.read())))
+
             # client = APNSClient(certificate=settings.APNS_CERT_PATH)
             # alert = notification_instance.message
             # token = notification_instance.recipient.device.token
@@ -104,6 +110,7 @@ def send_silent_push_notification(self, **kwargs):
                 apns_pusher = ApnsPusher()
                 token = patient_instance.device.token
                 alert = "Doctor completed this consultation"
+                
                 payload = {
                     'aps': {
                         'alert': {
@@ -118,10 +125,15 @@ def send_silent_push_notification(self, **kwargs):
                                 }
                     }
                 }
-                apns_pusher.send_single_push(
+
+                response = apns_pusher.send_single_push(
                     device_token    =   token,
                     payload         =   payload
                 )
+
+                logger.info("Notification response status code : %s"%(str(response.status)))
+                logger.info("Notification response data : %s"%(str(response.read())))
+
                 # client = APNSClient(certificate=settings.APNS_CERT_PATH)
                 # token = patient_instance.device.token
                 # alert = "Doctor completed this consultation"
