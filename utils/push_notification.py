@@ -1,9 +1,11 @@
 import jwt
 import time
 import json
-
+import logging
 from hyper import HTTPConnection
 from django.conf import settings
+
+logger = logging.getLogger("django")
 
 class ApnsPusher:
 	def __init__(
@@ -19,7 +21,7 @@ class ApnsPusher:
 		self.TEAM_ID = team_id
 		self.BUNDLE_ID = bundle_id
 
-	def send_single_push(self,device_token,title,body,badge,sound,extra):
+	def send_single_push(self,device_token,payload):
 		file = open(self.APNS_AUTH_KEY)
 		secret = file.read()
 		token = jwt.encode({
@@ -43,18 +45,6 @@ class ApnsPusher:
 	        'authorization': 'bearer {0}'.format(token.decode('ascii'))
 		}
         
-		payload = {
-			'aps': {
-				'alert': {
-					'title'	:	title,
-					'body'	: 	body
-				},
-				'badge': 	badge,
-				'sound': 	sound,
-				'extra': 	extra
-			}
-		}
-        
 		conn = HTTPConnection(settings.APNS_ENDPOINT)
 		
 		payload = json.dumps(payload).encode('utf-8')
@@ -65,4 +55,7 @@ class ApnsPusher:
 	        headers=request_headers
 		)
 		response = conn.get_response()
+		logger.info("Notification response status code : %s"%(str(response.status)))
+		logger.info("Notification response data : %s"%(str(response.read())))
+
 		return response

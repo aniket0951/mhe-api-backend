@@ -54,16 +54,24 @@ def send_push_notification(self, **kwargs):
         elif recipient.device.platform == 'iOS':
             apns_pusher = ApnsPusher()
             token = notification_instance.recipient.device.token
-            apns_pusher.send_single_push(
-                device_token    =   token,
-                title           =   notification_instance.title,
-                body            =   notification_instance.message,
-                sound           =   settings.APNS_SOUND,
-                badge           =   1,
-                extra           =   {
+            
+            payload = {
+                'aps': {
+                    'alert': {
+                        'title'	:	notification_instance.title,
+                        'body'	: 	notification_instance.message
+                    },
+                    'badge': 	1,
+                    'sound': 	settings.APNS_SOUND,
+                    'extra': 	{
                             'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
                             'appointment_id': notification_data["appointment_id"]
                         }
+                }
+            }
+            apns_pusher.send_single_push(
+                device_token    =   token,
+                payload         =   payload
             )
             # client = APNSClient(certificate=settings.APNS_CERT_PATH)
             # alert = notification_instance.message
@@ -96,16 +104,23 @@ def send_silent_push_notification(self, **kwargs):
                 apns_pusher = ApnsPusher()
                 token = patient_instance.device.token
                 alert = "Doctor completed this consultation"
-                apns_pusher.send_single_push(
-                    device_token    =   token,
-                    title           =   alert,
-                    body            =   alert,
-                    sound           =   settings.APNS_SOUND,
-                    badge           =   1,
-                    extra           =   {
+                payload = {
+                    'aps': {
+                        'alert': {
+                            'title'	:	alert,
+                            'body'	: 	alert
+                        },
+                        'badge': 	1,
+                        'sound': 	settings.APNS_SOUND,
+                        'extra': 	{
                                     'notification_type': '2',
                                     'appointment_id': notification_data["appointment_id"]
                                 }
+                    }
+                }
+                apns_pusher.send_single_push(
+                    device_token    =   token,
+                    payload         =   payload
                 )
                 # client = APNSClient(certificate=settings.APNS_CERT_PATH)
                 # token = patient_instance.device.token
