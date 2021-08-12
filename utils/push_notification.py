@@ -3,24 +3,23 @@ import time
 import json
 import logging
 from hyper import HTTPConnection
-from django.conf import settings
-
-logger = logging.getLogger("django")
 
 class ApnsPusher:
 	def __init__(
 			self, 
-			apns_key_id = settings.APNS_KEY_ID, 
-			apns_key_name = settings.APNS_CERT_PATH, 
-			team_id = settings.TEAM_ID, 
-			bundle_id = settings.BUNDLE_ID
+			apns_endpoint,
+			apns_key_id, 
+			apns_key_name,
+			team_id, 
+			bundle_id
 		):
 		self.ALGORITHM = 'ES256'
+		self.APNS_ENDPOINT = apns_endpoint
 		self.APNS_KEY_ID = apns_key_id
 		self.APNS_AUTH_KEY = apns_key_name
 		self.TEAM_ID = team_id
 		self.BUNDLE_ID = bundle_id
-
+		
 	def send_single_push(self,device_token,payload):
 		file = open(self.APNS_AUTH_KEY)
 		secret = file.read()
@@ -45,7 +44,7 @@ class ApnsPusher:
 	        'authorization': 'bearer {0}'.format(token.decode('ascii'))
 		}
         
-		conn = HTTPConnection(settings.APNS_ENDPOINT)
+		conn = HTTPConnection(self.APNS_ENDPOINT)
 		
 		payload = json.dumps(payload).encode('utf-8')
 		conn.request(
@@ -55,7 +54,5 @@ class ApnsPusher:
 	        headers=request_headers
 		)
 		response = conn.get_response()
-		logger.info("Notification response status code : %s"%(str(response.status)))
-		logger.info("Notification response data : %s"%(str(response.read())))
 
 		return response

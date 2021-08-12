@@ -52,8 +52,17 @@ def send_push_notification(self, **kwargs):
             else:
                 fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
                     "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+
         elif recipient.device.platform == 'iOS':
-            apns_pusher = ApnsPusher()
+            
+            apns_pusher = ApnsPusher(
+                apns_endpoint=settings.APNS_ENDPOINT,
+                apns_key_id=settings.APNS_KEY_ID,
+                apns_key_name=settings.APNS_CERT_PATH,
+                bundle_id=settings.BUNDLE_ID,
+                team_id=settings.TEAM_ID
+            )
+
             token = notification_instance.recipient.device.token
             
             payload = {
@@ -71,13 +80,10 @@ def send_push_notification(self, **kwargs):
                 }
             }
             
-            response = apns_pusher.send_single_push(
+            apns_pusher.send_single_push(
                 device_token    =   token,
                 payload         =   payload
             )
-            
-            logger.info("Notification response status code : %s"%(str(response.status)))
-            logger.info("Notification response data : %s"%(str(response.read())))
 
             # client = APNSClient(certificate=settings.APNS_CERT_PATH)
             # alert = notification_instance.message
@@ -106,8 +112,17 @@ def send_silent_push_notification(self, **kwargs):
                     "notification_type": "SILENT_NOTIFICATION", 
                     "appointment_id": notification_data["appointment_id"]
                 }, low_priority=False)
+
             elif patient_instance.device.platform == 'iOS':
-                apns_pusher = ApnsPusher()
+
+                apns_pusher = ApnsPusher(
+                    apns_endpoint=settings.APNS_ENDPOINT,
+                    apns_key_id=settings.APNS_KEY_ID,
+                    apns_key_name=settings.APNS_CERT_PATH,
+                    bundle_id=settings.BUNDLE_ID,
+                    team_id=settings.TEAM_ID
+                )
+
                 token = patient_instance.device.token
                 alert = "Doctor completed this consultation"
                 
@@ -126,13 +141,10 @@ def send_silent_push_notification(self, **kwargs):
                     }
                 }
 
-                response = apns_pusher.send_single_push(
+                apns_pusher.send_single_push(
                     device_token    =   token,
                     payload         =   payload
                 )
-
-                logger.info("Notification response status code : %s"%(str(response.status)))
-                logger.info("Notification response data : %s"%(str(response.read())))
 
                 # client = APNSClient(certificate=settings.APNS_CERT_PATH)
                 # token = patient_instance.device.token
