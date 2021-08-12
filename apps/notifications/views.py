@@ -10,7 +10,7 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
 from rest_framework.serializers import ValidationError
 from .models import MobileDevice, MobileNotification
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer
-from .tasks import send_push_notification, send_test_push_notification
+from .tasks import send_push_notification
 from django.conf import settings
 
 logger = logging.getLogger("django")
@@ -74,13 +74,6 @@ class PushNotificationViewSet(APIView):
         notification_data["appointment_id"] = None
         notification_data["notification_image_url"] = self.request.data.get("notification_image_url")
 
-        logger.info("settings.APNS_KEY_ID : %s"%(str(settings.APNS_KEY_ID)))
-        logger.info("settings.APNS_CERT_PATH : %s"%(str(settings.APNS_CERT_PATH)))
-        logger.info("settings.TEAM_ID : %s"%(str(settings.TEAM_ID)))
-        logger.info("settings.BUNDLE_ID : %s"%(str(settings.BUNDLE_ID)))
-        logger.info("settings.APNS_SOUND : %s"%(str(settings.APNS_SOUND)))
-        logger.info("settings.APNS_ENDPOINT : %s"%(str(settings.APNS_ENDPOINT)))
-
         if selected_all:
             device_qs = MobileDevice.objects.all()
             for each_device in device_qs:
@@ -99,10 +92,5 @@ class PushNotificationViewSet(APIView):
             if patient:
                 notification_data["recipient"] = patient.id
                 send_push_notification.delay(notification_data=notification_data)
-                logger.info("notification sent")
-                response = send_test_push_notification(notification_data=notification_data)
-                if response: 
-                    logger.info("notification response status: %s"%(str(response.status)))
-                    logger.info("notification response read: %s"%(str(response.read())))
-
+                
         return Response(status=status.HTTP_200_OK)
