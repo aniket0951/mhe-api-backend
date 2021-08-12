@@ -10,7 +10,7 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
 from rest_framework.serializers import ValidationError
 from .models import MobileDevice, MobileNotification
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer
-from .tasks import send_push_notification
+from .tasks import send_push_notification, send_test_push_notification
 from django.conf import settings
 
 logger = logging.getLogger("django")
@@ -98,7 +98,11 @@ class PushNotificationViewSet(APIView):
             patient = Patient.objects.filter(id=user).first()
             if patient:
                 notification_data["recipient"] = patient.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
+                send_push_notification.delay(notification_data=notification_data)
+                logger.info("notification sent")
+                response = send_test_push_notification(notification_data=notification_data)
+                if response: 
+                    logger.info("notification response status: %s"%(str(response.status)))
+                    logger.info("notification response read: %s"%(str(response.read())))
 
         return Response(status=status.HTTP_200_OK)
