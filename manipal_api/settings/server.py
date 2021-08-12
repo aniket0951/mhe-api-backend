@@ -25,10 +25,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 API_SECRET_KEY = env('API_SECRET_KEY')
-APNS_USE_SANDBOX=True
-# APNS_CERT_PATH=os.path.join(BASE_DIR, "ManipalPush_default.pem")
+
+APNS_ENDPOINT=env('APNS_ENDPOINT')
+APNS_USE_SANDBOX= True if env("APNS_USE_SANDBOX") and str(env("APNS_USE_SANDBOX"))=="True" else False
 APNS_CERT_PATH=os.path.join(BASE_DIR, env('APNS_CERT_PATH'))
+APNS_KEY_ID = env("APNS_KEY_ID")
+BUNDLE_ID = env("BUNDLE_ID")
+TEAM_ID = env("TEAM_ID")
 APNS_SOUND=env('APNS_SOUND')
+
+
 AWS_ACCESS_KEY_ID = None  # Set to None to use IAM role
 AWS_SECRET_ACCESS_KEY = None  # Set to None to use IAM role
 AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
