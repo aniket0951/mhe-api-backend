@@ -9,13 +9,6 @@ from apps.users.models import BaseUser
 
 
 class Doctor(BaseUser):
-    
-    SERVICES = (
-                        ('HV','HV'),
-                        ('VC','VC'),
-                        ('HVVC','HVVC'),
-                    )
-
 
     name = models.CharField(max_length=200,
                             blank=False,
@@ -38,13 +31,6 @@ class Doctor(BaseUser):
     specialisations = models.ManyToManyField(Specialisation,
                                              blank=True,
                                              related_name='doctor_specialisation')
-
-    service = models.CharField(
-                            choices=SERVICES,
-                            blank=True,
-                            null=True,
-                            max_length=6
-                        )
     
     hv_consultation_charges = models.IntegerField(default=0,
                                                   null=True)
@@ -160,6 +146,12 @@ class DoctorCharges(MyBaseModel):
 
 class DoctorsWeeklySchedule(MyBaseModel):
 
+    SERVICES = (
+        ('HV','HV'),
+        ('VC','VC'),
+        ('HVVC','HVVC'),
+    )
+
     RECIPIENTS_TYPE = (
         ("Monday", 'Monday'),
         ("Tuesday", 'Tuesday'),
@@ -195,12 +187,19 @@ class DoctorsWeeklySchedule(MyBaseModel):
                             blank=True,
                         )
 
+    service     = models.CharField(
+                            choices=SERVICES,
+                            blank=True,
+                            null=True,
+                            max_length=6
+                        )
+
     from_time   = models.TimeField(
                             null=True,
                             blank=True
                         )
 
-    to_time   = models.TimeField(
+    to_time     = models.TimeField(
                             null=True,
                             blank=True
                         )
