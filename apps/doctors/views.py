@@ -184,38 +184,6 @@ class DoctorSlotAvailability(ProxyView):
                         )
 
 
-class DoctorScheduleView(ProxyView):
-    source = 'weeklySchedule'
-    permission_classes = [IsPatientUser]
-
-    def get_request_data(self, request):
-        schedule = serializable_DoctorSchedule(**request.data)
-        request_data = custom_serializer().serialize(schedule, 'XML')
-        return request_data
-
-    def post(self, request, *args, **kwargs):
-        return self.proxy(request, *args, **kwargs)
-
-    def parse_proxy_response(self, response):
-        root = ET.fromstring(response.content)
-        schedule_lists = root.find("ScheduleList").text
-        schedule_list = []
-        records = {}
-        if schedule_lists:
-            schedule_list = ast.literal_eval(schedule_lists)
-        for record in schedule_list:
-            hospital = record["Hosp"]
-            hospital_description = Hospital.objects.filter(
-                code=hospital).first().description
-            if hospital_description in records:
-                records[hospital_description].append(record)
-            else:
-                records[hospital_description] = []
-                records[hospital_description].append(record)
-
-        return self.custom_success_response(message=DoctorsConstants.AVAILABLE_SLOTS, success=True, data=records)
-
-
 class NextSlotAvailable(ProxyView):
     source = 'NextAvailableSlotDate'
     permission_classes = [AllowAny]
@@ -350,6 +318,11 @@ class DoctorScheduleView(ProxyView):
         records = {}
         if schedule_lists:
             schedule_list = ast.literal_eval(schedule_lists)
+            records["day"] = schedule_list["Date"]
+            records["from_time"] = datetime.strptime(schedule_list["From-Time"], "%I:%M%p").time()
+            records["to_time"] = schedule_list["To-Time"]
+            records["session_type"] = schedule_list["SessionType"]
+                        
         for record in schedule_list:
             hospital = record["Hosp"]
             hospital_description = Hospital.objects.filter(

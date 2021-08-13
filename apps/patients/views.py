@@ -482,6 +482,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         random_password = get_random_string(
             length=OTP_LENGTH, allowed_chars='0123456789')
 
+        print("pasword==",random_password)
         if str(request_patient.mobile) == settings.HARDCODED_MOBILE_NO:
             random_password = settings.HARDCODED_MOBILE_OTP
 
