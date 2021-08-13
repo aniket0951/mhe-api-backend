@@ -1,13 +1,17 @@
-from apps.master_data.serializers import HospitalDepartmentSerializer
-from apps.doctors.models import Doctor, DoctorCharges
-from apps.master_data.models import (Department, Hospital, HospitalDepartment, Specialisation)
-from apps.master_data.models import Company
-from utils.serializers import DynamicFieldsModelSerializer
-from rest_framework.test import APIClient
-from datetime import datetime
-import logging
 import json
+import logging
+from datetime import datetime
+
 from django.conf import settings
+
+from rest_framework.test import APIClient
+
+from apps.master_data.serializers import HospitalDepartmentSerializer
+from apps.master_data.serializers import DepartmentSerializer as OriginalDepartmentSerializer
+from apps.doctors.models import Doctor, DoctorCharges, DoctorsWeeklySchedule
+from apps.master_data.models import (Department, Hospital, HospitalDepartment, Specialisation)
+from utils.serializers import DynamicFieldsModelSerializer
+
 
 client = APIClient()
 _logger = logging.getLogger("django")
@@ -155,3 +159,25 @@ class DoctorChargesSerializer(DynamicFieldsModelSerializer):
 
             except Exception as e:
                 _logger.error("Unexpected error occurred while processing the API response- {0}".format(e))
+
+class DoctorsWeeklyScheduleSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = DoctorsWeeklySchedule
+        exclude = ('created_at', 'updated_at',)
+    
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        if instance.hospital:
+            response_object['hospital'] = HospitalSerializer(instance.hospital,fields=("id","code","description")).data
+
+        if instance.department:
+            response_object['department'] = OriginalDepartmentSerializer(instance.department,fields=("id","name","code")).data
+
+        if instance.doctor:
+            response_object["doctor"] = DoctorSerializer(instance.doctor,fields=("id","name","code")).data
+            if "consultation_charge" in response_object["doctor"]:
+                response_object["doctor"].pop("consultation_charge")
+
+        return response_object

@@ -8,8 +8,8 @@ from django.db.models import Q
 from django.utils.timezone import datetime
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
-from apps.doctors.models import Doctor
-from apps.doctors.serializers import (DoctorSerializer,)
+from apps.doctors.models import Doctor, DoctorsWeeklySchedule
+from apps.doctors.serializers import (DoctorSerializer, DoctorsWeeklyScheduleSerializer,)
 from apps.master_data.models import Department, Hospital
 from django_filters.rest_framework import DjangoFilterBackend
 from proxy.custom_serializables import \
@@ -30,7 +30,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.serializers import ValidationError
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from utils import custom_viewsets
-from utils.custom_permissions import IsPatientUser
+from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsManipalAdminUser, IsPatientUser
 from utils.exceptions import InvalidRequest
 from utils.utils import manipal_admin_object,patient_user_object
 from .constants import DoctorsConstants
@@ -400,3 +400,41 @@ class DoctorConsultationChargeView(ProxyView):
                                         success=success, 
                                         data=data
                                     )
+
+class DoctorsWeeklyScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    
+    queryset = DoctorsWeeklySchedule.objects.all()
+    serializer_class = DoctorsWeeklyScheduleSerializer
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
+    create_success_message = "Doctor's weekly schedule added successfully!"
+    update_success_message = "Doctor's weekly schedule updated successfully!"
+    list_success_message = "Doctor's weekly schedule returned successfully!"
+    retrieve_success_message = "Doctor's weekly schedule returned successfully!"
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['hospital','hospital__code','department','department__code','doctor','doctor__code']
+    search_fields = ['hospital__code','hospital__description','department__code','department__name','doctor__code',"doctor__name"]
+    ordering_fields = ('hospital','departnemt','doctor','-created_at',)
+    
+    def get_permissions(self):
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create','partial_update']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()

@@ -156,3 +156,55 @@ class DoctorCharges(MyBaseModel):
     class Meta:
         verbose_name = "Consultation Charges"
         verbose_name_plural = "Consultation charges"
+
+
+class DoctorsWeeklySchedule(MyBaseModel):
+
+    RECIPIENTS_TYPE = (
+        ("Monday", 'Monday'),
+        ("Tuesday", 'Tuesday'),
+        ("Wednesday", 'Wednesday'),
+        ("Thursday", 'Thursday'),
+        ("Friday", 'Friday'),
+        ("Saturday", 'Saturday'),
+        ("Sunday", 'Sunday')
+    )
+
+    doctor      = models.ForeignKey(Doctor,
+                                on_delete=models.PROTECT,
+                                blank=False,
+                                null=False
+                            )
+
+    department  = models.ForeignKey(Department,
+                                blank=True,
+                                on_delete=models.PROTECT,
+                                related_name='doctor_department_weekly_schedule'
+                            )
+
+    hospital    = models.ForeignKey(
+                                Hospital,
+                                on_delete=models.PROTECT,
+                                related_name='doctor_hospital_weekly_schedule'
+                            )
+
+    day         = models.CharField(
+                            choices=RECIPIENTS_TYPE,
+                            max_length=30,
+                            null=True,
+                            blank=True,
+                        )
+
+    from_time   = models.TimeField(
+                            null=True,
+                            blank=True
+                        )
+
+    to_time   = models.TimeField(
+                            null=True,
+                            blank=True
+                        )
+    
+    class Meta:
+        verbose_name = "Consultation Charges"
+        verbose_name_plural = "Consultation charges"
