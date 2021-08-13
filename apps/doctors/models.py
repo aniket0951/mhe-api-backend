@@ -150,9 +150,10 @@ class DoctorsWeeklySchedule(MyBaseModel):
         ('HV','HV'),
         ('VC','VC'),
         ('HVVC','HVVC'),
+        ('PR','PR'),
     )
 
-    RECIPIENTS_TYPE = (
+    WEEKDAYS_TYPE = (
         ("Monday", 'Monday'),
         ("Tuesday", 'Tuesday'),
         ("Wednesday", 'Wednesday'),
@@ -181,7 +182,7 @@ class DoctorsWeeklySchedule(MyBaseModel):
                             )
 
     day         = models.CharField(
-                            choices=RECIPIENTS_TYPE,
+                            choices=WEEKDAYS_TYPE,
                             max_length=30,
                             null=True,
                             blank=True,
