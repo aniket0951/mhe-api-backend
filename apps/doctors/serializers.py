@@ -209,9 +209,9 @@ class DoctorsWeeklyScheduleSerializer(DynamicFieldsModelSerializer):
         if instance.department:
             response_object['department'] = OriginalDepartmentSerializer(instance.department,fields=("id","name","code")).data
 
-        if instance.doctor:
-            response_object["doctor"] = DoctorSerializer(instance.doctor,fields=("id","name","code")).data
-            if "consultation_charge" in response_object["doctor"]:
-                response_object["doctor"].pop("consultation_charge")
+        # if instance.doctor:
+        #     response_object["doctor"] = DoctorSerializer(instance.doctor,fields=("id","name","code")).data
+        #     if "consultation_charge" in response_object["doctor"]:
+        #         response_object["doctor"].pop("consultation_charge")
 
         return response_object
