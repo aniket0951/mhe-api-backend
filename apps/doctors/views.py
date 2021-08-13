@@ -79,10 +79,6 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             hospital_departments__department__id = self.request.query_params.get("hospital_departments__department__id", None)
             if not hospital_departments__department__id:
                 qs = qs.exclude(Q(hospital_departments__service__in=[settings.COVID_SERVICE]))
-        
-            service = self.request.query_params.get("service", None)
-            if service:
-                qs = qs.filter(service__icontains=service)
 
         return qs
 
