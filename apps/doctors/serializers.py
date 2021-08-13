@@ -69,6 +69,40 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
         if doctor_consultation:
             response_object["consultation_charge"] = DoctorChargesSerializer(doctor_consultation, many=True).data
 
+        schedule_ids = DoctorsWeeklySchedule.objects.filter(
+                                doctor__id=instance.id,
+                                hospital__id=instance.hospital.id
+                            )
+        doctors_weekly_schedule = {
+                "Monday":None,
+                "Tuesday":None,
+                "Wednesday":None,
+                "Thursday":None,
+                "Friday":None,
+                "Saturday":None,
+                "Sunday":None
+            }
+        response_object['doctors_weekly_schedule'] = doctors_weekly_schedule
+        if schedule_ids.exists():
+            for schedule_id in schedule_ids:
+                if schedule_id.day not in doctors_weekly_schedule or not doctors_weekly_schedule[schedule_id.day]:
+                    doctors_weekly_schedule[schedule_id.day] = DoctorsWeeklyScheduleSerializer(schedule_id).data
+                    doctors_weekly_schedule[schedule_id.day]["timings"] = [{
+                        "from_time":schedule_id.from_time,
+                        "to_time":schedule_id.to_time,
+                    }]
+                    doctors_weekly_schedule[schedule_id.day].pop("from_time")
+                    doctors_weekly_schedule[schedule_id.day].pop("to_time")
+                else:
+                    doctors_weekly_schedule[schedule_id.day]["timings"].append({
+                        "from_time":schedule_id.from_time,
+                        "to_time":schedule_id.to_time,
+                    })
+                    if schedule_id.service!=doctors_weekly_schedule[schedule_id.day]["service"]:
+                        doctors_weekly_schedule[schedule_id.day]["service"]="HVVC"
+
+            response_object['doctors_weekly_schedule'] = doctors_weekly_schedule
+
         if  not response_object['photo'] and \
             response_object.get("hospital_departments") and \
             len(response_object["hospital_departments"])>0 and \
