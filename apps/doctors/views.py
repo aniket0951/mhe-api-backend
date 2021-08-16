@@ -318,7 +318,7 @@ class DoctorScheduleView(ProxyView):
         records = {}
         if schedule_lists:
             schedule_list = ast.literal_eval(schedule_lists)
-            for schedule_data in range(len(schedule_list)):
+            for schedule_data in schedule_list:
                 records["day"] = schedule_data["Date"]
                 records["from_time"] = datetime.strptime(schedule_data["From-Time"], "%I:%M%p").time()
                 records["to_time"] = datetime.strptime(schedule_data["To-Time"], "%I:%M%p").time()
