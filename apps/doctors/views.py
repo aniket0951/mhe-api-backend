@@ -320,7 +320,7 @@ class DoctorScheduleView(ProxyView):
             schedule_list = ast.literal_eval(schedule_lists)
             records["day"] = schedule_list["Date"]
             records["from_time"] = datetime.strptime(schedule_list["From-Time"], "%I:%M%p").time()
-            records["to_time"] = schedule_list["To-Time"]
+            records["to_time"] = datetime.strptime(schedule_list["To-Time"], "%I:%M%p").time()
             records["session_type"] = schedule_list["SessionType"]
                         
         for record in schedule_list:
