@@ -61,10 +61,10 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
-                     Department, EmergencyContact, Hospital,
+                     Department, EmergencyContact, HelplineNumbers, Hospital,
                      HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations, Medicine, Billing)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
-                          DepartmentSerializer, EmergencyContactSerializer,
+                          DepartmentSerializer, EmergencyContactSerializer, HelplineNumbersSerializer,
                           HospitalDepartmentSerializer, HospitalSerializer,
                           HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer, ConfigurationSerializer, MedicineSerializer,BillingSerializer)
 
@@ -1129,3 +1129,40 @@ class BillingViewSet(custom_viewsets.ReadOnlyModelViewSet):
             )
     filter_fields = ['name']
     search_fields = ['name']
+    
+class HelplineNumbersViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    queryset = HelplineNumbers.objects.all()
+    serializer_class = HelplineNumbersSerializer
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
+    create_success_message = 'Helpline number added successfully!'
+    update_success_message = 'Helpline number updated successfully!'
+    list_success_message = 'Helpline numbers returned successfully!'
+    retrieve_success_message = 'Helpline number returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['hospital_ids','hospital_ids__code','company_id','company_id__name','component_id__code']
+    search_fields = ['contact_number','hospital_ids__code','hospital_ids__description','company_id__name','component_id__code']
+    ordering_fields = ('hospital_ids','company_id','component_id','-created_at',)
+    
+    def get_permissions(self):
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['create','partial_update']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()

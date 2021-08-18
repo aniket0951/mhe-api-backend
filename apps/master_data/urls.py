@@ -4,7 +4,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
-                    DoctorsView, EmergencyContactViewSet, HealthPackagesView,
+                    DoctorsView, EmergencyContactViewSet, HealthPackagesView, HelplineNumbersViewSet,
                     HospitalDepartmentViewSet, HospitalViewSet,
                     ItemsTarrifPriceView, LabRadiologyItemsView,
                     PatientAppointmentStatus, RequestSyncView,
@@ -25,6 +25,7 @@ router.register('compoments', ComponentsView)
 router.register('configurations', ConfigurationsView)
 router.register('medicine', MedicineViewSet)
 router.register('billing', BillingViewSet)
+router.register('helpline_numbers', HelplineNumbersViewSet)
 
 urlpatterns = [
 

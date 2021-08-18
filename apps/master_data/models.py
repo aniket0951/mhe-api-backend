@@ -435,4 +435,31 @@ class Billing(MyBaseModel):
                         default=uuid.uuid4
                     ) 
     
+class HelplineNumbers(MyBaseModel):
+    
+    title = models.CharField(max_length=255,
+                             blank=False,
+                             null=False,
+                             default='Helpline Numbers')
+    
+    hospital_ids = models.ManyToManyField(Hospital,
+                                    blank=False,
+                                    null=False)
+    
+    company_id = models.ForeignKey(Company,
+                                   on_delete=models.PROTECT,
+                                   blank=True,
+                                   null=True)
+    
+    component_id = models.ForeignKey(Components,
+                                     on_delete=models.PROTECT,
+                                     blank=False,
+                                     null=False)
+    
+    contact_number = models.CharField(
+                                    blank=False,
+                                    null=False,
+                                    max_length=11)
+    
+    is_active = models.BooleanField(default=True)
     

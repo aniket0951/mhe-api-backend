@@ -1,22 +1,19 @@
-from datetime import datetime, timedelta
+import logging
 
-from django.shortcuts import render
-
-from apps.appointments.models import Appointment, HealthPackageAppointment
-from apps.patients.models import Patient
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, serializers, status, viewsets
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import  status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from utils import custom_viewsets
-from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
-                                      IsSelfUserOrFamilyMember, SelfUserAccess)
+from apps.patients.models import Patient
+from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
 from rest_framework.serializers import ValidationError
 from .models import MobileDevice, MobileNotification
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer
 from .tasks import send_push_notification
+from django.conf import settings
 
+logger = logging.getLogger("django")
 
 class NotificationlistView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = MobileNotification.objects.all()
@@ -76,6 +73,7 @@ class PushNotificationViewSet(APIView):
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = None
         notification_data["notification_image_url"] = self.request.data.get("notification_image_url")
+
         if selected_all:
             device_qs = MobileDevice.objects.all()
             for each_device in device_qs:
@@ -93,7 +91,6 @@ class PushNotificationViewSet(APIView):
             patient = Patient.objects.filter(id=user).first()
             if patient:
                 notification_data["recipient"] = patient.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
-
+                send_push_notification.delay(notification_data=notification_data)
+                
         return Response(status=status.HTTP_200_OK)

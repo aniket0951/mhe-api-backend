@@ -1,0 +1,136 @@
+[
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d81",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Monday",
+            "service":"HV",
+            "from_time": "11:00",
+            "to_time":"19:00"
+        }
+    },
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d82",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Tuesday",
+            "service":"VC",
+            "from_time": "11:00",
+            "to_time":"19:00"
+        }
+    },
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d83",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Wednesday",
+            "service":"HV",
+            "from_time": "11:00",
+            "to_time":"19:00"
+        }
+    },
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d84",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Thursday",
+            "service":"VC",
+            "from_time": "11:00",
+            "to_time":"19:00"
+        }
+    },
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d85",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Friday",
+            "service":"HV",
+            "from_time": "12:00",
+            "to_time":"1:00"
+        }
+    },{
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d90",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Friday",
+            "service":"HV",
+            "from_time": "1:00",
+            "to_time":"19:00"
+        }
+    },
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d86",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Saturday",
+            "service":"HV",
+            "from_time": "9:00",
+            "to_time":"12:00"
+        }
+    },
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d87",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Saturday",
+            "service":"VC",
+            "from_time": "12:00",
+            "to_time":"1:00"
+        }
+    },
+    {
+        "model": "doctors.DoctorsWeeklySchedule",
+        "pk": "7c21c589-ca2a-4dbe-9964-5a538fc68d88",
+        "fields": {
+            "created_at": "2021-08-09T14:45:24.893Z",
+            "updated_at": "2021-08-09T14:45:24.893Z",
+            "doctor":"a8bb2e46-4beb-4bce-8f8a-61d626a27f27",
+            "hospital": "63850af2-3fdd-4fd6-84a2-a3c18b9f8202",
+            "department": "7f933066-d524-4d81-bb44-7ceb73e39c52",
+            "day":"Saturday",
+            "service":"HV",
+            "from_time": "1:00",
+            "to_time":"4:00"
+        }
+    }
+]
