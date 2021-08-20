@@ -38,8 +38,6 @@ def process_slots(slots):
                 evening_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
     return morning_slot, afternoon_slot, evening_slot
 
-
-@staticmethod
 def get_doctor_weekly_schedule_from_mainpal(location_code,department_code,doctor_code):
     weekly_schedule_data = None
     try:
@@ -54,7 +52,6 @@ def get_doctor_weekly_schedule_from_mainpal(location_code,department_code,doctor
             logger.error("Unexpected error occurred while calling the API- {0}".format(e))
     return weekly_schedule_data
 
-@staticmethod
 def get_and_update_doctors_weekly_schedule(doctor_instance):
     
     all_departments = doctor_instance.hospital_departments.all()
