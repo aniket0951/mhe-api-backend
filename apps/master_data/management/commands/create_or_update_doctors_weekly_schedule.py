@@ -1,7 +1,7 @@
-from apps.doctors.utils import get_and_update_doctors_weekly_schedule
 import warnings
 warnings.filterwarnings("ignore")
 from django.core.management import BaseCommand
+from apps.master_data.utils import MasterDataUtils
 
 from apps.doctors.models import Doctor, DoctorsWeeklySchedule
 from datetime import datetime
@@ -14,7 +14,7 @@ class Command(BaseCommand):
             all_doctors = Doctor.objects.all()
             
             for each_doctor in all_doctors:
-                get_and_update_doctors_weekly_schedule(each_doctor)
+                MasterDataUtils.get_and_update_doctors_weekly_schedule(each_doctor)
                     
             today_date = datetime.now().date()
             DoctorsWeeklySchedule.objects.filter(updated_at__date__lt=today_date).delete()
