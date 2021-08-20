@@ -40,15 +40,12 @@ def process_slots(slots):
 
 
 @staticmethod
-def get_doctor_weekly_schedule_from_mainpal(doctor_instance,department):
+def get_doctor_weekly_schedule_from_mainpal(location_code,department_code,doctor_code):
     weekly_schedule_data = None
     try:
-        doctor_code     = doctor_instance.code
-        location_code   = doctor_instance.hospital.code
-        
         response        = client.post('/api/doctors/schedule',json.dumps({
                                                             'location_code': location_code, 
-                                                            'department_code': department.code, 
+                                                            'department_code': department_code, 
                                                             'doctor_code': doctor_code,
                                                         }), content_type='application/json')
         if response.status_code == 200 and response.data["success"] == True:
@@ -64,30 +61,58 @@ def get_and_update_doctors_weekly_schedule(doctor_instance):
 
     for each_department in all_departments:
             
-        data = dict()
-            
+        hospital_descrption = doctor_instance.hospital.descrption
+        hospital_code       = doctor_instance.hospital.code
+        department_code     = each_department.department.code
         doctor_code         = doctor_instance.code
-        data["doctor"] = doctor_instance.id
-        data["department"] = each_department.department.id
 
         try:
-            weekly_schedule_data = get_doctor_weekly_schedule_from_mainpal(doctor_instance,each_department.department)
-            if weekly_schedule_data:
 
-                data["day"] =  weekly_schedule_data["day"]
-                data["from_time"] =  weekly_schedule_data["from_time"]
-                data["to_time"] =  weekly_schedule_data["to_time"]
-                data["serivce"] =  weekly_schedule_data["session_type"]
+            weekly_schedule_response = get_doctor_weekly_schedule_from_mainpal(
+                                                                    hospital_code,
+                                                                    department_code,
+                                                                    doctor_code
+                                                                )
+            if weekly_schedule_response and weekly_schedule_response.get(hospital_descrption):
 
+                recently_updated = []
 
-                weekly_schedule = DoctorsWeeklySchedule.objects.filter(doctor__code=doctor_code, department__code=each_department.department.code).first()
-                if weekly_schedule:
-                    serializer = DoctorsWeeklyScheduleSerializer(weekly_schedule, data=data, partial=True)
-                else:
-                    serializer = DoctorsWeeklyScheduleSerializer(data=data)
-                        
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
+                for weekly_schedule_data in weekly_schedule_response.get(hospital_descrption):
+
+                    data = dict()
+                    data["doctor"]      = doctor_instance.id
+                    data["department"]  = each_department.department.id
+                    data["hospital"]    = doctor_instance.hospital.id
+                    data["day"]         = weekly_schedule_data["Date"]
+                    data["from_time"]   = datetime.strptime(weekly_schedule_data["From-Time"], "%I:%M%p").time()
+                    data["to_time"]     = datetime.strptime(weekly_schedule_data["To-Time"], "%I:%M%p").time()
+                    data["serivce"]     = weekly_schedule_data["SessionType"]
+
+                    weekly_schedule = DoctorsWeeklySchedule.objects.filter(
+                                                doctor__code=doctor_code,
+                                                department__code=each_department.department.code,
+                                                day=data["day"],
+                                                from_time=data["from_time"],
+                                                to_time=data["to_time"],
+                                                serivce=data["serivce"]
+                                            ).first()
+                    if weekly_schedule:
+                        serializer = DoctorsWeeklyScheduleSerializer(weekly_schedule, data=data, partial=True)
+                    else:
+                        serializer = DoctorsWeeklyScheduleSerializer(data=data)
+                            
+                    serializer.is_valid(raise_exception=True)
+                    weekly_schedule_object = serializer.save()
+
+                    recently_updated.append(weekly_schedule_object.id)
+
+                weekly_schedule = DoctorsWeeklySchedule.objects.filter(
+                                                doctor__code=doctor_code,
+                                                department__code=department_code,
+                                                hospital__code=hospital_code,
+                                            ).exclude(
+                                                id__in=recently_updated
+                                            ).delete()
 
         except Exception as e:
                 logger.error("Unexpected error occurred while processing the API response- {0}".format(e))
