@@ -30,7 +30,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.serializers import ValidationError
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 from utils import custom_viewsets
-from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, IsManipalAdminUser, IsPatientUser
+from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, InternalAPICall, IsManipalAdminUser, IsPatientUser
 from utils.exceptions import InvalidRequest
 from utils.utils import manipal_admin_object,patient_user_object
 from .constants import DoctorsConstants
@@ -301,7 +301,7 @@ class DoctorRescheduleSlot(ProxyView):
 
 class DoctorScheduleView(ProxyView):
     source = 'weeklySchedule'
-    permission_classes = [IsPatientUser]
+    permission_classes = [ IsPatientUser | InternalAPICall ]
 
     def get_request_data(self, request):
         schedule = serializable_DoctorSchedule(**request.data)

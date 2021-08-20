@@ -1,3 +1,5 @@
+from apps.doctors.views import DoctorScheduleView
+from apps.notifications.utils import cancel_parameters
 from apps.doctors.serializers import DoctorsWeeklyScheduleSerializer
 from apps.doctors.models import DoctorsWeeklySchedule
 import ast
@@ -41,11 +43,13 @@ def process_slots(slots):
 def get_doctor_weekly_schedule_from_mainpal(location_code,department_code,doctor_code):
     weekly_schedule_data = None
     try:
-        response        = client.post('/api/doctors/schedule',json.dumps({
-                                                            'location_code': location_code, 
-                                                            'department_code': department_code, 
-                                                            'doctor_code': doctor_code,
-                                                        }), content_type='application/json')
+        param = {
+            'location_code': location_code, 
+            'department_code': department_code, 
+            'doctor_code': doctor_code,
+        }
+        request_param = cancel_parameters(param)
+        response = DoctorScheduleView.as_view()(request_param)
         if response.status_code == 200 and response.data["success"] == True:
             weekly_schedule_data = response.data["data"]
     except Exception as e:
