@@ -58,7 +58,7 @@ def get_and_update_doctors_weekly_schedule(doctor_instance):
 
     for each_department in all_departments:
             
-        hospital_descrption = doctor_instance.hospital.descrption
+        hospital_description = doctor_instance.hospital.description
         hospital_code       = doctor_instance.hospital.code
         department_code     = each_department.department.code
         doctor_code         = doctor_instance.code
@@ -70,11 +70,11 @@ def get_and_update_doctors_weekly_schedule(doctor_instance):
                                                                     department_code,
                                                                     doctor_code
                                                                 )
-            if weekly_schedule_response and weekly_schedule_response.get(hospital_descrption):
+            if weekly_schedule_response and weekly_schedule_response.get(hospital_description):
 
                 recently_updated = []
 
-                for weekly_schedule_data in weekly_schedule_response.get(hospital_descrption):
+                for weekly_schedule_data in weekly_schedule_response.get(hospital_description):
 
                     data = dict()
                     data["doctor"]      = doctor_instance.id
