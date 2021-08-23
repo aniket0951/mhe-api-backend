@@ -1,7 +1,15 @@
 import logging
+import os
 import random
 import re
 import string
+
+import qrcode
+from tempfile import TemporaryFile
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.utils.encoding import force_text
+
 from django.conf import settings
 from django.db.models.query_utils import Q
 from rest_framework.serializers import ValidationError
@@ -75,6 +83,18 @@ class AdditionalFeaturesUtil:
         if drive_id.booking_end_time < current_date:
             raise ValidationError('Bookings for the drive has been closed.')
 
+    @staticmethod
+    def generate_qr_code(code):
+        path = "%s.png"%(str(code))
+        with TemporaryFile() as qr_image:
+            qr_code_image = qrcode.make(code)
+            qr_code_image.save(qr_image)
+            qr_image.seek(0)
+            qr_code = default_storage.save(force_text(path), 
+                ContentFile(qr_image.read()))
+        os.remove(path)
+        return qr_code
+    
     @staticmethod
     def datetime_validation_on_creation(request_data):
         current_date = date.today()
