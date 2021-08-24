@@ -86,14 +86,18 @@ class AdditionalFeaturesUtil:
     @staticmethod
     def generate_qr_code(code):
         path = "%s.png"%(str(code))
+        file_content = None
         with TemporaryFile() as qr_image:
             qr_code_image = qrcode.make(code)
             qr_code_image.save(qr_image)
             qr_image.seek(0)
-            qr_code = default_storage.save(force_text(path), 
-                ContentFile(qr_image.read()))
+            qr_code = default_storage.save(
+                                    force_text(path), 
+                                    ContentFile(qr_image.read())
+                                )
+            file_content = qr_image.read()
         os.remove(path)
-        return qr_code
+        return file_content
     
     @staticmethod
     def datetime_validation_on_creation(request_data):
