@@ -72,6 +72,7 @@ python-dateutil==2.8.1
 python-magic==0.4.15
 pytz==2019.3
 PyYAML==5.3
+qrcode==7.3
 redis==3.4.1
 razorpay==1.2.0
 reportlab==3.5.45
