@@ -652,8 +652,8 @@ class HealthPackageAppointmentView(ProxyView):
             family_member = FamilyMember.objects.get(id=family_member_id)    
             check_health_package_age_and_gender(family_member,package_id_list)
         
-        patient = Patient.objects.get(id=patient_id) 
-        if patient:
+        elif patient_id:
+            patient = Patient.objects.get(id=patient_id) 
             check_health_package_age_and_gender(patient,package_id_list)
         
         if previous_appointment and payment_id:
