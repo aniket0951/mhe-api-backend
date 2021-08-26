@@ -1,4 +1,6 @@
 
+from apps.health_packages.filters import HealthPackageFilter
+from apps.health_packages.models import HealthPackage
 import ast
 import json
 import logging
@@ -645,9 +647,34 @@ class HealthPackageAppointmentView(ProxyView):
         patient_id = request.user.id
         family_member_id = request.data.get("user_id", None)
         package_id = request.data["package_id"]
+        print("package_id@@",package_id)
         package_id_list = package_id.split(",")
         previous_appointment = request.data.get("previous_appointment", None)
         payment_id = request.data.get("payment_id", None)
+        
+        if family_member_id:
+            family_member = FamilyMember.objects.get(id=family_member_id)    
+            if family_member.dob:    
+                family_member_age = calculate_age(family_member.dob)
+                for package_id in package_id_list:
+                    health_package = HealthPackage.objects.filter(id=package_id).first()
+                
+                    if not family_member_age in range(health_package.age_from, health_package.age_to) or family_member.gender not in health_package.gender:
+                        raise ValidationError("You cannot book health package, as you are not meet the health package criteria")  
+        
+        patient = Patient.objects.get(id=patient_id) 
+        if patient:
+            if patient.dob:    
+                patient_age = calculate_age(patient.dob)
+                for package_id in package_id_list:
+                    health_package = HealthPackage.objects.filter(id=package_id).first()
+                    if not patient_age in range(health_package.age_from, health_package.age_to):
+                        raise ValidationError("You cannot book %s health package, this package is only for ages %s to %s"%(str(health_package), str(health_package.age_from),str(health_package.age_to)))
+        
+                    if patient.gender not in health_package.gender:
+                        raise ValidationError("You cannot book %s health package, this package is only for %s gender"%(str(health_package), str(health_package.gender)))
+
+        
         if previous_appointment and payment_id:
             appointment_instance = HealthPackageAppointment.objects.filter(
                 appointment_identifier=previous_appointment).first()
