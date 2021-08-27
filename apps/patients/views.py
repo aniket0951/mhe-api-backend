@@ -738,7 +738,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             member.age = request.data.get("age", None)
             member.gender = request.data.get("gender", None)
             if request.data.get("dob", None):
-                member.dob = datetime.strptime(request.data.get("dob", None), '%Y-%m-%d')
+                member.dob = datetime.strptime(request.data.get("dob", None), '%Y-%m-%d').date()
             if request.data.get("email", None):
                 member.email = request.data.get("email", None)
                 member.email_verified = True
@@ -757,7 +757,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
             patient.last_name = None
             patient.middle_name = None
             if request.data.get("dob", None):
-                patient.dob = datetime.strptime(request.data.get("dob", None), '%Y-%m-%d')
+                patient.dob = datetime.strptime(request.data.get("dob", None), '%Y-%m-%d').date()
             if request.data.get("email", None):
                 patient.email = request.data.get("email", None)
                 patient.email_verified = True
@@ -1250,7 +1250,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             uhid_user_info['gender'] = family_member.get("gender")
 
             if request.data.get("dob", None):
-                uhid_user_info['dob'] = datetime.strptime(family_member.get("dob", None), '%Y-%m-%d')
+                uhid_user_info['dob'] = datetime.strptime(family_member.get("dob", None), '%Y-%m-%d').date()
                 
             if family_member.get("email", None):
                 uhid_user_info['email'] = family_member.get("email")
