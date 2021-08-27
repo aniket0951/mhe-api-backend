@@ -51,8 +51,9 @@ def fetch_uhid_user_details(request):
                    'mobile', 'first_name', 'gender', 'Status']
     uhid_user_info = {}
     for index, key in enumerate(sorted(response.data['data'].keys())):
-        if key in ['Age', 'DOB', 'HospNo', 'Status']:
+        if key in ['Age', 'HospNo', 'Status']:
             continue
+
         if not response.data['data'][key]:
             response.data['data'][key] = None
         if key == 'MobileNo' and len(response.data['data'][key]) == 10:
@@ -60,7 +61,11 @@ def fetch_uhid_user_details(request):
 
         if key == 'MobileNo' and len(response.data['data'][key]) == 12:
             response.data['data'][key] = '+' + response.data['data'][key]
-
+        
+        if key == 'DOB' and response.data['data'][key]:
+            uhid_user_info['dob'] = datetime.strptime(response.data['data'][key], '%d/%m/%y').date()
+            continue
+            
         uhid_user_info[sorted_keys[index]] = response.data['data'][key]
     uhid_user_info['uhid_number'] = uhid_number
     uhid_user_info['raw_info_from_manipal_API'] = response.data['data']
