@@ -963,6 +963,10 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info['is_visible']=True
         if uhid_user_info['email']:
             uhid_user_info['email_verified']=True
+        
+        if request.data.get("dob", None):
+            uhid_user_info['dob'] = datetime.strptime(request.data.get("dob", None), '%Y-%m-%d').date()
+
         uhid_user_info['patient_info']=patient_info
 
         self.model.objects.create(**uhid_user_info)
@@ -1187,6 +1191,9 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
         uhid_user_info['mobile'] = request.data.get("mobile")
         uhid_user_info['age'] = request.data.get("age")
         uhid_user_info['gender'] = request.data.get("gender")
+
+        if request.data.get("dob", None):
+            uhid_user_info['dob'] = datetime.strptime(request.data.get("dob", None), '%Y-%m-%d').date()
         
         if request.data.get("email", None):
             uhid_user_info['email'] = request.data.get("email")
@@ -1249,7 +1256,7 @@ class FamilyMemberViewSet(custom_viewsets.ModelViewSet):
             uhid_user_info['age'] = family_member.get("age")
             uhid_user_info['gender'] = family_member.get("gender")
 
-            if request.data.get("dob", None):
+            if family_member.get("dob", None):
                 uhid_user_info['dob'] = datetime.strptime(family_member.get("dob", None), '%Y-%m-%d').date()
                 
             if family_member.get("email", None):
