@@ -433,6 +433,10 @@ class CreateMyAppointment(ProxyView):
                     corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
                 if patient and patient.active_view == 'Corporate':
+                    
+                    corporate_appointment["processing_id"] = get_processing_id()
+                    corporate_appointment["transaction_number"] = corporate_appointment["location_code"]+appointment_identifier
+
                     corporate_param = cancel_and_refund_parameters(corporate_appointment)
                     payment_update_response = AppointmentPaymentView.as_view()(corporate_param)
                     
