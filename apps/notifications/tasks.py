@@ -405,7 +405,7 @@ def daily_update_scheduler():
     call_command("create_or_update_doctors", verbosity=0)
     call_command("update_doctors_profile", verbosity=0)
     call_command("create_or_update_doctor_price", verbosity=0)
-    # call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
+    call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
     
     call_command("create_or_update_health_packages", verbosity=0)
     call_command("update_health_package_image", verbosity=0)
@@ -423,7 +423,7 @@ def update_doctor():
     call_command("create_or_update_doctors", verbosity=0)
     call_command("update_doctors_profile", verbosity=0)
     call_command("create_or_update_doctor_price", verbosity=0)
-    # call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
+    call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
 
 
 @app.task(name="tasks.update_item")
