@@ -1429,7 +1429,6 @@ class PaymentUtils:
             payment_check_response = PaymentUtils.wait_for_manipal_response(payment_instance,order_details) if is_requested_from_mobile else PaymentUtils.check_appointment_payment_status(payment_instance)
             if payment_check_response:
                 return payment_check_response
-            payment_instance = PaymentUtils.get_payment_instance_from_order_id(razor_order_id)
             return PaymentUtils.update_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
         elif payment_instance.payment_for_op_billing:
             return PaymentUtils.update_op_bill_payment_details_with_manipal(payment_instance,order_details,order_payment_details)
