@@ -307,18 +307,6 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
-        "pk": "754bbde3-96f6-46d1-b553-aa9ec24f701b",
-        "fields": {
-            "created_at": "2021-01-27T18:47:24.893Z",
-            "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code":"MHJ",
-            "name":"Sudeep Singh",
-            "type":"TO",
-            "email":"sudeep.singh1@manipalhospitals.com"
-        }
-    },
-    {
-        "model": "master_data.FeedbackRecipients",
         "pk": "2934f5a4-d979-44fe-82a0-989d22baa292",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
