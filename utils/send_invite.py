@@ -1,10 +1,14 @@
+
 import boto3
+import logging
 from datetime import datetime,timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders as Encoders
 from django.conf import settings
+
+logger = logging.getLogger('django')
 
 def send_invitation(appointment_id, recipient):
     query_resp = {}
@@ -97,3 +101,5 @@ def send_invitation(appointment_id, recipient):
             'Data': msg.as_string()
         }
     )
+
+    logger.info("Response : %s"%(str(response)))
