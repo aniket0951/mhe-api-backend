@@ -6,7 +6,7 @@ from django.contrib.gis.geos import Point, fromstr
 from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 
-from .models import (AmbulanceContact, Company, Department, EmergencyContact, HelplineNumbers,
+from .models import (AmbulanceContact, Company, Department, EmergencyContact, FeedbackRecipients, HelplineNumbers,
                      Hospital, HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations, Medicine, Billing)
 from rest_framework.serializers import ValidationError
 from utils.custom_validation import ValidationUtil
@@ -200,3 +200,8 @@ class HelplineNumbersSerializer(DynamicFieldsModelSerializer):
             response_object["component_id"] = ComponentsSerializer(instance.component_id).data
         
         return response_object
+    
+class FeedbackRecipientSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = FeedbackRecipients
+        exclude = ('created_at', 'updated_at',)

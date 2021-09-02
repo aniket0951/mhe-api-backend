@@ -68,10 +68,10 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
-                     Department, EmergencyContact, HelplineNumbers, Hospital,
+                     Department, EmergencyContact, FeedbackRecipients, HelplineNumbers, Hospital,
                      HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations, Medicine, Billing)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
-                          DepartmentSerializer, EmergencyContactSerializer, HelplineNumbersSerializer,
+                          DepartmentSerializer, EmergencyContactSerializer, FeedbackRecipientSerializer, HelplineNumbersSerializer,
                           HospitalDepartmentSerializer, HospitalSerializer,
                           HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer, ConfigurationSerializer, MedicineSerializer,BillingSerializer)
 
@@ -1180,4 +1180,22 @@ def send_invite(request):
     appointment_id = request.data.get('appointment_id')
     recipient = request.data.get('recipient')
     send_invitation(appointment_id=appointment_id,recipient=recipient)
+    
+
+class FeedbackRecipientsViewSet(custom_viewsets.ModelViewSet):
+    queryset = FeedbackRecipients.objects.all()
+    serializer_class = FeedbackRecipientSerializer
+    permission_classes = [IsManipalAdminUser]
+    create_success_message = 'Feedback recipient information added successfully!'
+    update_success_message = 'Feedback recipient information updated successfully!'
+    list_success_message = 'Feedback recipients information returned successfully!'
+    retrieve_success_message = 'Feedback recipient information returned successfully!'
+    delete_success_message = 'Feedback recipient information deleted successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['hospital_code','type']
+    search_fields = ['hospital_code','name','contact','email'] 
     
