@@ -18,7 +18,8 @@ def send_invitation(appointment_id, recipient):
     query_resp['appointment_date']="2021-09-02"
     query_resp['prefix_name']="Dr."
     query_resp['name']="Anand"
-    
+    query_resp['doctor_email']="archana.b@mantralabsglobal.com"
+
     # ses_client = boto3.client('ses')
     
     msg = MIMEMultipart('mixed')
@@ -52,10 +53,10 @@ def send_invitation(appointment_id, recipient):
 
     guest = ''
 
-    guest = query_resp['docter_email']
+    guest = query_resp['doctor_email']
     name = dr_name
     description = "DESCRIPTION: Your appointment with {name} is now confirmed"+CRLF.format(name=name) # doctor name
-    attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF + " ;CN={guest};X-NUM-GUESTS=0:"+CRLF+" mailto:{guest}" + CRLF.format(guest=query_resp['docter_email'])
+    attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF + " ;CN={guest};X-NUM-GUESTS=0:"+CRLF+" mailto:{guest}" + CRLF.format(guest=query_resp['doctor_email'])
 
     for att in attendees:
         attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE" + CRLF+" ;CN="+att+";X-NUM-GUESTS=0:"+CRLF+" mailto:"+att+CRLF
