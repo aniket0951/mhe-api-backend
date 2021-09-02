@@ -170,6 +170,26 @@
     },
     {
         "model": "manipal_admin.AdminMenu",
+        "pk": "34663e52-6111-4eb1-98b4-016e56594689",
+        "fields": {
+            "created_at": "2021-09-02T16:37:24.893Z",
+            "updated_at": "2021-09-02T16:37:24.893Z",
+            "name": "Manage Components",
+            "parent_menu": "5d4ef8d3-7a86-489a-9dfb-fbcb1e426d6f"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "631fb529-54a9-467d-89ff-ca557659d895",
+        "fields": {
+            "created_at": "2021-09-02T16:37:24.893Z",
+            "updated_at": "2021-09-02T16:37:24.893Z",
+            "name": "Export Feedback",
+            "parent_menu": "5d4ef8d3-7a86-489a-9dfb-fbcb1e426d6f"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
         "pk": "00fa8b7d-f70c-4cfa-8561-342dcb69811e",
         "fields": {
             "created_at": "2021-05-28T14:37:24.893Z",
