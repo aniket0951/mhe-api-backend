@@ -1,4 +1,5 @@
 
+from django.core.mail.message import EmailMultiAlternatives
 import boto3
 import logging
 from datetime import datetime,timedelta
@@ -18,7 +19,8 @@ def send_invitation(appointment_id, recipient):
     query_resp['prefix_name']="Dr."
     query_resp['name']="Anand"
     
-    ses_client = boto3.client('ses')
+    # ses_client = boto3.client('ses')
+    
     msg = MIMEMultipart('mixed')
     attendees = ["{}".format(recipient)]
     msg['To'] = attendees[0]
@@ -94,12 +96,18 @@ def send_invitation(appointment_id, recipient):
     msgAlternative.attach(part_email)
     msgAlternative.attach(part_cal)
 
-    response = ses_client.send_raw_email(
-        Source=msg['From'],
-        Destinations=attendees,  # patient email id
-        RawMessage={
-            'Data': msg.as_string()
-        }
+    email = EmailMultiAlternatives(
+        msg['Subject'], None, msg['From'], attendees
     )
+    email.attach(msg)
+    email_sent = email.send()
 
-    logger.info("Response : %s"%(str(response)))
+    # response = ses_client.send_raw_email(
+    #     Source=msg['From'],
+    #     Destinations=attendees,  # patient email id
+    #     RawMessage={
+    #         'Data': msg.as_string()
+    #     }
+    # )
+
+    logger.info("Response : %s"%(str(email_sent)))
