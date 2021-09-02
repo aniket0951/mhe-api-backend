@@ -206,5 +206,5 @@ class DoctorsWeeklySchedule(MyBaseModel):
                         )
     
     class Meta:
-        verbose_name = "Consultation Charges"
-        verbose_name_plural = "Consultation charges"
+        verbose_name = "Weekly Schedule"
+        verbose_name_plural = "Weekly Schedules"
