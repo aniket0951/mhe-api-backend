@@ -355,6 +355,7 @@ REFUND_URL = env('REFUND_URL')
 VC_URL_REDIRECTION = env('VC_URL_REDIRECTION')
 SMS_SECRET_KEY = env('SMS_SECRET_KEY')
 
+WEBSITE = env('WEBSITE')
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

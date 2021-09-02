@@ -1,6 +1,4 @@
-from apps.master_data.utils import MasterDataUtils
-from apps.patients.models import FamilyMember, Patient
-from apps.master_data.constants import MasterDataConstants
+
 import json
 import logging
 import xml.etree.ElementTree as ET
@@ -21,8 +19,12 @@ from apps.lab_and_radiology_items.models import (LabRadiologyItem, LabRadiologyI
 from apps.patients.serializers import PatientSerializer,FamilyMemberSerializer
 from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
                                       update_health_package, update_item)
+from apps.master_data.utils import MasterDataUtils
+from apps.patients.models import FamilyMember, Patient
+from apps.master_data.constants import MasterDataConstants
+
 from utils.utils import check_code
-from django_filters.rest_framework import DjangoFilterBackend
+
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -39,12 +41,16 @@ from proxy.custom_serializables import \
     PatientDetails as serializable_patient_details_by_mobile    
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+
 from rest_framework import filters, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
+
+from django_filters.rest_framework import DjangoFilterBackend
+
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -54,6 +60,7 @@ from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       IsPatientUser
                                      )
 from utils.utils import get_report_info,patient_user_object
+from utils.send_invite import send_invitation
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -1166,3 +1173,11 @@ class HelplineNumbersViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSe
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def send_invite(request):
+    appointment_id = request.data.get('appointment_id')
+    recipient = request.data.get('recipient')
+    send_invitation(appointment_id=appointment_id,recipient=recipient)
+    

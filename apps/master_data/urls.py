@@ -10,7 +10,7 @@ from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
                     PatientAppointmentStatus, RequestSyncView,
                     SpecialisationViewSet, UhidConsultationPricingView,
                     ValidateMobileOTPView, ValidateMobileView, ValidateOTPView,
-                    ValidateUHIDView, CompanyDomainView, ComponentsView, ConfigurationsView,PatientDetailsByMobileView,MedicineViewSet,BillingViewSet)
+                    ValidateUHIDView, CompanyDomainView, ComponentsView, ConfigurationsView,PatientDetailsByMobileView,MedicineViewSet,BillingViewSet, send_invite)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -66,6 +66,8 @@ urlpatterns = [
 
     url('^consultation_charges', UhidConsultationPricingView.as_view(),
         name="consultation_charges"),
+    
+    url(r'^send_invite', send_invite, name='send_invite'),
 
     * router.urls
 ]
