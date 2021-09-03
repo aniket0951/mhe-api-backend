@@ -1,51 +1,81 @@
-
-from django.core.mail.message import EmailMultiAlternatives
-import boto3
 import logging
 from datetime import datetime,timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders as Encoders
+from django.core.mail.message import EmailMultiAlternatives
 from django.conf import settings
 
 logger = logging.getLogger('django')
 
-def send_invitation(appointment_id, recipient):
-    query_resp = {}
-    query_resp['start_time'] = "10:00:00"
-    query_resp['end_time'] = "12:00:00"
-    query_resp['appointment_date']="2021-09-02"
-    query_resp['prefix_name']="Dr."
-    query_resp['name']="Anand"
-    query_resp['doctor_email']="archana.b@mantralabsglobal.com"
+STANDARD_DATE_FORMAT        = "%Y-%m-%d"
+STANDARD_TIME_FORMAT        = "%H:%M:%S"
+STANDARD_DATETIME_FORMAT    = "%Y-%m-%d %H:%M:%S"
+OUTPUT_TIME_FORMAT          = "%I:%M %p"
+OUTPUT_DATE_FORMAT          = "%d-%m-%Y"
+APPOINTMENT_MODE = {
+        "HV":"Hospital Visit",
+        "VC":"Video Consultation",
+        "PR":"Prime Consultation",
+}
 
-    # ses_client = boto3.client('ses')
+def prepare_query_resp_of_appointment(appointment_obj):
+
+    query_resp = {}
+
+    start_time_obj = appointment_obj.appointment_slot
+    end_time_obj = start_time_obj + timedelta(minutes=int(10))
+    user = appointment_obj.family_member or appointment_obj.patient
+    
+    query_resp['date']              = appointment_obj.appointment_date.strftime(STANDARD_DATE_FORMAT)
+    query_resp['name']              = appointment_obj.doctor.name
+    query_resp["recipient"]         = user.email
+    query_resp['guest_email']       = None
+    query_resp['appointment_id']    = appointment_obj.appointment_identifier
+    query_resp['appointment_mode']  = APPOINTMENT_MODE[appointment_obj.appointment_mode]
+    query_resp['start_time']        = start_time_obj.strftime(STANDARD_TIME_FORMAT)
+    query_resp['end_time']          = end_time_obj.strftime(STANDARD_TIME_FORMAT)
+    query_resp['start_time_obj']    = start_time_obj
+    query_resp['end_time_obj']      = end_time_obj
+
+    return query_resp
+
+def send_appointment_invitation(appointment_obj):
+
+    query_resp = prepare_query_resp_of_appointment(appointment_obj)
+    query_resp['subject']       = "Appointment booking confirmation with {dr_name} from {start_date} to {end_date} on {appointment_date}".format(
+                                                    dr_name     = query_resp['name'],
+                                                    start_date  = query_resp['start_time_obj'].strftime(OUTPUT_TIME_FORMAT), 
+                                                    end_date    = query_resp['end_time_obj'].strftime(OUTPUT_TIME_FORMAT),
+                                                    date        = appointment_obj.appointment_date.strftime(OUTPUT_DATE_FORMAT),
+                                                )
+    query_resp['description']   = "Your appointment with {name} is now confirmed".format(name=query_resp['name'])
+    query_resp['summary']       = "Your {appointment_mode} appointment is confirmed in Manipal Hospitals".format(appointment_mode=query_resp['appointment_mode'])
+    query_resp['eml_body']      = "Confirmation for {appointment_mode} appointment booking with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
+    query_resp['event_status']  = "CONFIRMED"
+
+    return send_invitation_mail(query_resp)
+
+def send_invitation_mail(query_resp):
     
     msg = MIMEMultipart('mixed')
-    attendees = ["{}".format(recipient)]
+    attendees = ["{}".format(query_resp["recipient"])]
     msg['To'] = attendees[0]
     service_email = settings.EMAIL_FROM_USER
     organizer = "ORGANIZER;CN=organiser:mailto:{service_email}".format(service_email=service_email)
     fro = "{service_email}".format(service_email=service_email)
     
     dtstamp = datetime.now().strftime("%Y%m%dT%H%M%SZ")
-    start_time = query_resp['start_time']
-    end_time = query_resp['end_time']
-
-    appointment_start_date = query_resp['appointment_date'] + " "+start_time
-    appointment_end_date = query_resp['appointment_date'] + " "+end_time
     
-    dr_name = query_resp['prefix_name'] + " " + query_resp['name']
-
-    dtstart = datetime.strptime(appointment_start_date, "%Y-%m-%d %H:%M:%S")
+    dtstart = datetime.strptime(query_resp['date'] + " "+ query_resp['start_time'], STANDARD_DATETIME_FORMAT)
     dtstart = dtstart - timedelta(hours=5, minutes=30)
     dtstart = dtstart.strftime("%Y%m%dT%H%M%SZ")
-    dtend = datetime.strptime(appointment_end_date, "%Y-%m-%d %H:%M:%S")
+
+    dtend = datetime.strptime(query_resp['date'] + " "+ query_resp['end_time'], STANDARD_DATETIME_FORMAT)
     dtend = dtend - timedelta(hours=5, minutes=30)
     dtend = dtend.strftime("%Y%m%dT%H%M%SZ")
 
-    # ddtstart and dtend used to show the time of appointment
     websiteurl = settings.WEBSITE
 
     CRLF = "\r\n"
@@ -53,30 +83,29 @@ def send_invitation(appointment_id, recipient):
 
     guest = ''
 
-    guest = query_resp['doctor_email']
-    name = dr_name
-    description = "DESCRIPTION: Your appointment with {name} is now confirmed"+CRLF.format(name=name) # doctor name
-    attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF + " ;CN={guest};X-NUM-GUESTS=0:"+CRLF+" mailto:{guest}" + CRLF.format(guest=query_resp['doctor_email'])
+    guest = query_resp.get('guest_email')
+    description = "DESCRIPTION: "+query_resp['description'] + CRLF
+    attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF + " ;CN={guest};X-NUM-GUESTS=0:"+CRLF+" mailto:{guest}" + CRLF
 
     for att in attendees:
         attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE" + CRLF+" ;CN="+att+";X-NUM-GUESTS=0:"+CRLF+" mailto:"+att+CRLF
 
     ical = "BEGIN:VCALENDAR"+CRLF+"PRODID:pyICSParser" + CRLF+"VERSION:2.0"+CRLF+"CALSCALE:GREGORIAN"+CRLF
     ical += "METHOD:REQUEST"+CRLF+"BEGIN:VEVENT"+CRLF+"DTSTART:"+dtstart + CRLF+"DTEND:"+dtend+CRLF+"DTSTAMP:"+dtstamp+CRLF+organizer+CRLF
-    ical += "UID:{appointment_id}"+"@"+"{site_url}"+CRLF.format(appointment_id=appointment_id, site_url=websiteurl)  # appointment_id@c2cdomain.com
-    ical += attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:" + dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF+"STATUS:CONFIRMED"+CRLF
-    ical += "SUMMARY:Your Connect2Clinic appointment is confirmed " + CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"+CRLF
+    ical += "UID:{unique_id}"+"@"+"{site_url}"+CRLF
+    ical += attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:" + dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF+"STATUS:"+query_resp['event_status']+CRLF
+    ical += "SUMMARY:"+query_resp['summary'] + CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"
 
     if guest:
-        ical = ical.format(name=name, appointment_id=appointment_id, site_url=websiteurl, guest=guest)
+        ical = ical.format(unique_id=query_resp['unique_id'], site_url=websiteurl, guest=guest)
     else:
-        ical = ical.format(name=name, appointment_id=appointment_id, site_url=websiteurl)
+        ical = ical.format(unique_id=query_resp['unique_id'], site_url=websiteurl)
 
-    eml_body = "Invitation Link for doctor appointment booking"
+    eml_body = query_resp['eml_body']
     msg = MIMEMultipart('mixed')
     msg['Reply-To'] = fro
     msg['Date'] = dtstamp
-    msg['Subject'] = "Appointment Booking Invitation with {dr_name} from {appointment_start_date} to {appointment_end_date}".format(dr_name=dr_name, appointment_start_date=appointment_start_date, appointment_end_date=appointment_end_date)  # Subject formating
+    msg['Subject'] = query_resp['subject']
     msg['From'] = fro
     msg['To'] = ",".join(attendees)
 
@@ -102,13 +131,4 @@ def send_invitation(appointment_id, recipient):
     )
     email.attach(msg)
     email_sent = email.send()
-
-    # response = ses_client.send_raw_email(
-    #     Source=msg['From'],
-    #     Destinations=attendees,  # patient email id
-    #     RawMessage={
-    #         'Data': msg.as_string()
-    #     }
-    # )
-
-    logger.info("Response : %s"%(str(email_sent)))
+    return email_sent

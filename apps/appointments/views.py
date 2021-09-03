@@ -1,6 +1,7 @@
 import ast
 import json
 import logging
+
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
@@ -67,6 +68,7 @@ from .serializers import (AppointmentDocumentsSerializer,
 
 from apps.doctors.serializers import DoctorChargesSerializer
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id, check_health_package_age_and_gender
+from utils.send_invite import send_appointment_invitation
 from .constants import AppointmentsConstants
 
 client = APIClient()
@@ -431,6 +433,8 @@ class CreateMyAppointment(ProxyView):
                 if consultation_response.data.get('data') and consultation_response.data['data'].get("PlanCode"):
                     corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
+                is_invitation_email_sent = False
+
                 if patient and patient.active_view == 'Corporate':
                     
                     corporate_appointment["processing_id"] = get_processing_id()
@@ -464,6 +468,9 @@ class CreateMyAppointment(ProxyView):
                                     patient_instance = Patient.objects.filter(id=data.get("patient").id).first()
                                     patient_instance.uhid_number = bill_detail.get("HospitalNo")
                                     patient_instance.save()
+
+                                send_appointment_invitation(appointment_instance)
+                                is_invitation_email_sent = True
                                     
                     except Exception as e:
                         param = dict()
@@ -512,6 +519,10 @@ class CreateMyAppointment(ProxyView):
                             appointment_instance.consultation_amount = 0
                             response = AppointmentPaymentView.as_view()(followup_payment_param)
                             appointment_instance.payment_status = "success"
+                            appointment_instance.save()
+
+                            send_appointment_invitation(appointment_instance)
+                            is_invitation_email_sent = True
 
                         else:
                             param = dict()
@@ -529,8 +540,14 @@ class CreateMyAppointment(ProxyView):
 
                     appointment_instance.save()
 
-        return self.custom_success_response(message=response_message,
-                                            success=response_success, data=response_data)
+                if not is_invitation_email_sent and appointment_instance.appointment_mode in ["HV","PR"]:
+                    send_appointment_invitation(appointment_instance)
+
+        return self.custom_success_response(
+                                        message=response_message,
+                                        success=response_success, 
+                                        data=response_data
+                                    )
 
 def cancel_and_refund_appointment_view(instance):
     param = dict()

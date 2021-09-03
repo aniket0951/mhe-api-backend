@@ -1,10 +1,7 @@
-from apps.additional_features.serializers import DriveBookingSerializer
-from apps.additional_features.models import DriveBilling, DriveBooking
-from apps.doctors.serializers import DoctorChargesSerializer
+
 import time
 import json
 import logging
-from os import stat
 from datetime import date, datetime
 
 from django.conf import settings
@@ -37,9 +34,13 @@ from apps.payments.exceptions import (
                     )
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
+from apps.additional_features.serializers import DriveBookingSerializer
+from apps.additional_features.models import DriveBilling, DriveBooking
+from apps.doctors.serializers import DoctorChargesSerializer
 
 from utils.razorpay_util import RazorPayUtil
 from utils.razorpay_payment_parameter_generator import get_hospital_key_info
+from utils.send_invite import send_appointment_invitation
 
 from .constants import PaymentConstants
 from .serializers import PaymentSerializer,PaymentRefundSerializer
@@ -1109,7 +1110,9 @@ class PaymentUtils:
             }
             appointment_serializer = AppointmentSerializer(appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
-            appointment_serializer.save()
+            appointment_instance = appointment_serializer.save()
+            if appointment_instance.appointment_mode in ["VC"]:
+                send_appointment_invitation(appointment_instance)
 
     @staticmethod
     def payment_update_for_health_package(payment_instance,payment_response):
