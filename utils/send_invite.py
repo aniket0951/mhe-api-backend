@@ -51,10 +51,10 @@ def send_appointment_invitation(appointment_obj):
 
     query_resp = prepare_query_resp_of_appointment(appointment_obj)
     query_resp['subject']       = "Appointment booking confirmation with {dr_name} from {start_date} to {end_date} on {appointment_date}".format(
-                                                    dr_name     = query_resp['name'],
-                                                    start_date  = query_resp['start_time_obj'].strftime(OUTPUT_TIME_FORMAT), 
-                                                    end_date    = query_resp['end_time_obj'].strftime(OUTPUT_TIME_FORMAT),
-                                                    date        = appointment_obj.appointment_date.strftime(OUTPUT_DATE_FORMAT),
+                                                    dr_name             = query_resp['name'],
+                                                    start_date          = query_resp['start_time_obj'].strftime(OUTPUT_TIME_FORMAT), 
+                                                    end_date            = query_resp['end_time_obj'].strftime(OUTPUT_TIME_FORMAT),
+                                                    appointment_date    = appointment_obj.appointment_date.strftime(OUTPUT_DATE_FORMAT),
                                                 )
     query_resp['description']   = "Your appointment with {name} is now confirmed".format(name=query_resp['name'])
     query_resp['summary']       = "Your {appointment_mode} appointment is confirmed in Manipal Hospitals".format(appointment_mode=query_resp['appointment_mode'])
