@@ -87,11 +87,12 @@ def send_invitation_mail(query_resp):
     CRLF = "\r\n"
     attendee = ""
 
-    guest = ''
-
     guest = query_resp.get('guest_email')
+    
     description = "DESCRIPTION: "+query_resp['description'] + CRLF
-    attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF + " ;CN={guest};X-NUM-GUESTS=0:"+CRLF+" mailto:{guest}" + CRLF
+
+    if guest:
+        attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE"+CRLF + " ;CN={guest};X-NUM-GUESTS=0:"+CRLF+" mailto:{guest}" + CRLF
 
     for att in attendees:
         attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE" + CRLF+" ;CN="+att+";X-NUM-GUESTS=0:"+CRLF+" mailto:"+att+CRLF
