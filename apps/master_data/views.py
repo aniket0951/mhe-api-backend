@@ -1,4 +1,3 @@
-
 import json
 import logging
 import xml.etree.ElementTree as ET
@@ -22,6 +21,7 @@ from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
 from apps.master_data.utils import MasterDataUtils
 from apps.patients.models import FamilyMember, Patient
 from apps.master_data.constants import MasterDataConstants
+from apps.appointments.models import Appointment
 
 from utils.utils import check_code
 
@@ -59,8 +59,9 @@ from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistCreateMethodPermission,
                                       IsPatientUser
                                      )
+                                     
 from utils.utils import get_report_info,patient_user_object
-from utils.send_invite import send_invitation
+from utils.send_invite import send_appointment_invitation
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -1178,9 +1179,10 @@ class HelplineNumbersViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSe
 @permission_classes([AllowAny])
 def send_invite(request):
     appointment_id = request.data.get('appointment_id')
-    recipient = request.data.get('recipient')
-    send_invitation(appointment_id=appointment_id,recipient=recipient)
-    
+    appointment_obj = Appointment.objects.filter(appointment_identifier=appointment_id).first()
+    if appointment_obj and send_appointment_invitation(appointment_obj):
+        return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FeedbackRecipientsViewSet(custom_viewsets.ModelViewSet):
     queryset = FeedbackRecipients.objects.all()
