@@ -38,7 +38,7 @@ def prepare_query_resp_of_appointment(appointment_obj):
     query_resp['name']              = appointment_obj.doctor.name
     query_resp['unique_id']         = appointment_obj.id
     query_resp["recipient"]         = user.email
-    query_resp['guest_email']       = None
+    query_resp['guest_email']       = settings.EMAIL_FROM_USER
     query_resp['appointment_mode']  = APPOINTMENT_MODE[appointment_obj.appointment_mode]
     query_resp['start_time']        = start_time_str
     query_resp['end_time']          = end_time_obj.strftime(STANDARD_TIME_FORMAT)
@@ -109,6 +109,8 @@ def send_invitation_mail(query_resp):
         ical = ical.format(unique_id=query_resp['unique_id'], site_url=websiteurl, guest=guest)
     else:
         ical = ical.format(unique_id=query_resp['unique_id'], site_url=websiteurl)
+
+    logger.info("ical : %s"%(str(ical)))
 
     eml_body = query_resp['eml_body']
     msg = MIMEMultipart('mixed')
