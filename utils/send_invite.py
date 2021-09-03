@@ -64,8 +64,6 @@ def send_appointment_invitation(appointment_obj):
     return send_invitation_mail(query_resp)
 
 def send_invitation_mail(query_resp):
-
-    logger.info("query_resp : %s"%(str(query_resp)))
     
     msg = MIMEMultipart('mixed')
     attendees = ["{}".format(query_resp["recipient"])]
@@ -110,8 +108,6 @@ def send_invitation_mail(query_resp):
     else:
         ical = ical.format(unique_id=query_resp['unique_id'], site_url=websiteurl)
 
-    logger.info("ical : %s"%(str(ical)))
-
     eml_body = query_resp['eml_body']
     msg = MIMEMultipart('mixed')
     msg['Reply-To'] = fro
@@ -142,7 +138,5 @@ def send_invitation_mail(query_resp):
     )
     email.attach(msg)
     email_sent = email.send()
-
-    logger.info("email_sent : %s"%(str(email_sent)))
 
     return email_sent
