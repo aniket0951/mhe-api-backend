@@ -325,6 +325,7 @@ class DoctorScheduleView(ProxyView):
                 for record in schedule_list:
                     if hospital_description not in records:
                         records[hospital_description] = []
+                    record["SessionType"] = record["SessionType"].replace("/","") 
                     records[hospital_description].append(record)
                 
         return self.custom_success_response(message=DoctorsConstants.AVAILABLE_SLOTS,success=True, data=records)
