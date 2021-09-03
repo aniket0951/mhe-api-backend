@@ -103,7 +103,7 @@ def send_invitation_mail(query_resp):
     ical += "METHOD:REQUEST"+CRLF+"BEGIN:VEVENT"+CRLF+"DTSTART:"+dtstart + CRLF+"DTEND:"+dtend+CRLF+"DTSTAMP:"+dtstamp+CRLF+organizer+CRLF
     ical += "UID:{unique_id}"+"@"+"{site_url}"+CRLF
     ical += attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:" + dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF+"STATUS:"+query_resp['event_status']+CRLF
-    ical += "SUMMARY:"+query_resp['summary'] + CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"
+    ical += "SUMMARY:"+query_resp['summary'] + CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"+CRLF
 
     if guest:
         ical = ical.format(unique_id=query_resp['unique_id'], site_url=websiteurl, guest=guest)
