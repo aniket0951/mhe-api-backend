@@ -36,7 +36,7 @@ def prepare_query_resp_of_appointment(appointment_obj):
     
     query_resp['date']              = date_str
     query_resp['name']              = appointment_obj.doctor.name
-    query_resp['unique_id']         = appointment_obj.appointment_identifier
+    query_resp['unique_id']         = appointment_obj.id
     query_resp["recipient"]         = user.email
     query_resp['guest_email']       = None
     query_resp['appointment_mode']  = APPOINTMENT_MODE[appointment_obj.appointment_mode]
