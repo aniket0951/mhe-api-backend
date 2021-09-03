@@ -150,6 +150,7 @@ class DoctorsWeeklySchedule(MyBaseModel):
         ('HV','HV'),
         ('VC','VC'),
         ('HVVC','HVVC'),
+        ('HV/VC','HV/VC'),
         ('PR','PR'),
     )
 
