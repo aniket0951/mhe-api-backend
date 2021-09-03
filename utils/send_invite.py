@@ -24,17 +24,23 @@ def prepare_query_resp_of_appointment(appointment_obj):
 
     query_resp = {}
 
+    date_str = appointment_obj.appointment_date.strftime(STANDARD_DATE_FORMAT)
+    
     start_time_obj = appointment_obj.appointment_slot
-    end_time_obj = start_time_obj + timedelta(minutes=int(10))
+    start_time_str = start_time_obj.strftime(STANDARD_TIME_FORMAT)
+    
+    dtstart = datetime.strptime(date_str + " "+ start_time_str, STANDARD_DATETIME_FORMAT)
+    end_time_obj = dtstart + timedelta(minutes=int(10))
+
     user = appointment_obj.family_member or appointment_obj.patient
     
-    query_resp['date']              = appointment_obj.appointment_date.strftime(STANDARD_DATE_FORMAT)
+    query_resp['date']              = date_str
     query_resp['name']              = appointment_obj.doctor.name
     query_resp["recipient"]         = user.email
     query_resp['guest_email']       = None
     query_resp['appointment_id']    = appointment_obj.appointment_identifier
     query_resp['appointment_mode']  = APPOINTMENT_MODE[appointment_obj.appointment_mode]
-    query_resp['start_time']        = start_time_obj.strftime(STANDARD_TIME_FORMAT)
+    query_resp['start_time']        = start_time_str
     query_resp['end_time']          = end_time_obj.strftime(STANDARD_TIME_FORMAT)
     query_resp['start_time_obj']    = start_time_obj
     query_resp['end_time_obj']      = end_time_obj
