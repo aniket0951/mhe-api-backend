@@ -165,6 +165,7 @@ class DoctorSlotAvailability(ProxyView):
         morning_slot, afternoon_slot, evening_slot = [], [], []
         
         response = {}
+        services = {"HV":False,"VC":False,"PR":False}
         if status == "SUCCESS":
             hv_price, *vc_pr_price = price.split("-")
             if vc_pr_price:
@@ -295,6 +296,7 @@ class DoctorRescheduleSlot(ProxyView):
         price = root.find("price").text
         status = root.find("Status").text
         morning_slot, afternoon_slot, evening_slot = [], [], []
+        services = {"HV":False,"VC":False,"PR":False}
         response = {}
         if status == "SUCCESS":
             morning_slot, afternoon_slot, evening_slot, services = process_slots(slots)
