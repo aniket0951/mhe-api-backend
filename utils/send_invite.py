@@ -32,12 +32,18 @@ def prepare_query_resp_of_appointment(appointment_obj):
     dtstart = datetime.strptime(date_str + " "+ start_time_str, STANDARD_DATETIME_FORMAT)
     end_time_obj = dtstart + timedelta(minutes=int(10))
 
-    user = appointment_obj.family_member or appointment_obj.patient
+   # user = appointment_obj.family_member or appointment_obj.patient
+    
+    if appointment_obj.family_member:
+        email = appointment_obj.family_member.email
+    if appointment_obj.patient and appointment_obj.patient.active_view == 'Corporate':
+        email = appointment_obj.patient.corporate_email
+    email = appointment_obj.patient.email
     
     query_resp['date']              = date_str
     query_resp['name']              = appointment_obj.doctor.name
     query_resp['unique_id']         = appointment_obj.id
-    query_resp["recipient"]         = user.email
+    query_resp["recipient"]         = email
     query_resp['guest_email']       = settings.EMAIL_FROM_USER
     query_resp['appointment_mode']  = APPOINTMENT_MODE[appointment_obj.appointment_mode]
     query_resp['start_time']        = start_time_str
@@ -60,6 +66,37 @@ def send_appointment_invitation(appointment_obj):
     query_resp['summary']       = "Your {appointment_mode} appointment is confirmed in Manipal Hospitals".format(appointment_mode=query_resp['appointment_mode'])
     query_resp['eml_body']      = "Confirmation for {appointment_mode} appointment booking with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
     query_resp['event_status']  = "CONFIRMED"
+
+    return send_invitation_mail(query_resp)
+
+def send_appointment_cancellation_invitation(appointment_obj):
+
+    query_resp = prepare_query_resp_of_appointment(appointment_obj)
+    query_resp['subject']       = "Your appointment with {dr_name} on {appointment_date} has been cancelled".format(
+                                                    dr_name             = query_resp['name'],
+                                                    appointment_date    = appointment_obj.appointment_date.strftime(OUTPUT_DATE_FORMAT),
+                                                )
+
+    query_resp['description']   = "Your appointment with {name} has been cancelled".format(name=query_resp['name'])
+    query_resp['summary']       = "Your {appointment_mode} appointment with {dr_name} has been cancelled".format(appointment_mode=query_resp['appointment_mode'],dr_name=query_resp['name'])
+    query_resp['eml_body']      = "Appointment cancellation with {name} for {appointment_mode}".format(name=query_resp['name'],appointment_mode=query_resp['appointment_mode'])
+    query_resp['event_status']  = "CANCELLED"
+
+    return send_invitation_mail(query_resp)
+
+def send_appointment_rescheduling_invitation(appointment_obj):
+
+    query_resp = prepare_query_resp_of_appointment(appointment_obj)
+    query_resp['subject']       = "Your appointment with {dr_name} has been reschedule from {start_date} to {end_date} on {appointment_date}".format(
+                                                    dr_name             = query_resp['name'],
+                                                    start_date          = query_resp['start_time_obj'].strftime(OUTPUT_TIME_FORMAT), 
+                                                    end_date            = query_resp['end_time_obj'].strftime(OUTPUT_TIME_FORMAT),
+                                                    appointment_date    = appointment_obj.appointment_date.strftime(OUTPUT_DATE_FORMAT),
+                                                )
+    query_resp['description']   = "Your appointment with {name} has been reschedule".format(name=query_resp['name'])
+    query_resp['summary']       = "Your {appointment_mode} appointment with {dr_name} has been reschedule".format(appointment_mode=query_resp['appointment_mode'],dr_name=query_resp['name'])
+    query_resp['eml_body']      = "Confirmation for rescheduling the {appointment_mode} appointment with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
+    query_resp['event_status']  = "UPDATED"
 
     return send_invitation_mail(query_resp)
 

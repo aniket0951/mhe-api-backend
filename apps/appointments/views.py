@@ -68,7 +68,7 @@ from .serializers import (AppointmentDocumentsSerializer,
 
 from apps.doctors.serializers import DoctorChargesSerializer
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id, check_health_package_age_and_gender
-from utils.send_invite import send_appointment_invitation
+from utils.send_invite import send_appointment_invitation, send_appointment_cancellation_invitation, send_appointment_rescheduling_invitation
 from .constants import AppointmentsConstants
 
 client = APIClient()
@@ -612,12 +612,15 @@ class CancelMyAppointment(ProxyView):
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.other_reason = self.request.data.get("other_reason")
                 instance.save()
-
+                
                 refund_param = cancel_and_refund_parameters({"appointment_identifier": instance.appointment_identifier})
                 RazorRefundView.as_view()(refund_param)
 
                 request_param = cancel_and_refund_appointment_view(instance)
                 CancelAndRefundView.as_view()(request_param)
+
+                if not self.request.data.get("auto_cancellation"):
+                    send_appointment_cancellation_invitation(instance)
 
                 success_status = True
                 return self.custom_success_response(
@@ -1134,10 +1137,14 @@ class DoctorRescheduleAppointmentView(ProxyView):
                                 payment_instance.appointment = appointment
                                 payment_instance.save()
                         instance.status = 5
+                        
+                        send_appointment_rescheduling_invitation(instance)
+                        
                         instance.reason_id = self.request.data.get("reason_id")
                         instance.other_reason = self.request.data.get(
                             "other_reason")
                         instance.save()
+                        
                         response_success = True
                         response_message = AppointmentsConstants.APPOINTMENT_HAS_RESCHEDULED
                         response_data["appointment_identifier"] = appointment_id
