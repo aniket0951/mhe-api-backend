@@ -1137,14 +1137,14 @@ class DoctorRescheduleAppointmentView(ProxyView):
                                 payment_instance.appointment = appointment
                                 payment_instance.save()
                         instance.status = 5
-                        
-                        send_appointment_rescheduling_invitation(instance)
-                        
+                                            
                         instance.reason_id = self.request.data.get("reason_id")
                         instance.other_reason = self.request.data.get(
                             "other_reason")
                         instance.save()
-                        
+                    
+                        send_appointment_rescheduling_invitation(instance)
+    
                         response_success = True
                         response_message = AppointmentsConstants.APPOINTMENT_HAS_RESCHEDULED
                         response_data["appointment_identifier"] = appointment_id
