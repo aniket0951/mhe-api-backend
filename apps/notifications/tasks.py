@@ -343,6 +343,7 @@ def auto_appointment_cancellation():
         param["appointment_identifier"] = appointment.appointment_identifier
         param["reason_id"] = "1"
         param["status"] = "2"
+        param["auto_cancellation"] = True
         request_param = cancel_parameters(param)
         CancelMyAppointment.as_view()(request_param)
 
@@ -364,6 +365,7 @@ def daily_auto_appointment_cancellation():
         param["appointment_identifier"] = appointment.appointment_identifier
         param["reason_id"] = "1"
         param["status"] = "2"
+        param["auto_cancellation"] = True
         request_param = cancel_parameters(param)
         CancelMyAppointment.as_view()(request_param)
         
