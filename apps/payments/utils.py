@@ -1098,7 +1098,7 @@ class PaymentUtils:
             PaymentUtils.payment_for_uhid_creation_payment_done_for_family_member(payment_instance,uhid_info)
 
     @staticmethod
-    def payment_for_scheduling_appointment(payment_instance,payment_response,order_details):
+    def payment_for_scheduling_appointment(payment_instance,payment_response,order_details,is_requested_from_mobile):
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
             update_data = {
@@ -1111,7 +1111,7 @@ class PaymentUtils:
             appointment_serializer = AppointmentSerializer(appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_instance = appointment_serializer.save()
-            if appointment_instance.appointment_mode in ["VC"]:
+            if not is_requested_from_mobile and appointment_instance.appointment_mode in ["VC"]:
                 send_appointment_invitation(appointment_instance)
 
     @staticmethod

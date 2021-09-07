@@ -84,29 +84,34 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
 def extract_slots(slot_list):
     morning_slot, afternoon_slot, evening_slot = [], [], []
+    services = {"HV":False,"VC":False,"PR":False}
     for slot in slot_list:
         time_format = ""
         appointment_type = "HV"
         if "HVVC" in slot['startTime']:
             time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
             appointment_type = "HVVC"
+            services["HV"] = True
+            services["VC"] = True
         elif "VC" in slot['startTime']:
             time_format = '%d %b, %Y %I:%M:%S %p(VC)'
             appointment_type = "VC"
+            services["VC"] = True
         elif "PR" in slot['startTime']:
             time_format = '%d %b, %Y %I:%M:%S %p(PR)'
             appointment_type = "PR"
+            services["PR"] = True
         else:
             time_format = '%d %b, %Y %I:%M:%S %p(HV)'
-        time = datetime.strptime(
-            slot['startTime'], time_format).time()
+            services["HV"] = True
+        time = datetime.strptime(slot['startTime'], time_format).time()
         if time.hour < 12:
             morning_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
         elif (time.hour >= 12) and (time.hour < 17):
             afternoon_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
         else:
             evening_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
-    return morning_slot, afternoon_slot, evening_slot
+    return morning_slot, afternoon_slot, evening_slot, services
 
 def get_doctor_instace(data,date):
     doctor = None
@@ -160,6 +165,7 @@ class DoctorSlotAvailability(ProxyView):
         morning_slot, afternoon_slot, evening_slot = [], [], []
         
         response = {}
+        services = {"HV":False,"VC":False,"PR":False}
         if status == "SUCCESS":
             hv_price, *vc_pr_price = price.split("-")
             if vc_pr_price:
@@ -168,11 +174,12 @@ class DoctorSlotAvailability(ProxyView):
                     pr_price, *rem = pr_price
             if slots:
                 slot_list = ast.literal_eval(slots)
-                morning_slot, afternoon_slot, evening_slot = extract_slots(slot_list)
+                morning_slot, afternoon_slot, evening_slot, services = extract_slots(slot_list)
             
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
+        response["services"] = services
         response["hv_price"] = hv_price
         response["vc_price"] = vc_price
         response["prime_price"] = pr_price
@@ -289,13 +296,15 @@ class DoctorRescheduleSlot(ProxyView):
         price = root.find("price").text
         status = root.find("Status").text
         morning_slot, afternoon_slot, evening_slot = [], [], []
+        services = {"HV":False,"VC":False,"PR":False}
         response = {}
         if status == "SUCCESS":
-            morning_slot, afternoon_slot, evening_slot = process_slots(slots)
+            morning_slot, afternoon_slot, evening_slot, services = process_slots(slots)
             response["price"] = price.split("-")[0]
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
+        response["services"] = services
         return self.custom_success_response(message=DoctorsConstants.AVAILABLE_SLOTS,success=True, data=response)
 
 
