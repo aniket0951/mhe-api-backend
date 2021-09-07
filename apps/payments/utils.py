@@ -426,8 +426,6 @@ class PaymentUtils:
         
         response_doctor_charges = PaymentUtils.get_consultation_charges(location_code,appointment_instance,uhid,order_date)
         calculated_amount = PaymentUtils.calculate_amount_based_on_appointment_mode(calculated_amount,response_doctor_charges,appointment_instance)
-        logger.info("calculated_amount %s"%(str(calculated_amount)))
-        logger.info("int(float(param[token][accounts][0][amount])) %s"%(str(int(float(param["token"]["accounts"][0]["amount"])))))
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
@@ -481,7 +479,6 @@ class PaymentUtils:
 
     @staticmethod
     def calculate_amount_based_on_appointment_mode(calculated_amount,response_doctor_charges,appointment_instance):
-        logger.info("response_doctor_charges.data %s"%(str(response_doctor_charges.data)))
         if  response_doctor_charges.status_code == 200 and \
             response_doctor_charges.data and \
             response_doctor_charges.data.get("success") and \
