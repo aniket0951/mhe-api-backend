@@ -481,6 +481,7 @@ class PaymentUtils:
 
     @staticmethod
     def calculate_amount_based_on_appointment_mode(calculated_amount,response_doctor_charges,appointment_instance):
+        logger.info("response_doctor_charges.data %s"%(str(response_doctor_charges.data)))
         if  response_doctor_charges.status_code == 200 and \
             response_doctor_charges.data and \
             response_doctor_charges.data.get("success") and \
