@@ -1102,8 +1102,8 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         datetime_object = datetime.strptime(
                             appointment_date_time, '%Y%m%d%H%M%S')
                         time = datetime_object.time()
-                        new_appointment["appointment_date"] = datetime_object.date(
-                        )
+                        
+                        new_appointment["appointment_date"] = datetime_object.date()
                         new_appointment["appointment_slot"] = time.strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
                         new_appointment["status"] = 1
                         new_appointment["appointment_identifier"] = appointment_id
@@ -1116,13 +1116,13 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             new_appointment["family_member"] = instance.family_member.id
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
-                        new_appointment["appointment_mode"] = self.request.data.get(
-                            "app_type")
+                        new_appointment["appointment_mode"] = self.request.data.get("app_type")
                         new_appointment["corporate_appointment"] = instance.corporate_appointment
                         new_appointment["booked_via_app"] = True
                         new_appointment["beneficiary_reference_id"] = instance.beneficiary_reference_id
                         new_appointment["appointment_service"] = instance.appointment_service
-
+                        new_appointment["root_appointment_id"] = instance.root_appointment_id or instance.id
+                        
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
                         if appointment_instance:
                             appointment_serializer = AppointmentSerializer(appointment_instance, data=new_appointment, partial=True)
