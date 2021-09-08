@@ -104,6 +104,9 @@ def send_appointment_rescheduling_invitation(appointment_obj):
     return send_invitation_mail(query_resp)
 
 def send_invitation_mail(query_resp):
+
+    if not settings.SEND_CALENDAR_INVITATION:
+        return True
     
     msg = MIMEMultipart('mixed')
     attendees = ["{}".format(query_resp["recipient"])]
