@@ -64,6 +64,7 @@ def send_appointment_invitation(appointment_obj):
     query_resp['description']   = "Your appointment with {name} is now confirmed".format(name=query_resp['name'])
     query_resp['summary']       = "Your {appointment_mode} appointment is confirmed in Manipal Hospitals".format(appointment_mode=query_resp['appointment_mode'])
     query_resp['eml_body']      = "Confirmation for {appointment_mode} appointment booking with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
+    query_resp['event_method']  = "REQUEST"
     query_resp['event_status']  = "CONFIRMED"
 
     return send_invitation_mail(query_resp)
@@ -79,6 +80,7 @@ def send_appointment_cancellation_invitation(appointment_obj):
     query_resp['description']   = "Your appointment with {name} has been cancelled".format(name=query_resp['name'])
     query_resp['summary']       = "Your {appointment_mode} appointment with {dr_name} has been cancelled".format(appointment_mode=query_resp['appointment_mode'],dr_name=query_resp['name'])
     query_resp['eml_body']      = "Appointment cancellation with {name} for {appointment_mode}".format(name=query_resp['name'],appointment_mode=query_resp['appointment_mode'])
+    query_resp['event_method']  = "CANCEL"
     query_resp['event_status']  = "CANCELLED"
 
     return send_invitation_mail(query_resp)
@@ -95,7 +97,8 @@ def send_appointment_rescheduling_invitation(appointment_obj):
     query_resp['description']   = "Your appointment with {name} has been rescheduled".format(name=query_resp['name'])
     query_resp['summary']       = "Your {appointment_mode} appointment with {dr_name} has been rescheduled".format(appointment_mode=query_resp['appointment_mode'],dr_name=query_resp['name'])
     query_resp['eml_body']      = "Confirmation for rescheduling the {appointment_mode} appointment with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
-    query_resp['event_status']  = "CONFIRMED"
+    query_resp['event_method']  = "REQUEST"
+    query_resp['event_status']  = "UPDATE"
 
     return send_invitation_mail(query_resp)
 
@@ -136,7 +139,10 @@ def send_invitation_mail(query_resp):
     ical = "BEGIN:VCALENDAR"+CRLF+"PRODID:pyICSParser" + CRLF+"VERSION:2.0"+CRLF+"CALSCALE:GREGORIAN"+CRLF
     ical += "METHOD:REQUEST"+CRLF+"BEGIN:VEVENT"+CRLF+"DTSTART:"+dtstart + CRLF+"DTEND:"+dtend+CRLF+"DTSTAMP:"+dtstamp+CRLF+organizer+CRLF
     ical += "UID:{unique_id}"+"@"+"{site_url}"+CRLF
-    ical += attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:" + dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF+"STATUS:"+query_resp['event_status']+CRLF
+    ical += attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:" + dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF
+    if query_resp.get('event_method'):
+        ical += "METHOD:"+query_resp['event_method']+CRLF
+    ical += "STATUS:"+query_resp['event_status']+CRLF
     ical += "SUMMARY:"+query_resp['summary'] + CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"+CRLF
 
     if guest:
