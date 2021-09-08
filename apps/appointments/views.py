@@ -1143,7 +1143,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             "other_reason")
                         instance.save()
                     
-                        send_appointment_rescheduling_invitation(instance)
+                        send_appointment_rescheduling_invitation(appointment)
     
                         response_success = True
                         response_message = AppointmentsConstants.APPOINTMENT_HAS_RESCHEDULED
