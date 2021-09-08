@@ -99,7 +99,8 @@ def send_appointment_rescheduling_invitation(appointment_obj):
     query_resp['eml_body']      = "Confirmation for rescheduling the {appointment_mode} appointment with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
     query_resp['event_method']  = "REQUEST"
     query_resp['event_status']  = "UPDATE"
-
+    query_resp['event_sequence']  = "1"
+    
     return send_invitation_mail(query_resp)
 
 def send_invitation_mail(query_resp):
@@ -140,6 +141,8 @@ def send_invitation_mail(query_resp):
     ical += "METHOD:REQUEST"+CRLF+"BEGIN:VEVENT"+CRLF+"DTSTART:"+dtstart + CRLF+"DTEND:"+dtend+CRLF+"DTSTAMP:"+dtstamp+CRLF+organizer+CRLF
     ical += "UID:{unique_id}"+"@"+"{site_url}"+CRLF
     ical += attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:" + dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF
+    if query_resp.get('event_sequence'):
+        ical += "SEQUENCE:"+query_resp['event_sequence']+CRLF
     if query_resp.get('event_method'):
         ical += "METHOD:"+query_resp['event_method']+CRLF
     ical += "STATUS:"+query_resp['event_status']+CRLF
