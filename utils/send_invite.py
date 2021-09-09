@@ -80,7 +80,7 @@ def send_appointment_cancellation_invitation(appointment_obj):
     query_resp['description']   = "Your appointment with {name} has been cancelled".format(name=query_resp['name'])
     query_resp['summary']       = "Your {appointment_mode} appointment with {dr_name} has been cancelled".format(appointment_mode=query_resp['appointment_mode'],dr_name=query_resp['name'])
     query_resp['eml_body']      = "Appointment cancellation with {name} for {appointment_mode}".format(name=query_resp['name'],appointment_mode=query_resp['appointment_mode'])
-    query_resp['event_method']  = "REQUEST"
+    query_resp['event_method']  = "CANCEL"
     query_resp['event_status']  = "CANCELLED"
 
     return send_invitation_mail(query_resp)
