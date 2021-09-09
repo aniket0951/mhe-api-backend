@@ -139,15 +139,17 @@ def send_invitation_mail(query_resp):
 
     for att in attendees:
         attendee += "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE" + CRLF+" ;CN="+att+";X-NUM-GUESTS=0:"+CRLF+" mailto:"+att+CRLF
-
+    
+    
     ical = "BEGIN:VCALENDAR"+CRLF+"PRODID:pyICSParser" + CRLF+"VERSION:2.0"+CRLF+"CALSCALE:GREGORIAN"+CRLF
-    ical += "METHOD:REQUEST"+CRLF+"BEGIN:VEVENT"+CRLF+"DTSTART:"+dtstart + CRLF+"DTEND:"+dtend+CRLF+"DTSTAMP:"+dtstamp+CRLF+organizer+CRLF
+    if query_resp.get('event_method'):
+        ical += "METHOD:"+query_resp['event_method']+CRLF
+    ical += "BEGIN:VEVENT"+CRLF+"DTSTART:"+dtstart + CRLF+"DTEND:"+dtend+CRLF+"DTSTAMP:"+dtstamp+CRLF+organizer+CRLF
     ical += "UID:{unique_id}"+"@"+"{site_url}"+CRLF
     ical += attendee+"CREATED:"+dtstamp+CRLF+description+"LAST-MODIFIED:" + dtstamp+CRLF+"LOCATION:"+CRLF+"SEQUENCE:0"+CRLF
     if query_resp.get('event_sequence'):
         ical += "SEQUENCE:"+query_resp['event_sequence']+CRLF
-    if query_resp.get('event_method'):
-        ical += "METHOD:"+query_resp['event_method']+CRLF
+    
     ical += "STATUS:"+query_resp['event_status']+CRLF
     ical += "SUMMARY:"+query_resp['summary'] + CRLF+"TRANSP:OPAQUE"+CRLF+"END:VEVENT"+CRLF+"END:VCALENDAR"+CRLF
 
