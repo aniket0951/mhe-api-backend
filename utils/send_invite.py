@@ -63,7 +63,7 @@ def send_appointment_invitation(appointment_obj):
                                                     appointment_date    = appointment_obj.appointment_date.strftime(OUTPUT_DATE_FORMAT),
                                                 )
     
-    query_resp['description']   = "Your {appointment_mode} appointment with {name} at Manipal Hospitals has been confirmed,\nPlease download the app for more information about appointment. Click here to download http://onelink.to/tzyzna". \
+    query_resp['description']   = "Your {appointment_mode} appointment with {name} at Manipal Hospitals has been confirmed, Please download the app for more information about appointment. Click here to download http://onelink.to/tzyzna". \
                                 format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
     query_resp['eml_body'] = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed, Please download the app for more information about appointment. Click here to download http://onelink.to/tzyzna". \
                                 format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
