@@ -41,6 +41,7 @@ def prepare_query_resp_of_appointment(appointment_obj):
     
     query_resp['date']              = date_str
     query_resp['name']              = appointment_obj.doctor.name
+    query_resp['hospital']          = appointment_obj.hospital.location
     query_resp['unique_id']         = appointment_obj.root_appointment_id or appointment_obj.id
     query_resp["recipient"]         = email
     query_resp['guest_email']       = settings.EMAIL_FROM_USER
@@ -61,9 +62,18 @@ def send_appointment_invitation(appointment_obj):
                                                     end_date            = query_resp['end_time_obj'].strftime(OUTPUT_TIME_FORMAT),
                                                     appointment_date    = appointment_obj.appointment_date.strftime(OUTPUT_DATE_FORMAT),
                                                 )
-    query_resp['description']   = "Your appointment with {name} is now confirmed".format(name=query_resp['name'])
+    
+    query_resp['description']   = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app for more information about appointments.\nClick here to download http://onelink.to/tzyzna". \
+                                format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
+    query_resp['eml_body'] = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app for more information about appointments.\nClick here to download http://onelink.to/tzyzna". \
+                                format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
+    
+    if query_resp['appointment_mode'] == "VC":
+        query_resp['description']   = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app to join your video consultation appointment.\nClick here to download http://onelink.to/tzyzna". \
+                                    format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
+        query_resp['eml_body'] = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app to join your video consultation appointment.\nClick here to download http://onelink.to/tzyzna". \
+                                    format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
     query_resp['summary']       = "Your {appointment_mode} appointment is confirmed in Manipal Hospitals".format(appointment_mode=query_resp['appointment_mode'])
-    query_resp['eml_body']      = "Confirmation for {appointment_mode} appointment booking with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
     query_resp['event_method']  = "REQUEST"
     query_resp['event_status']  = "CONFIRMED"
 
@@ -94,7 +104,17 @@ def send_appointment_rescheduling_invitation(appointment_obj):
                                                     start_date          = query_resp['start_time_obj'].strftime(OUTPUT_TIME_FORMAT), 
                                                     end_date            = query_resp['end_time_obj'].strftime(OUTPUT_TIME_FORMAT)
                                                 )
-    query_resp['description']   = "Your appointment with {name} has been rescheduled".format(name=query_resp['name'])
+    query_resp['description']   = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app for more information about appointments.\nClick here to download http://onelink.to/tzyzna". \
+                                format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
+    query_resp['eml_body'] = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app for more information about appointments.\nClick here to download http://onelink.to/tzyzna". \
+                                format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
+    
+    if query_resp['appointment_mode'] == "VC":
+        query_resp['description']   = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app to join your video consultation appointment.\nClick here to download http://onelink.to/tzyzna". \
+                                    format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
+        query_resp['eml_body'] = "Your {appointment_mode} appointment with {name} at {hospital} has been confirmed,\nPlease download the app to join your video consultation appointment.\nClick here to download http://onelink.to/tzyzna". \
+                                    format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
+    
     query_resp['summary']       = "Your {appointment_mode} appointment with {dr_name} has been rescheduled".format(appointment_mode=query_resp['appointment_mode'],dr_name=query_resp['name'])
     query_resp['eml_body']      = "Confirmation for rescheduling the {appointment_mode} appointment with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
     query_resp['event_method']  = "REQUEST"
