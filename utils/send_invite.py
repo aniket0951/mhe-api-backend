@@ -116,7 +116,6 @@ def send_appointment_rescheduling_invitation(appointment_obj):
                                     format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'], hospital=query_resp['hospital'])
     
     query_resp['summary']       = "Your {appointment_mode} appointment with {dr_name} has been rescheduled".format(appointment_mode=query_resp['appointment_mode'],dr_name=query_resp['name'])
-    query_resp['eml_body']      = "Confirmation for rescheduling the {appointment_mode} appointment with {name}".format(appointment_mode=query_resp['appointment_mode'],name=query_resp['name'])
     query_resp['event_method']  = "REQUEST"
     query_resp['event_status']  = "CONFIRMED"
     query_resp['event_sequence']  = "1"
