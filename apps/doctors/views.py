@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from django.conf import settings
 from django.db.models import Q
 from django.utils.timezone import datetime
+from datetime import date
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor, DoctorsWeeklySchedule
@@ -88,6 +89,8 @@ def extract_slots(slot_list):
     for slot in slot_list:
         time_format = ""
         appointment_type = "HV"
+        end_time_format = '%d %b, %Y %I:%M:%S %p'
+
         if "HVVC" in slot['startTime']:
             time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
             appointment_type = "HVVC"
@@ -105,12 +108,17 @@ def extract_slots(slot_list):
             time_format = '%d %b, %Y %I:%M:%S %p(HV)'
             services["HV"] = True
         time = datetime.strptime(slot['startTime'], time_format).time()
+        end_time = datetime.strptime(slot['endTime'], end_time_format).time()
+        
+        slot_duration_td = datetime.combine(date.today(), end_time) - datetime.combine(date.today(), time)
+        slot_duration_minute = (slot_duration_td.seconds//60)%60
+        
         if time.hour < 12:
-            morning_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
+            morning_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type, 'slot_duration':slot_duration_minute})
         elif (time.hour >= 12) and (time.hour < 17):
-            afternoon_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
+            afternoon_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type, 'slot_duration':slot_duration_minute})
         else:
-            evening_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
+            evening_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type, 'slot_duration':slot_duration_minute})
     return morning_slot, afternoon_slot, evening_slot, services
 
 def get_doctor_instace(data,date):
