@@ -30,7 +30,7 @@ def prepare_query_resp_of_appointment(appointment_obj):
     start_time_str = start_time_obj.strftime(STANDARD_TIME_FORMAT)
     
     dtstart = datetime.strptime(date_str + " "+ start_time_str, STANDARD_DATETIME_FORMAT)
-    end_time_obj = dtstart + timedelta(minutes=int(10))
+    end_time_obj = dtstart + appointment_obj.appointment_duration
 
     email = appointment_obj.patient.email
     
