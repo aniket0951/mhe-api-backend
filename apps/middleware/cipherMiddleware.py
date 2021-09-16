@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import date,datetime
+from datetime import date,datetime,time
 from django.db.models.query import QuerySet
 from django.conf import settings
 from uuid import UUID
@@ -14,6 +14,7 @@ response_logger = logging.getLogger('django.response')
 ENCRYPTION_ENABLED = settings.ENCRYPTION_ENABLED
 ENCRYPTION_FLAG = settings.ENCRYPTION_FLAG
 ENCRYPTION_BODY_KEY = settings.ENCRYPTION_BODY_KEY
+TIME_FORMAT = "%H:%M:%S"
 
 class CipherRequestMiddleware(object):
 
@@ -93,6 +94,8 @@ class CipherResponseMiddleware(object):
                 v = dict(v)
             elif isinstance(v, bytes):
                 v = v.decode('utf-8')
+            elif isinstance(v, time):
+                v = v.strftime(TIME_FORMAT)
             elif isinstance(v, QuerySet):
                 v = list(v.values())
                 v = self.list_replace_value(v)
@@ -116,6 +119,8 @@ class CipherResponseMiddleware(object):
                 e = dict(e)
             elif isinstance(e, bytes):
                 e = e.decode('utf-8')
+            elif isinstance(e, time):
+                e = v.strftime(TIME_FORMAT)
             elif isinstance(e, QuerySet):
                 e = list(e.values())
                 e = self.list_replace_value(e)
