@@ -1108,14 +1108,14 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         appointment_id = new_appointment_response["NewApptId"]
                         instance = Appointment.objects.filter(
                             appointment_identifier=self.request.data["app_id"]).first()
-                        appointment_date_time = self.request.data.get(
-                            "new_date")
-                        datetime_object = datetime.strptime(
-                            appointment_date_time, '%Y%m%d%H%M%S')
+                        appointment_date_time = self.request.data.get("new_date")
+                        datetime_object = datetime.strptime(appointment_date_time, '%Y%m%d%H%M%S')
                         time = datetime_object.time()
                         
                         new_appointment["appointment_date"] = datetime_object.date()
                         new_appointment["appointment_slot"] = time.strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
+                        if self.request.data.get("appointment_duration"):
+                            new_appointment["appointment_duration"] = self.request.data.get("appointment_duration")
                         new_appointment["status"] = 1
                         new_appointment["appointment_identifier"] = appointment_id
                         new_appointment["patient"] = instance.patient.id
