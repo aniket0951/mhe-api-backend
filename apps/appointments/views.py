@@ -377,6 +377,10 @@ class CreateMyAppointment(ProxyView):
 
                 if data.get("beneficiary_reference_id"):
                     new_appointment["beneficiary_reference_id"] = data.get("beneficiary_reference_id")
+                
+                if data.get("appointment_duration"):
+                    new_appointment["appointment_duration"] = data.get("appointment_duration")
+
                 if data.get("appointment_service"):
                     new_appointment["appointment_service"] = data.get("appointment_service")
 
@@ -390,6 +394,7 @@ class CreateMyAppointment(ProxyView):
 
                 if new_appointment.get("appointment_mode") and new_appointment.get("appointment_mode").upper()=="VC":
                     new_appointment["booked_via_app"] = True
+
                 if data.get('corporate', None):
                     new_appointment["corporate_appointment"] = True
 
