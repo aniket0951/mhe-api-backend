@@ -1114,8 +1114,14 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         
                         new_appointment["appointment_date"] = datetime_object.date()
                         new_appointment["appointment_slot"] = time.strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
-                        if instance.appointment_duration:
+                        
+                        new_appointment["appointment_duration"] = 10
+                        
+                        if "appointment_duration" in self.request.data and self.request.data.get("appointment_duration"):
+                            new_appointment["appointment_duration"] = self.request.data.get("appointment_duration")
+                        elif instance.appointment_duration:
                             new_appointment["appointment_duration"] = instance.appointment_duration
+
                         new_appointment["status"] = 1
                         new_appointment["appointment_identifier"] = appointment_id
                         new_appointment["patient"] = instance.patient.id
