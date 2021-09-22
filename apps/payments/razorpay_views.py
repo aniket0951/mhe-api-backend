@@ -1,38 +1,23 @@
 import logging
-from time import sleep
 
-from apps.patients.models import FamilyMember
+from apps.patients.models import FamilyMember, Patient
 from apps.appointments.models import Appointment
 from apps.appointments.serializers import (HealthPackageAppointmentDetailSerializer,)
 from apps.appointments.utils import cancel_and_refund_parameters
 
-from proxy.custom_serializers import ObjectSerializer as custom_serializer
-from proxy.custom_serializables import EpisodeItems as serializable_EpisodeItems
-from proxy.custom_serializables import IPBills as serializable_IPBills
-from proxy.custom_serializables import OPBills as serializable_OPBills
-from proxy.custom_serializables import CorporateRegistration as serializable_CorporateRegistration
-from proxy.custom_views import ProxyView
-
-from rest_framework import filters, status
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-
+from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
 
-from rest_framework.exceptions import APIException
-from utils import custom_viewsets
-
-from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
-from utils.custom_sms import send_sms
+from utils.custom_permissions import (IsPatientUser)
 
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
-from .exceptions import ProcessingIdDoesNotExistsValidationException,IncompletePaymentCannotProcessRefund, UnsuccessfulPaymentException
-from .models import Payment, PaymentReceipts
+from .exceptions import IncompletePaymentCannotProcessRefund
 
 from .serializers import (PaymentReceiptsSerializer, PaymentSerializer)
 from .utils import PaymentUtils
@@ -61,15 +46,16 @@ class RazorAppointmentPayment(APIView):
         appointment_instance = PaymentUtils.get_appointment_instance(appointment)
         param = PaymentUtils.set_param_for_appointment(param,appointment)
         payment_data = PaymentUtils.set_payment_data_for_appointment(request,param,appointment_instance,hospital)
-        
-        user = request.user
-        if appointment_instance.family_member:
-            user = appointment_instance.family_member
 
         if registration_payment:
             payment_data["payment_for_uhid_creation"] = True
 
         PaymentUtils.validate_order_amount_for_appointments(request,appointment_instance,location_code,param)
+        
+        if appointment_instance.family_member:
+            user = appointment_instance.family_member
+        else:
+            user = Patient.objects.filter(id=request.user.id).first()
         
         param,payment_data = PaymentUtils.set_order_id_for_appointments(param,payment_data,user)
 
@@ -96,11 +82,12 @@ class RazorHealthPackagePayment(APIView):
         param = PaymentUtils.set_param_for_health_package(param,package_code,appointment)
         payment_data = PaymentUtils.set_payment_data_for_health_package(request,param,hospital,appointment_instance)
 
-        user = request.user
+        PaymentUtils.validate_order_amount_for_health_package(param,location_code,package_code_list)
+
         if appointment_instance.family_member:
             user = appointment_instance.family_member
-
-        PaymentUtils.validate_order_amount_for_health_package(param,location_code,package_code_list)
+        else:
+            user = Patient.objects.filter(id=request.user.id).first()
 
         param,payment_data = PaymentUtils.set_order_id_for_health_package(param,payment_data,user)
 
@@ -122,11 +109,12 @@ class RazorUHIDPayment(APIView):
         param = PaymentUtils.set_param_for_uhid(param,location_code)
         payment_data = PaymentUtils.set_payment_data_for_uhid(request,param,hospital)
 
-        user = request.user
+        PaymentUtils.validate_order_amount_for_uhid(param,location_code)
+
         if request.data.get("user_id", None):
             user = FamilyMember.objects.filter(id=request.data.get("user_id", None)).first()
-
-        PaymentUtils.validate_order_amount_for_uhid(param,location_code)
+        else:
+            user = Patient.objects.filter(id=request.user.id).first()
 
         param,payment_data = PaymentUtils.set_order_id_for_uhid(param,payment_data,user)
 
@@ -154,9 +142,10 @@ class RazorOPBillPayment(APIView):
 
         PaymentUtils.validate_order_amount_for_op_bill(param,location_code,episode_no,bill_row_id)
 
-        user = request.user
         if request.data.get("user_id", None):
             user = FamilyMember.objects.filter(id=request.data.get("user_id", None)).first()
+        else:
+            user = Patient.objects.filter(id=request.user.id).first()
 
         param,payment_data = PaymentUtils.set_order_id_for_op_bill(param,payment_data,user)
 
@@ -176,9 +165,10 @@ class RazorIPDepositPayment(APIView):
         param = PaymentUtils.set_param_for_ip_deposit(param,location_code)
         payment_data = PaymentUtils.set_payment_data_for_ip_deposit(request,param,hospital)
 
-        user = request.user
         if request.data.get("user_id", None):
             user = FamilyMember.objects.filter(id=request.data.get("user_id", None)).first()
+        else:
+            user = Patient.objects.filter(id=request.user.id).first()
 
         param,payment_data = PaymentUtils.set_order_id_for_ip_deposit(param,payment_data,user)
         payment = PaymentSerializer(data=payment_data)
@@ -220,9 +210,12 @@ class RazorDrivePayment(APIView):
             drive_update_data.update({'status':DriveBooking.BOOKING_BOOKED})
             
         else:
-            user = request.user
+
             if request.data.get("user_id", None):
                 user = FamilyMember.objects.filter(id=request.data.get("user_id", None)).first()
+            else:
+                user = Patient.objects.filter(id=request.user.id).first()
+
             param,payment_data = PaymentUtils.set_order_id_for_drive_booking(param,payment_data,user)
 
         payment = PaymentSerializer(data=payment_data)
