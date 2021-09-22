@@ -324,10 +324,11 @@ class PaymentUtils:
         return order_details.get("amount")
 
     @staticmethod
-    def get_payment_description(param):
+    def get_payment_description(param,user=None):
         account_number = ""
         email = ""
         phone = ""
+        name = ""
         if  param and \
             param.get("token") and \
             param.get("token").get("accounts") and \
@@ -335,7 +336,9 @@ class PaymentUtils:
                 account_number = param["token"]["accounts"][0].get("account_number")
                 email = param["token"]["accounts"][0].get("email")
                 phone = param["token"]["accounts"][0].get("phone")
-        return "UHID: %s; email: %s; contact: %s"%(account_number,email,str(phone))
+        if user:
+            name = "%s %s"%(user.first_name or "",user.last_name or "")
+        return "Name: %s; UHID: %s; email: %s; contact: %s"%(name,account_number,email,str(phone))
 
     @staticmethod
     def set_param_for_appointment(param,appointment):
@@ -502,11 +505,11 @@ class PaymentUtils:
         return calculated_amount
 
     @staticmethod
-    def set_order_id_for_appointments(param,payment_data):
+    def set_order_id_for_appointments(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_APPOINTMENT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_APPOINTMENT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -520,11 +523,11 @@ class PaymentUtils:
         return param,payment_data
 
     @staticmethod
-    def set_order_id_for_drive_booking(param,payment_data):
+    def set_order_id_for_drive_booking(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_DRIVE_BOOKING_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_DRIVE_BOOKING_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -593,11 +596,11 @@ class PaymentUtils:
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
     @staticmethod
-    def set_order_id_for_health_package(param,payment_data):
+    def set_order_id_for_health_package(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_HEALTH_PACKAGE_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_HEALTH_PACKAGE_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -657,11 +660,11 @@ class PaymentUtils:
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
     @staticmethod
-    def set_order_id_for_uhid(param,payment_data):
+    def set_order_id_for_uhid(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_UHID_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_UHID_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -733,11 +736,11 @@ class PaymentUtils:
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
     @staticmethod
-    def set_order_id_for_op_bill(param,payment_data):
+    def set_order_id_for_op_bill(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -779,11 +782,11 @@ class PaymentUtils:
         return payment_data
 
     @staticmethod
-    def set_order_id_for_ip_deposit(param,payment_data):
+    def set_order_id_for_ip_deposit(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_IP_DEPOSIT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_IP_DEPOSIT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
