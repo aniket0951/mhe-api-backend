@@ -13,7 +13,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
-from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, InternalAPICall, IsManipalAdminUser, IsPatientUser
+from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistPartialUpdateMethodPermission, BlacklistUpdateMethodPermission, InternalAPICall, IsManipalAdminUser, IsPatientUser
 from utils.utils import patient_user_object
 
 from .filters import ReportFilter
@@ -299,15 +299,13 @@ class ReportFileViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     queryset = ReportFile.objects.all().order_by('-created_at')
     serializer_class = ReportFileSerializer
     create_success_message = "Report file is uploaded successfully."
-    update_success_message = "Report file is updated successfully."
     list_success_message = 'Report files returned successfully!'
     retrieve_success_message = 'Report file information returned successfully!'
-    filter_backends = (DjangoFilterBackend,
-                       filters.SearchFilter, )
+    filter_backends = ( DjangoFilterBackend, filters.SearchFilter, )
     
     def get_permissions(self):
 
-        if self.action in ['create','partial_update']:
+        if self.action in ['create']:
             permission_classes = [AllowAny]
             return [permission() for permission in permission_classes]
 
@@ -315,6 +313,10 @@ class ReportFileViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
             permission_classes = [IsPatientUser | IsManipalAdminUser ]
             return [permission() for permission in permission_classes]
         
+        if self.action == 'partial_update':
+            permission_classes = [BlacklistPartialUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
         if self.action == 'update':
             permission_classes = [BlacklistUpdateMethodPermission]
             return [permission() for permission in permission_classes]
@@ -326,20 +328,30 @@ class ReportFileViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         return super().get_permissions()
     
     def create(self, request):
-        report_document_param = dict()
-        uhid = request.query_params.get("uhid")
-        visit_id = request.query_params.get("visit_id")
-        message_id = request.query_params.get("message_id")
-        for _, f in enumerate(request.FILES.getlist('report_file')):
-            report_document_param["uhid"] = uhid
-            report_document_param["visit_id"] = visit_id
-            report_document_param["message_id"] = message_id
-            report_document_param["report_file"] = f
-            report_file_serializer = self.serializer_class(data=report_document_param)
-            report_instance = ReportFile.objects.filter(uhid=uhid,visit_id=visit_id).first()
-            if report_instance:
-                report_file_serializer = self.serializer_class(report_instance, data=report_document_param, partial=True)
-            report_file_serializer.is_valid(raise_exception = True)
-            report_file_serializer.save()
         
-        return Response(data={"message": "Report file is Uploaded Successfully!"}, status=status.HTTP_200_OK)
+        report_document_param = {
+            "uhid"          : request.query_params.get("uhid"),
+            "visit_id"      : request.query_params.get("visit_id"),
+            "message_id"    : request.query_params.get("message_id")
+        }
+        
+        for _, f in enumerate(request.FILES.getlist('report_file')):
+            report_document_param["report_file"] = f
+
+        report_instance = ReportFile.objects.filter(
+                                        uhid=report_document_param["uhid"],
+                                        visit_id=report_document_param["visit_id"]
+                                    ).first()
+        if report_instance:
+            report_file_serializer = self.serializer_class(report_instance, data=report_document_param, partial=True)
+        else:
+            report_file_serializer = self.serializer_class(data=report_document_param)
+            
+        report_file_serializer.is_valid(raise_exception = True)
+        report_object = report_file_serializer.save()
+        
+        data = {
+                "data":self.serializer_class(report_object).data,
+                "message": "Report file is Uploaded Successfully!"
+            }
+        return Response(data, status=status.HTTP_200_OK)

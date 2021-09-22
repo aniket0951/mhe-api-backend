@@ -66,6 +66,18 @@ class BlacklistUpdateMethodPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.method != 'PUT'
 
+class BlacklistPartialUpdateMethodPermission(permissions.BasePermission):
+    """
+    Global permission check for blacklisted Partial UPDATE method.
+    """
+    message = DO_NOT_HAVE_PERMISSION
+
+    def has_permission(self, request, view):
+        return request.method != 'PATCH'
+
+    def has_object_permission(self, request, view, obj):
+        return request.method != 'PATCH'
+
 
 class BlacklistDestroyMethodPermission(permissions.BasePermission):
     """
