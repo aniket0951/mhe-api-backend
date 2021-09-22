@@ -293,7 +293,7 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
         return qs.filter(uhid=uhid).order_by('-created_at').distinct()
     
     
-class ReportFileViewSet(custom_viewsets.ModelViewSet):
+class ReportFileViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     permission_classes = [AllowAny, ]
     model = ReportFile
     queryset = ReportFile.objects.all().order_by('-created_at')
@@ -324,3 +324,22 @@ class ReportFileViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
+    
+    def create(self, request):
+        report_document_param = dict()
+        uhid = request.query_params.get("uhid")
+        visit_id = request.query_params.get("visit_id")
+        message_id = request.query_params.get("message_id")
+        for _, f in enumerate(request.FILES.getlist('report_file')):
+            report_document_param["uhid"] = uhid
+            report_document_param["visit_id"] = visit_id
+            report_document_param["message_id"] = message_id
+            report_document_param["report_file"] = f
+            report_file_serializer = self.serializer_class(data=report_document_param)
+            report_instance = ReportFile.objects.filter(uhid=uhid,visit_id=visit_id).first()
+            if report_instance:
+                report_file_serializer = self.serializer_class(report_instance, data=report_document_param, partial=True)
+            report_file_serializer.is_valid(raise_exception = True)
+            report_file_serializer.save()
+        
+        return Response(data={"message": "Report file is Uploaded Successfully!"}, status=status.HTTP_200_OK)
