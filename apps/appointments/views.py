@@ -1075,6 +1075,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
 
     def get_request_data(self, request):
         reason_id = request.data.pop("reason_id")
+        appointment_duration = request.data.pop("appointment_duration")
         instance = Appointment.objects.filter(
             appointment_identifier=self.request.data["app_id"]).first()
         if not instance:
@@ -1084,6 +1085,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
         request_data = custom_serializer().serialize(slot_book, 'XML')
         request.data["reason_id"] = reason_id
         request.data["other_reason"] = other_reason
+        request.data["appointment_duration"] = appointment_duration
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -1115,12 +1117,12 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["appointment_date"] = datetime_object.date()
                         new_appointment["appointment_slot"] = time.strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
                         
-                        new_appointment["appointment_duration"] = 10
+                        # new_appointment["appointment_duration"] = 10
                         
-                        if "appointment_duration" in self.request.data and self.request.data.get("appointment_duration"):
-                            new_appointment["appointment_duration"] = self.request.data.get("appointment_duration")
-                        elif instance.appointment_duration:
-                            new_appointment["appointment_duration"] = instance.appointment_duration
+                        # if "appointment_duration" in self.request.data and self.request.data.get("appointment_duration"):
+                        #     new_appointment["appointment_duration"] = self.request.data.get("appointment_duration")
+                        # elif instance.appointment_duration:
+                        #     new_appointment["appointment_duration"] = instance.appointment_duration
 
                         new_appointment["status"] = 1
                         new_appointment["appointment_identifier"] = appointment_id
