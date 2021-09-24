@@ -55,7 +55,7 @@ from .serializers import (
                     PatientSerializer, FamilyMemberCorporateHistorySerializer
                 )
 from .utils import check_max_otp_retries, check_max_otp_retries_from_mobile_number, covid_registration_mandatory_check, fetch_uhid_user_details, link_uhid, link_uhid_from_uhid_number, make_family_member_corporate, process_is_email_to_be_verified, save_authentication_type, validate_access_attempts, validate_uhid_family_members, validate_uhid_patients
-from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress, FamilyMemberCorporateHistory
+from .models import CovidVaccinationRegistration, FamilyMember, OtpGenerationCount, Patient, PatientAddress, FamilyMemberCorporateHistory, UpdatePatientMobile
 from .constants import PatientsConstants
 from utils.custom_validation import ValidationUtil
 logger = logging.getLogger('django')
@@ -527,17 +527,23 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         if patient_info.uhid_number == uhid_number:
             raise ValidationError(
                 "This UHID is already linked to your account!")
-
-        if self.model.objects.filter(uhid_number=uhid_number).exists():
-            raise ValidationError("There is an exisiting user with different contact number on our platform with this UHID. Please contact our customer care for more information.")
-
+        
+        patient_user_obj = self.get_object()
+        existing_user_uhids = self.model.objects.filter(uhid_number=uhid_number)
+        for existing_user_uhid in existing_user_uhids:
+            existing_user_uhid.uhid_number = None
+            existing_user_uhid.pre_registration_number = None
+            existing_user_uhid.save()
+            update_patient_obj = UpdatePatientMobile.objects.create(old_patient_user=existing_user_uhid,new_patient_user=patient_user_obj,uhid_number=uhid_number)
+            update_patient_obj.save()
+            
         if FamilyMember.objects.filter(patient_info=patient_info,
                                        uhid_number=uhid_number,
                                        is_visible=True).exists():
             raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
         uhid_user_info = fetch_uhid_user_details(request)
 
-        patient_user_obj = self.get_object()
+        
 
         patient_user_obj.first_name = uhid_user_info['first_name']
         patient_user_obj.last_name = None

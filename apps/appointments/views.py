@@ -633,7 +633,7 @@ class CancelMyAppointment(ProxyView):
                                             success=success_status, 
                                             data=None
                                         )
-        raise ValidationError("Could not process the request. PLease try again")
+        raise ValidationError("Could not process the request. Please try again")
 
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
