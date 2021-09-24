@@ -633,7 +633,7 @@ class CancelMyAppointment(ProxyView):
                                             success=success_status, 
                                             data=None
                                         )
-        raise ValidationError("Could not process the request. PLease try again")
+        raise ValidationError("Could not process the request. Please try again")
 
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
@@ -1583,7 +1583,7 @@ class CurrentAppointmentListView(ProxyView):
             for appointment in appointment_list:
 
                 appointment_identifier = appointment["AppId"]
-                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                 appointment["enable_vc"] = False
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
@@ -1604,7 +1604,7 @@ class CurrentAppointmentListView(ProxyView):
                         }
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
-                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
 
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
