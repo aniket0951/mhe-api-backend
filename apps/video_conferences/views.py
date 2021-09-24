@@ -50,7 +50,7 @@ class RoomCreationView(APIView):
     def post(self, request, format=None):
         appointment_id = request.data.get("appointment_id")
         appointment = Appointment.objects.filter(
-            appointment_identifier=appointment_id).first()
+            appointment_identifier=appointment_id).order_by('-created_at').first()
         doctor = appointment.doctor
         doctor_appointments = Appointment.objects.filter(Q(doctor=doctor.id) & Q(appointment_mode="VC") & Q(
             payment_status="success") & Q(status=1) & (Q(vc_appointment_status=2) | Q(vc_appointment_status=3)))
@@ -128,7 +128,7 @@ class AccessTokenGenerationView(APIView):
         room_name = "".join(room.split("||"))
         identity = request.data.get("identity")
         appointment = Appointment.objects.filter(
-            appointment_identifier=room).first()
+            appointment_identifier=room).order_by('-created_at').first()
         if not appointment:
             raise ValidationError("Invalid room name")
         if appointment.vc_appointment_status == 4:
