@@ -1138,6 +1138,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["beneficiary_reference_id"] = instance.beneficiary_reference_id
                         new_appointment["appointment_service"] = instance.appointment_service
                         new_appointment["root_appointment_id"] = instance.root_appointment_id or instance.id
+                        new_appointment["appointment_duration"] = self.request.data.get("appointment_duration")
                         
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
                         if appointment_instance:
@@ -1155,9 +1156,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         instance.status = 5
                                             
                         instance.reason_id = self.request.data.get("reason_id")
-                        instance.other_reason = self.request.data.get(
-                            "other_reason")
-                        instance.appointment_duration = self.request.data.get("appointment_duration")
+                        instance.other_reason = self.request.data.get("other_reason")
                         instance.save()
                     
                         send_appointment_rescheduling_invitation(appointment)
