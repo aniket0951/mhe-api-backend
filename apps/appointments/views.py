@@ -1157,6 +1157,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         instance.reason_id = self.request.data.get("reason_id")
                         instance.other_reason = self.request.data.get(
                             "other_reason")
+                        instance.appointment_duration = self.request.data.get("appointment_duration")
                         instance.save()
                     
                         send_appointment_rescheduling_invitation(appointment)
