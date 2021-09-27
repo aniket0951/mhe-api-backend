@@ -1078,7 +1078,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
         
         appointment_duration = 10
         if "appointment_duration" in request.data:
-            appointment_duration = request.data.pop("appointment_duration")
+            appointment_duration = request.data.get("appointment_duration")
 
         instance = Appointment.objects.filter(
             appointment_identifier=self.request.data["app_id"]).first()
