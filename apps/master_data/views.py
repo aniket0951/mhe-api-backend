@@ -922,14 +922,19 @@ class ValidateMobileOTPView(ProxyView):
         message = None
         item = root.find('ValidateResponse')
         response_content = json.loads(item.text)
-        if response_content and response_content[0] and ('Status' in response_content[0]):
-            success = False
-            message = response_content[0]['Message']
-            response_content = None
-        else:
+        success = False
+        
+        if  response_content and \
+            response_content[0] and \
+            'Status' in response_content[0] and \
+            'Status' in response_content[0]:
+            
             success = True
+            message = response_content[0].get('Message')
+
         if success and not message:
             message = self.success_msg
+
         return self.custom_success_response(success=success, message=message,
                                             data=response_content)
 
