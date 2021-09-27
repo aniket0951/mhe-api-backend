@@ -279,7 +279,7 @@ def appointment_reminder_scheduler():
 @app.task(name="tasks.pre_appointment_reminder")
 def pre_appointment_reminder_scheduler():
     current_time = datetime.today()
-    after_time = current_time + timedelta(hours=1)
+    after_time = current_time + timedelta(hours=1,minutes=10)
     appointments = Appointment.objects.filter(
         appointment_date=current_time.date(),appointment_slot__range=[current_time.time(), after_time.time()], status="1")
     for appointment_instance in appointments:
