@@ -379,7 +379,7 @@ class CreateMyAppointment(ProxyView):
                     new_appointment["beneficiary_reference_id"] = data.get("beneficiary_reference_id")
                 
                 if data.get("appointment_duration"):
-                    new_appointment["appointment_duration"] = data.get("appointment_duration")
+                    new_appointment["slot_duration"] = data.get("appointment_duration")
 
                 if data.get("appointment_service"):
                     new_appointment["appointment_service"] = data.get("appointment_service")
@@ -1076,20 +1076,17 @@ class DoctorRescheduleAppointmentView(ProxyView):
     def get_request_data(self, request):
         reason_id = request.data.pop("reason_id")
         
-        appointment_duration = 10
-        if "appointment_duration" in request.data:
-            appointment_duration = request.data.get("appointment_duration")
-
-        instance = Appointment.objects.filter(
-            appointment_identifier=self.request.data["app_id"]).first()
+        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
         if not instance:
             raise ValidationError(AppointmentsConstants.APPOINTMENT_DOESNT_EXIST)
+
         other_reason = request.data.pop("other")
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
+
         request.data["reason_id"] = reason_id
         request.data["other_reason"] = other_reason
-        request.data["appointment_duration"] = appointment_duration
+
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -1105,22 +1102,22 @@ class DoctorRescheduleAppointmentView(ProxyView):
             if status == "1":
                 reschedule_response = root.find("ReScheduleAppResp").text
                 if reschedule_response:
-                    new_appointment_response = ast.literal_eval(
-                        reschedule_response)[0]
+                    new_appointment_response = ast.literal_eval(reschedule_response)[0]
                     message = new_appointment_response["Message"]
                     response_message = message
                     if message == AppointmentsConstants.APPOINTMENT_RESCHEDULED_SUCCESSFULLY:
+                        
                         new_appointment = dict()
                         appointment_id = new_appointment_response["NewApptId"]
-                        instance = Appointment.objects.filter(
-                            appointment_identifier=self.request.data["app_id"]).first()
+                        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
+                        
                         appointment_date_time = self.request.data.get("new_date")
                         datetime_object = datetime.strptime(appointment_date_time, '%Y%m%d%H%M%S')
                         time = datetime_object.time()
                         
                         new_appointment["appointment_date"] = datetime_object.date()
                         new_appointment["appointment_slot"] = time.strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
-
+                        new_appointment["slot_duration"] = self.request.data.get("appointment_duration") or instance.slot_duration
                         new_appointment["status"] = 1
                         new_appointment["appointment_identifier"] = appointment_id
                         new_appointment["patient"] = instance.patient.id
@@ -1128,8 +1125,10 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["department"] = instance.department.id
                         new_appointment["consultation_amount"] = instance.consultation_amount
                         new_appointment["payment_status"] = instance.payment_status
+                        
                         if instance.family_member:
                             new_appointment["family_member"] = instance.family_member.id
+
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
                         new_appointment["appointment_mode"] = self.request.data.get("app_type")
@@ -1138,7 +1137,6 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["beneficiary_reference_id"] = instance.beneficiary_reference_id
                         new_appointment["appointment_service"] = instance.appointment_service
                         new_appointment["root_appointment_id"] = instance.root_appointment_id or instance.id
-                        new_appointment["appointment_duration"] = self.request.data.get("appointment_duration")
                         
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
                         if appointment_instance:

@@ -54,7 +54,7 @@ class Appointment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     appointment_date = models.DateField()
     appointment_slot = models.TimeField()
-    appointment_duration = models.IntegerField(default=10)
+    slot_duration = models.IntegerField(default=10,null=False)
     appointment_identifier = models.CharField(max_length=20,
                                               blank=True,
                                               null=True)
