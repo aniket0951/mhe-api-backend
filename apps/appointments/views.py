@@ -1070,7 +1070,7 @@ class ReBookDoctorAppointment(ProxyView):
 
 
 class DoctorRescheduleAppointmentView(ProxyView):
-    permission_classes = [IsPatientUser | InternalAPICall]
+    permission_classes = [IsPatientUser | InternalAPICall | IsManipalAdminUser]
     source = 'ReScheduleApp'
 
     def get_request_data(self, request):

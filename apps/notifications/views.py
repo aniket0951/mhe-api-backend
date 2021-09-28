@@ -8,8 +8,8 @@ from utils import custom_viewsets
 from apps.patients.models import Patient
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
 from rest_framework.serializers import ValidationError
-from .models import MobileDevice, MobileNotification
-from .serializers import MobileDeviceSerializer, MobileNotificationSerializer
+from .models import MobileDevice, MobileNotification, ScheduleNotifications
+from .serializers import MobileDeviceSerializer, MobileNotificationSerializer, ScheduleNotificationsSerializer
 from .tasks import send_push_notification
 from django.conf import settings
 
@@ -94,3 +94,11 @@ class PushNotificationViewSet(APIView):
                 send_push_notification.delay(notification_data=notification_data)
                 
         return Response(status=status.HTTP_200_OK)
+    
+class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = ScheduleNotifications
+    queryset = ScheduleNotifications.objects.all()
+    serializer_class = ScheduleNotificationsSerializer
+    create_success_message = "Notification send successfully!"
+    list_success_message = 'Notifications returned successfully!'

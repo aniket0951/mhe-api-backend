@@ -288,7 +288,7 @@ class DoctorloginView(ProxyView):
 
 class DoctorRescheduleSlot(ProxyView):
     source = 'getSlotForAppntType'
-    permission_classes = [IsPatientUser]
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
 
     def get_request_data(self, request):
         slots = serializable_RescheduleSlot(**request.data)
