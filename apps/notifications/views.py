@@ -1,5 +1,5 @@
 import logging
-
+import openpyxl
 from rest_framework import  status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -8,8 +8,8 @@ from utils import custom_viewsets
 from apps.patients.models import Patient
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
 from rest_framework.serializers import ValidationError
-from .models import MobileDevice, MobileNotification, ScheduleNotifications
-from .serializers import MobileDeviceSerializer, MobileNotificationSerializer, ScheduleNotificationsSerializer
+from .models import MobileDevice, MobileNotification, NotificationTemplate, ScheduleNotifications
+from .serializers import MobileDeviceSerializer, MobileNotificationSerializer, NotificationTemplateSerializer, ScheduleNotificationsSerializer
 from .tasks import send_push_notification
 from django.conf import settings
 
@@ -94,6 +94,14 @@ class PushNotificationViewSet(APIView):
                 send_push_notification.delay(notification_data=notification_data)
                 
         return Response(status=status.HTTP_200_OK)
+
+class NotificationTemplateViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    permission_classes = [IsManipalAdminUser]
+    model = NotificationTemplate
+    queryset = NotificationTemplate.objects.all()
+    serializer_class = NotificationTemplateSerializer
+    create_success_message = "Notification template added successfully!"
+    list_success_message = 'Notifications templated returned successfully!'
     
 class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [IsManipalAdminUser]
@@ -102,3 +110,33 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     serializer_class = ScheduleNotificationsSerializer
     create_success_message = "Notification send successfully!"
     list_success_message = 'Notifications returned successfully!'
+    
+    def create(self, request):
+        excel_file = request.FILES["file"]       
+        try:
+            wb = openpyxl.load_workbook(filename=excel_file)
+        except:
+            wb = openpyxl.Workbook()
+            wb.save(excel_file)
+            wb = openpyxl.load_workbook(filename=excel_file)
+       
+        ws = wb.active
+        excel_data = list()
+        for row in ws.iter_rows():
+            row_data = list()
+            for cell in row:
+                row_data.append(str(cell.value))
+            excel_data.append(row_data)
+            
+        uhid_list = [item for sublist in excel_data for item in sublist]
+        uhid_string = ','.join(uhid_list)
+        request.data['uhids'] = uhid_string
+        
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        data = {
+            "data" : serializer.data,
+            "message"  : "Notification send successfully!"
+        }
+        return Response(data=data, status=status.HTTP_200_OK)
