@@ -1,9 +1,9 @@
 import logging
-import openpyxl
 from rest_framework import  status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from apps.notifications.utils import create_notification_template, read_excel_file_data
 from utils import custom_viewsets
 from apps.patients.models import Patient
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
@@ -12,7 +12,7 @@ from .models import MobileDevice, MobileNotification, NotificationTemplate, Sche
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer, NotificationTemplateSerializer, ScheduleNotificationsSerializer
 from .tasks import send_push_notification
 from django.conf import settings
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import MultiPartParser
 
 logger = logging.getLogger("django")
 
@@ -114,26 +114,17 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     list_success_message = 'Notifications returned successfully!'
     
     def create(self, request):
-        excel_file = request.FILES["file"]       
-        try:
-            wb = openpyxl.load_workbook(filename=excel_file)
-        except:
-            wb = openpyxl.Workbook()
-            wb.save(excel_file)
-            wb = openpyxl.load_workbook(filename=excel_file)
-       
-        ws = wb.active
-        excel_data = list()
-        for row in ws.iter_rows():
-            row_data = list()
-            for cell in row:
-                row_data.append(str(cell.value))
-            excel_data.append(row_data)
-            
-        uhid_list = [item for sublist in excel_data for item in sublist]
-        uhid_string = ','.join(uhid_list)
-        request.data['uhids'] = uhid_string
         
+        excel_file = request.FILES["file"]  
+        notification_subject = request.data.get("notification_subject", None)
+        notification_body = request.data.get("notification_body", None)
+        template_id = request.data.get("template_id", None)
+
+        if not template_id:
+            create_notification_template(request, notification_subject,notification_body)
+    
+        read_excel_file_data(request, excel_file)
+    
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

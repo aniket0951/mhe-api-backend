@@ -50,12 +50,21 @@ class NotificationTemplate(MyBaseModel):
     
 class ScheduleNotifications(MyBaseModel):
     
+    TRIGGER_CHOICES = (
+        ('schedule','schedule'),
+        ('now','now')
+    )
+    
     template_id = models.ForeignKey(
                                     NotificationTemplate, 
                                     on_delete=models.PROTECT, 
                                     related_name='notification_template_id'
                                 )
-    
+    trigger_type = models.CharField(
+                                choices=TRIGGER_CHOICES,
+                                max_length=10, 
+                                default='schedule'
+                            )
     uhids = models.TextField()
     file = models.FileField(upload_to=generate_notification_uhids_file_path,
                                 storage=FileStorage(),
@@ -70,3 +79,4 @@ class ScheduleNotifications(MyBaseModel):
     date = models.DateField()
     time = models.TimeField()
     is_scheduled = models.BooleanField(default=True) 
+    
