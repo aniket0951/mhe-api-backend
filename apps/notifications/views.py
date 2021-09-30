@@ -106,7 +106,7 @@ class NotificationTemplateViewSet(custom_viewsets.CreateUpdateListRetrieveModelV
     
 class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [IsManipalAdminUser]
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = [MultiPartParser, FormParser]
     model = ScheduleNotifications
     queryset = ScheduleNotifications.objects.all()
     serializer_class = ScheduleNotificationsSerializer
