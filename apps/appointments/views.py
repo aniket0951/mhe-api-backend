@@ -581,6 +581,9 @@ class CancelMyAppointment(ProxyView):
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
         status = data.pop("status", None)
+        auto_cancellation = False
+        if "auto_cancellation" in data:
+            auto_cancellation = data.pop("auto_cancellation", None)
 
         instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
         if not instance:
@@ -590,9 +593,12 @@ class CancelMyAppointment(ProxyView):
         request.data["location_code"] = instance.hospital.code
         cancel_appointment = serializable_CancelAppointmentRequest(**request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+
         data["reason_id"] = reason_id
         data["status"] = status
         data["other_reason"] = other_reason
+        data["auto_cancellation"] = auto_cancellation
+
         return request_data
 
     def post(self, request, *args, **kwargs):
