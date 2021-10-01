@@ -1113,7 +1113,7 @@ class PaymentUtils:
             appointment_serializer = AppointmentSerializer(appointment, data=update_data, partial=True)
             appointment_serializer.is_valid(raise_exception=True)
             appointment_instance = appointment_serializer.save()
-            if not is_requested_from_mobile and appointment_instance.appointment_mode in ["VC"]:
+            if not is_requested_from_mobile and appointment_instance.appointment_mode in ["VC", "PR"]:
                 send_appointment_invitation(appointment_instance)
 
     @staticmethod

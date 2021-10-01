@@ -149,7 +149,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 Q(family_member_id=family_member)
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
                         ).filter(corporate_appointment=True)
 
@@ -161,7 +161,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 Q(family_member_id=family_member)
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
                         ).filter(corporate_appointment=False)
 
@@ -196,7 +196,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
                         ).filter(corporate_appointment=True)
 
@@ -207,7 +207,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                             (Q(patient_id=patient.id) & Q(family_member__isnull=True))
                         )
                     ).exclude(
-                        (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                        (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                         (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
                     ).filter(corporate_appointment=False)
 
@@ -581,6 +581,9 @@ class CancelMyAppointment(ProxyView):
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
         status = data.pop("status", None)
+        auto_cancellation = False
+        if "auto_cancellation" in data:
+            auto_cancellation = data.pop("auto_cancellation", None)
 
         instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
         if not instance:
@@ -590,9 +593,12 @@ class CancelMyAppointment(ProxyView):
         request.data["location_code"] = instance.hospital.code
         cancel_appointment = serializable_CancelAppointmentRequest(**request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+
         data["reason_id"] = reason_id
         data["status"] = status
         data["other_reason"] = other_reason
+        data["auto_cancellation"] = auto_cancellation
+
         return request_data
 
     def post(self, request, *args, **kwargs):

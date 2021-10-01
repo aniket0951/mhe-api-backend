@@ -925,9 +925,7 @@ class ValidateMobileOTPView(ProxyView):
         success = False
         
         if  response_content and \
-            response_content[0] and \
-            'Status' in response_content[0] and \
-            'Status' in response_content[0]:
+            response_content[0]:
             
             success = True
             message = response_content[0].get('Message')

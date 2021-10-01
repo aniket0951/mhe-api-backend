@@ -66,7 +66,7 @@ def get_appointment(patient_id):
                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
             )
         ).exclude(
-            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & (
+            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & (
                 Q(vc_appointment_status="4") | Q(payment_status__isnull=True)
             )
         ).filter(corporate_appointment=True)
@@ -79,7 +79,7 @@ def get_appointment(patient_id):
                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
             )
         ).exclude(
-            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & (
+            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & (
                 Q(vc_appointment_status="4") | Q(payment_status__isnull=True)
             )
         ).filter(corporate_appointment=False)
@@ -93,7 +93,7 @@ def get_appointment(patient_id):
                     Q(family_member_id=member.id)
                 )
             ).exclude(
-                (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & (
+                (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & (
                     Q(vc_appointment_status="4") | Q(payment_status__isnull=True)
                 )
             ).filter(corporate_appointment=False)
