@@ -1,10 +1,8 @@
-from datetime import datetime
 
+import openpyxl
+from datetime import datetime
 from django.conf import settings
 from django.db.models.query_utils import Q
-import openpyxl
-
-from apps.health_packages.models import HealthPackage
 from rest_framework.test import APIRequestFactory
 
 from apps.notifications.models import NotificationTemplate
@@ -50,36 +48,38 @@ def get_birthday_notification_data(patient_id,users_first_name):
     notification_data["notification_image_url"] = settings.BIRTHDAY_NOTIFICATION_IMAGE_URL
     return notification_data
 
-def create_notification_template(request, notification_subject,notification_body):
-    if notification_subject and notification_body:
-        exist_notification_temp = NotificationTemplate.objects.filter( 
-                                                                    Q(notification_subject=notification_subject) & 
-                                                                    Q(notification_body=notification_body)
-                                                               ).first()                
-        if exist_notification_temp:
-            request.data['template_id'] = exist_notification_temp.id
-        elif not exist_notification_temp:
-            notification_template = NotificationTemplate.objects.create(notification_subject=notification_subject,notification_body=notification_body)
-            notification_template.save()
-            request.data['template_id'] = notification_template.id
+def create_notification_template(notification_subject,notification_body):
+    existing_notification_id = NotificationTemplate.objects.filter( 
+                                                                Q(notification_subject=notification_subject) & 
+                                                                Q(notification_body=notification_body)
+                                                            ).first()                
+    if existing_notification_id:
+        return existing_notification_id.id
+    else:
+        new_notification_template_id = NotificationTemplate.objects.create(notification_subject=notification_subject,notification_body=notification_body)
+        new_notification_template_id.save()
+        return new_notification_template_id.id
             
-def read_excel_file_data(request, excel_file):
+def read_excel_file_data(excel_file):
     try:
         wb = openpyxl.load_workbook(filename=excel_file)
-    except:
+    
+    except Exception as e:
         wb = openpyxl.Workbook()
         wb.save(excel_file)
         wb = openpyxl.load_workbook(filename=excel_file)
         
-        ws = wb.active
-        excel_data = list()
-        for row in ws.iter_rows():
-            row_data = list()
-            for cell in row:
-                row_data.append(str(cell.value))
-            excel_data.append(row_data)
-        uhid_list = [item for sublist in excel_data for item in sublist]
-        uhid_string = ','.join(uhid_list)
-        request.data['uhids'] = uhid_string
+    ws = wb.active
+    excel_data = list()
+    for row in ws.iter_rows():
+        row_data = list()
+        for cell in row:
+            row_data.append(str(cell.value))
+        excel_data.append(row_data)
+
+    uhid_list = [item for sublist in excel_data for item in sublist if item.startswith("MH")]
+    uhid_string = ','.join(uhid_list)
+
+    return uhid_string
         
         

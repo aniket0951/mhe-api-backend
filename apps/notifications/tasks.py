@@ -247,7 +247,6 @@ def health_package_appointment_reminder():
         notification_data["recipient"] = patient.id
         send_push_notification.delay(notification_data=notification_data)
 
-
 @app.task(name="tasks.appointment_reminder")
 def appointment_reminder_scheduler():
     now = datetime.today()
@@ -331,7 +330,7 @@ def auto_appointment_cancellation():
     appointments = Appointment.objects.filter(
             Q(created_at__date=now.date()) & 
             Q(status="1") &
-            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) &
+            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) &
             Q(payment_status=None) &
             Q(booked_via_app=True)
         ).filter(
@@ -355,7 +354,7 @@ def daily_auto_appointment_cancellation():
     appointments = Appointment.objects.filter(
         Q(created_at__date=now.date()) &
         Q(status="1") &
-        (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) &
+        (Q(appointment_mode="VC")| Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) &
         Q(payment_status=None) &
         Q(booked_via_app=True)
     )

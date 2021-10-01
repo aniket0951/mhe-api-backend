@@ -115,19 +115,23 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     
     def create(self, request):
         
-        excel_file = request.FILES["file"]  
-        notification_subject = request.data.get("notification_subject", None)
-        notification_body = request.data.get("notification_body", None)
-        template_id = request.data.get("template_id", None)
+        notification_subject    = request.data.get("notification_subject", None)
+        notification_body       = request.data.get("notification_body", None)
+        template_id             = request.data.get("template_id", None)
+        
+        if not template_id and not notification_subject and not notification_body:
+            raise ValidationError("Kindly provide either template or notification subject & body.")
 
         if not template_id:
-            create_notification_template(request, notification_subject,notification_body)
-    
-        read_excel_file_data(request, excel_file)
+            request.data['template_id'] = create_notification_template(notification_subject,notification_body)
+
+        excel_file              = request.FILES["file"]  
+        request.data['uhids']   = read_excel_file_data(excel_file)
     
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
         data = {
             "data" : serializer.data,
             "message"  : "Notification send successfully!"
