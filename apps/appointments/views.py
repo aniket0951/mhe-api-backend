@@ -545,7 +545,7 @@ class CreateMyAppointment(ProxyView):
 
                     appointment_instance.save()
 
-                if not is_invitation_email_sent and appointment_instance.appointment_mode in ["HV","PR"]:
+                if not is_invitation_email_sent and appointment_instance.appointment_mode in ["HV"]:
                     send_appointment_invitation(appointment_instance)
 
         return self.custom_success_response(
