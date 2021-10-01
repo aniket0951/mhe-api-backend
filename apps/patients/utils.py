@@ -11,6 +11,8 @@ from rest_framework.serializers import ValidationError
 from rest_framework.test import APIRequestFactory
 from axes.models import AccessAttempt
 from datetime import datetime, timedelta
+
+from utils.utils import determine_date_format
 from .constants import PatientsConstants
 
 def check_max_otp_retries(user_obj):
@@ -63,7 +65,9 @@ def fetch_uhid_user_details(request):
             response.data['data'][key] = '+' + response.data['data'][key]
         
         if key == 'DOB' and response.data['data'][key]:
-            uhid_user_info['dob'] = datetime.strptime(response.data['data'][key], '%d/%m/%y').date()
+            date_string = response.data['data'][key]
+            date_format = determine_date_format(date_string)
+            uhid_user_info['dob'] = datetime.strptime(date_string, date_format).date()
             continue
             
         uhid_user_info[sorted_keys[index]] = response.data['data'][key]

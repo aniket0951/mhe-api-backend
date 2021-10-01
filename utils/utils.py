@@ -253,3 +253,10 @@ def end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_d
     date_of_vaccination_date_time = datetime.strptime(date_of_vaccination_date,'%Y-%m-%d')
     if end_date_time.date()!=date_of_vaccination_date_time.date():
         raise ValidationError('End date should be the same as the vaccination date.')
+
+def determine_date_format(date_string):
+    date_format = '%d/%m/%y'
+    date_parts = date_string.split("/")
+    if date_parts and len(date_parts)>2 and date_parts[2] and len(date_parts[2])>3:
+        date_format = '%d/%m/%Y'
+    return date_format
