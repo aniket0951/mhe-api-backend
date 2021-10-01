@@ -33,11 +33,11 @@ def prepare_query_resp_of_appointment(appointment_obj):
     end_time_obj = dtstart + timedelta(minutes=int(appointment_obj.slot_duration))
 
     email = appointment_obj.patient.email
-    name = appointment_obj.patient.first_name+" "+appointment_obj.patient.last_name
+    name = (appointment_obj.patient.first_name or "")+" "+(appointment_obj.patient.last_name or "")
     uhid = appointment_obj.patient.uhid_number
     
     if appointment_obj.family_member:
-        name = appointment_obj.family_member.first_name+" "+appointment_obj.family_member.last_name
+        name = (appointment_obj.family_member.first_name or "")+" "+(appointment_obj.family_member.last_name or "")
         uhid = appointment_obj.family_member.uhid_number
         email = appointment_obj.family_member.email
     if appointment_obj.patient and appointment_obj.patient.active_view == 'Corporate':
