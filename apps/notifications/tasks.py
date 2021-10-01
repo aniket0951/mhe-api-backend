@@ -3,13 +3,11 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management import call_command
-from pushjack import APNSClient
 
 from celery.schedules import crontab
 from manipal_api.celery import app
 from pyfcm import FCMNotification
 from django.db.models import Q
-
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.views import CancelMyAppointment
@@ -85,20 +83,6 @@ def send_push_notification(self, **kwargs):
                 payload         =   payload
             )
 
-            # client = APNSClient(certificate=settings.APNS_CERT_PATH)
-            # alert = notification_instance.message
-            # token = notification_instance.recipient.device.token
-            # client.send(token,
-            #             alert,
-            #             badge=1,
-            #             sound=settings.APNS_SOUND,
-            #             extra={
-            #                 'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
-            #                 'appointment_id': notification_data["appointment_id"]
-            #             }
-            #         )
-
-
 @app.task(bind=True, name="silent_push_notification")
 def send_silent_push_notification(self, **kwargs):
     fcm = FCMNotification(api_key=settings.FCM_API_KEY)
@@ -145,20 +129,6 @@ def send_silent_push_notification(self, **kwargs):
                     device_token    =   token,
                     payload         =   payload
                 )
-
-                # client = APNSClient(certificate=settings.APNS_CERT_PATH)
-                # token = patient_instance.device.token
-                # alert = "Doctor completed this consultation"
-                # client.send(token,
-                #             alert,
-                #             badge=1,
-                #             sound="default",
-                #             extra={
-                #                 'notification_type': '2',
-                #                 'appointment_id': notification_data["appointment_id"]
-                #             }
-                #         )
-
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
 def appointment_next_day_reminder_scheduler():

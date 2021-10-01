@@ -149,7 +149,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 Q(family_member_id=family_member)
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
                         ).filter(corporate_appointment=True)
 
@@ -161,7 +161,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 Q(family_member_id=family_member)
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
                         ).filter(corporate_appointment=False)
 
@@ -196,7 +196,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
                         ).filter(corporate_appointment=True)
 
@@ -207,7 +207,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                             (Q(patient_id=patient.id) & Q(family_member__isnull=True))
                         )
                     ).exclude(
-                        (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                        (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                         (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
                     ).filter(corporate_appointment=False)
 
