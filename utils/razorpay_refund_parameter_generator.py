@@ -8,7 +8,7 @@ from datetime import datetime
 from django.conf import settings
 
 from apps.appointments.models import Appointment
-from apps.payments.models import PaymentHospitalKey
+from apps.payments.models import Payment, PaymentHospitalKey
 from apps.payments.utils import PaymentUtils
 from rest_framework.serializers import ValidationError
 
@@ -39,8 +39,9 @@ def set_refund_amount(appointment_instance,param):
     if appointment_instance.appointment_date >= datetime.now().date():
         
         param["amount"] = appointment_instance.consultation_amount
-        
-        if appointment_instance.payment_appointment.payment_for_uhid_creation:
+
+        payment_instance = Payment.objects.filter(appointment=appointment_instance.id).first()
+        if payment_instance.payment_for_uhid_creation:
             calculated_amount = PaymentUtils.add_items_tariff_price(0,appointment_instance.hospital.code)
             param["amount"] -= calculated_amount
         
