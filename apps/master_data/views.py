@@ -475,6 +475,7 @@ class HealthPackagesView(ProxyView):
             'price',
             'specialisation_name'
         ]
+        hospital_code = ""
         for each_health_package in response_content:
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):

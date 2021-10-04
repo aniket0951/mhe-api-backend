@@ -9,6 +9,7 @@ from django.conf import settings
 
 from apps.appointments.models import Appointment
 from apps.payments.models import PaymentHospitalKey
+from apps.payments.utils import PaymentUtils
 from rest_framework.serializers import ValidationError
 
 
@@ -34,19 +35,25 @@ def get_refund_param_for_razorpay(data=None):
     return param
 
 def set_refund_amount(appointment_instance,param):
+    
     if appointment_instance.appointment_date >= datetime.now().date():
+        
         param["amount"] = appointment_instance.consultation_amount
+        
+        if appointment_instance.payment_appointment.payment_for_uhid_creation:
+            calculated_amount = PaymentUtils.add_items_tariff_price(0,appointment_instance.hospital.code)
+            param["amount"] -= calculated_amount
+        
         if appointment_instance.appointment_date == datetime.now().date():
-            date_time_slot = datetime.combine(
-                datetime.now(), appointment_instance.appointment_slot)
-            date_time_now = datetime.combine(
-                datetime.now(), datetime.now().time())
-            time_delta = (
-                date_time_slot - date_time_now).total_seconds()/3600
+            date_time_slot = datetime.combine(datetime.now(), appointment_instance.appointment_slot)
+            date_time_now = datetime.combine(datetime.now(), datetime.now().time())
+            
+            time_delta = (date_time_slot - date_time_now).total_seconds()/3600
             if time_delta >= 2 and time_delta <= 4:
                 param["amount"] = appointment_instance.consultation_amount - 100
             if time_delta < 2:
                 param["amount"] = 0.0
+            
     return param
 
 def set_patient(appointment_instance,param):
