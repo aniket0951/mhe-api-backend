@@ -1261,7 +1261,7 @@ class PaymentUtils:
             payment_response.update({
                 "uhid_number"           : payment_check_response.get("APPOLPPatHospNo"),
                 "ReceiptNo"             : payment_check_response.get("APPOLPReceiptNo"),
-                "appointment_identifier": appointment_id,
+                "appointment_identifier": payment_check_response.get("APPOLPConvAppId"),
                 "StatusMessage"         : PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,
             })
         
