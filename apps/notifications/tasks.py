@@ -357,12 +357,12 @@ def birthday_wishing_scheduler():
     now = datetime.today()
     query = Q(dob__isnull=False) & Q(dob__day=now.date().day) & Q(dob__month=now.date().month)
 
-    family_member_ids = FamilyMember.objects.filter( query )
+    family_member_ids = FamilyMember.objects.filter( query & Q(patient_info__is_birthday_notification_on=True))
     for family_member_id in family_member_ids:
         notification_data = get_birthday_notification_data(family_member_id.patient_info,family_member_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
 
-    patient_ids = Patient.objects.filter( (query) )
+    patient_ids = Patient.objects.filter( query & Q(is_birthday_notification_on=True) )
     for patient_id in patient_ids:
         notification_data = get_birthday_notification_data(patient_id,patient_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
@@ -440,7 +440,7 @@ app.conf.beat_schedule = {
     },
     "daily_auto_process_birthday_wishes": {
         "task": "tasks.birthday_wishing_scheduler",
-        "schedule": crontab(minute="*/5", hour="*")
+        "schedule": crontab(minute="*/15", hour="*")
     },
     "pre_appointment_reminder": {
         "task": "tasks.pre_appointment_reminder",

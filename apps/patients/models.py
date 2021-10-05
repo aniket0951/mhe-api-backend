@@ -187,6 +187,9 @@ class Patient(BaseUser):
         verbose_name='Date of birth'
     )
 
+    is_birthday_notification_on = models.BooleanField(default=True,verbose_name='is_birthday_notification_on')
+    is_promotional_notification_on = models.BooleanField(default=True,verbose_name='is_promotional_notification_on')
+
     @property
     def representation(self):
         return 'Unique Manipal Identifier: {} Name: {}'.format(self.uhid_number, self.first_name)
