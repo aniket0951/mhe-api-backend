@@ -31,25 +31,31 @@ TIME_FORMAT = "%I:%M %p"
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
     notification_data = kwargs["notification_data"]
-    mobile_notification_serializer = MobileNotificationSerializer(
-        data=notification_data)
+    mobile_notification_serializer = MobileNotificationSerializer(data=notification_data)
     mobile_notification_serializer.is_valid(raise_exception=True)
     notification_instance = mobile_notification_serializer.save()
     recipient = notification_instance.recipient
     if (hasattr(recipient, 'device') and recipient.device.token):
+
         if recipient.device.platform == 'Android':
+
             fcm = FCMNotification(api_key=settings.FCM_API_KEY)
+            
             if notification_data.get("doctor_name"):
                 fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
                     "title": notification_instance.title, 
                     "message": notification_instance.message, 
                     "notification_type": notification_data["notification_type"], 
-                    "appointment_id": notification_data["appointment_id"], 
-                    "doctor_name": notification_data["doctor_name"]
+                    "appointment_id": notification_data.get("appointment_id"),
+                    "doctor_name": notification_data.get("doctor_name")
                 }, low_priority=False)
             else:
                 fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-                    "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+                    "title": notification_instance.title, 
+                    "message": notification_instance.message, 
+                    "notification_type": notification_data["notification_type"], 
+                    "appointment_id": notification_data.get("appointment_id")
+                }, low_priority=False)
 
         elif recipient.device.platform == 'iOS':
             
@@ -60,9 +66,7 @@ def send_push_notification(self, **kwargs):
                 bundle_id=settings.BUNDLE_ID,
                 team_id=settings.TEAM_ID
             )
-
             token = notification_instance.recipient.device.token
-            
             payload = {
                 'aps': {
                     'alert': {
@@ -73,11 +77,10 @@ def send_push_notification(self, **kwargs):
                     'sound': 	settings.APNS_SOUND,
                     'extra': 	{
                             'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
-                            'appointment_id': notification_data["appointment_id"]
+                            'appointment_id': notification_data.get("appointment_id")
                         }
                 }
             }
-            
             apns_pusher.send_single_push(
                 device_token    =   token,
                 payload         =   payload
@@ -94,7 +97,7 @@ def send_silent_push_notification(self, **kwargs):
             if patient_instance.device.platform == 'Android':
                 fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
                     "notification_type": "SILENT_NOTIFICATION", 
-                    "appointment_id": notification_data["appointment_id"]
+                    "appointment_id": notification_data.get("appointment_id")
                 }, low_priority=False)
 
             elif patient_instance.device.platform == 'iOS':
@@ -106,10 +109,8 @@ def send_silent_push_notification(self, **kwargs):
                     bundle_id=settings.BUNDLE_ID,
                     team_id=settings.TEAM_ID
                 )
-
                 token = patient_instance.device.token
                 alert = "Doctor completed this consultation"
-                
                 payload = {
                     'aps': {
                         'alert': {
@@ -120,11 +121,10 @@ def send_silent_push_notification(self, **kwargs):
                         'sound': 	settings.APNS_SOUND,
                         'extra': 	{
                                     'notification_type': '2',
-                                    'appointment_id': notification_data["appointment_id"]
+                                    'appointment_id': notification_data.get("appointment_id")
                                 }
                     }
                 }
-
                 apns_pusher.send_single_push(
                     device_token    =   token,
                     payload         =   payload
