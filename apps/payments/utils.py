@@ -1257,7 +1257,9 @@ class PaymentUtils:
         
         if  payment_check_response.get("Status")==PaymentConstants.CHECK_APPOINTMENT_PAYMENT_STATUS_SUCCESS and \
             payment_check_response.get("APPOLPReceiptNo") and \
-            payment_check_response.get("APPOLPPatHospNo"):
+            payment_check_response.get("APPOLPPatHospNo") and \
+            payment_check_response.get("APPOLPConvAppId"):
+            
             payment_response.update({
                 "uhid_number"           : payment_check_response.get("APPOLPPatHospNo"),
                 "ReceiptNo"             : payment_check_response.get("APPOLPReceiptNo"),
