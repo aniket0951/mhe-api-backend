@@ -379,7 +379,7 @@ def trigger_scheduled_notification(scheduler):
             notification_data["recipient"] = family_member_id.patient_info.id
             send_push_notification.delay(notification_data=notification_data)
 
-        patient_ids = Patient.objects.filter(uhid_number=scheduler.uhid)
+        patient_ids = Patient.objects.filter(uhid_number=uhid)
         for patient_id in patient_ids:
             notification_data["recipient"] = patient_id.id
             send_push_notification.delay(notification_data=notification_data)

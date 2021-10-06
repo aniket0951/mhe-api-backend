@@ -115,26 +115,27 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     list_success_message = 'Notifications returned successfully!'
     
     def create(self, request):
+        request_data = dict()
 
-        request_data = dict(request.data)
-        
-        notification_subject    = request_data.get("notification_subject", None)
-        notification_body       = request_data.get("notification_body", None)
-        template_id             = request_data.get("template_id", None)
-        
-        if not template_id and not notification_subject and not notification_body:
+        request_data["notification_subject"]    = request.data.get("notification_subject", None)
+        request_data["notification_body"]       = request.data.get("notification_body", None)
+        request_data["template_id"]             = request.data.get("template_id", None)
+        request_data["trigger_type"]            = request.data.get("trigger_type", None)
+        request_data["uhids"]                   = request.data.get("uhids", None)
+
+        if not request_data["template_id"] and not request_data["notification_subject"] and not request_data["notification_body"]:
             raise ValidationError("Kindly provide either template or notification subject & body.")
 
         excel_file = request.FILES.get("file")
-        if not excel_file and not request_data.get('uhids',None):
+        if not excel_file and not request.data.get('uhids',None):
             raise ValidationError("Kindly provide either List of UHIDs or Excel file")
 
-        if not template_id:
-            request_data['template_id'] = create_notification_template(notification_subject,notification_body)
+        if not request_data["template_id"]:
+            request_data['template_id'] = create_notification_template(request_data["notification_subject"],request_data["notification_body"])
 
         if excel_file:
             request_data['uhids']  = read_excel_file_data(excel_file)
-        
+
         if request_data["trigger_type"] == ScheduleNotifications.TRIGGER_CHOICE_NOW:
             request_data['date'] = datetime.now().date()
             request_data['time'] = datetime.now().time()

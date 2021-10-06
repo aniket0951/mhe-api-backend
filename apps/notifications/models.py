@@ -77,8 +77,8 @@ class ScheduleNotifications(MyBaseModel):
                                         validate_file_authenticity,
                                         validate_file_infection
                                 ],
-                                blank=False,
-                                null=False)
+                                blank=True,
+                                null=True)
     date = models.DateField()
     time = models.TimeField()
     is_executed = models.BooleanField(default=False)
