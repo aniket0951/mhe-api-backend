@@ -41,23 +41,30 @@ def send_push_notification(self, **kwargs):
         if recipient.device.platform == 'Android':
 
             fcm = FCMNotification(api_key=settings.FCM_API_KEY)
-            
-            if notification_data.get("doctor_name"):
-                fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-                    "title": notification_instance.title, 
-                    "message": notification_instance.message, 
-                    "notification_type": notification_data["notification_type"], 
-                    "appointment_id": notification_data.get("appointment_id"),
-                    "doctor_name": notification_data.get("doctor_name")
-                }, low_priority=False)
-            else:
-                fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
+
+            data_message = {
                     "title": notification_instance.title, 
                     "message": notification_instance.message, 
                     "notification_type": notification_data["notification_type"], 
                     "appointment_id": notification_data.get("appointment_id")
-                }, low_priority=False)
+            }
 
+            if notification_data.get("doctor_name"):
+                data_message.update({
+                    "doctor_name": notification_data.get("doctor_name")
+                })
+
+            if notification_data.get("notification_image_url"):
+                data_message.update({
+                    "notification_image_url": notification_data.get("notification_image_url")
+                })
+
+            fcm.notify_single_device(
+                        registration_id=notification_instance.recipient.device.token, 
+                        data_message=data_message, 
+                        low_priority=False
+                    )
+            
         elif recipient.device.platform == 'iOS':
             
             apns_pusher = ApnsPusher(
@@ -92,14 +99,23 @@ def send_silent_push_notification(self, **kwargs):
     fcm = FCMNotification(api_key=settings.FCM_API_KEY)
     notification_data = kwargs["notification_data"]
     if notification_data.get("patient"):
-        patient_instance = Patient.objects.filter(
-            id=notification_data.get("patient")["id"]).first()
+
+        patient_instance = Patient.objects.filter(id=notification_data.get("patient")["id"]).first()
+
         if (hasattr(patient_instance, 'device') and patient_instance.device.token):
+            
             if patient_instance.device.platform == 'Android':
-                fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
+
+                data_message={
                     "notification_type": "SILENT_NOTIFICATION", 
                     "appointment_id": notification_data.get("appointment_id")
-                }, low_priority=False)
+                }
+
+                fcm.notify_single_device(
+                    registration_id=patient_instance.device.token, 
+                    data_message=data_message, 
+                    low_priority=False
+                )
 
             elif patient_instance.device.platform == 'iOS':
 
@@ -120,10 +136,10 @@ def send_silent_push_notification(self, **kwargs):
                         },
                         'badge': 	1,
                         'sound': 	settings.APNS_SOUND,
-                        'extra': 	{
-                                    'notification_type': '2',
-                                    'appointment_id': notification_data.get("appointment_id")
-                                }
+                        'extra': {
+                                'notification_type': '2',
+                                'appointment_id': notification_data.get("appointment_id")
+                            }
                     }
                 }
                 apns_pusher.send_single_push(
@@ -151,14 +167,11 @@ def appointment_next_day_reminder_scheduler():
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-                patient_member = Patient.objects.filter(
-                    uhid_number=member.uhid_number).first()
+                patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
+                send_push_notification.delay(notification_data=notification_data)
         notification_data["recipient"] = appointment_instance.patient.id
         send_push_notification.delay(notification_data=notification_data)
 
@@ -170,8 +183,8 @@ def health_package_next_day_appointment_reminder():
         appointment_date__date=now.date(), appointment_status="Booked")
     for appointment_instance in appointments:
         notification_data = {}
-        patient = Patient.objects.filter(
-            id=appointment_instance.patient.id).first()
+        patient = Patient.objects.filter(id=appointment_instance.patient.id).first()
+        
         notification_data["title"] = "Reminder: Health Package Appointment Reminder"
         notification_data["message"] = "Reminder: You have a Health Check appointment appointment at {0}, tomorrow at {1}. For assistance, call Appointment Helpline 1800 102 5555.".format(
                                             appointment_instance.hospital.address, 
@@ -179,15 +192,16 @@ def health_package_next_day_appointment_reminder():
                                         )
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
+
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+
+            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-                patient_member = Patient.objects.filter(
-                    uhid_number=member.uhid_number).first()
+                patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
+                send_push_notification.delay(notification_data=notification_data)
+
         notification_data["recipient"] = patient.id
         send_push_notification.delay(notification_data=notification_data)
 
