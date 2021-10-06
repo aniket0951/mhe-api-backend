@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from rest_framework import  status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
 from rest_framework.serializers import ValidationError
 from .models import MobileDevice, MobileNotification, NotificationTemplate, ScheduleNotifications
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer, NotificationTemplateSerializer, ScheduleNotificationsSerializer
-from .tasks import send_push_notification
+from .tasks import send_push_notification, trigger_scheduled_notification
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
 
@@ -114,26 +115,40 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     list_success_message = 'Notifications returned successfully!'
     
     def create(self, request):
-        
-        notification_subject    = request.data.get("notification_subject", None)
-        notification_body       = request.data.get("notification_body", None)
-        template_id             = request.data.get("template_id", None)
-        
-        if not template_id and not notification_subject and not notification_body:
+        request_data = dict()
+
+        request_data["notification_subject"]    = request.data.get("notification_subject", None)
+        request_data["notification_body"]       = request.data.get("notification_body", None)
+        request_data["template_id"]             = request.data.get("template_id", None)
+        request_data["trigger_type"]            = request.data.get("trigger_type", None)
+        request_data["uhids"]                   = request.data.get("uhids", None)
+
+        if not request_data["template_id"] and not request_data["notification_subject"] and not request_data["notification_body"]:
             raise ValidationError("Kindly provide either template or notification subject & body.")
 
-        if not template_id:
-            request.data['template_id'] = create_notification_template(notification_subject,notification_body)
+        excel_file = request.FILES.get("file")
+        if not excel_file and not request.data.get('uhids',None):
+            raise ValidationError("Kindly provide either List of UHIDs or Excel file")
 
-        excel_file              = request.FILES["file"]  
-        request.data['uhids']   = read_excel_file_data(excel_file)
+        if not request_data["template_id"]:
+            request_data['template_id'] = create_notification_template(request_data["notification_subject"],request_data["notification_body"])
+
+        if excel_file:
+            request_data['uhids']  = read_excel_file_data(excel_file)
+
+        if request_data["trigger_type"] == ScheduleNotifications.TRIGGER_CHOICE_NOW:
+            request_data['date'] = datetime.now().date()
+            request_data['time'] = datetime.now().time()
     
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request_data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        scheduler = serializer.save()
+
+        if scheduler.trigger_type == ScheduleNotifications.TRIGGER_CHOICE_NOW:
+            trigger_scheduled_notification(scheduler)
 
         data = {
             "data" : serializer.data,
-            "message"  : "Notification send successfully!"
+            "message"  : "Notification scheduled successfully!"
         }
         return Response(data=data, status=status.HTTP_200_OK)

@@ -50,9 +50,12 @@ class NotificationTemplate(MyBaseModel):
     
 class ScheduleNotifications(MyBaseModel):
     
+    TRIGGER_CHOICE_SCHEDULE = 'schedule'
+    TRIGGER_CHOICE_NOW = 'now'
+
     TRIGGER_CHOICES = (
-        ('schedule','schedule'),
-        ('now','now')
+        (TRIGGER_CHOICE_SCHEDULE,TRIGGER_CHOICE_SCHEDULE),
+        (TRIGGER_CHOICE_NOW,TRIGGER_CHOICE_NOW)
     )
     
     template_id = models.ForeignKey(
@@ -74,9 +77,9 @@ class ScheduleNotifications(MyBaseModel):
                                         validate_file_authenticity,
                                         validate_file_infection
                                 ],
-                                blank=False,
-                                null=False)
+                                blank=True,
+                                null=True)
     date = models.DateField()
     time = models.TimeField()
-    is_scheduled = models.BooleanField(default=True) 
+    is_executed = models.BooleanField(default=False)
     
