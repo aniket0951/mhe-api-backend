@@ -10,7 +10,7 @@ from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
 from rest_framework.serializers import ValidationError
 from .models import MobileDevice, MobileNotification, NotificationTemplate, ScheduleNotifications
 from .serializers import MobileDeviceSerializer, MobileNotificationSerializer, NotificationTemplateSerializer, ScheduleNotificationsSerializer
-from .tasks import send_push_notification
+from .tasks import send_push_notification, trigger_scheduled_notification
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
 
@@ -130,10 +130,13 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        scheduler = serializer.save()
+
+        if scheduler.trigger_type == ScheduleNotifications.TRIGGER_CHOICE_NOW:
+            trigger_scheduled_notification(scheduler)
 
         data = {
             "data" : serializer.data,
-            "message"  : "Notification send successfully!"
+            "message"  : "Notification scheduled successfully!"
         }
         return Response(data=data, status=status.HTTP_200_OK)

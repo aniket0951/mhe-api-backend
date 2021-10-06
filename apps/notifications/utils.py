@@ -1,17 +1,15 @@
-
 import openpyxl
 from datetime import datetime
 from django.conf import settings
 from django.db.models.query_utils import Q
+from apps.patients.models import FamilyMember, Patient
 from rest_framework.test import APIRequestFactory
 
 from apps.notifications.models import NotificationTemplate
 
-
 def cancel_parameters(param, factory=APIRequestFactory()):
     return factory.post(
         '', param, format='json')
-
 
 def doctor_rebook_parameters(instance, new_date=None, factory=APIRequestFactory()):
     param = dict()
@@ -48,12 +46,11 @@ def get_birthday_notification_data(patient_id,users_first_name):
     notification_data["notification_image_url"] = settings.BIRTHDAY_NOTIFICATION_IMAGE_URL
     return notification_data
 
-def get_scheduler_notification_data(patient_id,scheduler):
+def get_scheduler_notification_data(scheduler):
     notification_data = {}
     notification_data["title"] = scheduler.template_id.notification_subject
     notification_data["message"] = scheduler.template_id.notification_body
     notification_data["notification_type"] = "GENERAL_NOTIFICATION"
-    notification_data["recipient"] = patient_id.id
     return notification_data
 
 def create_notification_template(notification_subject,notification_body):

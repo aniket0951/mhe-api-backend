@@ -369,26 +369,41 @@ def birthday_wishing_scheduler():
         notification_data = get_birthday_notification_data(patient_id,patient_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
 
+def trigger_scheduled_notification(scheduler):
+    uhid_list = scheduler.uhids.split(",")
+    notification_data = get_scheduler_notification_data(scheduler)
+    
+    for uhid in uhid_list:
+        family_member_ids = FamilyMember.objects.filter(uhid_number=uhid)
+        for family_member_id in family_member_ids:
+            notification_data["recipient"] = family_member_id.patient_info.id
+            send_push_notification.delay(notification_data=notification_data)
+
+        patient_ids = Patient.objects.filter(uhid_number=scheduler.uhid)
+        for patient_id in patient_ids:
+            notification_data["recipient"] = patient_id.id
+            send_push_notification.delay(notification_data=notification_data)
+
+    scheduler.is_executed = True
+    scheduler.save()
+
 @app.task(name="tasks.scheduler_notification_reminder")
 def scheduler_notification_reminder():
     current_time = datetime.now()
-    start_time = current_time - timedelta(minutes=5)
-    end_time = current_time + timedelta(hours=1,minutes=5)
     
-    appointment_schedulers = ScheduleNotifications.objects.filter(date=current_time.date(),time__range=[start_time.time(), end_time.time()])
-    
+    start_time = current_time - timedelta(minutes=20)
+    end_time = current_time + timedelta(minutes=20)
+
+    appointment_schedulers = ScheduleNotifications.objects.filter(
+                                        date            = current_time.date(),
+                                        time__range     = [start_time.time(), end_time.time()],
+                                        trigger_type    = 'schedule',
+                                        is_executed     = False
+                                    )
+
     for scheduler in appointment_schedulers:
-        uhid_list = scheduler.uhids
-        
-        for uhid in uhid_list:
-            family_member_id = FamilyMember.objects.filter(uhid_number=uhid)
-            if family_member_id:
-                notification_data = get_scheduler_notification_data(family_member_id,scheduler)
-                send_push_notification.delay(notification_data=notification_data)
-            patient_id = Patient.objects.filter(uhid_number=scheduler.uhid)
-            if patient_id:
-                notification_data = get_scheduler_notification_data(patient_id,scheduler)
-                send_push_notification.delay(notification_data=notification_data)
+        trigger_scheduled_notification(scheduler)
+
 
 @app.task(name="tasks.daily_update")
 def daily_update_scheduler():
@@ -469,5 +484,8 @@ app.conf.beat_schedule = {
         "task": "tasks.pre_appointment_reminder",
         "schedule": crontab(minute="*/30", hour='*')
     },
-
+    "scheduler_notification_reminder": {
+        "task": "tasks.scheduler_notification_reminder",
+        "schedule": crontab(minute="0", hour='*/1')
+    }
 }
