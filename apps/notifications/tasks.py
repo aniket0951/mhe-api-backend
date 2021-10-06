@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management import call_command
+from apps.notifications.models import ScheduleNotifications
 
 from celery.schedules import crontab
 from manipal_api.celery import app
@@ -18,7 +19,7 @@ from apps.payments.razorpay_views import RazorPaymentResponse
 from apps.payments.models import Payment
 
 from .serializers import MobileNotificationSerializer
-from .utils import cancel_parameters, get_birthday_notification_data
+from .utils import cancel_parameters, get_birthday_notification_data, get_scheduler_notification_data
 
 logger = logging.getLogger("django")
 
@@ -355,6 +356,7 @@ def daily_auto_drive_bookings_cancellation():
 @app.task(name="tasks.birthday_wishing_scheduler")
 def birthday_wishing_scheduler():
     now = datetime.today()
+    
     query = Q(dob__isnull=False) & Q(dob__day=now.date().day) & Q(dob__month=now.date().month)
 
     family_member_ids = FamilyMember.objects.filter( query & Q(patient_info__is_birthday_notification_on=True))
@@ -366,6 +368,27 @@ def birthday_wishing_scheduler():
     for patient_id in patient_ids:
         notification_data = get_birthday_notification_data(patient_id,patient_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
+
+@app.task(name="tasks.scheduler_notification_reminder")
+def scheduler_notification_reminder():
+    current_time = datetime.now()
+    start_time = current_time - timedelta(minutes=5)
+    end_time = current_time + timedelta(hours=1,minutes=5)
+    
+    appointment_schedulers = ScheduleNotifications.objects.filter(date=current_time.date(),time__range=[start_time.time(), end_time.time()])
+    
+    for scheduler in appointment_schedulers:
+        uhid_list = scheduler.uhids
+        
+        for uhid in uhid_list:
+            family_member_id = FamilyMember.objects.filter(uhid_number=uhid)
+            if family_member_id:
+                notification_data = get_scheduler_notification_data(family_member_id,scheduler)
+                send_push_notification.delay(notification_data=notification_data)
+            patient_id = Patient.objects.filter(uhid_number=scheduler.uhid)
+            if patient_id:
+                notification_data = get_scheduler_notification_data(patient_id,scheduler)
+                send_push_notification.delay(notification_data=notification_data)
 
 @app.task(name="tasks.daily_update")
 def daily_update_scheduler():

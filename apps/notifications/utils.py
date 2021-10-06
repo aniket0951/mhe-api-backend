@@ -48,6 +48,14 @@ def get_birthday_notification_data(patient_id,users_first_name):
     notification_data["notification_image_url"] = settings.BIRTHDAY_NOTIFICATION_IMAGE_URL
     return notification_data
 
+def get_scheduler_notification_data(patient_id,scheduler):
+    notification_data = {}
+    notification_data["title"] = scheduler.template_id.notification_subject
+    notification_data["message"] = scheduler.template_id.notification_body
+    notification_data["notification_type"] = "GENERAL_NOTIFICATION"
+    notification_data["recipient"] = patient_id.id
+    return notification_data
+
 def create_notification_template(notification_subject,notification_body):
     existing_notification_id = NotificationTemplate.objects.filter( 
                                                                 Q(notification_subject=notification_subject) & 
