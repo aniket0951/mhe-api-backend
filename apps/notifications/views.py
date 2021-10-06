@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from rest_framework import  status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -131,6 +132,10 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
 
         if excel_file:
             request.data['uhids']  = read_excel_file_data(excel_file)
+        
+        if request.data["trigger_type"] == ScheduleNotifications.TRIGGER_CHOICE_NOW:
+            request.data['date'] = datetime.now().date()
+            request.data['time'] = datetime.now().time()
     
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
