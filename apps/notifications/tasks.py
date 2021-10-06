@@ -411,7 +411,7 @@ def scheduler_notification_reminder():
     appointment_schedulers = ScheduleNotifications.objects.filter(
                                         date            = current_time.date(),
                                         time__range     = [start_time.time(), end_time.time()],
-                                        trigger_type    = 'schedule',
+                                        trigger_type    = ScheduleNotifications.TRIGGER_CHOICE_SCHEDULE,
                                         is_executed     = False
                                     )
 
