@@ -124,7 +124,7 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
             raise ValidationError("Kindly provide either template or notification subject & body.")
 
         excel_file = request.FILES.get("file")
-        if not excel_file and request.data.get('uhids',None):
+        if not excel_file and not request.data.get('uhids',None):
             raise ValidationError("Kindly provide either List of UHIDs or Excel file")
 
         if not template_id:
