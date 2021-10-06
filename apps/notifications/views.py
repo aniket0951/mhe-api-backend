@@ -122,11 +122,15 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
         if not template_id and not notification_subject and not notification_body:
             raise ValidationError("Kindly provide either template or notification subject & body.")
 
+        excel_file = request.FILES.get("file")
+        if not excel_file and request.data.get('uhids',None):
+            raise ValidationError("Kindly provide either List of UHIDs or Excel file")
+
         if not template_id:
             request.data['template_id'] = create_notification_template(notification_subject,notification_body)
 
-        excel_file              = request.FILES["file"]  
-        request.data['uhids']   = read_excel_file_data(excel_file)
+        if excel_file:
+            request.data['uhids']  = read_excel_file_data(excel_file)
     
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
