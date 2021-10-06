@@ -124,21 +124,34 @@ class Appointment(models.Model):
     @property
     def is_cancellable(self):
         if self.appointment_date and ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
+            
+            registration_amount = 0
+            if self.payment_appointment.exists():
+                payment_instance = self.payment_appointment.first()
+                if payment_instance.payment_for_uhid_creation:
+                    from apps.payments.utils import PaymentUtils
+                    registration_amount = PaymentUtils.add_items_tariff_price(0,self.hospital.code)
+            
             if self.appointment_date > datetime.now().date():
                 if self.payment_status == "success":
-                    self.refundable_amount = self.consultation_amount
+                    self.refundable_amount = self.consultation_amount - registration_amount
                     self.save()
                 return True
+
             if self.appointment_date == datetime.now().date() and self.appointment_slot > datetime.now().time():
                 if not self.payment_status:
                     return True
+
                 date_time_slot = datetime.combine(datetime.now(), self.appointment_slot)
                 date_time_now = datetime.combine(datetime.now(), datetime.now().time())
                 time_delta = (date_time_slot - date_time_now).total_seconds()/3600
+
                 if time_delta > 2:
-                    self.refundable_amount = self.consultation_amount
+                    self.refundable_amount = self.consultation_amount - registration_amount
+
                     if time_delta <= 4:
-                        self.refundable_amount = self.consultation_amount - 100.0
+                        self.refundable_amount = self.consultation_amount - registration_amount - 100.0
+
                     self.save()
                     return True
         self.save()
