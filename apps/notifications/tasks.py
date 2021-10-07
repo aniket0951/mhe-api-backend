@@ -46,18 +46,11 @@ def send_push_notification(self, **kwargs):
                     "title": notification_instance.title, 
                     "message": notification_instance.message, 
                     "notification_type": notification_data["notification_type"], 
-                    "appointment_id": notification_data.get("appointment_id")
-            }
-
-            if notification_data.get("doctor_name"):
-                data_message.update({
-                    "doctor_name": notification_data.get("doctor_name")
-                })
-
-            if notification_data.get("notification_image_url"):
-                data_message.update({
+                    "appointment_id": notification_data.get("appointment_id"),
+                    "doctor_name": notification_data.get("doctor_name"),
                     "notification_image_url": notification_data.get("notification_image_url")
-                })
+
+            }
 
             fcm.notify_single_device(
                         registration_id=notification_instance.recipient.device.token, 
@@ -108,7 +101,9 @@ def send_silent_push_notification(self, **kwargs):
 
                 data_message={
                     "notification_type": "SILENT_NOTIFICATION", 
-                    "appointment_id": notification_data.get("appointment_id")
+                    "appointment_id": notification_data.get("appointment_id"),
+                    "doctor_name": notification_data.get("doctor_name"),
+                    "notification_image_url": notification_data.get("notification_image_url")
                 }
 
                 fcm.notify_single_device(
