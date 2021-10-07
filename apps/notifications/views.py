@@ -169,13 +169,10 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
             request_data['date'] = current_date_time.date()
             request_data['time'] = current_date_time.time()
         
-        if request_data["date"] and request_data["time"]:
+        if request_data["date"]:
             schedule_date = datetime.strptime(request_data["date"],'%Y-%m-%d')
-            schedule_time = datetime.strptime(request_data["time"],'%H:%M')
             if schedule_date.date() < current_date_time.date():
                 raise ValidationError('Schedule date should not be set as past date.')
-            if schedule_time.time() < current_date_time.time():
-                raise ValidationError('Schedule time should not be set as past time.')
     
         serializer = self.serializer_class(data=request_data)
         serializer.is_valid(raise_exception=True)
