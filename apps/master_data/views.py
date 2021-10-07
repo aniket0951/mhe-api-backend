@@ -375,41 +375,45 @@ class DoctorsView(ProxyView):
                     each_doctor[key] = None
 
                 if key in ['DateFrom', 'DateTo'] and each_doctor[key]:
-                    each_doctor[key] = datetime.strptime(
-                        each_doctor[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
+                    each_doctor[key] = datetime.strptime(each_doctor[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
 
                 if key == "DocName" and each_doctor[key]:
+
                     each_doctor[key] = each_doctor[key].title()
 
                 if key == "IsOnlineAppt" and each_doctor[key]:
+
                     if each_doctor[key] == "Yes":
                         each_doctor[key] = True
                     else:
                         each_doctor[key] = False
+
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
+
             doctor_kwargs = dict()
             hospital_department_obj = None
             specialisation_obj = None
+            
             hospital_code = doctor_details.pop('hospital_code')
             hospital = Hospital.objects.filter(code=hospital_code).first()
+            
             doctor_kwargs['code'] = doctor_details.pop('code')
             doctor_kwargs['hospital'] = hospital
+            
             department_code = doctor_details.pop('department_code')
             if department_code:
-                hospital_department_obj = HospitalDepartment.objects.filter(
-                    department__code=department_code, hospital=hospital).first()
+                hospital_department_obj = HospitalDepartment.objects.filter(department__code=department_code, hospital=hospital).first()
+
             specialisation_code = doctor_details.pop('specialisation_code')
             if specialisation_code:
-                specialisation_obj = Specialisation.objects.filter(
-                    code=specialisation_code).first()
+                specialisation_obj = Specialisation.objects.filter(code=specialisation_code).first()
 
             is_doctor_updated = Doctor.objects.filter(
                              code=doctor_kwargs['code'],
                              hospital__code=hospital_code
                          ).exclude(updated_at__date__lt=today_date).first()
 
-            doctor, doctor_created = Doctor.objects.update_or_create(
-                **doctor_kwargs, defaults=doctor_details)
+            doctor, doctor_created = Doctor.objects.update_or_create(**doctor_kwargs, defaults=doctor_details)
             doctor_details['doctor_created'] = doctor_created
 
             if not is_doctor_updated:
@@ -418,8 +422,10 @@ class DoctorsView(ProxyView):
 
             if hospital_department_obj:
                 doctor.hospital_departments.add(hospital_department_obj)
+
             if specialisation_obj:
                 doctor.specialisations.add(specialisation_obj)
+                
             all_doctors.append(doctor_details)
 
         previous_date = datetime.now() - timedelta(days=1)

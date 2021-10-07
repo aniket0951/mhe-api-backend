@@ -135,7 +135,7 @@ def get_doctor_instace(data,date):
         logger.info("Exception in DoctorSlotAvailability: %s"%(str(e)))
         raise InvalidRequest
     if not doctor:
-        raise DoctorDoesNotExistsValidationException
+        raise ValidationError("Doctor is not available on the selected date.")
     return doctor
 
 class DoctorSlotAvailability(ProxyView):
