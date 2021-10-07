@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime
-from rest_framework import  status
+from datetime import date, datetime
+from rest_framework import status,filters
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,6 +14,7 @@ from .serializers import MobileDeviceSerializer, MobileNotificationSerializer, N
 from .tasks import send_push_notification, trigger_scheduled_notification
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser
+from django_filters.rest_framework import DjangoFilterBackend
 
 logger = logging.getLogger("django")
 
@@ -105,6 +106,14 @@ class NotificationTemplateViewSet(custom_viewsets.CreateUpdateListRetrieveModelV
     create_success_message = "Notification template added successfully!"
     list_success_message = 'Notifications templated returned successfully!'
     
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['notification_subject']
+    search_fields = ['notification_subject']
+    
 class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [IsManipalAdminUser]
     parser_classes = [MultiPartParser]
@@ -114,7 +123,25 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     create_success_message = "Notification send successfully!"
     list_success_message = 'Notifications returned successfully!'
     
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['template_id__notification_subject']
+    search_fields = ['template_id__notification_subject','schedule_type']
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        date_from = self.request.query_params.get("date_from", None)
+        date_to = self.request.query_params.get("date_to", None)
+        if date_from and date_to:
+            qs = qs.filter(date__range=[date_from, date_to])
+        return qs
+    
     def create(self, request):
+        current_date_time = datetime.now()
+        
         request_data = dict()
 
         request_data["notification_subject"]    = request.data.get("notification_subject", None)
@@ -122,6 +149,8 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
         request_data["template_id"]             = request.data.get("template_id", None)
         request_data["trigger_type"]            = request.data.get("trigger_type", None)
         request_data["uhids"]                   = request.data.get("uhids", None)
+        request_data["date"]                   = request.data.get("date", None)
+        request_data["time"]                   = request.data.get("time", None)
 
         if not request_data["template_id"] and not request_data["notification_subject"] and not request_data["notification_body"]:
             raise ValidationError("Kindly provide either template or notification subject & body.")
@@ -137,8 +166,16 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
             request_data['uhids']  = read_excel_file_data(excel_file)
 
         if request_data["trigger_type"] == ScheduleNotifications.TRIGGER_CHOICE_NOW:
-            request_data['date'] = datetime.now().date()
-            request_data['time'] = datetime.now().time()
+            request_data['date'] = current_date_time.date()
+            request_data['time'] = current_date_time.time()
+        
+        if request_data["date"] and request_data["time"]:
+            schedule_date = datetime.strptime(request_data["date"],'%Y-%m-%d')
+            schedule_time = datetime.strptime(request_data["time"],'%H:%M')
+            if schedule_date.date() < current_date_time.date():
+                raise ValidationError('Schedule date should not be set as past date.')
+            if schedule_time.time() < current_date_time.time():
+                raise ValidationError('Schedule time should not be set as past time.')
     
         serializer = self.serializer_class(data=request_data)
         serializer.is_valid(raise_exception=True)

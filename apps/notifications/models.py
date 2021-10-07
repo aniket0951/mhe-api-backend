@@ -58,6 +58,11 @@ class ScheduleNotifications(MyBaseModel):
         (TRIGGER_CHOICE_NOW,TRIGGER_CHOICE_NOW)
     )
     
+    SCHEDULE_TYPE = (
+        ('promotional','promotional'),
+        ('transactional','transactional')
+    )
+    
     template_id = models.ForeignKey(
                                     NotificationTemplate, 
                                     on_delete=models.PROTECT, 
@@ -82,4 +87,9 @@ class ScheduleNotifications(MyBaseModel):
     date = models.DateField()
     time = models.TimeField()
     is_executed = models.BooleanField(default=False)
+    schedule_type = models.CharField(
+                                choices=SCHEDULE_TYPE,
+                                max_length=20, 
+                                default='transactional'
+                            )
     
