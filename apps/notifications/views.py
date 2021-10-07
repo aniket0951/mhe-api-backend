@@ -165,15 +165,15 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
         if excel_file:
             request_data['uhids']  = read_excel_file_data(excel_file)
 
-        if request_data["trigger_type"] == ScheduleNotifications.TRIGGER_CHOICE_NOW:
-            request_data['date'] = current_date_time.date()
-            request_data['time'] = current_date_time.time()
-        
         if request_data["date"]:
             schedule_date = datetime.strptime(request_data["date"],'%Y-%m-%d')
             if schedule_date.date() < current_date_time.date():
                 raise ValidationError('Schedule date should not be set as past date.')
     
+        if request_data["trigger_type"] == ScheduleNotifications.TRIGGER_CHOICE_NOW:
+            request_data['date'] = current_date_time.date()
+            request_data['time'] = current_date_time.time()
+        
         serializer = self.serializer_class(data=request_data)
         serializer.is_valid(raise_exception=True)
         scheduler = serializer.save()
