@@ -517,6 +517,6 @@ app.conf.beat_schedule = {
     },
     "scheduler_notification_reminder": {
         "task": "tasks.scheduler_notification_reminder",
-        "schedule": crontab(minute="/5", hour='*')
+        "schedule": crontab(minute="*/5", hour='*')
     }
 }
