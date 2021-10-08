@@ -422,8 +422,8 @@ def trigger_scheduled_notification(scheduler):
 def scheduler_notification_reminder():
     current_time = datetime.now()
     
-    start_time = current_time - timedelta(minutes=20)
-    end_time = current_time + timedelta(minutes=20)
+    start_time = current_time - timedelta(minutes=2)
+    end_time = current_time + timedelta(minutes=2)
 
     appointment_schedulers = ScheduleNotifications.objects.filter(
                                         date            = current_time.date(),
@@ -517,6 +517,6 @@ app.conf.beat_schedule = {
     },
     "scheduler_notification_reminder": {
         "task": "tasks.scheduler_notification_reminder",
-        "schedule": crontab(minute="0", hour='*/1')
+        "schedule": crontab(minute="/5", hour='*')
     }
 }
