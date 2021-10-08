@@ -112,7 +112,7 @@ class NotificationTemplateViewSet(custom_viewsets.CreateUpdateListRetrieveModelV
                 filters.OrderingFilter
             )
     filter_fields = ['notification_subject']
-    search_fields = ['notification_subject']
+    search_fields = ['notification_subject','notification_body']
     
 class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
     permission_classes = [IsManipalAdminUser]
@@ -129,7 +129,7 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
                 filters.OrderingFilter
             )
     filter_fields = ['template_id__notification_subject']
-    search_fields = ['template_id__notification_subject','schedule_type']
+    search_fields = ['template_id__notification_subject','template_id__notification_body','schedule_type','uhids']
     
     def get_queryset(self):
         qs = super().get_queryset()
