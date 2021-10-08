@@ -162,7 +162,11 @@ def appointment_next_day_reminder_scheduler():
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            member = FamilyMember.objects.filter(
+                                    id=appointment_instance.family_member.id, 
+                                    patient_info_id=appointment_instance.patient.id,
+                                    is_visible=True
+                                ).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
@@ -190,7 +194,11 @@ def health_package_next_day_appointment_reminder():
 
         if appointment_instance.family_member:
 
-            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            member = FamilyMember.objects.filter(
+                                    id=appointment_instance.family_member.id, 
+                                    patient_info_id=appointment_instance.patient.id,
+                                    is_visible=True
+                                ).first()
             
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
@@ -217,7 +225,10 @@ def health_package_appointment_reminder():
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+                                id=appointment_instance.family_member.id, 
+                                patient_info_id=appointment_instance.patient.id,
+                                is_visible=True
+                            ).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(
                     uhid_number=member.uhid_number).first()
@@ -247,7 +258,11 @@ def appointment_reminder_scheduler():
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            member = FamilyMember.objects.filter(
+                                id=appointment_instance.family_member.id, 
+                                patient_info_id=appointment_instance.patient.id,
+                                is_visible=True
+                            ).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
@@ -276,8 +291,15 @@ def pre_appointment_reminder_scheduler():
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
-            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+            member = FamilyMember.objects.filter(
+                                            id=appointment_instance.family_member.id, 
+                                            patient_info_id=appointment_instance.patient.id,
+                                            is_visible=True
+                                        ).first()
+            if Patient.objects.filter(
+                                uhid_number__isnull=False, 
+                                uhid_number=member.uhid_number
+                            ).exists():
                 patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
                 send_push_notification.delay(notification_data=notification_data)
@@ -368,7 +390,7 @@ def birthday_wishing_scheduler():
     
     query = Q(dob__isnull=False) & Q(dob__day=now.date().day) & Q(dob__month=now.date().month)
 
-    family_member_ids = FamilyMember.objects.filter( query & Q(patient_info__is_birthday_notification_on=True))
+    family_member_ids = FamilyMember.objects.filter( query & Q(patient_info__is_birthday_notification_on=True) & Q(is_visible=True))
     for family_member_id in family_member_ids:
         notification_data = get_birthday_notification_data(family_member_id.patient_info,family_member_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
@@ -383,7 +405,7 @@ def trigger_scheduled_notification(scheduler):
     notification_data = get_scheduler_notification_data(scheduler)
     
     for uhid in uhid_list:
-        family_member_ids = FamilyMember.objects.filter(uhid_number=uhid)
+        family_member_ids = FamilyMember.objects.filter(uhid_number=uhid,is_visible=True)
         for family_member_id in family_member_ids:
             notification_data["recipient"] = family_member_id.patient_info.id
             send_push_notification.delay(notification_data=notification_data)

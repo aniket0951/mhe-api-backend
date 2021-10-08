@@ -22,7 +22,7 @@ class AppointmentsConstants:
     INVALID_PARAM = "Invalid Parameters"
 
     DATE_FORMAT = '%Y-%m-%d'
-    APPOINTMENT_TIME_FORMAT = "%H:%M:%S %p"
+    APPOINTMENT_TIME_FORMAT = "%H:%M:%S"
 
     FILE_UPLOAD_SUCCESSFUL = "File Upload Sucessful"
     
