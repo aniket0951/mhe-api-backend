@@ -405,12 +405,19 @@ def trigger_scheduled_notification(scheduler):
     notification_data = get_scheduler_notification_data(scheduler)
     
     for uhid in uhid_list:
-        family_member_ids = FamilyMember.objects.filter(uhid_number=uhid,is_visible=True)
+        family_member_ids = FamilyMember.objects.filter(
+                                    uhid_number     = uhid,
+                                    is_visible      = True,
+                                    patient_info__is_promotional_notification_on = True
+                                )
         for family_member_id in family_member_ids:
             notification_data["recipient"] = family_member_id.patient_info.id
             send_push_notification.delay(notification_data=notification_data)
 
-        patient_ids = Patient.objects.filter(uhid_number=uhid)
+        patient_ids = Patient.objects.filter(
+                                    uhid_number     = uhid, 
+                                    is_promotional_notification_on = True
+                                )
         for patient_id in patient_ids:
             notification_data["recipient"] = patient_id.id
             send_push_notification.delay(notification_data=notification_data)
