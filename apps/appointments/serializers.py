@@ -24,6 +24,7 @@ class CancellationReasonSerializer(DynamicFieldsModelSerializer):
 
 class AppointmentSerializer(DynamicFieldsModelSerializer):
     is_cancellable = serializers.ReadOnlyField()
+    is_admin_cancellable = serializers.ReadOnlyField()
     is_payment_option_enabled = serializers.ReadOnlyField()
 
     class Meta:
