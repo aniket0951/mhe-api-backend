@@ -508,14 +508,14 @@ class CreateMyAppointment(ProxyView):
                         (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
 
                         if  (consultation_response.data['data'].get('IsFollowUp') and \
-                            consultation_response.data['data'].get('IsFollowUp') != "N") or \
+                            consultation_response.data['data'].get('IsFollowUp') == "Y") or \
                             consultation_response.data['data'].get("PlanCode"):
 
                             corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                             corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
                             corporate_appointment["processing_id"] = get_processing_id()
-                            if consultation_response.data['data'].get('IsFollowUp') != "N":
+                            if consultation_response.data['data'].get('IsFollowUp') == "Y":
                                 corporate_appointment["transaction_number"] = "F"+appointment_identifier
                             else:
                                 corporate_appointment["transaction_number"] = consultation_response.data['data'].get("PlanCode")+appointment_identifier
