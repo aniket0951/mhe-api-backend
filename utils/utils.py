@@ -260,3 +260,8 @@ def determine_date_format(date_string):
     if date_parts and len(date_parts)>2 and date_parts[2] and len(date_parts[2])>3:
         date_format = '%d/%m/%Y'
     return date_format
+
+def validate_uhid_number(uhid_number):
+    if uhid_number and len(uhid_number)>2 and (uhid_number[:2].upper() == "MH" or uhid_number[:3].upper() == "MMH"):
+        return True
+    return False
