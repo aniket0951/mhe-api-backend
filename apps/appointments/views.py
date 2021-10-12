@@ -53,7 +53,7 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj
+from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj, validate_uhid_number
 from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
@@ -1591,6 +1591,9 @@ class CurrentAppointmentListView(ProxyView):
                 appointment["enable_vc"] = False
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
+                appointment["app_user"] = False
+                appointment["uhid_linked"] = False
+                appointment["mobile"] = None
 
                 if not appointment_instance:
                     try:
@@ -1613,48 +1616,38 @@ class CurrentAppointmentListView(ProxyView):
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
-                appointment["uhid_linked"] = False
-                appointment["mobile"] = None
-
-                user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
-                if not user:
-                    user = FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
+                user = None
+                
+                if validate_uhid_number(appointment["HospNo"]):
+                    user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first() or FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
 
                 if appointment_instance:
-                    if appointment_instance.family_member:
-                        user = appointment_instance.family_member
-                    else:
-                        user = appointment_instance.patient
-                
-                if user:
-                    appointment["mobile"] = user.mobile.raw_input 
-
-                    if user.uhid_number:
-                        appointment["HospNo"] = user.uhid_number
-                        appointment["uhid_linked"] = True
-                    
-
-                appointment["app_user"] = False
-                
-                if appointment_instance:
-                    
+                    user = appointment_instance.family_member or appointment_instance.patient
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
 
-                    if appointment_instance.status == 1 and appointment_instance.appointment_mode == "VC" and appointment_instance.payment_status == "success":
+                    if  appointment_instance.status == 1 and \
+                        appointment_instance.appointment_mode == "VC" and \
+                        appointment_instance.payment_status == "success" and \
+                        not appointment_instance.vc_appointment_status == 4:
+
                         appointment["enable_vc"] = True
 
-                        if appointment_instance.vc_appointment_status == 4:
-                            appointment["enable_vc"] = False
+                    if appointment_instance.appointment_vitals.exists():
+                        appointment["vitals_available"] = True
 
-                        if appointment_instance.appointment_vitals.exists():
-                            appointment["vitals_available"] = True
+                    if appointment_instance.appointment_prescription.exists():
+                        appointment["prescription_available"] = True
 
-                        if appointment_instance.appointment_prescription.exists():
-                            appointment["prescription_available"] = True
-
+                if user:
+                    appointment["mobile"] = user.mobile.raw_input
+                    if user.uhid_number:
+                        appointment["uhid_linked"] = True
+                        if not validate_uhid_number(appointment["HospNo"]):
+                            appointment["HospNo"] = user.uhid_number
+                        
         return self.custom_success_response(
                                     message=message,
                                     success=True, 

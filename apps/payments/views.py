@@ -1,4 +1,4 @@
-from apps.payments.constants import PaymentConstants
+
 import ast
 import json
 import logging
@@ -22,6 +22,9 @@ from apps.master_data.exceptions import HospitalDoesNotExistsValidationException
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
+from apps.patients.utils import link_uhid_from_uhid_number
+from apps.payments.constants import PaymentConstants
+
 from proxy.custom_serializables import EpisodeItems as serializable_EpisodeItems
 from proxy.custom_serializables import IPBills as serializable_IPBills
 from proxy.custom_serializables import OPBills as serializable_OPBills
@@ -784,8 +787,10 @@ class CorporateUhidRegistration(ProxyView):
                 if patient:
                     patient.uhid_number = uhid
                     patient.save()
-                response_data["uhid"] = uhid
 
+                link_uhid_from_uhid_number(uhid)
+                
+                response_data["uhid"] = uhid
         return self.custom_success_response(message=response_message,
                                             success=success_status, data=response_data)
 
