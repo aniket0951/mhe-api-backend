@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db.models import Q
-from django.shortcuts import render
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -23,8 +22,6 @@ from apps.payments.views import AppointmentPaymentView
 from apps.users.models import BaseUser
 from apps.notifications.utils import cancel_parameters
 from django_filters.rest_framework import DjangoFilterBackend
-from django.utils.decorators import method_decorator
-from ratelimit.decorators import ratelimit
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest

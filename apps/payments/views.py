@@ -22,7 +22,6 @@ from apps.master_data.exceptions import HospitalDoesNotExistsValidationException
 from apps.master_data.models import Hospital
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
-from apps.patients.utils import link_uhid_from_uhid_number
 from apps.payments.constants import PaymentConstants
 
 from proxy.custom_serializables import EpisodeItems as serializable_EpisodeItems
@@ -787,7 +786,8 @@ class CorporateUhidRegistration(ProxyView):
                 if patient:
                     patient.uhid_number = uhid
                     patient.save()
-
+                    
+                from apps.patients.utils import link_uhid_from_uhid_number
                 link_uhid_from_uhid_number(uhid)
                 
                 response_data["uhid"] = uhid
