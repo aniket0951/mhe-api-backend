@@ -408,7 +408,7 @@ class PrimeBenefits(MyBaseModel):
     sequence = models.IntegerField()
     
     description = models.CharField(
-                        max_length=30,
+                        max_length=500,
                         null=True,
                         blank=True
                     )
