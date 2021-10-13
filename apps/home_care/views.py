@@ -7,7 +7,7 @@ from rest_framework import filters, status
 from django_filters.rest_framework import DjangoFilterBackend
 
 
-class HealthTestViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+class HealthTestViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsManipalAdminUser | IsPatientUser]
     queryset = HealthTest.objects.all()
     serializer_class = HomeCareHealthTestSerializer
@@ -47,7 +47,7 @@ class HealthTestViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
         return super().get_permissions()
 
     
-class HealthTestPricingViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+class HealthTestPricingViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsManipalAdminUser | IsPatientUser]
     queryset = HealthTestPricing.objects.all()
     serializer_class = HealthTestPricingSerializer
@@ -88,7 +88,7 @@ class HealthTestPricingViewSet(custom_viewsets.CreateUpdateListRetrieveModelView
         return super().get_permissions()
 
     
-class HealthTestCartItemViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+class HealthTestCartItemViewSet(custom_viewsets.ModelViewSet):
     permission_classes = [IsManipalAdminUser | IsPatientUser]
     queryset = HealthTestCartItems.objects.all()
     serializer_class = HealthTestCartItemsSerializer
@@ -103,6 +103,8 @@ class HealthTestCartItemViewSet(custom_viewsets.CreateUpdateListRetrieveModelVie
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
+    filter_fields = ['health_test__code','health_test__description','hospital__code','hospital__description','hospital__id']
+    search_fields = ['hospital__code','hospital__description','hospital__id','health_test__code','health_test__description']
 
     def get_permissions(self):
 
@@ -142,6 +144,9 @@ class LabTestAppointmentViewSet(custom_viewsets.ModelViewSet):
                 filters.OrderingFilter
             )
 
+    filter_fields = ['health_test__code','hospital__code','patient__uhid','patient__first_name','family_member__uhid','family_memer__first_name','phlebo__first_name']
+    search_fields = ['hospital__code','hospital__description','hospital__id','health_test__code','health_test__description','patient__uhid','patient__first_name','family_member__uhid','family_memer__first_name','phlebo__first_name']
+
     def get_permissions(self):
 
         if self.action in ['create','partial_update']:
@@ -178,6 +183,8 @@ class LabTestSlotsWeeklyMasterViewSet(custom_viewsets.ModelViewSet):
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
+    filter_fields = ['hospital__code','hospital__id','day']
+    search_fields = ['hospital__code','hospital__description','hospital__id']
 
     def get_permissions(self):
 
@@ -216,6 +223,9 @@ class LabTestSlotScheduleViewSet(custom_viewsets.ModelViewSet):
                 filters.OrderingFilter
             )
     
+    filter_fields = ['hospital__code','hospital__id','phlebo__first_name']
+    search_fields = ['hospital__code','hospital__description','hospital__id','phlebo__first_name','pin']
+
     def get_permissions(self):
 
         if self.action in ['create','partial_update']:
