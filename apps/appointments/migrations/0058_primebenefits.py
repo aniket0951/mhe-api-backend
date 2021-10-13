@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('master_data', '0040_helplinenumbers_title'),
-        ('appointments', '0052_auto_20210331_1228'),
+        ('appointments', '0057_appointment_slot_duration'),
     ]
 
     operations = [
