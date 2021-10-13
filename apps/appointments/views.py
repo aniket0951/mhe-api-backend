@@ -55,13 +55,13 @@ from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidApp
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
-                     PrescriptionDocuments)
+                     PrescriptionDocuments, PrimeBenefits)
 from .serializers import (AppointmentDocumentsSerializer,
                           AppointmentPrescriptionSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
-                          PrescriptionDocumentsSerializer)
+                          PrescriptionDocumentsSerializer, PrimeBenefitsSerializer)
 
 from apps.doctors.serializers import DoctorChargesSerializer
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id, check_health_package_age_and_gender
@@ -1672,3 +1672,18 @@ class FeedbackData(APIView):
             "message": self.list_success_message,
         }
         return Response(data,status=status.HTTP_200_OK)
+
+class PrimeBenefitsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    queryset = PrimeBenefits.objects.all()
+    serializer_class = PrimeBenefitsSerializer
+    permission_classes = [IsPatientUser | IsManipalAdminUser ]
+    list_success_message = 'Prime benefits returned successfully!'
+    retrieve_success_message = 'Prime benefits returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['hospital_info']
+    search_fields = ['description']
+    ordering_fields = ('sequence','-created_at')

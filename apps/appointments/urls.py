@@ -13,7 +13,8 @@ from .views import (AppointmentDocumentsViewSet,
                     FeedbackViewSet, HealthPackageAppointmentView,
                     ManipalPrescriptionViewSet, OfflineAppointment,
                     PrescriptionDocumentsViewSet,
-                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView)
+                    RecentlyVisitedDoctorlistView, UpcomingAppointmentsAPIView, 
+                    PrimeBenefitsViewSet)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -27,7 +28,7 @@ router.register('feedback', FeedbackViewSet)
 router.register('manipal_prescription', ManipalPrescriptionViewSet)
 router.register('recently_visited_doctor', RecentlyVisitedDoctorlistView)
 router.register('all_prescription', AppointmentPrescriptionViewSet)
-
+router.register('prime_benefits', PrimeBenefitsViewSet)
 
 urlpatterns = [
 
