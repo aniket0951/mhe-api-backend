@@ -27,6 +27,15 @@ class Phlebo(BaseUser):
                             related_name='phlebo_hospital'
                         )
     
+    otp_expiration_time = models.DateTimeField(
+                                        blank=True,
+                                        null=True,
+                                        verbose_name='OTP Expiration Date Time')
+
+    mobile_verified = models.BooleanField(default=False,
+                                          verbose_name='Mobile Verified')
+
+    
     start_date = models.DateField()
     
     end_date = models.DateField()
