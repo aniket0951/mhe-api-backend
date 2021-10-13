@@ -12,7 +12,7 @@ from utils.utils import generate_pre_signed_url
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
-                     PrescriptionDocuments)
+                     PrescriptionDocuments, PrimeBenefits)
 
 logger = logging.getLogger('django.serializers')
 
@@ -24,6 +24,7 @@ class CancellationReasonSerializer(DynamicFieldsModelSerializer):
 
 class AppointmentSerializer(DynamicFieldsModelSerializer):
     is_cancellable = serializers.ReadOnlyField()
+    is_admin_cancellable = serializers.ReadOnlyField()
     is_payment_option_enabled = serializers.ReadOnlyField()
 
     class Meta:
@@ -210,3 +211,22 @@ class FeedbacksDataSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Feedbacks
         fields = '__all__' 
+
+
+class PrimeBenefitsSerializer(DynamicFieldsModelSerializer):
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        if instance.hospital_info:
+            response_object["hospital_info"] = HospitalSerializer(
+                                                    instance.hospital_info.all(),
+                                                    fields=("id","code","description"), 
+                                                    many=True
+                                                ).data
+
+        return response_object
+
+    class Meta:
+        model = PrimeBenefits
+        fields = '__all__'

@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db.models import Q
-from django.shortcuts import render
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -23,8 +22,6 @@ from apps.payments.views import AppointmentPaymentView
 from apps.users.models import BaseUser
 from apps.notifications.utils import cancel_parameters
 from django_filters.rest_framework import DjangoFilterBackend
-from django.utils.decorators import method_decorator
-from ratelimit.decorators import ratelimit
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
@@ -53,18 +50,18 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj
+from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj, validate_uhid_number
 from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
-                     PrescriptionDocuments)
+                     PrescriptionDocuments, PrimeBenefits)
 from .serializers import (AppointmentDocumentsSerializer,
                           AppointmentPrescriptionSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
-                          PrescriptionDocumentsSerializer)
+                          PrescriptionDocumentsSerializer, PrimeBenefitsSerializer)
 
 from apps.doctors.serializers import DoctorChargesSerializer
 from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id, check_health_package_age_and_gender
@@ -508,14 +505,14 @@ class CreateMyAppointment(ProxyView):
                         (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
 
                         if  (consultation_response.data['data'].get('IsFollowUp') and \
-                            consultation_response.data['data'].get('IsFollowUp') != "N") or \
+                            consultation_response.data['data'].get('IsFollowUp') == "Y") or \
                             consultation_response.data['data'].get("PlanCode"):
 
                             corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                             corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
                             corporate_appointment["processing_id"] = get_processing_id()
-                            if consultation_response.data['data'].get('IsFollowUp') != "N":
+                            if consultation_response.data['data'].get('IsFollowUp') == "Y":
                                 corporate_appointment["transaction_number"] = "F"+appointment_identifier
                             else:
                                 corporate_appointment["transaction_number"] = consultation_response.data['data'].get("PlanCode")+appointment_identifier
@@ -1591,6 +1588,9 @@ class CurrentAppointmentListView(ProxyView):
                 appointment["enable_vc"] = False
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
+                appointment["app_user"] = False
+                appointment["uhid_linked"] = False
+                appointment["mobile"] = None
 
                 if not appointment_instance:
                     try:
@@ -1613,44 +1613,38 @@ class CurrentAppointmentListView(ProxyView):
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
-                appointment["uhid_linked"] = False
-                appointment["mobile"] = None
-
-                user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
-                if not user:
-                    user = FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
-
-                if appointment_instance:
-                    if appointment_instance.family_member:
-                        user = appointment_instance.family_member
-                    else:
-                        user = appointment_instance.patient
+                user = None
                 
-                if user:
-                    if user.uhid_number:
-                        appointment["uhid_linked"] = True
-                    appointment["mobile"] = user.mobile.raw_input 
+                if validate_uhid_number(appointment["HospNo"]):
+                    user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first() or FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
 
-                appointment["app_user"] = False
                 if appointment_instance:
-                    
+                    user = appointment_instance.family_member or appointment_instance.patient
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
 
-                    if appointment_instance.status == 1 and appointment_instance.appointment_mode == "VC" and appointment_instance.payment_status == "success":
+                    if  appointment_instance.status == 1 and \
+                        appointment_instance.appointment_mode == "VC" and \
+                        appointment_instance.payment_status == "success" and \
+                        not appointment_instance.vc_appointment_status == 4:
+
                         appointment["enable_vc"] = True
 
-                        if appointment_instance.vc_appointment_status == 4:
-                            appointment["enable_vc"] = False
+                    if appointment_instance.appointment_vitals.exists():
+                        appointment["vitals_available"] = True
 
-                        if appointment_instance.appointment_vitals.exists():
-                            appointment["vitals_available"] = True
+                    if appointment_instance.appointment_prescription.exists():
+                        appointment["prescription_available"] = True
 
-                        if appointment_instance.appointment_prescription.exists():
-                            appointment["prescription_available"] = True
-
+                if user:
+                    appointment["mobile"] = user.mobile.raw_input
+                    if user.uhid_number:
+                        appointment["uhid_linked"] = True
+                        if not validate_uhid_number(appointment["HospNo"]):
+                            appointment["HospNo"] = user.uhid_number
+                        
         return self.custom_success_response(
                                     message=message,
                                     success=True, 
@@ -1678,3 +1672,18 @@ class FeedbackData(APIView):
             "message": self.list_success_message,
         }
         return Response(data,status=status.HTTP_200_OK)
+
+class PrimeBenefitsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    queryset = PrimeBenefits.objects.all()
+    serializer_class = PrimeBenefitsSerializer
+    permission_classes = [IsPatientUser | IsManipalAdminUser ]
+    list_success_message = 'Prime benefits returned successfully!'
+    retrieve_success_message = 'Prime benefits returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['hospital_info']
+    search_fields = ['description']
+    ordering_fields = ('sequence','-created_at')
