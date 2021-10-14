@@ -1686,6 +1686,21 @@ class PrimeBenefitsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
                 filters.SearchFilter, 
                 filters.OrderingFilter
             )
-    filter_fields = ['hospital_info']
-    search_fields = ['description']
+    filter_fields = ['hospital_info__code','hospital_info__description','hospital_info__id']
+    search_fields = ['hospital_info__code','description']
     ordering_fields = ('sequence','-created_at')
+    
+    def get_permissions(self):
+        if self.action in ['create','partial_update']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser, IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()

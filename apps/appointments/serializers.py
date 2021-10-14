@@ -6,6 +6,7 @@ from apps.health_packages.serializers import (HealthPackageSpecificSerializer)
 from apps.master_data.models import Department
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
+from apps.payments.models import Payment
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
@@ -54,6 +55,13 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.reason:
             response_object["reason"] = CancellationReasonSerializer(
                 instance.reason).data
+        
+        payment = Payment.objects.filter(appointment=instance.id)
+        from apps.payments.serializers import PaymentSerializer
+        response_object['payment_details'] = PaymentSerializer(payment, fields=(
+                                                'id','razor_order_id','razor_payment_id',
+                                                'transaction_id','processing_id','status',
+                                                'amount')).data
 
         documents = AppointmentDocuments.objects.filter(
             appointment_info=instance.id)
