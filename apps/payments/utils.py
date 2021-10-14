@@ -1,10 +1,7 @@
-from apps.additional_features.serializers import DriveBookingSerializer
-from apps.additional_features.models import DriveBilling, DriveBooking
-from apps.doctors.serializers import DoctorChargesSerializer
+
 import time
 import json
 import logging
-from os import stat
 from datetime import date, datetime
 
 from django.conf import settings
@@ -37,6 +34,9 @@ from apps.payments.exceptions import (
                     )
 from apps.patients.models import FamilyMember, Patient
 from apps.patients.serializers import (FamilyMemberSpecificSerializer,PatientSpecificSerializer)
+from apps.additional_features.serializers import DriveBookingSerializer
+from apps.additional_features.models import DriveBilling, DriveBooking
+from apps.doctors.serializers import DoctorChargesSerializer
 
 from utils.razorpay_util import RazorPayUtil
 from utils.razorpay_payment_parameter_generator import get_hospital_key_info
@@ -323,10 +323,11 @@ class PaymentUtils:
         return order_details.get("amount")
 
     @staticmethod
-    def get_payment_description(param):
+    def get_payment_description(param,user=None):
         account_number = ""
         email = ""
         phone = ""
+        name = ""
         if  param and \
             param.get("token") and \
             param.get("token").get("accounts") and \
@@ -334,7 +335,9 @@ class PaymentUtils:
                 account_number = param["token"]["accounts"][0].get("account_number")
                 email = param["token"]["accounts"][0].get("email")
                 phone = param["token"]["accounts"][0].get("phone")
-        return "UHID: %s; email: %s; contact: %s"%(account_number,email,str(phone))
+        if user:
+            name = "%s %s"%(user.first_name or "",user.last_name or "")
+        return "Name: %s; UHID: %s; email: %s; contact: %s"%(name,account_number,email,str(phone))
 
     @staticmethod
     def set_param_for_appointment(param,appointment):
@@ -425,7 +428,6 @@ class PaymentUtils:
         
         response_doctor_charges = PaymentUtils.get_consultation_charges(location_code,appointment_instance,uhid,order_date)
         calculated_amount = PaymentUtils.calculate_amount_based_on_appointment_mode(calculated_amount,response_doctor_charges,appointment_instance)
-
         if not (calculated_amount == int(float(param["token"]["accounts"][0]["amount"]))):
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
@@ -502,11 +504,11 @@ class PaymentUtils:
         return calculated_amount
 
     @staticmethod
-    def set_order_id_for_appointments(param,payment_data):
+    def set_order_id_for_appointments(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_APPOINTMENT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_APPOINTMENT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -520,11 +522,11 @@ class PaymentUtils:
         return param,payment_data
 
     @staticmethod
-    def set_order_id_for_drive_booking(param,payment_data):
+    def set_order_id_for_drive_booking(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_DRIVE_BOOKING_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_DRIVE_BOOKING_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -593,11 +595,11 @@ class PaymentUtils:
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
     @staticmethod
-    def set_order_id_for_health_package(param,payment_data):
+    def set_order_id_for_health_package(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_HEALTH_PACKAGE_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_HEALTH_PACKAGE_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -657,11 +659,11 @@ class PaymentUtils:
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
     @staticmethod
-    def set_order_id_for_uhid(param,payment_data):
+    def set_order_id_for_uhid(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_UHID_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_UHID_PURCHASE_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -733,11 +735,11 @@ class PaymentUtils:
             raise ValidationError(PaymentConstants.ERROR_MESSAGE_PRICE_UPDATED)
 
     @staticmethod
-    def set_order_id_for_op_bill(param,payment_data):
+    def set_order_id_for_op_bill(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_OP_BILL_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -779,11 +781,11 @@ class PaymentUtils:
         return payment_data
 
     @staticmethod
-    def set_order_id_for_ip_deposit(param,payment_data):
+    def set_order_id_for_ip_deposit(param,payment_data,user):
         hospital_key = param["token"]["auth"]["key"]
         hospital_secret = param["token"]["auth"].pop("secret")
         amount = int(float(param["token"]["accounts"][0]["amount"]))
-        description = PaymentConstants.RAZORPAY_IP_DEPOSIT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param)
+        description = PaymentConstants.RAZORPAY_IP_DEPOSIT_PAYMENT_DESCRIPTION +"; "+ PaymentUtils.get_payment_description(param,user)
         currency = PaymentConstants.RAZORPAY_PAYMENT_CURRENCY
         order_id = PaymentUtils.create_razorpay_order_id(
                                     hospital_key=hospital_key,
@@ -1097,7 +1099,7 @@ class PaymentUtils:
             PaymentUtils.payment_for_uhid_creation_payment_done_for_family_member(payment_instance,uhid_info)
 
     @staticmethod
-    def payment_for_scheduling_appointment(payment_instance,payment_response,order_details):
+    def payment_for_scheduling_appointment(payment_instance,payment_response,order_details,is_requested_from_mobile):
         if payment_instance.appointment:
             appointment = Appointment.objects.filter(id=payment_instance.appointment.id).first()
             update_data = {
@@ -1252,11 +1254,13 @@ class PaymentUtils:
         
         if  payment_check_response.get("Status")==PaymentConstants.CHECK_APPOINTMENT_PAYMENT_STATUS_SUCCESS and \
             payment_check_response.get("APPOLPReceiptNo") and \
-            payment_check_response.get("APPOLPPatHospNo"):
+            payment_check_response.get("APPOLPPatHospNo") and \
+            payment_check_response.get("APPOLPConvAppId"):
+            
             payment_response.update({
                 "uhid_number"           : payment_check_response.get("APPOLPPatHospNo"),
                 "ReceiptNo"             : payment_check_response.get("APPOLPReceiptNo"),
-                "appointment_identifier": appointment_id,
+                "appointment_identifier": payment_check_response.get("APPOLPConvAppId"),
                 "StatusMessage"         : PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,
             })
         
@@ -1410,7 +1414,7 @@ class PaymentUtils:
     def wait_for_manipal_response(payment_instance,order_details):
         payment_check_response = dict()
         retry_count = 0
-        while retry_count<3 and not payment_check_response:
+        while retry_count<5 and not payment_check_response:
             payment_check_response = PaymentUtils.check_appointment_payment_status(payment_instance)
             if not payment_check_response:
                 time.sleep(5)
