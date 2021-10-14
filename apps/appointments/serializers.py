@@ -60,7 +60,7 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         from apps.payments.serializers import PaymentSerializer
         response_object['payment_details'] = PaymentSerializer(payment, fields=(
                                                 'id','razor_order_id','razor_payment_id',
-                                                'transaction_id','processing_id','status',
+                                                'transaction_id','status',
                                                 'amount')).data
 
         documents = AppointmentDocuments.objects.filter(

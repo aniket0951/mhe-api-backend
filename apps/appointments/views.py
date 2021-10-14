@@ -1696,7 +1696,7 @@ class PrimeBenefitsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
             return [permission() for permission in permission_classes]
 
         if self.action in ['list', 'retrieve']:
-            permission_classes = [IsPatientUser, IsManipalAdminUser]
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
             return [permission() for permission in permission_classes]
 
         if self.action == 'update':
