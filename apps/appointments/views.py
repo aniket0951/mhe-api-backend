@@ -82,7 +82,9 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 'patient__uhid_number', 
                 'family_member__uhid_number',
                 'patient__mobile', 
-                'patient__email'
+                'patient__email',
+                'department__code',
+                'hospital__code'
             ]
     filter_backends = (
                 DjangoFilterBackend,
@@ -93,7 +95,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    filter_fields = ('status', 'appointment_identifier','appointment_service')
+    filter_fields = ('status', 'appointment_identifier','appointment_service','appointment_mode','department__code','department__name','department__id','hospital__id','hospital__code','hospital__description',)
     ordering = ('appointment_date', '-appointment_slot', 'status')
     ordering_fields = ('appointment_date', 'appointment_slot', 'status')
     create_success_message = None
