@@ -64,6 +64,8 @@ class Hospital(MyBaseModel):
                             null=True,
                             blank=True
                         )
+    
+    slot_blocking_duration = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = "Hospital"
