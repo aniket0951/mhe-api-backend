@@ -57,12 +57,16 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
                 instance.reason).data
         
         payment_instance = Payment.objects.filter(appointment=instance.id).first()
-        from apps.payments.serializers import PaymentSerializer
         if payment_instance:
-            response_object["payment_details"] = PaymentSerializer(payment_instance, fields=(
-                                                'id','razor_order_id','razor_payment_id',
-                                                'transaction_id','status',
-                                                'amount')).data
+            response_object['payment'] = {
+                                    "id":payment_instance.id,
+                                    "razor_order_id":payment_instance.razor_order_id,
+                                    "razor_payment_id": payment_instance.razor_payment_id,
+                                    "transaction_id":payment_instance.transaction_id,
+                                    "processing_id":payment_instance.processing_id,
+                                    "status":payment_instance.status,
+                                    "amount":payment_instance.amount
+                                }
 
         documents = AppointmentDocuments.objects.filter(
             appointment_info=instance.id)
