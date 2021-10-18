@@ -1679,8 +1679,11 @@ class PrimeBenefitsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
     queryset = PrimeBenefits.objects.all()
     serializer_class = PrimeBenefitsSerializer
     permission_classes = [IsPatientUser | IsManipalAdminUser ]
+    create_success_message = "Prime benefit is added successfully."
+    update_success_message = 'Prime benefit is updated successfuly!'
     list_success_message = 'Prime benefits returned successfully!'
     retrieve_success_message = 'Prime benefits returned successfully!'
+    
     filter_backends = (
                 DjangoFilterBackend,
                 filters.SearchFilter, 
