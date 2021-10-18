@@ -13,7 +13,7 @@ def process_slots(slots,slot_blocking_duration=0):
     
     morning_slot, afternoon_slot, evening_slot = [], [], []
     services = {"HV":False,"VC":False,"PR":False}
-    current_time = datetime.now() + timedelta(minutes=slot_blocking_duration)
+    current_datetime = datetime.now() + timedelta(minutes=slot_blocking_duration)
 
     if slots:
 
@@ -43,12 +43,15 @@ def process_slots(slots,slot_blocking_duration=0):
                 time_format = '%d %b, %Y %I:%M:%S %p(HV)'
                 services["HV"] = True
 
-            time = datetime.strptime(slot['startTime'], time_format).time()
+
+            start_datetime = datetime.strptime(slot['startTime'], time_format)
+            
+            if start_datetime < current_datetime:
+                continue
+
+            time = start_datetime.time()
             end_time = datetime.strptime(slot['endTime'], end_time_format).time()
 
-            if time < current_time:
-                continue
-        
             slot_duration_td = datetime.combine(date.today(), end_time) - datetime.combine(date.today(), time)
             slot_duration_minute = (slot_duration_td.seconds//60)%60   
          
