@@ -202,7 +202,7 @@
             "location":"",
             "promo_code":"MIO",
             "corporate_only":"True",
-            "slot_blocking_duration": "30"
+            "slot_blocking_duration": 30
         }
     },{
         "model": "master_data.hospital",
