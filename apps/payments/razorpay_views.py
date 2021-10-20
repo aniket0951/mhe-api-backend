@@ -280,6 +280,9 @@ class RazorPaymentResponse(APIView):
         order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
         PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
 
+        
+        logger.info("Payment Request order_payment_details: %s"%str(order_payment_details))
+
         if order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED]:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 

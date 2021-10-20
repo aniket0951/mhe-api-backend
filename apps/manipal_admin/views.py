@@ -223,7 +223,12 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
             user_object = ManipalAdmin.objects.filter(email=email).first()
             user_object.set_password(request.data.get('password'))
             user_object.save()
-        return Response(status=status.HTTP_200_OK)
+
+        data={
+            "message": self.create_success_message,
+        }
+
+        return Response(data,status=status.HTTP_200_OK)
     
     def update(self, request, *args, **kwargs):
         admin = self.get_object()
@@ -244,7 +249,11 @@ class ManipalAdminView(custom_viewsets.ModelViewSet):
         admin_object.is_valid(raise_exception=True)
         admin_object.save()
 
-        return Response("Information updated successfully!", status=status.HTTP_200_OK)
+        data={
+            "message": self.update_success_message,
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
     
 
         

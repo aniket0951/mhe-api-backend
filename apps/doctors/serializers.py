@@ -73,35 +73,20 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
                                 doctor__id=instance.id,
                                 hospital__id=instance.hospital.id
                             )
-        doctors_weekly_schedule = {
-                "Monday":None,
-                "Tuesday":None,
-                "Wednesday":None,
-                "Thursday":None,
-                "Friday":None,
-                "Saturday":None,
-                "Sunday":None
+     
+        doctors_appointment_schedule = {
+                "HV":[],
+                "VC":[],
+                "PR":[]
             }
-        response_object['doctors_weekly_schedule'] = doctors_weekly_schedule
+        
+        response_object['doctors_weekly_schedule'] = doctors_appointment_schedule
         if schedule_ids.exists():
             for schedule_id in schedule_ids:
-                if schedule_id.day not in doctors_weekly_schedule or not doctors_weekly_schedule[schedule_id.day]:
-                    doctors_weekly_schedule[schedule_id.day] = DoctorsWeeklyScheduleSerializer(schedule_id).data
-                    doctors_weekly_schedule[schedule_id.day]["timings"] = [{
-                        "from_time":schedule_id.from_time,
-                        "to_time":schedule_id.to_time,
-                    }]
-                    doctors_weekly_schedule[schedule_id.day].pop("from_time")
-                    doctors_weekly_schedule[schedule_id.day].pop("to_time")
-                else:
-                    doctors_weekly_schedule[schedule_id.day]["timings"].append({
-                        "from_time":schedule_id.from_time,
-                        "to_time":schedule_id.to_time,
-                    })
-                    if schedule_id.service!=doctors_weekly_schedule[schedule_id.day]["service"]:
-                        doctors_weekly_schedule[schedule_id.day]["service"]="HVVC"
-
-            response_object['doctors_weekly_schedule'] = doctors_weekly_schedule
+                for service_key in doctors_appointment_schedule:
+                    if service_key in schedule_id.service:
+                        doctors_appointment_schedule[service_key].append(schedule_id.day)
+            response_object['doctors_weekly_schedule'] = doctors_appointment_schedule
 
         if  not response_object['photo'] and \
             response_object.get("hospital_departments") and \

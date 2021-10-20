@@ -401,3 +401,22 @@ class AppointmentPrescription(MyBaseModel):
                                                     blank=True,
                                                     null=True
                                                     )
+
+    
+class PrimeBenefits(MyBaseModel):
+
+    sequence = models.IntegerField()
+    
+    description = models.CharField(
+                        max_length=500,
+                        null=True,
+                        blank=True
+                    )
+
+    hospital_info = models.ManyToManyField(
+                                        Hospital,
+                                        blank=True,
+                                        null=True,
+                                        related_name='prime_benefits_hospital'
+                                    )
+    

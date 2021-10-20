@@ -6,13 +6,14 @@ from apps.health_packages.serializers import (HealthPackageSpecificSerializer)
 from apps.master_data.models import Department
 from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from rest_framework import serializers
+from apps.payments.models import Payment
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
-                     PrescriptionDocuments)
+                     PrescriptionDocuments, PrimeBenefits)
 
 logger = logging.getLogger('django.serializers')
 
@@ -54,6 +55,18 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
         if instance.reason:
             response_object["reason"] = CancellationReasonSerializer(
                 instance.reason).data
+        
+        payment_instance = Payment.objects.filter(appointment=instance.id).first()
+        if payment_instance:
+            response_object['payment'] = {
+                                    "id":payment_instance.id,
+                                    "razor_order_id":payment_instance.razor_order_id,
+                                    "razor_payment_id": payment_instance.razor_payment_id,
+                                    "transaction_id":payment_instance.transaction_id,
+                                    "processing_id":payment_instance.processing_id,
+                                    "status":payment_instance.status,
+                                    "amount":payment_instance.amount
+                                }
 
         documents = AppointmentDocuments.objects.filter(
             appointment_info=instance.id)
@@ -211,3 +224,22 @@ class FeedbacksDataSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Feedbacks
         fields = '__all__' 
+
+
+class PrimeBenefitsSerializer(DynamicFieldsModelSerializer):
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        if instance.hospital_info:
+            response_object["hospital_info"] = HospitalSerializer(
+                                                    instance.hospital_info.all(),
+                                                    fields=("id","code","description"), 
+                                                    many=True
+                                                ).data
+
+        return response_object
+
+    class Meta:
+        model = PrimeBenefits
+        fields = '__all__'
