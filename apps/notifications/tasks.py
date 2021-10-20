@@ -496,7 +496,7 @@ app.conf.beat_schedule = {
     },
     "daily_update_scheduler": {
         "task": "tasks.daily_update",
-        "schedule": crontab(minute="0", hour="6")
+        "schedule": crontab(minute="0", hour="2")
     },
     "hourly_auto_cancellation_for_unpaid_vc_appointment": {
         "task": "tasks.auto_appointment_cancellation",
@@ -516,7 +516,7 @@ app.conf.beat_schedule = {
     },
     "daily_auto_process_birthday_wishes": {
         "task": "tasks.birthday_wishing_scheduler",
-        "schedule": crontab(minute="*/15", hour="*")
+        "schedule": crontab(minute="0", hour="6")
     },
     "pre_appointment_reminder": {
         "task": "tasks.pre_appointment_reminder",
