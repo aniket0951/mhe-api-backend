@@ -4,7 +4,7 @@ from apps.patients.exceptions import InvalidCredentialsException
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from apps.patients.serializers import FamilyMemberCorporateHistorySerializer
-from apps.patients.models import FamilyMember, FamilyMemberCorporateHistory, OtpGenerationCount, Patient
+from apps.patients.models import FamilyMember, FamilyMemberCorporateHistory, OtpGenerationCount, Patient, UpdatePatientMobile
 from apps.master_data.models import Hospital
 from apps.master_data.views import LinkUhidView, ValidateOTPView
 from rest_framework.serializers import ValidationError
@@ -117,8 +117,16 @@ def validate_uhid_patients(patient,uhid_number):
     if patient.uhid_number == uhid_number:
         raise ValidationError("This UHID is already linked to your account!")
         
-    if Patient.objects.filter(uhid_number=uhid_number).exists():
-        raise ValidationError("There is an existing user with different contact number on our platform with this UHID. Please contact our customer care for more information.")
+    # if Patient.objects.filter(uhid_number=uhid_number).exists():
+    #     raise ValidationError("There is an existing user with different contact number on our platform with this UHID. Please contact our customer care for more information.")
+    
+    existing_user_uhids = Patient.objects.filter(uhid_number=uhid_number)
+    for existing_user_uhid in existing_user_uhids:
+            existing_user_uhid.uhid_number = None
+            existing_user_uhid.pre_registration_number = None
+            existing_user_uhid.save()
+            update_patient_obj = UpdatePatientMobile.objects.create(old_patient_user=existing_user_uhid,new_patient_user=patient,uhid_number=uhid_number)
+            update_patient_obj.save()
     
     if FamilyMember.objects.filter(patient_info=patient,uhid_number=uhid_number,is_visible=True).exists():
         raise ValidationError(PatientsConstants.UHID_LINKED_TO_FAMILY_MEMBER)
