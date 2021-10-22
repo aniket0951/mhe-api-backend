@@ -157,6 +157,45 @@ class PaymentRefund(MyBaseModel):
                                   blank=True,
                                   )
 
+class UnprocessedTransactions:
+
+    UNPROCESSED = "unprocessed"
+    PROCESSED = "processed"
+    REFUNDED = "refunded"
+
+    STATUS_CHOICES = (
+        (UNPROCESSED,UNPROCESSED),
+        (PROCESSED,PROCESSED),
+        (REFUNDED,REFUNDED),
+    )
+
+    payment = models.ForeignKey(Payment,
+                                 on_delete=models.PROTECT,
+                                 blank=False,
+                                 null=False)
+    
+    health_package_appointment = models.ForeignKey(HealthPackageAppointment,
+                                 on_delete=models.PROTECT,
+                                 blank=True,
+                                 null=True)
+    
+    patient = models.ForeignKey(Patient,
+                                on_delete=models.PROTECT,
+                                blank=False,
+                                null=False)
+    
+    family_member = models.ForeignKey(FamilyMember,
+                                on_delete=models.PROTECT,
+                                blank=True,
+                                null=True)
+
+    status = models.CharField(
+                        choices=STATUS_CHOICES,
+                        max_length=100,
+                        default=UNPROCESSED,
+                        blank=False,
+                        null=False)
+
 
 class PaymentHospitalKey(MyBaseModel):
 

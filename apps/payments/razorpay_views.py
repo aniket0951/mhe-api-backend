@@ -35,6 +35,7 @@ from apps.additional_features.models import DriveBooking
 from apps.payments.constants import PaymentConstants
 from apps.payments.views import RefundView
 from apps.additional_features.serializers import DriveBookingSerializer
+from apps.patients.models import Patient,FamilyMember
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -308,7 +309,8 @@ class RazorPaymentResponse(APIView):
         except Exception as e:
             logger.error("Error while processing payment : %s"%str(e))
             PaymentUtils.cancel_drive_booking_on_failure(payment_instance)
-            PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
+            PaymentUtils.update_failed_payment_response_with_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
+            PaymentUtils.update_failed_payment_response_without_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
             
         return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
