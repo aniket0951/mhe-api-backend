@@ -120,7 +120,7 @@ class CipherResponseMiddleware(object):
             elif isinstance(e, bytes):
                 e = e.decode('utf-8')
             elif isinstance(e, time):
-                e = v.strftime(TIME_FORMAT)
+                e = e.strftime(TIME_FORMAT)
             elif isinstance(e, QuerySet):
                 e = list(e.values())
                 e = self.list_replace_value(e)
