@@ -1203,6 +1203,9 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
         if self.request.query_params.get("vc_appointment_status", None):
             return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")
+        
+        if self.request.query_params.get("prime_visit", None):
+            return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="PR", payment_status="success")
 
         return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(vc_appointment_status=4)
 
