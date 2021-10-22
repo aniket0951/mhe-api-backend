@@ -35,6 +35,7 @@ from apps.additional_features.models import DriveBooking
 from apps.payments.constants import PaymentConstants
 from apps.payments.views import RefundView
 from apps.additional_features.serializers import DriveBookingSerializer
+from apps.patients.models import Patient,FamilyMember
 
 logger = logging.getLogger('django')
 client = APIClient()
