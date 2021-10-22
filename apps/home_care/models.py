@@ -277,3 +277,9 @@ class LabTestSlotSchedule(MyBaseModel):
                         )
     
     pin = models.CharField(max_length=20)
+    
+class LabTestAppointmentHistory(MyBaseModel):
+    appointment = models.ForeignKey(LabTestAppointment, on_delete=models.PROTECT)
+    phlebo = models.ForeignKey(Phlebo, on_delete=models.PROTECT)
+    appointment_status = models.CharField(max_length=50)
+    phlebo_status = models.CharField(max_length=50)

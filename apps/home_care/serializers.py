@@ -4,7 +4,7 @@ from apps.doctors.serializers import HospitalSerializer
 from apps.payments.serializers import PaymentSerializer
 from apps.phlebo.serializers import PhleboSerializer
 from utils.utils import generate_pre_signed_url
-from .models import HealthTestCartItems, HealthTestCategory,HealthTest, HealthTestPricing, HospitalRegion, LabTestAppointment, LabTestSlotSchedule, LabTestSlotsMaster, LabTestSlotsWeeklyMaster
+from .models import HealthTestCartItems, HealthTestCategory,HealthTest, HealthTestPricing, HospitalRegion, LabTestAppointment, LabTestAppointmentHistory, LabTestSlotSchedule, LabTestSlotsMaster, LabTestSlotsWeeklyMaster
 from apps.patients.serializers import FamilyMemberSerializer, PatientAddressSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
 
@@ -138,6 +138,21 @@ class LabTestSlotScheduleSerializer(DynamicFieldsModelSerializer):
                 response_object['hospital'] = HospitalSerializer(instance.hospital).data
         if instance.weekly_slot:
             response_object['weekly_slot'] = LabTestSlotsWeeklyMasterSerializer(instance.weekly_slot).data
+        if instance.phlebo:
+            response_object['phlebo'] = PhleboSerializer(instance.phlebo).data
+        
+        return response_object
+    
+class LabAppointmentHistorySerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = LabTestAppointmentHistory
+        fields = '__all__'
+        
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+        if instance.appointment:
+                response_object['appointment'] = LabTestAppointmentSerializer(instance.appointment).data
         if instance.phlebo:
             response_object['phlebo'] = PhleboSerializer(instance.phlebo).data
         

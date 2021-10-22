@@ -245,3 +245,38 @@ class LabTestSlotScheduleViewSet(custom_viewsets.ModelViewSet):
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
+
+class LabTestAppointmentHistoryViewSet(custom_viewsets.ModelViewSet):
+    permission_classes = [IsManipalAdminUser | IsPatientUser]
+    queryset = LabTestSlotSchedule.objects.all()
+    serializer_class = LabTestSlotScheduleSerializer
+
+    create_success_message = 'Lab test appointment history created successfully!'
+    list_success_message = 'Lab test appointment history returned successfully!'
+    retrieve_success_message = 'Lab test appointment history retrived successfully!'
+
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    
+    def get_permissions(self):
+
+        if self.action in ['create']:
+            permission_classes = [IsPatientUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
