@@ -157,7 +157,7 @@ class PaymentRefund(MyBaseModel):
                                   blank=True,
                                   )
 
-class UnprocessedTransactions:
+class UnprocessedTransactions(MyBaseModel):
 
     UNPROCESSED = "unprocessed"
     PROCESSED = "processed"
@@ -195,6 +195,8 @@ class UnprocessedTransactions:
                         default=UNPROCESSED,
                         blank=False,
                         null=False)
+
+    retries = models.IntegerField(default=0)
 
 
 class PaymentHospitalKey(MyBaseModel):
