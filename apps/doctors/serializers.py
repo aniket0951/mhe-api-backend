@@ -84,7 +84,7 @@ class DoctorSerializer(DynamicFieldsModelSerializer):
         if schedule_ids.exists():
             for schedule_id in schedule_ids:
                 for service_key in doctors_appointment_schedule:
-                    if service_key in schedule_id.service:
+                    if service_key in schedule_id.service and schedule_id.day not in doctors_appointment_schedule[service_key]:
                         doctors_appointment_schedule[service_key].append(schedule_id.day)
             response_object['doctors_weekly_schedule'] = doctors_appointment_schedule
 
