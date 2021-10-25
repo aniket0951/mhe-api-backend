@@ -107,7 +107,9 @@ CUSTOM_APPS = [
     'apps.notifications.apps.NotificationsConfig',
     'apps.discharge_summaries',
     'apps.additional_features',
-    'apps.middleware'
+    'apps.middleware',
+    'apps.home_care',
+    'apps.phlebo'
 ]
 
 THIRD_PARTY_APPS = [
