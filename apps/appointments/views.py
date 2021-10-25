@@ -17,6 +17,7 @@ from apps.master_data.exceptions import (
 from apps.master_data.models import Department, Hospital, HospitalDepartment
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
+from apps.payments.models import Payment
 from apps.payments.razorpay_views import RazorRefundView
 from apps.payments.views import AppointmentPaymentView
 from apps.users.models import BaseUser
@@ -1098,18 +1099,26 @@ class DoctorRescheduleAppointmentView(ProxyView):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        
         response_message = AppointmentsConstants.UNABLE_TO_BOOK
         response_data = {}
         response_success = False
+        
         if response.status_code == 200:
+            
             root = ET.fromstring(response.content)
             status = root.find("Status").text
+            
             if status == "1":
+                
                 reschedule_response = root.find("ReScheduleAppResp").text
+                
                 if reschedule_response:
+                    
                     new_appointment_response = ast.literal_eval(reschedule_response)[0]
                     message = new_appointment_response["Message"]
                     response_message = message
+
                     if message == AppointmentsConstants.APPOINTMENT_RESCHEDULED_SUCCESSFULLY:
                         
                         new_appointment = dict()
@@ -1144,31 +1153,35 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["root_appointment_id"] = instance.root_appointment_id or instance.id
                         
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
+                        
                         if appointment_instance:
                             appointment_serializer = AppointmentSerializer(appointment_instance, data=new_appointment, partial=True)
                         else:
                             appointment_serializer = AppointmentSerializer(data=new_appointment)
+
                         appointment_serializer.is_valid(raise_exception=True)
                         appointment = appointment_serializer.save()
-                        if instance.payment_appointment.exists():
-                            payment_instance = instance.payment_appointment.filter(
-                                status="success").first()
-                            if payment_instance:
-                                payment_instance.appointment = appointment
-                                payment_instance.save()
-                        instance.status = 5
-                                            
+                        
+                        payment_instances = Payment.objects.filter(appointment=instance.id)
+                        if payment_instances.exists():
+                            payment_instances.update(appointment=appointment.id)
+
+                        instance.status = 5            
                         instance.reason_id = self.request.data.get("reason_id")
                         instance.other_reason = self.request.data.get("other_reason")
                         instance.save()
-                    
+
                         send_appointment_rescheduling_invitation(appointment)
     
                         response_success = True
                         response_message = AppointmentsConstants.APPOINTMENT_HAS_RESCHEDULED
                         response_data["appointment_identifier"] = appointment_id
-                        return self.custom_success_response(message=response_message,
-                                                            success=response_success, data=response_data)
+
+                        return self.custom_success_response(
+                                                            message=response_message,
+                                                            success=response_success, 
+                                                            data=response_data
+                                                        )
         raise ValidationError(response_message)
 
 
