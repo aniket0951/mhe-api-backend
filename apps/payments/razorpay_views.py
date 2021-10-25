@@ -11,21 +11,23 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend
 
 from utils.custom_permissions import (IsPatientUser)
 
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
-from .exceptions import IncompletePaymentCannotProcessRefund
-
-from .serializers import (PaymentReceiptsSerializer, PaymentSerializer)
+from .exceptions import IncompletePaymentCannotProcessRefund, UnsuccessfulPaymentException
+from .models import Payment, PaymentReceipts, UnprocessedTransactions
+from .serializers import (PaymentReceiptsSerializer, PaymentSerializer, UnprocessedTransactionsSerializer)
 from .utils import PaymentUtils
 from apps.additional_features.models import DriveBooking
 
 from apps.payments.constants import PaymentConstants
 from apps.payments.views import RefundView
 from apps.additional_features.serializers import DriveBookingSerializer
+from apps.patients.models import Patient,FamilyMember
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -299,7 +301,8 @@ class RazorPaymentResponse(APIView):
         except Exception as e:
             logger.error("Error while processing payment : %s"%str(e))
             PaymentUtils.cancel_drive_booking_on_failure(payment_instance)
-            PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
+            PaymentUtils.update_failed_payment_response_with_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
+            PaymentUtils.update_failed_payment_response_without_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
             
         return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
@@ -351,3 +354,22 @@ class RazorRefundView(APIView):
                 payment_instance.save()
 
         return Response(status=status.HTTP_200_OK)
+
+
+class UnprocessedTransactionsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    queryset = UnprocessedTransactions.objects.all()
+    serializer_class = UnprocessedTransactionsSerializer
+    permission_classes = [IsManipalAdminUser]
+    list_success_message = 'Unprocessed Transactions returned successfully!'
+    retrieve_success_message = 'Unprocessed Transaction returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    search_fields = [
+            'payment__razor_order_id',
+            'payment__razor_payment_id',
+            'payment__uhid_number',
+            'health_package_appointment__appointment_identifier'
+        ]
