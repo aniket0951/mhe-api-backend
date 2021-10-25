@@ -20,6 +20,7 @@ from rest_framework.test import APIClient
 from rest_framework.views import APIView
 from rest_framework.exceptions import APIException
 from utils import custom_viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 
 from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
 from utils.custom_sms import send_sms
@@ -27,8 +28,8 @@ from utils.razorpay_payment_parameter_generator import get_payment_param_for_raz
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException,IncompletePaymentCannotProcessRefund, UnsuccessfulPaymentException
-from .models import Payment, PaymentReceipts
-from .serializers import (PaymentReceiptsSerializer, PaymentSerializer)
+from .models import Payment, PaymentReceipts, UnprocessedTransactions
+from .serializers import (PaymentReceiptsSerializer, PaymentSerializer, UnprocessedTransactionsSerializer)
 from .utils import PaymentUtils
 from apps.additional_features.models import DriveBooking
 
@@ -362,3 +363,22 @@ class RazorRefundView(APIView):
                 payment_instance.save()
 
         return Response(status=status.HTTP_200_OK)
+
+
+class UnprocessedTransactionsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    queryset = UnprocessedTransactions.objects.all()
+    serializer_class = UnprocessedTransactionsSerializer
+    permission_classes = [IsManipalAdminUser]
+    list_success_message = 'Unprocessed Transactions returned successfully!'
+    retrieve_success_message = 'Unprocessed Transaction returned successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    search_fields = [
+            'payment__razor_order_id',
+            'payment__razor_payment_id',
+            'payment__uhid_number',
+            'health_package_appointment__appointment_identifier'
+        ]
