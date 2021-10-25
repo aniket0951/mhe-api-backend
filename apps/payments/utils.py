@@ -324,19 +324,28 @@ class PaymentUtils:
 
     @staticmethod
     def update_failed_payment_response_without_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
-        if payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit:
+        if payment_instance and payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit:
+            
             patient_instance,family_member_instance = PaymentUtils.get_patient_and_family_member_instance_from_payment_instance(payment_instance)
+            appointment_instance = PaymentUtils.get_appointment_instance_from_payment_instance(payment_instance)
+            
             payment_response = {
                 "uhid_number":family_member_instance.uhid_number if family_member_instance else patient_instance.uhid_number,
-                "appointment_identifier":PaymentUtils.get_appointment_identifier(payment_instance)
+                "appointment_identifier":None
             }
+            if appointment_instance:
+                payment_response.update({
+                    "appointment_identifier":appointment_instance.appointment_identifier
+                })
+                
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)
             PaymentUtils.payment_update_for_health_package(payment_instance,payment_response)
+
             unprocessed_transaction_data = {
-                "payment":payment_instance,
-                "health_package_appointment":PaymentUtils.get_appointment_identifier(payment_instance),
-                "patient":patient_instance,
-                "family_member":family_member_instance
+                "payment":payment_instance.id,
+                "health_package_appointment":appointment_instance.id if appointment_instance else None,
+                "patient":family_member_instance.patient_info.id if family_member_instance else patient_instance.id,
+                "family_member":family_member_instance.id if family_member_instance else None
             }
             unprocessed_trans = UnprocessedTransactionsSerializer(data=unprocessed_transaction_data)
             unprocessed_trans.is_valid(raise_exception=True)
