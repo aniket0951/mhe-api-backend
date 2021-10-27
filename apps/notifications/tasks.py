@@ -335,6 +335,7 @@ def process_payment_records_scheduler():
         param = dict()
         param["order_id"] = ut.payment.razor_order_id
         param["processing_id"] = ut.payment.processing_id
+        param["cron"] = True
         request_param = cancel_parameters(param)
         response = RazorPaymentResponse.as_view()(request_param)
         

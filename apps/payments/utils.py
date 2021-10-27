@@ -320,12 +320,12 @@ class PaymentUtils:
 
     @staticmethod
     def update_failed_payment_response_with_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
-        if payment_instance.appointment or (payment_instance.payment_for_uhid_creation and not payment_instance.payment_for_health_package and not payment_instance.payment_for_drive):
+        if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package and not payment_instance.payment_for_drive:
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
 
     @staticmethod
     def update_failed_payment_response_without_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
-        if payment_instance and payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit:
+        if payment_instance and (payment_instance.appointment or  payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit):
             
             patient_instance,family_member_instance = PaymentUtils.get_patient_and_family_member_instance_from_payment_instance(payment_instance)
             appointment_instance = PaymentUtils.get_appointment_instance_from_payment_instance(payment_instance)
@@ -340,6 +340,7 @@ class PaymentUtils:
                 })
                 
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)
+            PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details,is_requested_from_mobile)
             PaymentUtils.payment_update_for_health_package(payment_instance,payment_response)
 
             unprocessed_transaction_data = {

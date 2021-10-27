@@ -273,10 +273,14 @@ class RazorPaymentResponse(APIView):
         is_requested_from_mobile = False
         if request.data.get("order_id") and request.data.get("processing_id"):
             is_requested_from_mobile = True
+
+        is_request_from_cron = False
+        if request.data.get("cron"):
+            is_request_from_cron = True
         
         payment_instance = PaymentUtils.validate_and_wait_for_mobile_request(request,is_requested_from_mobile)
 
-        if payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED]:
+        if not is_request_from_cron and payment_instance.status in [PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS,PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED]:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
@@ -286,7 +290,7 @@ class RazorPaymentResponse(APIView):
         
         logger.info("Payment Request order_payment_details: %s"%str(order_payment_details))
 
-        if order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED]:
+        if not is_request_from_cron and order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED]:
             return Response(data=PaymentUtils.get_successful_payment_response(payment_instance), status=status.HTTP_200_OK)
 
         payment_response = dict()
