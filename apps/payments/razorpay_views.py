@@ -19,7 +19,7 @@ from utils import custom_viewsets
 from utils.razorpay_payment_parameter_generator import get_payment_param_for_razorpay
 from utils.razorpay_refund_parameter_generator import get_refund_param_for_razorpay
 
-from .exceptions import IncompletePaymentCannotProcessRefund, UnsuccessfulPaymentException
+from .exceptions import IncompletePaymentCannotProcessRefund, PaymentProcessingFailedRefundProcessedException, UnsuccessfulPaymentException
 from .models import Payment, PaymentReceipts, UnprocessedTransactions
 from .serializers import (PaymentReceiptsSerializer, PaymentSerializer, UnprocessedTransactionsSerializer)
 from .utils import PaymentUtils
@@ -304,6 +304,9 @@ class RazorPaymentResponse(APIView):
             PaymentUtils.payment_update_for_drive_booking(payment_instance)
 
         except Exception as e:
+            if not is_request_from_cron:
+                raise PaymentProcessingFailedRefundProcessedException
+                
             logger.error("Error while processing payment : %s"%str(e))
             PaymentUtils.cancel_drive_booking_on_failure(payment_instance)
             PaymentUtils.update_failed_payment_response_with_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
