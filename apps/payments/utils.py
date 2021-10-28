@@ -323,6 +323,21 @@ class PaymentUtils:
         if payment_instance.appointment or (payment_instance.payment_for_uhid_creation and not payment_instance.payment_for_health_package and not payment_instance.payment_for_drive):
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
 
+
+    @staticmethod
+    def create_or_update_unprocessed_trans_instance(unprocessed_transaction_data):
+
+        unprocessed_trans_instance = None
+        try:
+            unprocessed_trans_instance = UnprocessedTransactions.objects.get(**unprocessed_transaction_data)
+        except Exception as e:
+            pass
+
+        if not unprocessed_trans_instance:
+            unprocessed_trans = UnprocessedTransactionsSerializer(data=unprocessed_transaction_data)
+            unprocessed_trans.is_valid(raise_exception=True)
+            unprocessed_trans_instance = unprocessed_trans.save()
+
     @staticmethod
     def update_failed_payment_response_without_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
         if payment_instance and payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit:
@@ -340,6 +355,7 @@ class PaymentUtils:
                 })
                 
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)
+            PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details,is_requested_from_mobile)
             PaymentUtils.payment_update_for_health_package(payment_instance,payment_response)
 
             unprocessed_transaction_data = {
@@ -348,9 +364,8 @@ class PaymentUtils:
                 "patient":family_member_instance.patient_info.id if family_member_instance else patient_instance.id,
                 "family_member":family_member_instance.id if family_member_instance else None
             }
-            unprocessed_trans = UnprocessedTransactionsSerializer(data=unprocessed_transaction_data)
-            unprocessed_trans.is_valid(raise_exception=True)
-            unprocessed_trans.save()
+            
+            PaymentUtils.create_or_update_unprocessed_trans_instance(unprocessed_transaction_data)
 
     @staticmethod
     def get_payment_amount(order_details):
