@@ -343,22 +343,23 @@ class PaymentUtils:
         if payment_instance and (payment_instance.appointment or  payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit):
             
             patient_instance,family_member_instance = PaymentUtils.get_patient_and_family_member_instance_from_payment_instance(payment_instance)
+            payment_response = {
+                "uhid_number":family_member_instance.uhid_number if family_member_instance else patient_instance.uhid_number,
+                "appointment_identifier":None
+            }
             
             appointment_instance = None
             health_package_appointment_instance = None
 
             if payment_instance.appointment:
                 appointment_instance = Appointment.objects.filter(id=payment_instance.appointment.id).first()
-            elif payment_instance.payment_for_health_package:
-                health_package_appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
-
-            payment_response = {
-                "uhid_number":family_member_instance.uhid_number if family_member_instance else patient_instance.uhid_number,
-                "appointment_identifier":None
-            }
-            if appointment_instance:
                 payment_response.update({
                     "appointment_identifier":appointment_instance.appointment_identifier
+                })
+            elif payment_instance.payment_for_health_package:
+                health_package_appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
+                payment_response.update({
+                    "appointment_identifier":health_package_appointment_instance.appointment_identifier
                 })
                 
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)
