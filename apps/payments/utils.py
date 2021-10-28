@@ -343,8 +343,15 @@ class PaymentUtils:
         if payment_instance and (payment_instance.appointment or  payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit):
             
             patient_instance,family_member_instance = PaymentUtils.get_patient_and_family_member_instance_from_payment_instance(payment_instance)
-            appointment_instance = PaymentUtils.get_appointment_instance_from_payment_instance(payment_instance)
             
+            appointment_instance = None
+            health_package_appointment_instance = None
+
+            if payment_instance.appointment:
+                appointment_instance = Appointment.objects.filter(id=payment_instance.appointment.id).first()
+            elif payment_instance.payment_for_health_package:
+                health_package_appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
+
             payment_response = {
                 "uhid_number":family_member_instance.uhid_number if family_member_instance else patient_instance.uhid_number,
                 "appointment_identifier":None
@@ -359,12 +366,13 @@ class PaymentUtils:
             PaymentUtils.payment_update_for_health_package(payment_instance,payment_response)
 
             unprocessed_transaction_data = {
-                "payment":payment_instance.id,
-                "health_package_appointment":appointment_instance.id if appointment_instance else None,
-                "patient":family_member_instance.patient_info.id if family_member_instance else patient_instance.id,
-                "family_member":family_member_instance.id if family_member_instance else None
+                "payment"                   : payment_instance.id,
+                "appointment"               : appointment_instance.id if appointment_instance else None,
+                "health_package_appointment": health_package_appointment_instance.id if health_package_appointment_instance else None,
+                "patient"                   : family_member_instance.patient_info.id if family_member_instance else patient_instance.id,
+                "family_member"             : family_member_instance.id if family_member_instance else None
             }
-            
+
             PaymentUtils.create_or_update_unprocessed_trans_instance(unprocessed_transaction_data)
 
     @staticmethod
