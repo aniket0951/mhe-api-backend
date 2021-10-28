@@ -61,7 +61,7 @@ class RoomCreationView(APIView):
                 "message": "Please complete the initiated meeting Before starting new one"
             }
             return Response(data=data, status=status.HTTP_417_EXPECTATION_FAILED)
-        room_name = "".join(appointment_id.split("||")) if "||" in appointment_id else appointment_id
+        room_name = "".join(appointment_id.split("||")) if "||" in appointment_id else str(appointment_id)
         data = dict()
         if not appointment:
             raise ValidationError("Appointment does not Exist")
@@ -125,7 +125,7 @@ class AccessTokenGenerationView(APIView):
 
     def post(self, request, format=None):
         room = request.data.get("room")
-        room_name = "".join(room.split("||")) if "||" in room else room
+        room_name = "".join(room.split("||")) if "||" in room else str(room)
         identity = request.data.get("identity")
         appointment = Appointment.objects.filter(
             appointment_identifier=room).order_by('-created_at').first()
@@ -173,7 +173,7 @@ class CloseRoomView(APIView):
         if appointment:
             appointment.vc_appointment_status, appointment.enable_join_button, appointment.patient_ready = 4, False, False
             appointment.save()
-        room_name = "".join(room_name.split("||")) if "||" in room_name else room_name
+        room_name = "".join(room_name.split("||")) if "||" in room_name else str(room_name)
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:
@@ -304,7 +304,7 @@ class HoldAppointmentView(APIView):
         if appointment:
             appointment.vc_appointment_status, appointment.enable_join_button, appointment.patient_ready = 5, False, False
             appointment.save()
-        room_name = "".join(room_name.split("||")) if "||" in room_name else room_name
+        room_name = "".join(room_name.split("||")) if "||" in room_name else str(room_name)
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:
