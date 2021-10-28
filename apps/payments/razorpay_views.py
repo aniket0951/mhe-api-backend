@@ -304,7 +304,7 @@ class RazorPaymentResponse(APIView):
             PaymentUtils.payment_update_for_drive_booking(payment_instance)
 
         except Exception as e:
-            if not is_request_from_cron:
+            if is_request_from_cron:
                 raise PaymentProcessingFailedRefundProcessedException
                 
             logger.error("Error while processing payment : %s"%str(e))
