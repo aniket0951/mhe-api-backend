@@ -323,7 +323,6 @@ class PaymentUtils:
         if payment_instance.payment_for_uhid_creation and not payment_instance.appointment and not payment_instance.payment_for_health_package and not payment_instance.payment_for_drive:
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
 
-
     @staticmethod
     def create_or_update_unprocessed_trans_instance(unprocessed_transaction_data):
 
@@ -339,6 +338,32 @@ class PaymentUtils:
             unprocessed_trans_instance = unprocessed_trans.save()
 
     @staticmethod
+    def prepare_failed_payment_response(payment_instance,payment_response):
+        appointment_instance = None
+        health_package_appointment_instance = None
+        if payment_instance.appointment:
+            appointment_instance = Appointment.objects.filter(id=payment_instance.appointment.id).first()
+            payment_response.update({
+                "appointment_identifier":appointment_instance.appointment_identifier,
+                "ReceiptNo":PaymentConstants.RECEIPT_NUMBER_ON_FAILURE
+            })
+        elif payment_instance.payment_for_health_package:
+            health_package_appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
+            payment_response.update({
+                "appointment_identifier":health_package_appointment_instance.appointment_identifier,
+                "ReceiptNo":PaymentConstants.RECEIPT_NUMBER_ON_FAILURE
+            })
+        elif payment_instance.payment_for_op_billing:
+            payment_response.update({
+                "BillNo":PaymentConstants.RECEIPT_NUMBER_ON_FAILURE
+            })
+        elif payment_instance.payment_for_ip_deposit:
+            payment_response.update({
+                "ReceiptNo":PaymentConstants.RECEIPT_NUMBER_ON_FAILURE
+            })
+        return payment_response,appointment_instance,health_package_appointment_instance
+
+    @staticmethod
     def update_failed_payment_response_without_refund(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
         if payment_instance and (payment_instance.appointment or  payment_instance.payment_for_health_package or payment_instance.payment_for_op_billing or payment_instance.payment_for_ip_deposit):
             
@@ -347,21 +372,9 @@ class PaymentUtils:
                 "uhid_number":family_member_instance.uhid_number if family_member_instance else patient_instance.uhid_number,
                 "appointment_identifier":None
             }
+        
+            payment_response,appointment_instance,health_package_appointment_instance = PaymentUtils.prepare_failed_payment_response(payment_instance,payment_response)
             
-            appointment_instance = None
-            health_package_appointment_instance = None
-
-            if payment_instance.appointment:
-                appointment_instance = Appointment.objects.filter(id=payment_instance.appointment.id).first()
-                payment_response.update({
-                    "appointment_identifier":appointment_instance.appointment_identifier
-                })
-            elif payment_instance.payment_for_health_package:
-                health_package_appointment_instance = HealthPackageAppointment.objects.filter(id=payment_instance.health_package_appointment.id).first()
-                payment_response.update({
-                    "appointment_identifier":health_package_appointment_instance.appointment_identifier
-                })
-                
             PaymentUtils.update_payment_details(payment_instance,payment_response,order_details,order_payment_details,is_requested_from_mobile)
             PaymentUtils.payment_for_scheduling_appointment(payment_instance,payment_response,order_details,is_requested_from_mobile)
             PaymentUtils.payment_update_for_health_package(payment_instance,payment_response)
