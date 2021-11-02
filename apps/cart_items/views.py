@@ -62,7 +62,11 @@ class HealthPackageCartViewSet(custom_viewsets.ListUpdateViewSet):
         data = request.data
         health_packages = data.get('health_packages')
         hospital = data.get("hospital")
-        hospital_id = Hospital.objects.get(id=hospital)
+        
+        try:
+            hospital_id = Hospital.objects.get(id=hospital)
+        except Exception as e:
+                raise ValidationError("Hospital is mandatory")
 
         for health_package in health_packages:
             try:
