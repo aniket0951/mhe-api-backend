@@ -1,3 +1,3 @@
 #!/bin/bash
-sudo service gunicorn restart
-sudo service celery restart 
+#sudo service gunicorn restart
+#sudo service celery restart 
