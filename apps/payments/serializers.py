@@ -12,7 +12,7 @@ from rest_framework import serializers
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url
 
-from .models import Payment, PaymentReceipts, PaymentRefund
+from .models import Payment, PaymentReceipts, PaymentRefund, UnprocessedTransactions
 
 logger = logging.getLogger("django")
 
@@ -87,6 +87,12 @@ class PaymentSpecificRefundSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = PaymentRefund
         exclude = ('updated_at', 'payment', 'created_at', 'uhid_number')
+
+
+class UnprocessedTransactionsSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = UnprocessedTransactions
+        fields = '__all__'
 
 
 class PaymentReceiptsSerializer(DynamicFieldsModelSerializer):

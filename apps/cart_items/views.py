@@ -1,8 +1,10 @@
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
 from apps.master_data.models import Hospital
+from apps.health_packages.models import HealthPackagePricing
 from utils import custom_viewsets
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser,
                                       IsSelfHealthPackageCartItem,
@@ -55,6 +57,24 @@ class HealthPackageCartViewSet(custom_viewsets.ListUpdateViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    def update(self, request, *args, **kwargs):
+
+        data = request.data
+        health_packages = data.get('health_packages')
+        hospital = data.get("hospital")
+        
+        try:
+            hospital_id = Hospital.objects.get(id=hospital)
+        except Exception as e:
+                raise ValidationError("Hospital is mandatory")
+
+        for health_package in health_packages:
+            try:
+                HealthPackagePricing.objects.get(health_package=health_package,hospital=hospital)
+            except Exception as e:
+                raise ValidationError("You cannot add health packages that don't belong to %s"%(str(hospital_id.description)))
+        
+        return super().update(request, *args, **kwargs)
 
 class HomeCollectionCartViewSet(custom_viewsets.ListUpdateViewSet):
     permission_classes = [IsAuthenticated]
