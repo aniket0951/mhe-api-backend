@@ -1172,10 +1172,8 @@ class DoctorRescheduleAppointmentView(ProxyView):
                             "reason_id":self.request.data.get("reason_id"),
                             "other_reason":self.request.data.get("other_reason")
                         }
-                        
-                        old_appointment_serializer = AppointmentSerializer(instance, data=update_data, partial=True)
-                        old_appointment_serializer.is_valid(raise_exception=True)
-                        old_appointment_serializer.save()
+                        old_appointment_instances = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"])
+                        old_appointment_instances.update(**update_data)
                         
                         try:
                             send_appointment_rescheduling_invitation(appointment)
