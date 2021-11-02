@@ -1088,8 +1088,6 @@ class DoctorRescheduleAppointmentView(ProxyView):
 
         other_reason = request.data.pop("other")
 
-        logger.info("ReScheduleApp DataType of %s: %s"%(str(request.data.get("new_date")),str(type(request.data.get("new_date")))))
-
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
 
