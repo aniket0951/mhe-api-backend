@@ -1,5 +1,5 @@
 #!/bin/bash
-#cd /home/ec2-user/mhe-backend/mhe-api-backend
+cd /home/ec2-user/
 #source ../mhenv/bin/activate
 #git pull
 #python manage.py migrate
