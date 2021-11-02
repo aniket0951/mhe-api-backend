@@ -1087,6 +1087,9 @@ class DoctorRescheduleAppointmentView(ProxyView):
             raise ValidationError(AppointmentsConstants.APPOINTMENT_DOESNT_EXIST)
 
         other_reason = request.data.pop("other")
+
+        logger.info("ReScheduleApp DataType of %s: %s"%(str(request.data.get("newdate")),str(request.data.get("newdate").type())))
+
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
 
