@@ -1,7 +1,7 @@
 version: 0.0
 os: linux
 files:
-  - source:
+  - source: /
     destination: /home/ec2-user/mhe-backend/mhe-api-backend
 hooks:
   BeforeInstall:
