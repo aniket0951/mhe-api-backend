@@ -173,6 +173,12 @@ class UnprocessedTransactions(MyBaseModel):
                                  on_delete=models.PROTECT,
                                  blank=False,
                                  null=False)
+
+    appointment = models.ForeignKey(Appointment,
+                                    related_name="unprocessed_transactions_appointment",
+                                    on_delete=models.PROTECT,
+                                    blank=True,
+                                    null=True)
     
     health_package_appointment = models.ForeignKey(HealthPackageAppointment,
                                  on_delete=models.PROTECT,

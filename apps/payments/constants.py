@@ -64,6 +64,7 @@ class PaymentConstants:
     CHECK_APPOINTMENT_PAYMENT_STATUS_SUCCESS = "Success"
     CHECK_APPOINTMENT_PAYMENT_STATUS_FAILED = "Failed"
     
+    RECEIPT_NUMBER_ON_FAILURE = "Processing"
     
     RAZORPAY_ORDER_PAID_EVENT = "order.paid"
     RAZORPAY_ORDER_PAYMENT_FAILED_EVENT = "payment.failed"
