@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management import call_command
+from apps.payments.serializers import UnprocessedTransactionsSerializer
 from pushjack import APNSClient
 
 from celery.schedules import crontab
@@ -17,7 +18,7 @@ from apps.patients.models import FamilyMember, Patient
 from utils.push_notification import ApnsPusher
 from apps.additional_features.models import DriveBooking
 from apps.payments.razorpay_views import RazorPaymentResponse
-from apps.payments.models import Payment
+from apps.payments.models import Payment, UnprocessedTransactions
 
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters, get_birthday_notification_data
@@ -33,13 +34,14 @@ TIME_FORMAT = "%I:%M %p"
 @app.task(bind=True, name="push_notifications")
 def send_push_notification(self, **kwargs):
     notification_data = kwargs["notification_data"]
-    mobile_notification_serializer = MobileNotificationSerializer(
-        data=notification_data)
+    mobile_notification_serializer = MobileNotificationSerializer(data=notification_data)
     mobile_notification_serializer.is_valid(raise_exception=True)
     notification_instance = mobile_notification_serializer.save()
     recipient = notification_instance.recipient
     if (hasattr(recipient, 'device') and recipient.device.token):
+
         if recipient.device.platform == 'Android':
+
             fcm = FCMNotification(api_key=settings.FCM_API_KEY)
             if notification_data.get("doctor_name"):
                 fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
@@ -62,9 +64,7 @@ def send_push_notification(self, **kwargs):
                 bundle_id=settings.BUNDLE_ID,
                 team_id=settings.TEAM_ID
             )
-
             token = notification_instance.recipient.device.token
-            
             payload = {
                 'aps': {
                     'alert': {
@@ -75,29 +75,14 @@ def send_push_notification(self, **kwargs):
                     'sound': 	settings.APNS_SOUND,
                     'extra': 	{
                             'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
-                            'appointment_id': notification_data["appointment_id"]
+                            'appointment_id': notification_data.get("appointment_id")
                         }
                 }
             }
-            
             apns_pusher.send_single_push(
                 device_token    =   token,
                 payload         =   payload
             )
-
-            # client = APNSClient(certificate=settings.APNS_CERT_PATH)
-            # alert = notification_instance.message
-            # token = notification_instance.recipient.device.token
-            # client.send(token,
-            #             alert,
-            #             badge=1,
-            #             sound=settings.APNS_SOUND,
-            #             extra={
-            #                 'notification_type': NOTIFICAITON_TYPE_MAP[notification_data["notification_type"]] if notification_data.get("notification_type") and NOTIFICAITON_TYPE_MAP.get(notification_data["notification_type"]) else '1',
-            #                 'appointment_id': notification_data["appointment_id"]
-            #             }
-            #         )
-
 
 @app.task(bind=True, name="silent_push_notification")
 def send_silent_push_notification(self, **kwargs):
@@ -134,10 +119,10 @@ def send_silent_push_notification(self, **kwargs):
                         },
                         'badge': 	1,
                         'sound': 	settings.APNS_SOUND,
-                        'extra': 	{
-                                    'notification_type': '2',
-                                    'appointment_id': notification_data["appointment_id"]
-                                }
+                        'extra': {
+                                'notification_type': '2',
+                                'appointment_id': notification_data.get("appointment_id")
+                            }
                     }
                 }
 
@@ -145,20 +130,6 @@ def send_silent_push_notification(self, **kwargs):
                     device_token    =   token,
                     payload         =   payload
                 )
-
-                # client = APNSClient(certificate=settings.APNS_CERT_PATH)
-                # token = patient_instance.device.token
-                # alert = "Doctor completed this consultation"
-                # client.send(token,
-                #             alert,
-                #             badge=1,
-                #             sound="default",
-                #             extra={
-                #                 'notification_type': '2',
-                #                 'appointment_id': notification_data["appointment_id"]
-                #             }
-                #         )
-
 
 @app.task(name="tasks.appointment_next_day_reminder_scheduler")
 def appointment_next_day_reminder_scheduler():
@@ -247,7 +218,6 @@ def health_package_appointment_reminder():
         notification_data["recipient"] = patient.id
         send_push_notification.delay(notification_data=notification_data)
 
-
 @app.task(name="tasks.appointment_reminder")
 def appointment_reminder_scheduler():
     now = datetime.today()
@@ -279,7 +249,7 @@ def appointment_reminder_scheduler():
 @app.task(name="tasks.pre_appointment_reminder")
 def pre_appointment_reminder_scheduler():
     current_time = datetime.today()
-    after_time = current_time + timedelta(hours=1)
+    after_time = current_time + timedelta(hours=1,minutes=10)
     appointments = Appointment.objects.filter(
         appointment_date=current_time.date(),appointment_slot__range=[current_time.time(), after_time.time()], status="1")
     for appointment_instance in appointments:
@@ -297,8 +267,15 @@ def pre_appointment_reminder_scheduler():
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
-            if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
+            member = FamilyMember.objects.filter(
+                                            id=appointment_instance.family_member.id, 
+                                            patient_info_id=appointment_instance.patient.id,
+                                            is_visible=True
+                                        ).first()
+            if Patient.objects.filter(
+                                uhid_number__isnull=False, 
+                                uhid_number=member.uhid_number
+                            ).exists():
                 patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
                 send_push_notification.delay(notification_data=notification_data)
@@ -307,9 +284,11 @@ def pre_appointment_reminder_scheduler():
 
 @app.task(name="tasks.process_payment_records")
 def process_payment_records_scheduler():
+    
     now = datetime.now()
     end_time = now - timedelta(minutes=13)
     start_time = now - timedelta(minutes=45)
+
     payments = Payment.objects.filter(
             Q(created_at__date=now.date()) & 
             Q(status="Initiated")
@@ -317,11 +296,32 @@ def process_payment_records_scheduler():
             created_at__time__gte=start_time, 
             created_at__time__lte=end_time
         )
+
     for payment in payments:
         param = dict()
         param["order_id"] = payment.razor_order_id
         request_param = cancel_parameters(param)
         RazorPaymentResponse.as_view()(request_param)
+
+    unprocessed_transactions = UnprocessedTransactions.objects.filter(status=UnprocessedTransactions.UNPROCESSED,retries__lt=3)
+    
+    for ut in unprocessed_transactions:
+        
+        param = dict()
+        param["order_id"] = ut.payment.razor_order_id
+        param["processing_id"] = ut.payment.processing_id
+        param["cron"] = True
+        request_param = cancel_parameters(param)
+        response = RazorPaymentResponse.as_view()(request_param)
+        
+        update_data={"retries":ut.retries+1}
+        if response.status_code == 200:
+            update_data.update({"status":UnprocessedTransactions.PROCESSED})
+
+        unprocessed_tran_serializer = UnprocessedTransactionsSerializer(ut,data=update_data,partial=True)
+        unprocessed_tran_serializer.is_valid(raise_exception=True)
+        unprocessed_tran_serializer.save()
+
 
 @app.task(name="tasks.auto_appointment_cancellation")
 def auto_appointment_cancellation():
@@ -364,6 +364,7 @@ def daily_auto_appointment_cancellation():
         param["appointment_identifier"] = appointment.appointment_identifier
         param["reason_id"] = "1"
         param["status"] = "2"
+        param["auto_cancellation"] = True
         request_param = cancel_parameters(param)
         CancelMyAppointment.as_view()(request_param)
         
@@ -449,7 +450,7 @@ app.conf.beat_schedule = {
     },
     "daily_update_scheduler": {
         "task": "tasks.daily_update",
-        "schedule": crontab(minute="0", hour="6")
+        "schedule": crontab(minute="0", hour="2")
     },
     "hourly_auto_cancellation_for_unpaid_vc_appointment": {
         "task": "tasks.auto_appointment_cancellation",
