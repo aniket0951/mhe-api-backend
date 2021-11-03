@@ -7,8 +7,8 @@ hooks:
   BeforeInstall:
     - location: scripts/update.sh
       timeout: 300
-      runas: root
+      runas: ec2-user
   AfterInstall:
     - location: scripts/restart.sh
       timeout: 300
-      runas: root
+      runas: ec2-user
