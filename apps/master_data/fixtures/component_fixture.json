@@ -7,6 +7,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Appointments",
             "code": "appointments",
+            "type": "hospital",
             "is_active": "True"
         }
     },
@@ -18,6 +19,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Health Packages",
             "code": "health_packages",
+            "type": "hospital",
             "is_active": "True"
         }
     },
@@ -29,6 +31,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Pay Bills",
             "code": "pay_bills",
+            "type": "hospital",
             "is_active": "True"
         }
     },
@@ -40,6 +43,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Reports",
             "code": "reports",
+            "type": "hospital",
             "is_active": "True"
         }
     },
@@ -51,6 +55,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Medical Records",
             "code": "medical_records",
+            "type": "hospital",
             "is_active": "True"
         }
     },
@@ -62,6 +67,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Home Care",
             "code": "home_care",
+            "type": "hospital",
             "is_active": "True"
         }
     },
@@ -73,6 +79,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Covid Vaccination Registration",
             "code": "covid_vaccination_registration",
+            "type": "hospital",
             "is_active": "True"
         }
     },
@@ -84,6 +91,7 @@
             "updated_at": "2021-03-15T18:47:24.893Z",
             "name": "Vaccination Drive",
             "code": "vaccination_drive",
+            "type": "hospital",
             "is_active": "True"
         }
     },
