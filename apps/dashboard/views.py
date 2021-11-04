@@ -3,10 +3,11 @@ import base64
 from datetime import date, datetime
 from apps.appointments import models
 from apps.dashboard.constants import DashboardConstants
-from apps.master_data.models import Configurations
+from apps.master_data.models import Components, Configurations
 from apps.master_data.serializers import ComponentsSerializer, ConfigurationSerializer
 from django.conf import settings
 from django.db.models import Count, Sum
+from django.db.models.query_utils import Q
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.serializers import AppointmentSerializer
@@ -417,3 +418,24 @@ class FlyerSchedulerViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet
             DashboardUtils.start_end_datetime_comparision(start_date_time,end_date_time)
             
         serializer.save()
+        
+class HomeCareDashboardAPIView(ListAPIView):
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+
+        dashboard_details = {}
+        dashboard_details['banners'] = DashboardBannerSerializer(DashboardBanner.objects.filter(banner_type="HomeCare"), many=True).data
+        dashboard_details['configurations'] = ConfigurationSerializer(Configurations.objects.filter(Q(allowed_components__is_active=True) & Q(allowed_components__type__icontains='homecare')).first(),many=False).data
+
+        version_number = self.request.query_params.get("version", None)
+        dashboard_details = DashboardUtils.validate_app_version(version_number,dashboard_details)
+        
+        if request.user:
+
+            patient_obj = patient_user_object(request)
+            if patient_obj:
+
+                dashboard_details['configurations']["allowed_components"] = ComponentsSerializer(Components.objects.filter(Q(is_active=True) & Q(type__icontains='homecare')),many=True).data
+
+        return Response(dashboard_details, status=status.HTTP_200_OK)

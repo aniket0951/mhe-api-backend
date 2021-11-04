@@ -32,6 +32,7 @@ class DashboardBanner(MyBaseModel):
 
     BANNER_TYPE_CHOICES = (
         ('HomeCollection', 'HomeCollection'),
+        ('HomeCare', 'HomeCare'),
     )
 
     image = models.ImageField(

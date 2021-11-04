@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.management import call_command
+from apps.payments.serializers import UnprocessedTransactionsSerializer
 from apps.notifications.models import ScheduleNotifications
 
 from celery.schedules import crontab
@@ -16,7 +17,7 @@ from apps.patients.models import FamilyMember, Patient
 from utils.push_notification import ApnsPusher
 from apps.additional_features.models import DriveBooking
 from apps.payments.razorpay_views import RazorPaymentResponse
-from apps.payments.models import Payment
+from apps.payments.models import Payment, UnprocessedTransactions
 
 from .serializers import MobileNotificationSerializer
 from .utils import cancel_parameters, get_birthday_notification_data, get_scheduler_notification_data
@@ -308,9 +309,11 @@ def pre_appointment_reminder_scheduler():
 
 @app.task(name="tasks.process_payment_records")
 def process_payment_records_scheduler():
+    
     now = datetime.now()
     end_time = now - timedelta(minutes=13)
     start_time = now - timedelta(minutes=45)
+
     payments = Payment.objects.filter(
             Q(created_at__date=now.date()) & 
             Q(status="Initiated")
@@ -318,11 +321,32 @@ def process_payment_records_scheduler():
             created_at__time__gte=start_time, 
             created_at__time__lte=end_time
         )
+
     for payment in payments:
         param = dict()
         param["order_id"] = payment.razor_order_id
         request_param = cancel_parameters(param)
         RazorPaymentResponse.as_view()(request_param)
+
+    unprocessed_transactions = UnprocessedTransactions.objects.filter(status=UnprocessedTransactions.UNPROCESSED,retries__lt=3)
+    
+    for ut in unprocessed_transactions:
+        
+        param = dict()
+        param["order_id"] = ut.payment.razor_order_id
+        param["processing_id"] = ut.payment.processing_id
+        param["cron"] = True
+        request_param = cancel_parameters(param)
+        response = RazorPaymentResponse.as_view()(request_param)
+        
+        update_data={"retries":ut.retries+1}
+        if response.status_code == 200:
+            update_data.update({"status":UnprocessedTransactions.PROCESSED})
+
+        unprocessed_tran_serializer = UnprocessedTransactionsSerializer(ut,data=update_data,partial=True)
+        unprocessed_tran_serializer.is_valid(raise_exception=True)
+        unprocessed_tran_serializer.save()
+
 
 @app.task(name="tasks.auto_appointment_cancellation")
 def auto_appointment_cancellation():

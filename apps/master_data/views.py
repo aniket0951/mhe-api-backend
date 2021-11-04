@@ -988,6 +988,9 @@ class ComponentsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     update_success_message = 'Component updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
+    
+    filter_fields = ['code','type']
+    search_fields = ['code','type','name'] 
 
     def get_permissions(self):
         if self.action in ['list']:
