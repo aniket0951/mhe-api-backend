@@ -54,8 +54,8 @@ from utils.payment_parameter_generator import get_payment_param
 from utils.refund_parameter_generator import get_refund_param
 
 from .exceptions import ProcessingIdDoesNotExistsValidationException
-from .models import Payment, PaymentReceipts
-from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer, PaymentSerializer)
+from .models import Payment, PaymentReceipts, PaymentRefund, UnprocessedTransactions
+from .serializers import (PaymentReceiptsSerializer, PaymentRefundSerializer, PaymentSerializer, UnprocessedTransactionsSerializer)
 
 logger = logging.getLogger('django')
 client = APIClient()
@@ -506,13 +506,15 @@ class PaymentReturn(APIView):
 
 
 class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
-    search_fields = ['patient__first_name']
     filter_backends = (filters.SearchFilter,
                        filters.OrderingFilter, DjangoFilterBackend)
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     ordering = ('-created_at',)
     filter_fields = ('status',)
+    search_fields = ['patient__first_name','uhid_number','appointment__appointment_identifier','health_package_appointment__appointment_identifier',
+                     'location__code','location__description','patient__mobile','payment_done_for_family_member__uhid_number',
+                     'payment_done_for_family_member__mobile','payment_done_for_family_member__first_name']
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Payment list returned successfully!'
     retrieve_success_message = 'Payment information returned successfully!'
@@ -523,7 +525,10 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
         if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
             return super().get_queryset()
         if filter_by:
-            if filter_by == "current_week":
+            if filter_by == "current_date":
+                current_date = date.today()
+                return super().get_queryset().filter(uhid_number=uhid, created_at=current_date)
+            elif filter_by == "current_week":
                 current_week = date.today().isocalendar()[1]
                 current_year = date.today().isocalendar()[0]
                 return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week, created_at__year=current_year)
@@ -960,3 +965,95 @@ class DriveRegistrationPaymentStatusView(ProxyView):
                                 success=status,
                                 data=data
                             )
+        
+class PaymentRefundAPIView(custom_viewsets.ReadOnlyModelViewSet):
+    filter_backends = (filters.SearchFilter,
+                       filters.OrderingFilter, DjangoFilterBackend)
+    queryset = PaymentRefund.objects.all()
+    serializer_class = PaymentRefundSerializer
+    ordering = ('-created_at',)
+    filter_fields = ('status',)
+    search_fields = ['uhid_number','payment__id','payment__patient__first_name','payment__patient__mobile','payment__payment_done_for_family_member__mobile',
+                     'payment__payment_done_for_family_member__first_name','payment__location__code','payment__location__description']
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    list_success_message = 'Payment Refund list returned successfully!'
+    retrieve_success_message = 'Payment Refund information returned successfully!'
+
+    def get_queryset(self):
+        uhid = self.request.query_params.get("uhid", None)
+        filter_by = self.request.query_params.get("filter_by", None)
+        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            return super().get_queryset()
+        if filter_by:
+            if filter_by == "current_date":
+                current_date = date.today()
+                return super().get_queryset().filter(uhid_number=uhid, created_at=current_date)
+            elif filter_by == "current_week":
+                current_week = date.today().isocalendar()[1]
+                current_year = date.today().isocalendar()[0]
+                return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week, created_at__year=current_year)
+            elif filter_by == "last_week":
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                return super().get_queryset().filter(uhid_number=uhid, created_at__week=last_week, created_at__year=current_year)
+            elif filter_by == "last_month":
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                return super().get_queryset().filter(uhid_number=uhid, created_at__month=last_month.month, created_at__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                return super().get_queryset().filter(uhid_number=uhid, created_at__month=current_month.month, created_at__year=current_month.year)
+            elif filter_by == "date_range":
+                date_from = self.request.query_params.get("date_from", None)
+                date_to = self.request.query_params.get("date_to", None)
+                return super().get_queryset().filter(uhid_number=uhid, created_at__date__range=[date_from, date_to])
+            else:
+                return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
+        return super().get_queryset().filter(uhid_number=uhid)        
+
+class UnprocessedTransactionsAPIView(custom_viewsets.ReadOnlyModelViewSet):
+    filter_backends = (filters.SearchFilter,
+                       filters.OrderingFilter, DjangoFilterBackend)
+    queryset = UnprocessedTransactions.objects.all()
+    serializer_class = UnprocessedTransactionsSerializer
+    ordering = ('-created_at',)
+    filter_fields = ('status',)
+    search_fields = ['patient__first_name','patient__uhid_number','patient__mobile','family_member__uhid_number','family_member__first_name','family_member__mobile',
+                     'appointment__appointment_identifier','health_package_appointment__appointment_identifier','status','payment__id']
+    permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
+    list_success_message = 'Unprocess transaction list returned successfully!'
+    retrieve_success_message = 'Unprocess transaction information returned successfully!'
+
+    def get_queryset(self):
+        uhid = self.request.query_params.get("uhid", None)
+        filter_by = self.request.query_params.get("filter_by", None)
+        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
+            return super().get_queryset()
+        if filter_by:
+            if filter_by == "current_date":
+                current_date = date.today()
+                return super().get_queryset().filter(patient__uhid_number=uhid, created_at=current_date)
+            elif filter_by == "current_week":
+                current_week = date.today().isocalendar()[1]
+                print("current_week****",current_week)
+                current_year = date.today().isocalendar()[0]
+                print("current_year****",current_year)
+                return super().get_queryset().filter(patient__uhid_number=uhid, created_at__week=current_week, created_at__year=current_year)
+            elif filter_by == "last_week":
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                return super().get_queryset().filter(patient__uhid_number=uhid, created_at__week=last_week, created_at__year=current_year)
+            elif filter_by == "last_month":
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                return super().get_queryset().filter(patient__uhid_number=uhid, created_at__month=last_month.month, created_at__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                return super().get_queryset().filter(patient__uhid_number=uhid, created_at__month=current_month.month, created_at__year=current_month.year)
+            elif filter_by == "date_range":
+                date_from = self.request.query_params.get("date_from", None)
+                date_to = self.request.query_params.get("date_to", None)
+                return super().get_queryset().filter(patient__uhid_number=uhid, created_at__date__range=[date_from, date_to])
+            else:
+                return super().get_queryset().filter(patient__uhid_number=uhid, created_at__date=filter_by)
+        return super().get_queryset().filter(patient__uhid_number=uhid)        
