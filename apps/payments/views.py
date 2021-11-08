@@ -1035,9 +1035,7 @@ class UnprocessedTransactionsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 return super().get_queryset().filter(payment__uhid_number=uhid, created_at=current_date)
             elif filter_by == "current_week":
                 current_week = date.today().isocalendar()[1]
-                print("current_week****",current_week)
                 current_year = date.today().isocalendar()[0]
-                print("current_year****",current_year)
                 return super().get_queryset().filter(payment__uhid_number=uhid, created_at__week=current_week, created_at__year=current_year)
             elif filter_by == "last_week":
                 previous_week = date.today() - timedelta(weeks=1)
