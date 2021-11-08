@@ -511,7 +511,7 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     ordering = ('-created_at',)
-    filter_fields = ('status',)
+    filter_fields = ('status','uhid_number',)
     search_fields = ['patient__first_name','uhid_number','appointment__appointment_identifier','health_package_appointment__appointment_identifier',
                      'location__code','location__description','patient__mobile','payment_done_for_family_member__uhid_number',
                      'payment_done_for_family_member__mobile','payment_done_for_family_member__first_name']
@@ -978,7 +978,7 @@ class PaymentRefundAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = PaymentRefund.objects.all()
     serializer_class = PaymentRefundSerializer
     ordering = ('-created_at',)
-    filter_fields = ('status',)
+    filter_fields = ('status','uhid_number',)
     search_fields = ['uhid_number','payment__id','payment__patient__first_name','payment__patient__mobile','payment__payment_done_for_family_member__mobile',
                      'payment__payment_done_for_family_member__first_name','payment__location__code','payment__location__description']
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
@@ -1028,7 +1028,7 @@ class UnprocessedTransactionsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = UnprocessedTransactions.objects.all()
     serializer_class = UnprocessedTransactionsSerializer
     ordering = ('-created_at',)
-    filter_fields = ('status',)
+    filter_fields = ('status','payment__uhid_number',)
     search_fields = ['patient__first_name','patient__uhid_number','patient__mobile','family_member__uhid_number','family_member__first_name','family_member__mobile',
                      'appointment__appointment_identifier','health_package_appointment__appointment_identifier','status','payment__id']
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
