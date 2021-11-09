@@ -11,6 +11,7 @@ from .views import (AppointmentPayment, CorporateUhidRegistration,
                     PaymentsAPIView, ReceiptViewSet, RefundView, UHIDPayment, UnprocessedTransactionsAPIView)
 
 from .razorpay_views import (
+                        InitiateManualRefundAPI,
                         RazorAppointmentPayment,
                         RazorDrivePayment,
                         RazorHealthPackagePayment,
@@ -50,5 +51,6 @@ urlpatterns = [
     path('episode_items_details', EpisodeItemView.as_view()),
     path('refund', RefundView.as_view()),
     path('corporate_uhid_registration', CorporateUhidRegistration.as_view()),
+    path('initiate_manual_refund', InitiateManualRefundAPI.as_view()),
     *router.urls
 ]
