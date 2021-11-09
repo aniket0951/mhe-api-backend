@@ -48,7 +48,7 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from utils import custom_viewsets
-from utils.utils import manipal_admin_object
+from utils.utils import manipal_admin_object,patient_user_object
 from utils.custom_permissions import (InternalAPICall, IsManipalAdminUser, IsPatientUser, IsSelfUserOrFamilyMember)
 from utils.payment_parameter_generator import get_payment_param
 from utils.refund_parameter_generator import get_refund_param
@@ -520,43 +520,46 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     retrieve_success_message = 'Payment information returned successfully!'
 
     def get_queryset(self):
+
         uhid = self.request.query_params.get("uhid", None)
         filter_by = self.request.query_params.get("filter_by", None)
-        patient = Patient.objects.filter(id=self.request.user.id).first()
-     
-        if patient:
-            if not uhid:
-                raise ValidationError("UHID missing!")
-            return super().get_queryset().filter(uhid_number=uhid)
+        qs = super().get_queryset()
 
-        if ManipalAdmin.objects.filter(id=self.request.user.id).exists():
-            if filter_by:
-                if filter_by == "current_date":
-                    current_date = date.today()
-                    return super().get_queryset().filter(uhid_number=uhid, created_at=current_date)
-                elif filter_by == "current_week":
-                    current_week = date.today().isocalendar()[1]
-                    current_year = date.today().isocalendar()[0]
-                    return super().get_queryset().filter(uhid_number=uhid, created_at__week=current_week, created_at__year=current_year)
-                elif filter_by == "last_week":
-                    previous_week = date.today() - timedelta(weeks=1)
-                    last_week = previous_week.isocalendar()[1]
-                    current_year = previous_week.isocalendar()[0]
-                    return super().get_queryset().filter(uhid_number=uhid, created_at__week=last_week, created_at__year=current_year)
-                elif filter_by == "last_month":
-                    last_month = datetime.today().replace(day=1) - timedelta(days=1)
-                    return super().get_queryset().filter(uhid_number=uhid, created_at__month=last_month.month, created_at__year=last_month.year)
-                elif filter_by == "current_month":
-                    current_month = datetime.today()
-                    return super().get_queryset().filter(uhid_number=uhid, created_at__month=current_month.month, created_at__year=current_month.year)
-                elif filter_by == "date_range":
-                    date_from = self.request.query_params.get("date_from", None)
-                    date_to = self.request.query_params.get("date_to", None)
-                    return super().get_queryset().filter(uhid_number=uhid, created_at__date__range=[date_from, date_to])
-                else:
-                    return super().get_queryset().filter(uhid_number=uhid, created_at__date=filter_by)
-            return super().get_queryset()
+        if filter_by:
+                
+            if filter_by == "current_date":
+                current_date = date.today()
+                qs = qs.filter( created_at=current_date)
+            elif filter_by == "current_week":
+                current_week = date.today().isocalendar()[1]
+                current_year = date.today().isocalendar()[0]
+                qs = qs.filter( created_at__week=current_week, created_at__year=current_year)
+            elif filter_by == "last_week":
+                previous_week = date.today() - timedelta(weeks=1)
+                last_week = previous_week.isocalendar()[1]
+                current_year = previous_week.isocalendar()[0]
+                qs = qs.filter( created_at__week=last_week, created_at__year=current_year)
+            elif filter_by == "last_month":
+                last_month = datetime.today().replace(day=1) - timedelta(days=1)
+                qs = qs.filter( created_at__month=last_month.month, created_at__year=last_month.year)
+            elif filter_by == "current_month":
+                current_month = datetime.today()
+                qs = qs.filter( created_at__month=current_month.month, created_at__year=current_month.year)
+            elif filter_by == "date_range":
+                date_from = self.request.query_params.get("date_from", None)
+                date_to = self.request.query_params.get("date_to", None)
+                qs = qs.filter( created_at__date__range=[date_from, date_to])
+            else:
+                qs = qs.filter( created_at__date=filter_by)
 
+        if uhid:
+              qs = qs.filter(uhid_number=uhid)
+
+        patient_instance = patient_user_object(self.request)
+        if patient_instance and not uhid:
+            raise ValidationError("UHID is mandatory!")
+            
+        return qs
 
 class HealthPackageAPIView(custom_viewsets.ReadOnlyModelViewSet):
     search_fields = ['payment_id__payment_done_for_patient__first_name', 'payment_id__payment_done_for_family_member__first_name',
