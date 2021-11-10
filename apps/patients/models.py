@@ -187,6 +187,9 @@ class Patient(BaseUser):
         verbose_name='Date of birth'
     )
 
+    is_birthday_notification_on = models.BooleanField(default=True,verbose_name='is_birthday_notification_on')
+    is_promotional_notification_on = models.BooleanField(default=True,verbose_name='is_promotional_notification_on')
+
     @property
     def representation(self):
         return 'Unique Manipal Identifier: {} Name: {}'.format(self.uhid_number, self.first_name)
@@ -486,5 +489,21 @@ class CovidVaccinationRegistration(AutoIncrementBaseModel):
                         null=True,
                         blank=True
                     )
+    
+class UpdatePatientMobile(MyBaseModel):
+    
+    old_patient_user = models.ForeignKey(Patient,
+                                     on_delete=models.PROTECT,
+                                     null=False,
+                                     blank=False,
+                                     related_name='old_patient_user')
+    
+    new_patient_user = models.ForeignKey(Patient,
+                                     on_delete=models.PROTECT,
+                                     null=False,
+                                     blank=False,
+                                     related_name='new_patient_user')
+    
+    uhid_number = models.CharField(max_length=20)
 
     

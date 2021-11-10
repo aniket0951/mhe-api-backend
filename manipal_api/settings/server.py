@@ -107,7 +107,9 @@ CUSTOM_APPS = [
     'apps.notifications.apps.NotificationsConfig',
     'apps.discharge_summaries',
     'apps.additional_features',
-    'apps.middleware'
+    'apps.middleware',
+    'apps.home_care',
+    'apps.phlebo'
 ]
 
 THIRD_PARTY_APPS = [
@@ -355,6 +357,7 @@ REFUND_URL = env('REFUND_URL')
 VC_URL_REDIRECTION = env('VC_URL_REDIRECTION')
 SMS_SECRET_KEY = env('SMS_SECRET_KEY')
 
+WEBSITE = env('WEBSITE')
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -446,6 +449,8 @@ MAX_FLYER_IMAGES = env('MAX_FLYER_IMAGES')
 BIRTHDAY_NOTIFICATION_IMAGE_URL = env("BIRTHDAY_NOTIFICATION_IMAGE_URL")
 
 ENVIRONMENT = env("ENVIRONMENT")
+
+SEND_CALENDAR_INVITATION = True if env("SEND_CALENDAR_INVITATION") and str(env("SEND_CALENDAR_INVITATION"))=="True" else False
 
 # Logger configuration
 LOGGING = {

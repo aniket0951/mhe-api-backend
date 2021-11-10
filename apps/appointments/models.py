@@ -54,6 +54,7 @@ class Appointment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     appointment_date = models.DateField()
     appointment_slot = models.TimeField()
+    slot_duration = models.FloatField(default=10,null=False)
     appointment_identifier = models.CharField(max_length=20,
                                               blank=True,
                                               null=True)
@@ -118,24 +119,75 @@ class Appointment(models.Model):
 
     beneficiary_reference_id = models.CharField(max_length=30,null=True,blank=True)
 
+    root_appointment_id = models.CharField(max_length=50,null=True,blank=True)
+
     @property
     def is_cancellable(self):
         if self.appointment_date and ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
+            
+            registration_amount = 0
+            if self.payment_appointment.exists():
+                payment_instance = self.payment_appointment.first()
+                if payment_instance.payment_for_uhid_creation:
+                    from apps.payments.utils import PaymentUtils
+                    registration_amount = PaymentUtils.add_items_tariff_price(0,self.hospital.code)
+            
             if self.appointment_date > datetime.now().date():
                 if self.payment_status == "success":
-                    self.refundable_amount = self.consultation_amount
+                    self.refundable_amount = self.consultation_amount - registration_amount
                     self.save()
                 return True
+
             if self.appointment_date == datetime.now().date() and self.appointment_slot > datetime.now().time():
                 if not self.payment_status:
                     return True
+
                 date_time_slot = datetime.combine(datetime.now(), self.appointment_slot)
                 date_time_now = datetime.combine(datetime.now(), datetime.now().time())
                 time_delta = (date_time_slot - date_time_now).total_seconds()/3600
+
                 if time_delta > 2:
-                    self.refundable_amount = self.consultation_amount
+                    self.refundable_amount = self.consultation_amount - registration_amount
+
                     if time_delta <= 4:
-                        self.refundable_amount = self.consultation_amount - 100.0
+                        self.refundable_amount = self.consultation_amount - registration_amount - 100.0
+
+                    self.save()
+                    return True
+        self.save()
+        return False
+    
+    @property
+    def is_admin_cancellable(self):
+        if self.appointment_date and ((self.appointment_date >= datetime.now().date()) and (self.status == 1)):
+            
+            registration_amount = 0
+            if self.payment_appointment.exists():
+                payment_instance = self.payment_appointment.first()
+                if payment_instance.payment_for_uhid_creation:
+                    from apps.payments.utils import PaymentUtils
+                    registration_amount = PaymentUtils.add_items_tariff_price(0,self.hospital.code)
+            
+            if self.appointment_date > datetime.now().date():
+                if self.payment_status == "success":
+                    self.refundable_amount = self.consultation_amount - registration_amount
+                    self.save()
+                return True
+
+            if self.appointment_date == datetime.now().date() and self.appointment_slot > datetime.now().time():
+                if not self.payment_status:
+                    return True
+
+                date_time_slot = datetime.combine(datetime.now(), self.appointment_slot)
+                date_time_now = datetime.combine(datetime.now(), datetime.now().time())
+                time_delta = (date_time_slot - date_time_now).total_seconds()/3600
+
+                if time_delta > 0.5:
+                    self.refundable_amount = self.consultation_amount - registration_amount
+
+                    if time_delta <= 4:
+                        self.refundable_amount = self.consultation_amount - registration_amount - 100.0
+
                     self.save()
                     return True
         self.save()
@@ -349,3 +401,22 @@ class AppointmentPrescription(MyBaseModel):
                                                     blank=True,
                                                     null=True
                                                     )
+
+    
+class PrimeBenefits(MyBaseModel):
+
+    sequence = models.IntegerField()
+    
+    description = models.CharField(
+                        max_length=500,
+                        null=True,
+                        blank=True
+                    )
+
+    hospital_info = models.ManyToManyField(
+                                        Hospital,
+                                        blank=True,
+                                        null=True,
+                                        related_name='prime_benefits_hospital'
+                                    )
+    

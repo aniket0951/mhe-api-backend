@@ -1,13 +1,12 @@
-
 import ast
 import json
 import logging
+
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db.models import Q
-from django.shortcuts import render
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
@@ -18,13 +17,12 @@ from apps.master_data.exceptions import (
 from apps.master_data.models import Department, Hospital, HospitalDepartment
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
+from apps.payments.models import Payment
 from apps.payments.razorpay_views import RazorRefundView
 from apps.payments.views import AppointmentPaymentView
 from apps.users.models import BaseUser
 from apps.notifications.utils import cancel_parameters
 from django_filters.rest_framework import DjangoFilterBackend
-from django.utils.decorators import method_decorator
-from ratelimit.decorators import ratelimit
 from proxy.custom_serializables import BookMySlot as serializable_BookMySlot
 from proxy.custom_serializables import \
     CancelAppointmentRequest as serializable_CancelAppointmentRequest
@@ -53,21 +51,22 @@ from utils.custom_validation import ValidationUtil
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
-from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj
+from utils.utils import manipal_admin_object,calculate_age,date_and_time_str_to_obj, validate_uhid_number
 from .exceptions import (AppointmentDoesNotExistsValidationException, InvalidAppointmentPrice, InvalidManipalResponseException)
 from .models import (Appointment, AppointmentDocuments,
                      AppointmentPrescription, AppointmentVital,
                      CancellationReason, Feedbacks, HealthPackageAppointment,
-                     PrescriptionDocuments)
+                     PrescriptionDocuments, PrimeBenefits)
 from .serializers import (AppointmentDocumentsSerializer,
                           AppointmentPrescriptionSerializer,
                           AppointmentSerializer, AppointmentVitalSerializer,
                           CancellationReasonSerializer, FeedbacksDataSerializer, FeedbacksSerializer,
                           HealthPackageAppointmentSerializer,
-                          PrescriptionDocumentsSerializer)
+                          PrescriptionDocumentsSerializer, PrimeBenefitsSerializer)
 
 from apps.doctors.serializers import DoctorChargesSerializer
-from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id
+from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id, check_health_package_age_and_gender
+from utils.send_invite import send_appointment_invitation, send_appointment_cancellation_invitation, send_appointment_rescheduling_invitation
 from .constants import AppointmentsConstants
 
 client = APIClient()
@@ -84,7 +83,9 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 'patient__uhid_number', 
                 'family_member__uhid_number',
                 'patient__mobile', 
-                'patient__email'
+                'patient__email',
+                'department__code',
+                'hospital__code'
             ]
     filter_backends = (
                 DjangoFilterBackend,
@@ -95,7 +96,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
-    filter_fields = ('status', 'appointment_identifier','appointment_service')
+    filter_fields = ('status', 'appointment_identifier','appointment_service','appointment_mode','department__code','department__name','department__id','hospital__id','hospital__code','hospital__description',)
     ordering = ('appointment_date', '-appointment_slot', 'status')
     ordering_fields = ('appointment_date', 'appointment_slot', 'status')
     create_success_message = None
@@ -148,7 +149,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 Q(family_member_id=family_member)
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
                         ).filter(corporate_appointment=True)
 
@@ -160,7 +161,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 Q(family_member_id=family_member)
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             ( Q(vc_appointment_status="4") | Q(payment_status__isnull=True) )
                         ).filter(corporate_appointment=False)
 
@@ -195,7 +196,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
                             )
                         ).exclude(
-                            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                             (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
                         ).filter(corporate_appointment=True)
 
@@ -206,7 +207,7 @@ class AppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                             (Q(patient_id=patient.id) & Q(family_member__isnull=True))
                         )
                     ).exclude(
-                        (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & 
+                        (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & 
                         (Q(vc_appointment_status="4") | Q(payment_status__isnull=True))
                     ).filter(corporate_appointment=False)
 
@@ -376,6 +377,10 @@ class CreateMyAppointment(ProxyView):
 
                 if data.get("beneficiary_reference_id"):
                     new_appointment["beneficiary_reference_id"] = data.get("beneficiary_reference_id")
+                
+                if data.get("appointment_duration"):
+                    new_appointment["slot_duration"] = data.get("appointment_duration")
+
                 if data.get("appointment_service"):
                     new_appointment["appointment_service"] = data.get("appointment_service")
 
@@ -389,6 +394,7 @@ class CreateMyAppointment(ProxyView):
 
                 if new_appointment.get("appointment_mode") and new_appointment.get("appointment_mode").upper()=="VC":
                     new_appointment["booked_via_app"] = True
+
                 if data.get('corporate', None):
                     new_appointment["corporate_appointment"] = True
 
@@ -432,6 +438,8 @@ class CreateMyAppointment(ProxyView):
                 if consultation_response.data.get('data') and consultation_response.data['data'].get("PlanCode"):
                     corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
+                is_invitation_email_sent = False
+
                 if patient and patient.active_view == 'Corporate':
                     
                     corporate_appointment["processing_id"] = get_processing_id()
@@ -465,6 +473,9 @@ class CreateMyAppointment(ProxyView):
                                     patient_instance = Patient.objects.filter(id=data.get("patient").id).first()
                                     patient_instance.uhid_number = bill_detail.get("HospitalNo")
                                     patient_instance.save()
+
+                                send_appointment_invitation(appointment_instance)
+                                is_invitation_email_sent = True
                                     
                     except Exception as e:
                         param = dict()
@@ -497,14 +508,14 @@ class CreateMyAppointment(ProxyView):
                         (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
 
                         if  (consultation_response.data['data'].get('IsFollowUp') and \
-                            consultation_response.data['data'].get('IsFollowUp') != "N") or \
+                            consultation_response.data['data'].get('IsFollowUp') == "Y") or \
                             consultation_response.data['data'].get("PlanCode"):
 
                             corporate_appointment["is_followup"] = consultation_response.data['data'].get("IsFollowUp")
                             corporate_appointment["plan_code"] = consultation_response.data['data'].get("PlanCode")
 
                             corporate_appointment["processing_id"] = get_processing_id()
-                            if consultation_response.data['data'].get('IsFollowUp') != "N":
+                            if consultation_response.data['data'].get('IsFollowUp') == "Y":
                                 corporate_appointment["transaction_number"] = "F"+appointment_identifier
                             else:
                                 corporate_appointment["transaction_number"] = consultation_response.data['data'].get("PlanCode")+appointment_identifier
@@ -513,6 +524,10 @@ class CreateMyAppointment(ProxyView):
                             appointment_instance.consultation_amount = 0
                             response = AppointmentPaymentView.as_view()(followup_payment_param)
                             appointment_instance.payment_status = "success"
+                            appointment_instance.save()
+
+                            send_appointment_invitation(appointment_instance)
+                            is_invitation_email_sent = True
 
                         else:
                             param = dict()
@@ -530,8 +545,14 @@ class CreateMyAppointment(ProxyView):
 
                     appointment_instance.save()
 
-        return self.custom_success_response(message=response_message,
-                                            success=response_success, data=response_data)
+                if not is_invitation_email_sent and appointment_instance.appointment_mode in ["HV"]:
+                    send_appointment_invitation(appointment_instance)
+
+        return self.custom_success_response(
+                                        message=response_message,
+                                        success=response_success, 
+                                        data=response_data
+                                    )
 
 def cancel_and_refund_appointment_view(instance):
     param = dict()
@@ -560,6 +581,9 @@ class CancelMyAppointment(ProxyView):
         appointment_id = data.get("appointment_identifier")
         reason_id = data.pop("reason_id")
         status = data.pop("status", None)
+        auto_cancellation = False
+        if "auto_cancellation" in data:
+            auto_cancellation = data.pop("auto_cancellation", None)
 
         instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
         if not instance:
@@ -569,9 +593,12 @@ class CancelMyAppointment(ProxyView):
         request.data["location_code"] = instance.hospital.code
         cancel_appointment = serializable_CancelAppointmentRequest(**request.data)
         request_data = custom_serializer().serialize(cancel_appointment, 'XML')
+
         data["reason_id"] = reason_id
         data["status"] = status
         data["other_reason"] = other_reason
+        data["auto_cancellation"] = auto_cancellation
+
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -596,12 +623,15 @@ class CancelMyAppointment(ProxyView):
                 instance.reason_id = self.request.data.get("reason_id")
                 instance.other_reason = self.request.data.get("other_reason")
                 instance.save()
-
+                
                 refund_param = cancel_and_refund_parameters({"appointment_identifier": instance.appointment_identifier})
                 RazorRefundView.as_view()(refund_param)
 
                 request_param = cancel_and_refund_appointment_view(instance)
                 CancelAndRefundView.as_view()(request_param)
+
+                if not self.request.data.get("auto_cancellation"):
+                    send_appointment_cancellation_invitation(instance)
 
                 success_status = True
                 return self.custom_success_response(
@@ -609,7 +639,7 @@ class CancelMyAppointment(ProxyView):
                                             success=success_status, 
                                             data=None
                                         )
-        raise ValidationError("Could not process the request. PLease try again")
+        raise ValidationError("Could not process the request. Please try again")
 
 
 class RecentlyVisitedDoctorlistView(custom_viewsets.ReadOnlyModelViewSet):
@@ -652,6 +682,15 @@ class HealthPackageAppointmentView(ProxyView):
         package_id_list = package_id.split(",")
         previous_appointment = request.data.get("previous_appointment", None)
         payment_id = request.data.get("payment_id", None)
+        
+        if family_member_id:
+            family_member = FamilyMember.objects.get(id=family_member_id)    
+            check_health_package_age_and_gender(family_member,package_id_list)
+        
+        elif patient_id:
+            patient = Patient.objects.get(id=patient_id) 
+            check_health_package_age_and_gender(patient,package_id_list)
+        
         if previous_appointment and payment_id:
             appointment_instance = HealthPackageAppointment.objects.filter(
                 appointment_identifier=previous_appointment).first()
@@ -842,6 +881,8 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
             date_from = self.request.query_params.get("date_from", None)
             date_to = self.request.query_params.get("date_to", None)
             uhid = self.request.query_params.get("uhid", None)
+            patient_id = self.request.query_params.get("patient_id", None)
+            family_member_id = self.request.query_params.get("family_member_id", None)
             
             upcoming_appointment = qs.filter(appointment_date__gte=datetime.now().date(), status=1)
             if admin_object.hospital:
@@ -850,6 +891,10 @@ class UpcomingAppointmentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
                 upcoming_appointment = upcoming_appointment.filter(appointment_date__range=[date_from, date_to])
             if uhid:
                 upcoming_appointment = upcoming_appointment.filter(Q(uhid=uhid) & Q(uhid__isnull=False))
+            if patient_id:
+                upcoming_appointment = upcoming_appointment.filter(patient__id=patient_id,family_member__isnull=True).order_by('-created_at').distinct()
+            if family_member_id:
+                upcoming_appointment = upcoming_appointment.filter(family_member__id=family_member_id).order_by('-created_at').distinct()
             return upcoming_appointment
         
         patient_appointment = super().get_queryset().filter(
@@ -1031,52 +1076,63 @@ class ReBookDoctorAppointment(ProxyView):
 
 
 class DoctorRescheduleAppointmentView(ProxyView):
-    permission_classes = [IsPatientUser | InternalAPICall]
+    permission_classes = [IsPatientUser | InternalAPICall | IsManipalAdminUser]
     source = 'ReScheduleApp'
 
     def get_request_data(self, request):
         reason_id = request.data.pop("reason_id")
-        instance = Appointment.objects.filter(
-            appointment_identifier=self.request.data["app_id"]).first()
+        
+        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
         if not instance:
             raise ValidationError(AppointmentsConstants.APPOINTMENT_DOESNT_EXIST)
+
         other_reason = request.data.pop("other")
+
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
+
         request.data["reason_id"] = reason_id
         request.data["other_reason"] = other_reason
+
         return request_data
 
     def post(self, request, *args, **kwargs):
         return self.proxy(request, *args, **kwargs)
 
     def parse_proxy_response(self, response):
+        
         response_message = AppointmentsConstants.UNABLE_TO_BOOK
         response_data = {}
         response_success = False
+        
         if response.status_code == 200:
+            
             root = ET.fromstring(response.content)
             status = root.find("Status").text
+            
             if status == "1":
+                
                 reschedule_response = root.find("ReScheduleAppResp").text
+                
                 if reschedule_response:
-                    new_appointment_response = ast.literal_eval(
-                        reschedule_response)[0]
+                    
+                    new_appointment_response = ast.literal_eval(reschedule_response)[0]
                     message = new_appointment_response["Message"]
                     response_message = message
+
                     if message == AppointmentsConstants.APPOINTMENT_RESCHEDULED_SUCCESSFULLY:
+                        
                         new_appointment = dict()
                         appointment_id = new_appointment_response["NewApptId"]
-                        instance = Appointment.objects.filter(
-                            appointment_identifier=self.request.data["app_id"]).first()
-                        appointment_date_time = self.request.data.get(
-                            "new_date")
-                        datetime_object = datetime.strptime(
-                            appointment_date_time, '%Y%m%d%H%M%S')
+                        instance = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"]).first()
+                        
+                        appointment_date_time = self.request.data.get("new_date")
+                        datetime_object = datetime.strptime(appointment_date_time, '%Y%m%d%H%M%S')
                         time = datetime_object.time()
-                        new_appointment["appointment_date"] = datetime_object.date(
-                        )
+                        
+                        new_appointment["appointment_date"] = datetime_object.date()
                         new_appointment["appointment_slot"] = time.strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
+                        new_appointment["slot_duration"] = instance.slot_duration
                         new_appointment["status"] = 1
                         new_appointment["appointment_identifier"] = appointment_id
                         new_appointment["patient"] = instance.patient.id
@@ -1084,40 +1140,55 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         new_appointment["department"] = instance.department.id
                         new_appointment["consultation_amount"] = instance.consultation_amount
                         new_appointment["payment_status"] = instance.payment_status
+                        
                         if instance.family_member:
                             new_appointment["family_member"] = instance.family_member.id
+
                         new_appointment["doctor"] = instance.doctor.id
                         new_appointment["hospital"] = instance.hospital.id
-                        new_appointment["appointment_mode"] = self.request.data.get(
-                            "app_type")
+                        new_appointment["appointment_mode"] = self.request.data.get("app_type")
                         new_appointment["corporate_appointment"] = instance.corporate_appointment
                         new_appointment["booked_via_app"] = True
                         new_appointment["beneficiary_reference_id"] = instance.beneficiary_reference_id
                         new_appointment["appointment_service"] = instance.appointment_service
-
+                        new_appointment["root_appointment_id"] = instance.root_appointment_id or instance.id
+                        
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_id).first()
+                        
                         if appointment_instance:
                             appointment_serializer = AppointmentSerializer(appointment_instance, data=new_appointment, partial=True)
                         else:
                             appointment_serializer = AppointmentSerializer(data=new_appointment)
+
                         appointment_serializer.is_valid(raise_exception=True)
                         appointment = appointment_serializer.save()
-                        if instance.payment_appointment.exists():
-                            payment_instance = instance.payment_appointment.filter(
-                                status="success").first()
-                            if payment_instance:
-                                payment_instance.appointment = appointment
-                                payment_instance.save()
-                        instance.status = 5
-                        instance.reason_id = self.request.data.get("reason_id")
-                        instance.other_reason = self.request.data.get(
-                            "other_reason")
-                        instance.save()
+                        
+                        payment_instances = Payment.objects.filter(appointment=instance.id)
+                        if payment_instances.exists():
+                            payment_instances.update(appointment=appointment.id)
+
+                        update_data = {
+                            "status":5,
+                            "reason_id":self.request.data.get("reason_id"),
+                            "other_reason":self.request.data.get("other_reason")
+                        }
+                        old_appointment_instances = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"])
+                        old_appointment_instances.update(**update_data)
+                        
+                        try:
+                            send_appointment_rescheduling_invitation(appointment)
+                        except Exception as e:
+                            logger.error("Error while sending invitation email : %s"%(str(e)))
+    
                         response_success = True
                         response_message = AppointmentsConstants.APPOINTMENT_HAS_RESCHEDULED
                         response_data["appointment_identifier"] = appointment_id
-                        return self.custom_success_response(message=response_message,
-                                                            success=response_success, data=response_data)
+
+                        return self.custom_success_response(
+                                                            message=response_message,
+                                                            success=response_success, 
+                                                            data=response_data
+                                                        )
         raise ValidationError(response_message)
 
 
@@ -1152,6 +1223,9 @@ class DoctorsAppointmentAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
         if self.request.query_params.get("vc_appointment_status", None):
             return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success")
+        
+        if self.request.query_params.get("prime_visit", None):
+            return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="PR", payment_status="success")
 
         return qs.filter(doctor__code=doctor.code, status="1", appointment_mode="VC", payment_status="success").exclude(vc_appointment_status=4)
 
@@ -1535,10 +1609,13 @@ class CurrentAppointmentListView(ProxyView):
             for appointment in appointment_list:
 
                 appointment_identifier = appointment["AppId"]
-                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                 appointment["enable_vc"] = False
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
+                appointment["app_user"] = False
+                appointment["uhid_linked"] = False
+                appointment["mobile"] = None
 
                 if not appointment_instance:
                     try:
@@ -1556,49 +1633,43 @@ class CurrentAppointmentListView(ProxyView):
                         }
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
-                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
+                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
 
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
-                appointment["uhid_linked"] = False
-                appointment["mobile"] = None
-
-                user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
-                if not user:
-                    user = FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
-
-                if appointment_instance:
-                    if appointment_instance.family_member:
-                        user = appointment_instance.family_member
-                    else:
-                        user = appointment_instance.patient
+                user = None
                 
-                if user:
-                    if user.uhid_number:
-                        appointment["uhid_linked"] = True
-                    appointment["mobile"] = user.mobile.raw_input 
+                if validate_uhid_number(appointment["HospNo"]):
+                    user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first() or FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
 
-                appointment["app_user"] = False
                 if appointment_instance:
-                    
+                    user = appointment_instance.family_member or appointment_instance.patient
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
                     appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
                     appointment["app_user"] = True
 
-                    if appointment_instance.status == 1 and appointment_instance.appointment_mode == "VC" and appointment_instance.payment_status == "success":
+                    if  appointment_instance.status == 1 and \
+                        appointment_instance.appointment_mode == "VC" and \
+                        appointment_instance.payment_status == "success" and \
+                        not appointment_instance.vc_appointment_status == 4:
+
                         appointment["enable_vc"] = True
 
-                        if appointment_instance.vc_appointment_status == 4:
-                            appointment["enable_vc"] = False
+                    if appointment_instance.appointment_vitals.exists():
+                        appointment["vitals_available"] = True
 
-                        if appointment_instance.appointment_vitals.exists():
-                            appointment["vitals_available"] = True
+                    if appointment_instance.appointment_prescription.exists():
+                        appointment["prescription_available"] = True
 
-                        if appointment_instance.appointment_prescription.exists():
-                            appointment["prescription_available"] = True
-
+                if user:
+                    appointment["mobile"] = user.mobile.raw_input
+                    if user.uhid_number:
+                        appointment["uhid_linked"] = True
+                        if not validate_uhid_number(appointment["HospNo"]):
+                            appointment["HospNo"] = user.uhid_number
+                        
         return self.custom_success_response(
                                     message=message,
                                     success=True, 
@@ -1626,3 +1697,36 @@ class FeedbackData(APIView):
             "message": self.list_success_message,
         }
         return Response(data,status=status.HTTP_200_OK)
+
+class PrimeBenefitsViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    queryset = PrimeBenefits.objects.all()
+    serializer_class = PrimeBenefitsSerializer
+    permission_classes = [IsPatientUser | IsManipalAdminUser ]
+    create_success_message = "Prime benefit is added successfully."
+    update_success_message = 'Prime benefit is updated successfuly!'
+    list_success_message = 'Prime benefits returned successfully!'
+    retrieve_success_message = 'Prime benefits returned successfully!'
+    
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['hospital_info__code','hospital_info__description','hospital_info__id']
+    search_fields = ['hospital_info__code','description']
+    ordering_fields = ('sequence','-created_at')
+    
+    def get_permissions(self):
+        if self.action in ['create','partial_update']:
+            permission_classes = [IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()

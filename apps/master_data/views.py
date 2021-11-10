@@ -1,6 +1,3 @@
-from apps.master_data.utils import MasterDataUtils
-from apps.patients.models import FamilyMember, Patient
-from apps.master_data.constants import MasterDataConstants
 import json
 import logging
 import xml.etree.ElementTree as ET
@@ -21,8 +18,13 @@ from apps.lab_and_radiology_items.models import (LabRadiologyItem, LabRadiologyI
 from apps.patients.serializers import PatientSerializer,FamilyMemberSerializer
 from apps.notifications.tasks import (daily_update_scheduler, update_doctor,
                                       update_health_package, update_item)
+from apps.master_data.utils import MasterDataUtils
+from apps.patients.models import FamilyMember, Patient
+from apps.master_data.constants import MasterDataConstants
+from apps.appointments.models import Appointment
+
 from utils.utils import check_code
-from django_filters.rest_framework import DjangoFilterBackend
+
 from proxy.custom_endpoints import SYNC_SERVICE, VALIDATE_OTP, VALIDATE_UHID
 from proxy.custom_serializables import \
     ItemTariffPrice as serializable_ItemTariffPrice
@@ -39,12 +41,16 @@ from proxy.custom_serializables import \
     PatientDetails as serializable_patient_details_by_mobile    
 from proxy.custom_serializers import ObjectSerializer as custom_serializer
 from proxy.custom_views import ProxyView
+
 from rest_framework import filters, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
+
+from django_filters.rest_framework import DjangoFilterBackend
+
 from utils import custom_viewsets
 from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistUpdateMethodPermission,
@@ -53,7 +59,9 @@ from utils.custom_permissions import (BlacklistDestroyMethodPermission,
                                       BlacklistCreateMethodPermission,
                                       IsPatientUser
                                      )
+                                     
 from utils.utils import get_report_info,patient_user_object
+from utils.send_invite import send_appointment_invitation
 
 from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          HospitalCodeMissingValidationException,
@@ -61,10 +69,10 @@ from .exceptions import (DoctorHospitalCodeMissingValidationException,
                          InvalidHospitalCodeValidationException,
                          ItemOrDepartmentDoesNotExistsValidationException)
 from .models import (AmbulanceContact, BillingGroup, BillingSubGroup, Company,
-                     Department, EmergencyContact, HelplineNumbers, Hospital,
+                     Department, EmergencyContact, FeedbackRecipients, HelplineNumbers, Hospital,
                      HospitalDepartment, Specialisation, Components, CompanyDomain, Configurations, Medicine, Billing)
 from .serializers import (AmbulanceContactSerializer, CompanySerializer,
-                          DepartmentSerializer, EmergencyContactSerializer, HelplineNumbersSerializer,
+                          DepartmentSerializer, EmergencyContactSerializer, FeedbackRecipientSerializer, HelplineNumbersSerializer,
                           HospitalDepartmentSerializer, HospitalSerializer,
                           HospitalSpecificSerializer, SpecialisationSerializer,ComponentsSerializer, CompanyDomainsSerializer, ConfigurationSerializer, MedicineSerializer,BillingSerializer)
 
@@ -367,41 +375,45 @@ class DoctorsView(ProxyView):
                     each_doctor[key] = None
 
                 if key in ['DateFrom', 'DateTo'] and each_doctor[key]:
-                    each_doctor[key] = datetime.strptime(
-                        each_doctor[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
+                    each_doctor[key] = datetime.strptime(each_doctor[key], '%d/%m/%Y').strftime(MasterDataConstants.DATE_FORMAT)
 
                 if key == "DocName" and each_doctor[key]:
+
                     each_doctor[key] = each_doctor[key].title()
 
                 if key == "IsOnlineAppt" and each_doctor[key]:
+
                     if each_doctor[key] == "Yes":
                         each_doctor[key] = True
                     else:
                         each_doctor[key] = False
+
                 doctor_details[doctor_sorted_keys[index]] = each_doctor[key]
+
             doctor_kwargs = dict()
             hospital_department_obj = None
             specialisation_obj = None
+            
             hospital_code = doctor_details.pop('hospital_code')
             hospital = Hospital.objects.filter(code=hospital_code).first()
+            
             doctor_kwargs['code'] = doctor_details.pop('code')
             doctor_kwargs['hospital'] = hospital
+            
             department_code = doctor_details.pop('department_code')
             if department_code:
-                hospital_department_obj = HospitalDepartment.objects.filter(
-                    department__code=department_code, hospital=hospital).first()
+                hospital_department_obj = HospitalDepartment.objects.filter(department__code=department_code, hospital=hospital).first()
+
             specialisation_code = doctor_details.pop('specialisation_code')
             if specialisation_code:
-                specialisation_obj = Specialisation.objects.filter(
-                    code=specialisation_code).first()
+                specialisation_obj = Specialisation.objects.filter(code=specialisation_code).first()
 
             is_doctor_updated = Doctor.objects.filter(
                              code=doctor_kwargs['code'],
                              hospital__code=hospital_code
                          ).exclude(updated_at__date__lt=today_date).first()
 
-            doctor, doctor_created = Doctor.objects.update_or_create(
-                **doctor_kwargs, defaults=doctor_details)
+            doctor, doctor_created = Doctor.objects.update_or_create(**doctor_kwargs, defaults=doctor_details)
             doctor_details['doctor_created'] = doctor_created
 
             if not is_doctor_updated:
@@ -410,8 +422,10 @@ class DoctorsView(ProxyView):
 
             if hospital_department_obj:
                 doctor.hospital_departments.add(hospital_department_obj)
+
             if specialisation_obj:
                 doctor.specialisations.add(specialisation_obj)
+                
             all_doctors.append(doctor_details)
 
         previous_date = datetime.now() - timedelta(days=1)
@@ -467,6 +481,7 @@ class HealthPackagesView(ProxyView):
             'price',
             'specialisation_name'
         ]
+        hospital_code = ""
         for each_health_package in response_content:
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
@@ -914,14 +929,17 @@ class ValidateMobileOTPView(ProxyView):
         message = None
         item = root.find('ValidateResponse')
         response_content = json.loads(item.text)
-        if response_content and response_content[0] and ('Status' in response_content[0]):
-            success = False
-            message = response_content[0]['Message']
-            response_content = None
-        else:
+        success = False
+        
+        if  response_content and \
+            response_content[0]:
+            
             success = True
+            message = response_content[0].get('Message')
+
         if success and not message:
             message = self.success_msg
+
         return self.custom_success_response(success=success, message=message,
                                             data=response_content)
 
@@ -970,6 +988,9 @@ class ComponentsView(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     update_success_message = 'Component updated successfully!'
     filter_backends = (DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter,)
+    
+    filter_fields = ['code','type']
+    search_fields = ['code','type','name'] 
 
     def get_permissions(self):
         if self.action in ['list']:
@@ -1166,3 +1187,30 @@ class HelplineNumbersViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSe
             return [permission() for permission in permission_classes]
 
         return super().get_permissions()
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def send_invite(request):
+    appointment_id = request.data.get('appointment_id')
+    appointment_obj = Appointment.objects.filter(appointment_identifier=appointment_id).first()
+    if appointment_obj and send_appointment_invitation(appointment_obj):
+        return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class FeedbackRecipientsViewSet(custom_viewsets.ModelViewSet):
+    queryset = FeedbackRecipients.objects.all()
+    serializer_class = FeedbackRecipientSerializer
+    permission_classes = [IsManipalAdminUser]
+    create_success_message = 'Feedback recipient information added successfully!'
+    update_success_message = 'Feedback recipient information updated successfully!'
+    list_success_message = 'Feedback recipients information returned successfully!'
+    retrieve_success_message = 'Feedback recipient information returned successfully!'
+    delete_success_message = 'Feedback recipient information deleted successfully!'
+    filter_backends = (
+                DjangoFilterBackend,
+                filters.SearchFilter, 
+                filters.OrderingFilter
+            )
+    filter_fields = ['hospital_code','type']
+    search_fields = ['hospital_code','name','contact','email'] 
+    

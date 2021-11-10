@@ -13,14 +13,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from utils import custom_viewsets
-from utils.custom_permissions import InternalAPICall, IsPatientUser
+from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistPartialUpdateMethodPermission, BlacklistUpdateMethodPermission, InternalAPICall, IsManipalAdminUser, IsPatientUser
 from utils.utils import patient_user_object
 
 from .filters import ReportFilter
-from .models import (FreeTextReportDetails, NumericReportDetails, Report,
+from .models import (ReportFile, FreeTextReportDetails, NumericReportDetails, Report,
                      ReportDocuments, StringReportDetails, TextReportDetails,
                      VisitReport)
-from .serializers import (FreeTextReportDetailsSerializer,
+from .serializers import (ReportFileSerializer, FreeTextReportDetailsSerializer,
                           NumericReportDetailsSerializer,
                           ReportDocumentsSerializer, ReportSerializer,
                           StringReportDetailsSerializer,
@@ -291,3 +291,67 @@ class ReportVisitViewSet(custom_viewsets.ModelViewSet):
             qs = qs.filter(patient_class=patient_class).distinct()
 
         return qs.filter(uhid=uhid).order_by('-created_at').distinct()
+    
+    
+class ReportFileViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
+    permission_classes = [AllowAny, ]
+    model = ReportFile
+    queryset = ReportFile.objects.all().order_by('-created_at')
+    serializer_class = ReportFileSerializer
+    create_success_message = "Report file is uploaded successfully."
+    list_success_message = 'Report files returned successfully!'
+    retrieve_success_message = 'Report file information returned successfully!'
+    filter_backends = ( DjangoFilterBackend, filters.SearchFilter, )
+    
+    def get_permissions(self):
+
+        if self.action in ['create']:
+            permission_classes = [AllowAny]
+            return [permission() for permission in permission_classes]
+
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [IsPatientUser | IsManipalAdminUser ]
+            return [permission() for permission in permission_classes]
+        
+        if self.action == 'partial_update':
+            permission_classes = [BlacklistPartialUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'update':
+            permission_classes = [BlacklistUpdateMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        if self.action == 'destroy':
+            permission_classes = [BlacklistDestroyMethodPermission]
+            return [permission() for permission in permission_classes]
+
+        return super().get_permissions()
+    
+    def create(self, request):
+        
+        report_document_param = {
+            "uhid"          : request.query_params.get("uhid"),
+            "visit_id"      : request.query_params.get("visit_id"),
+            "message_id"    : request.query_params.get("message_id")
+        }
+        
+        for _, f in enumerate(request.FILES.getlist('report_file')):
+            report_document_param["report_file"] = f
+
+        report_instance = ReportFile.objects.filter(
+                                        uhid=report_document_param["uhid"],
+                                        visit_id=report_document_param["visit_id"]
+                                    ).first()
+        if report_instance:
+            report_file_serializer = self.serializer_class(report_instance, data=report_document_param, partial=True)
+        else:
+            report_file_serializer = self.serializer_class(data=report_document_param)
+            
+        report_file_serializer.is_valid(raise_exception = True)
+        report_object = report_file_serializer.save()
+        
+        data = {
+                "data":self.serializer_class(report_object).data,
+                "message": "Report file is Uploaded Successfully!"
+            }
+        return Response(data, status=status.HTTP_200_OK)

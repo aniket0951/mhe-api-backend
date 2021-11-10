@@ -22,7 +22,14 @@ class AppointmentsConstants:
     INVALID_PARAM = "Invalid Parameters"
 
     DATE_FORMAT = '%Y-%m-%d'
-    APPOINTMENT_TIME_FORMAT = "%H:%M:%S %p"
+    APPOINTMENT_TIME_FORMAT = "%H:%M:%S"
 
     FILE_UPLOAD_SUCCESSFUL = "File Upload Sucessful"
     
+    HEALTH_PACKAGE_AGE_ERROR_MESSAGE = "You cannot book %s health package, as the package is for the age from %s to %s only."
+    
+    HEALTH_PACKAGE_BELOW_AGE_ERROR_MESSAGE = "You cannot book %s health package, as the package is for the age below %s only."
+    
+    HEALTH_PACKAGE_ABOVE_AGE_ERROR_MESSAGE = "You cannot book %s health package, as the package is for the age above %s only."
+    
+    HEALTH_PACKAGE_GENDER_ERROR_MESSAGE = "You cannot book %s health package, this package is only for the %s patient."

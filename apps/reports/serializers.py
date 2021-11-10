@@ -6,7 +6,7 @@ from apps.patients.serializers import FamilyMemberSerializer, PatientSerializer
 from utils.serializers import DynamicFieldsModelSerializer
 from utils.utils import generate_pre_signed_url, patient_user_object
 
-from .models import (FreeTextReportDetails, NumericReportDetails, Report,
+from .models import (ReportFile, FreeTextReportDetails, NumericReportDetails, Report,
                      ReportDocuments, StringReportDetails, TextReportDetails,
                      VisitReport)
 
@@ -184,5 +184,25 @@ class VisitReportsSerializer(DynamicFieldsModelSerializer):
             report = Report.objects.filter(visit_id=instance.visit_id).first()
             if report:
                 response_object["patient_type"] = report.patient_class
+
+        return response_object
+    
+class ReportFileSerializer(DynamicFieldsModelSerializer):
+
+    class Meta:
+        model = ReportFile
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        response_object = super().to_representation(instance)
+
+        try:
+            if instance.report_file:
+                response_object['report_file'] = generate_pre_signed_url(
+                    instance.report_file.url)
+
+        except Exception as error:
+            logger.error("Error while DownloadReportSerializer : %s"%str(error))
+            response_object['report_file'] = None
 
         return response_object

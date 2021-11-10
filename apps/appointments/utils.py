@@ -2,14 +2,19 @@ import hashlib
 import random
 import time
 import logging
+from utils.utils import calculate_age
 
 from rest_framework.test import APIRequestFactory
+from rest_framework.serializers import ValidationError
+
 from apps.health_packages.models import HealthPackage
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from apps.patients.models import Patient
 from apps.master_data.models import FeedbackRecipients
 from apps.patients.exceptions import UnablToSendEmailException
+from apps.appointments.constants import AppointmentsConstants
+
 
 TO = "TO"
 CC = "CC"
@@ -126,4 +131,20 @@ def send_feedback_received_mail(feedback_serializer,patient_instance):
             raise UnablToSendEmailException
     except Exception as e:
         logger.info("Exception while sending feedback email: %s"%str(e))
+        
+
+def check_health_package_age_and_gender(patient,package_id_list):
+    if patient.dob:    
+        patient_age = calculate_age(patient.dob)
+        for package_id in package_id_list:
+            health_package = HealthPackage.objects.filter(id=package_id).first()
+            if not patient_age in range(health_package.age_from, health_package.age_to):
+                if patient_age < health_package.age_from:
+                    raise ValidationError(AppointmentsConstants.HEALTH_PACKAGE_ABOVE_AGE_ERROR_MESSAGE%(str(health_package),str(health_package.age_from)))
+                if patient_age > health_package.age_to:
+                    raise ValidationError(AppointmentsConstants.HEALTH_PACKAGE_BELOW_AGE_ERROR_MESSAGE%(str(health_package),str(health_package.age_to)))
+                raise ValidationError(AppointmentsConstants.HEALTH_PACKAGE_AGE_ERROR_MESSAGE%(str(health_package), str(health_package.age_from),str(health_package.age_to)))
+        
+            if patient.gender not in health_package.gender:
+                raise ValidationError(AppointmentsConstants.HEALTH_PACKAGE_GENDER_ERROR_MESSAGE%(str(health_package), str(health_package.gender)))
 

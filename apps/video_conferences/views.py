@@ -50,7 +50,7 @@ class RoomCreationView(APIView):
     def post(self, request, format=None):
         appointment_id = request.data.get("appointment_id")
         appointment = Appointment.objects.filter(
-            appointment_identifier=appointment_id).first()
+            appointment_identifier=appointment_id).order_by('-created_at').first()
         doctor = appointment.doctor
         doctor_appointments = Appointment.objects.filter(Q(doctor=doctor.id) & Q(appointment_mode="VC") & Q(
             payment_status="success") & Q(status=1) & (Q(vc_appointment_status=2) | Q(vc_appointment_status=3)))
@@ -61,7 +61,7 @@ class RoomCreationView(APIView):
                 "message": "Please complete the initiated meeting Before starting new one"
             }
             return Response(data=data, status=status.HTTP_417_EXPECTATION_FAILED)
-        room_name = "".join(appointment_id.split("||"))
+        room_name = "".join(appointment_id.split("||")) if "||" in str(appointment_id) else str(appointment_id)
         data = dict()
         if not appointment:
             raise ValidationError("Appointment does not Exist")
@@ -125,10 +125,10 @@ class AccessTokenGenerationView(APIView):
 
     def post(self, request, format=None):
         room = request.data.get("room")
-        room_name = "".join(room.split("||"))
+        room_name = "".join(room.split("||")) if "||" in str(room) else str(room)
         identity = request.data.get("identity")
         appointment = Appointment.objects.filter(
-            appointment_identifier=room).first()
+            appointment_identifier=room).order_by('-created_at').first()
         if not appointment:
             raise ValidationError("Invalid room name")
         if appointment.vc_appointment_status == 4:
@@ -173,7 +173,7 @@ class CloseRoomView(APIView):
         if appointment:
             appointment.vc_appointment_status, appointment.enable_join_button, appointment.patient_ready = 4, False, False
             appointment.save()
-        room_name = "".join(room_name.split("||"))
+        room_name = "".join(room_name.split("||")) if "||" in str(room_name) else str(room_name)
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:
@@ -304,7 +304,7 @@ class HoldAppointmentView(APIView):
         if appointment:
             appointment.vc_appointment_status, appointment.enable_join_button, appointment.patient_ready = 5, False, False
             appointment.save()
-        room_name = "".join(room_name.split("||"))
+        room_name = "".join(room_name.split("||")) if "||" in str(room_name) else str(room_name)
         room_instance = VideoConference.objects.filter(
             room_name=room_name).first()
         if not room_instance:

@@ -170,6 +170,36 @@
     },
     {
         "model": "manipal_admin.AdminMenu",
+        "pk": "34663e52-6111-4eb1-98b4-016e56594689",
+        "fields": {
+            "created_at": "2021-09-02T16:37:24.893Z",
+            "updated_at": "2021-09-02T16:37:24.893Z",
+            "name": "Manage Components",
+            "parent_menu": "5d4ef8d3-7a86-489a-9dfb-fbcb1e426d6f"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "631fb529-54a9-467d-89ff-ca557659d895",
+        "fields": {
+            "created_at": "2021-09-02T16:37:24.893Z",
+            "updated_at": "2021-09-02T16:37:24.893Z",
+            "name": "Export Feedback",
+            "parent_menu": "5d4ef8d3-7a86-489a-9dfb-fbcb1e426d6f"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "55f67d8b-4a89-4f32-a01c-85f56c883aaf",
+        "fields": {
+            "created_at": "2021-10-13T18:37:24.893Z",
+            "updated_at": "2021-10-13T18:37:24.893Z",
+            "name": "Prime Benefits",
+            "parent_menu": "5d4ef8d3-7a86-489a-9dfb-fbcb1e426d6f"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
         "pk": "00fa8b7d-f70c-4cfa-8561-342dcb69811e",
         "fields": {
             "created_at": "2021-05-28T14:37:24.893Z",
@@ -204,6 +234,45 @@
             "updated_at": "2021-06-11T12:37:24.893Z",
             "name": "Drive Bookings",
             "parent_menu": "bb6561a6-7b02-4439-8e2e-a9d4b59882cf"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "bb6561a6-7b02-4439-8e2e-a9d4b59883cf",
+        "fields": {
+            "created_at": "2021-11-08T18:37:24.893Z",
+            "updated_at": "2021-11-08T18:37:24.893Z",
+            "name": "Manage Payment"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "d83c8326-b451-456c-8f3f-3a0172b12778",
+        "fields": {
+            "created_at": "2021-11-08T18:37:24.893Z",
+            "updated_at": "2021-11-08T18:37:24.893Z",
+            "name": "Payment History",
+            "parent_menu": "bb6561a6-7b02-4439-8e2e-a9d4b59883cf"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "d83c8326-b451-456c-8f3f-3a0172b12779",
+        "fields": {
+            "created_at": "2021-11-08T18:37:24.893Z",
+            "updated_at": "2021-11-08T18:37:24.893Z",
+            "name": "Refund History",
+            "parent_menu": "bb6561a6-7b02-4439-8e2e-a9d4b59883cf"
+        }
+    },
+    {
+        "model": "manipal_admin.AdminMenu",
+        "pk": "d83c8326-b451-456c-8f3f-3a0172b12780",
+        "fields": {
+            "created_at": "2021-11-08T18:37:24.893Z",
+            "updated_at": "2021-11-08T18:37:24.893Z",
+            "name": "Unprocessed Transactions",
+            "parent_menu": "bb6561a6-7b02-4439-8e2e-a9d4b59883cf"
         }
     }
 ]

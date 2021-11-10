@@ -7,8 +7,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (AppointmentPayment, CorporateUhidRegistration,
                     EpisodeItemView, HealthPackageAPIView,
                     HealthPackagePayment, IPDepositPayment, OPBillPayment,
-                    PayBillOpView, PayBillView, PaymentReturn,
-                    PaymentsAPIView, ReceiptViewSet, RefundView, UHIDPayment)
+                    PayBillOpView, PayBillView, PaymentRefundAPIView, PaymentReturn,
+                    PaymentsAPIView, ReceiptViewSet, RefundView, UHIDPayment, UnprocessedTransactionsAPIView)
 
 from .razorpay_views import (
                         RazorAppointmentPayment,
@@ -25,6 +25,8 @@ router = DefaultRouter(trailing_slash=False)
 router.register('all_payments', PaymentsAPIView)
 router.register('all_health_package', HealthPackageAPIView)
 router.register('payment_receipt', ReceiptViewSet)
+router.register('all_refund_payments', PaymentRefundAPIView)
+router.register('all_unprocess_transactions', UnprocessedTransactionsAPIView)
 
 
 urlpatterns = [

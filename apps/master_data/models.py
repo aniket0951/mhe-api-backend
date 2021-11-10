@@ -64,6 +64,8 @@ class Hospital(MyBaseModel):
                             null=True,
                             blank=True
                         )
+    
+    slot_blocking_duration = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = "Hospital"
@@ -275,6 +277,11 @@ class AmbulanceContact(MyBaseModel):
         verbose_name_plural = "Ambulance Contacts"
 
 class Components(MyBaseModel):
+    
+    TYPE_CHOICES = (
+        ('hospital','hospital'),
+        ('homecare','homecare')
+    )
 
     name = models.CharField(max_length=50,
                             null=False,
@@ -283,7 +290,13 @@ class Components(MyBaseModel):
     code = models.SlugField(unique=True,
                             blank=False,
                             null=True)
-
+    
+    type = models.CharField(
+                        choices=TYPE_CHOICES,
+                        max_length=30,
+                       default='hospital'
+                    )
+    
     is_active = models.BooleanField(default=True)
 
 class CompanyDomain(MyBaseModel):

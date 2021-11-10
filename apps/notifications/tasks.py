@@ -4,13 +4,12 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.management import call_command
 from apps.payments.serializers import UnprocessedTransactionsSerializer
-from pushjack import APNSClient
+from apps.notifications.models import ScheduleNotifications
 
 from celery.schedules import crontab
 from manipal_api.celery import app
 from pyfcm import FCMNotification
 from django.db.models import Q
-
 
 from apps.appointments.models import Appointment, HealthPackageAppointment
 from apps.appointments.views import CancelMyAppointment
@@ -21,7 +20,7 @@ from apps.payments.razorpay_views import RazorPaymentResponse
 from apps.payments.models import Payment, UnprocessedTransactions
 
 from .serializers import MobileNotificationSerializer
-from .utils import cancel_parameters, get_birthday_notification_data
+from .utils import cancel_parameters, get_birthday_notification_data, get_scheduler_notification_data
 
 logger = logging.getLogger("django")
 
@@ -43,18 +42,23 @@ def send_push_notification(self, **kwargs):
         if recipient.device.platform == 'Android':
 
             fcm = FCMNotification(api_key=settings.FCM_API_KEY)
-            if notification_data.get("doctor_name"):
-                fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
+
+            data_message = {
                     "title": notification_instance.title, 
                     "message": notification_instance.message, 
                     "notification_type": notification_data["notification_type"], 
-                    "appointment_id": notification_data["appointment_id"], 
-                    "doctor_name": notification_data["doctor_name"]
-                }, low_priority=False)
-            else:
-                fcm.notify_single_device(registration_id=notification_instance.recipient.device.token, data_message={
-                    "title": notification_instance.title, "message": notification_instance.message, "notification_type": notification_data["notification_type"], "appointment_id": notification_data["appointment_id"]}, low_priority=False)
+                    "appointment_id": notification_data.get("appointment_id"),
+                    "doctor_name": notification_data.get("doctor_name"),
+                    "notification_image_url": notification_data.get("notification_image_url")
 
+            }
+
+            fcm.notify_single_device(
+                        registration_id=notification_instance.recipient.device.token, 
+                        data_message=data_message, 
+                        low_priority=False
+                    )
+            
         elif recipient.device.platform == 'iOS':
             
             apns_pusher = ApnsPusher(
@@ -89,14 +93,25 @@ def send_silent_push_notification(self, **kwargs):
     fcm = FCMNotification(api_key=settings.FCM_API_KEY)
     notification_data = kwargs["notification_data"]
     if notification_data.get("patient"):
-        patient_instance = Patient.objects.filter(
-            id=notification_data.get("patient")["id"]).first()
+
+        patient_instance = Patient.objects.filter(id=notification_data.get("patient")["id"]).first()
+
         if (hasattr(patient_instance, 'device') and patient_instance.device.token):
+            
             if patient_instance.device.platform == 'Android':
-                fcm.notify_single_device(registration_id=patient_instance.device.token, data_message={
+
+                data_message={
                     "notification_type": "SILENT_NOTIFICATION", 
-                    "appointment_id": notification_data["appointment_id"]
-                }, low_priority=False)
+                    "appointment_id": notification_data.get("appointment_id"),
+                    "doctor_name": notification_data.get("doctor_name"),
+                    "notification_image_url": notification_data.get("notification_image_url")
+                }
+
+                fcm.notify_single_device(
+                    registration_id=patient_instance.device.token, 
+                    data_message=data_message, 
+                    low_priority=False
+                )
 
             elif patient_instance.device.platform == 'iOS':
 
@@ -107,10 +122,8 @@ def send_silent_push_notification(self, **kwargs):
                     bundle_id=settings.BUNDLE_ID,
                     team_id=settings.TEAM_ID
                 )
-
                 token = patient_instance.device.token
                 alert = "Doctor completed this consultation"
-                
                 payload = {
                     'aps': {
                         'alert': {
@@ -125,7 +138,6 @@ def send_silent_push_notification(self, **kwargs):
                             }
                     }
                 }
-
                 apns_pusher.send_single_push(
                     device_token    =   token,
                     payload         =   payload
@@ -152,13 +164,14 @@ def appointment_next_day_reminder_scheduler():
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+                                    id=appointment_instance.family_member.id, 
+                                    patient_info_id=appointment_instance.patient.id,
+                                    is_visible=True
+                                ).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-                patient_member = Patient.objects.filter(
-                    uhid_number=member.uhid_number).first()
+                patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
+                send_push_notification.delay(notification_data=notification_data)
         notification_data["recipient"] = appointment_instance.patient.id
         send_push_notification.delay(notification_data=notification_data)
 
@@ -170,8 +183,8 @@ def health_package_next_day_appointment_reminder():
         appointment_date__date=now.date(), appointment_status="Booked")
     for appointment_instance in appointments:
         notification_data = {}
-        patient = Patient.objects.filter(
-            id=appointment_instance.patient.id).first()
+        patient = Patient.objects.filter(id=appointment_instance.patient.id).first()
+        
         notification_data["title"] = "Reminder: Health Package Appointment Reminder"
         notification_data["message"] = "Reminder: You have a Health Check appointment appointment at {0}, tomorrow at {1}. For assistance, call Appointment Helpline 1800 102 5555.".format(
                                             appointment_instance.hospital.address, 
@@ -179,15 +192,20 @@ def health_package_next_day_appointment_reminder():
                                         )
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
+
         if appointment_instance.family_member:
+
             member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+                                    id=appointment_instance.family_member.id, 
+                                    patient_info_id=appointment_instance.patient.id,
+                                    is_visible=True
+                                ).first()
+            
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
-                patient_member = Patient.objects.filter(
-                    uhid_number=member.uhid_number).first()
+                patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
-                send_push_notification.delay(
-                    notification_data=notification_data)
+                send_push_notification.delay(notification_data=notification_data)
+
         notification_data["recipient"] = patient.id
         send_push_notification.delay(notification_data=notification_data)
 
@@ -208,7 +226,10 @@ def health_package_appointment_reminder():
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
             member = FamilyMember.objects.filter(
-                id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+                                id=appointment_instance.family_member.id, 
+                                patient_info_id=appointment_instance.patient.id,
+                                is_visible=True
+                            ).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(
                     uhid_number=member.uhid_number).first()
@@ -238,7 +259,11 @@ def appointment_reminder_scheduler():
         notification_data["notification_type"] = "GENERAL_NOTIFICATION"
         notification_data["appointment_id"] = appointment_instance.appointment_identifier
         if appointment_instance.family_member:
-            member = FamilyMember.objects.filter(id=appointment_instance.family_member.id, patient_info_id=appointment_instance.patient.id).first()
+            member = FamilyMember.objects.filter(
+                                id=appointment_instance.family_member.id, 
+                                patient_info_id=appointment_instance.patient.id,
+                                is_visible=True
+                            ).first()
             if Patient.objects.filter(uhid_number__isnull=False, uhid_number=member.uhid_number).exists():
                 patient_member = Patient.objects.filter(uhid_number=member.uhid_number).first()
                 notification_data["recipient"] = patient_member.id
@@ -331,7 +356,7 @@ def auto_appointment_cancellation():
     appointments = Appointment.objects.filter(
             Q(created_at__date=now.date()) & 
             Q(status="1") &
-            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) &
+            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) &
             Q(payment_status=None) &
             Q(booked_via_app=True)
         ).filter(
@@ -343,6 +368,7 @@ def auto_appointment_cancellation():
         param["appointment_identifier"] = appointment.appointment_identifier
         param["reason_id"] = "1"
         param["status"] = "2"
+        param["auto_cancellation"] = True
         request_param = cancel_parameters(param)
         CancelMyAppointment.as_view()(request_param)
 
@@ -354,7 +380,7 @@ def daily_auto_appointment_cancellation():
     appointments = Appointment.objects.filter(
         Q(created_at__date=now.date()) &
         Q(status="1") &
-        (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) &
+        (Q(appointment_mode="VC")| Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) &
         Q(payment_status=None) &
         Q(booked_via_app=True)
     )
@@ -385,17 +411,61 @@ def daily_auto_drive_bookings_cancellation():
 @app.task(name="tasks.birthday_wishing_scheduler")
 def birthday_wishing_scheduler():
     now = datetime.today()
+    
     query = Q(dob__isnull=False) & Q(dob__day=now.date().day) & Q(dob__month=now.date().month)
 
-    family_member_ids = FamilyMember.objects.filter( query )
+    family_member_ids = FamilyMember.objects.filter( query & Q(patient_info__is_birthday_notification_on=True) & Q(is_visible=True))
     for family_member_id in family_member_ids:
         notification_data = get_birthday_notification_data(family_member_id.patient_info,family_member_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
 
-    patient_ids = Patient.objects.filter( (query) )
+    patient_ids = Patient.objects.filter( query & Q(is_birthday_notification_on=True) )
     for patient_id in patient_ids:
         notification_data = get_birthday_notification_data(patient_id,patient_id.first_name)
         send_push_notification.delay(notification_data=notification_data)
+
+def trigger_scheduled_notification(scheduler):
+    uhid_list = scheduler.uhids.split(",")
+    notification_data = get_scheduler_notification_data(scheduler)
+    
+    for uhid in uhid_list:
+        family_member_ids = FamilyMember.objects.filter(
+                                    uhid_number     = uhid,
+                                    is_visible      = True,
+                                    patient_info__is_promotional_notification_on = True
+                                )
+        for family_member_id in family_member_ids:
+            notification_data["recipient"] = family_member_id.patient_info.id
+            send_push_notification.delay(notification_data=notification_data)
+
+        patient_ids = Patient.objects.filter(
+                                    uhid_number     = uhid, 
+                                    is_promotional_notification_on = True
+                                )
+        for patient_id in patient_ids:
+            notification_data["recipient"] = patient_id.id
+            send_push_notification.delay(notification_data=notification_data)
+
+    scheduler.is_executed = True
+    scheduler.save()
+
+@app.task(name="tasks.scheduler_notification_reminder")
+def scheduler_notification_reminder():
+    current_time = datetime.now()
+    
+    start_time = current_time - timedelta(minutes=2)
+    end_time = current_time + timedelta(minutes=2)
+
+    appointment_schedulers = ScheduleNotifications.objects.filter(
+                                        date            = current_time.date(),
+                                        time__range     = [start_time.time(), end_time.time()],
+                                        trigger_type    = ScheduleNotifications.TRIGGER_CHOICE_SCHEDULE,
+                                        is_executed     = False
+                                    )
+
+    for scheduler in appointment_schedulers:
+        trigger_scheduled_notification(scheduler)
+
 
 @app.task(name="tasks.daily_update")
 def daily_update_scheduler():
@@ -406,7 +476,7 @@ def daily_update_scheduler():
     call_command("create_or_update_doctors", verbosity=0)
     call_command("update_doctors_profile", verbosity=0)
     call_command("create_or_update_doctor_price", verbosity=0)
-    # call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
+    call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
     
     call_command("create_or_update_health_packages", verbosity=0)
     call_command("update_health_package_image", verbosity=0)
@@ -424,7 +494,7 @@ def update_doctor():
     call_command("create_or_update_doctors", verbosity=0)
     call_command("update_doctors_profile", verbosity=0)
     call_command("create_or_update_doctor_price", verbosity=0)
-    # call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
+    call_command("create_or_update_doctors_weekly_schedule", verbosity=0)
 
 
 @app.task(name="tasks.update_item")
@@ -467,5 +537,17 @@ app.conf.beat_schedule = {
     "daily_auto_drive_booking_cancellation": {
         "task": "tasks.daily_auto_drive_bookings_cancellation",
         "schedule": crontab(minute="*/5", hour="*")
+    },
+    "daily_auto_process_birthday_wishes": {
+        "task": "tasks.birthday_wishing_scheduler",
+        "schedule": crontab(minute="*/10", hour="6")
+    },
+    "pre_appointment_reminder": {
+        "task": "tasks.pre_appointment_reminder",
+        "schedule": crontab(minute="*/30", hour='*')
+    },
+    "scheduler_notification_reminder": {
+        "task": "tasks.scheduler_notification_reminder",
+        "schedule": crontab(minute="*/5", hour='*')
     }
 }

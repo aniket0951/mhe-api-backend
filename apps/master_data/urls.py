@@ -4,13 +4,13 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (AmbulanceContactViewSet, CompanyViewSet, DepartmentsView,
-                    DoctorsView, EmergencyContactViewSet, HealthPackagesView, HelplineNumbersViewSet,
+                    DoctorsView, EmergencyContactViewSet, FeedbackRecipientsViewSet, HealthPackagesView, HelplineNumbersViewSet,
                     HospitalDepartmentViewSet, HospitalViewSet,
                     ItemsTarrifPriceView, LabRadiologyItemsView,
                     PatientAppointmentStatus, RequestSyncView,
                     SpecialisationViewSet, UhidConsultationPricingView,
                     ValidateMobileOTPView, ValidateMobileView, ValidateOTPView,
-                    ValidateUHIDView, CompanyDomainView, ComponentsView, ConfigurationsView,PatientDetailsByMobileView,MedicineViewSet,BillingViewSet)
+                    ValidateUHIDView, CompanyDomainView, ComponentsView, ConfigurationsView,PatientDetailsByMobileView,MedicineViewSet,BillingViewSet, send_invite)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -26,6 +26,7 @@ router.register('configurations', ConfigurationsView)
 router.register('medicine', MedicineViewSet)
 router.register('billing', BillingViewSet)
 router.register('helpline_numbers', HelplineNumbersViewSet)
+router.register('feedback_recipients', FeedbackRecipientsViewSet)
 
 urlpatterns = [
 
@@ -66,6 +67,8 @@ urlpatterns = [
 
     url('^consultation_charges', UhidConsultationPricingView.as_view(),
         name="consultation_charges"),
+    
+    url(r'^send_invite', send_invite, name='send_invite'),
 
     * router.urls
 ]

@@ -23,5 +23,5 @@ class Command(BaseCommand):
                 client.post('/api/master_data/departments',json.dumps({'location_code': each_hospital.code}), content_type='application/json')
                 print("Completed loading departments of {} hospital.\n------------".format(each_hospital.code))
 
-        except Exception as e:
+        except Exception as e: 
             print("Unexpected error occurred while loading Departments- {0}".format(e))

@@ -66,7 +66,7 @@ def get_appointment(patient_id):
                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
             )
         ).exclude(
-            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & (
+            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & (
                 Q(vc_appointment_status="4") | Q(payment_status__isnull=True)
             )
         ).filter(corporate_appointment=True)
@@ -79,7 +79,7 @@ def get_appointment(patient_id):
                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
             )
         ).exclude(
-            (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & (
+            (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & (
                 Q(vc_appointment_status="4") | Q(payment_status__isnull=True)
             )
         ).filter(corporate_appointment=False)
@@ -93,7 +93,7 @@ def get_appointment(patient_id):
                     Q(family_member_id=member.id)
                 )
             ).exclude(
-                (Q(appointment_mode="VC") | Q(appointment_service=settings.COVID_SERVICE)) & (
+                (Q(appointment_mode="VC") | Q(appointment_mode="PR") | Q(appointment_service=settings.COVID_SERVICE)) & (
                     Q(vc_appointment_status="4") | Q(payment_status__isnull=True)
                 )
             ).filter(corporate_appointment=False)
@@ -253,3 +253,15 @@ def end_date_vaccination_date_comparision(booking_end_time,date_of_vaccination_d
     date_of_vaccination_date_time = datetime.strptime(date_of_vaccination_date,'%Y-%m-%d')
     if end_date_time.date()!=date_of_vaccination_date_time.date():
         raise ValidationError('End date should be the same as the vaccination date.')
+
+def determine_date_format(date_string):
+    date_format = '%d/%m/%y'
+    date_parts = date_string.split("/")
+    if date_parts and len(date_parts)>2 and date_parts[2] and len(date_parts[2])>3:
+        date_format = '%d/%m/%Y'
+    return date_format
+
+def validate_uhid_number(uhid_number):
+    if uhid_number and len(uhid_number)>2 and (uhid_number[:2].upper() == "MH" or uhid_number[:3].upper() == "MMH"):
+        return True
+    return False

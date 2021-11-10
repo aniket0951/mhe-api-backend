@@ -23,6 +23,11 @@ def generate_radiology_report_file_path(self, filename):
     obj_name = str(self.id) + str(obj_file_extension)
     return "reports/{0}/documents/{1}".format(self.id, obj_name)
 
+def generate_report_file_path(self, filename):
+    _, obj_file_extension = os.path.splitext(filename)
+    obj_name = str(self.id) + str(obj_file_extension)
+    return "reports/{0}/documents/{1}".format(self.id, obj_name)
+
 
 class Report(MyBaseModel):
     PATIENT_CLASS_CHOICES = (
@@ -303,3 +308,28 @@ class VisitReport(MyBaseModel):
     class Meta:
         verbose_name = "Report Visit"
         verbose_name_plural = "Report Visits"
+
+class ReportFile(MyBaseModel):
+    uhid = models.CharField(max_length=20,
+                            blank=False,
+                            null=False)
+    
+    visit_id = models.CharField(max_length=100,
+                                null=False,
+                                blank=False)
+    
+    message_id = models.CharField(max_length=100,
+                                  null=False,
+                                  blank=False)
+    
+    report_file = models.FileField(upload_to=generate_report_file_path,
+                                  storage=FileStorage(),
+                                  validators=[
+                                      FileExtensionValidator(settings.VALID_FILE_EXTENSIONS), 
+                                      validate_file_size,
+                                      validate_file_authenticity,
+                                      validate_file_infection
+                                    ],
+                                      
+                                  blank=True,
+                                  null=True)

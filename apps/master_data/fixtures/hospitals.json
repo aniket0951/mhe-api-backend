@@ -201,7 +201,8 @@
             "is_home_collection_supported":"True",
             "location":"",
             "promo_code":"MIO",
-            "corporate_only":"True"
+            "corporate_only":"True",
+            "slot_blocking_duration": 30
         }
     },{
         "model": "master_data.hospital",
@@ -221,6 +222,23 @@
             "location":"",
             "promo_code":""
         }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8215",
+        "fields": {
+            "created_at": "2021-09-29T00:00:00+05:30",
+            "updated_at": "2021-09-29T00:00:00+05:30",
+            "code": "MVB",
+            "description": "Manipal Hospital Varthur Road",
+            "email": "www.manipalhospitals.com",
+            "mobile": "080-25023344",
+            "address": "Manipal Hospital Varthur Road, Bengaluru, Karnataka 560078",
+            "is_health_package_online_purchase_supported": "False",
+            "health_package_doctor_code":"",
+            "health_package_department_code":"",
+            "is_home_collection_supported":"True",
+            "location":"",
+            "promo_code":""
+        }
     }
-
 ]

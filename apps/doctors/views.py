@@ -1,4 +1,3 @@
-from apps.doctors.utils import process_slots
 import ast
 import logging
 import xml.etree.ElementTree as ET
@@ -6,9 +5,11 @@ import xml.etree.ElementTree as ET
 from django.conf import settings
 from django.db.models import Q
 from django.utils.timezone import datetime
+from datetime import date, timedelta
 
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor, DoctorsWeeklySchedule
+from apps.doctors.utils import process_slots
 from apps.doctors.serializers import (DoctorSerializer, DoctorsWeeklyScheduleSerializer,)
 from apps.master_data.models import Department, Hospital
 from django_filters.rest_framework import DjangoFilterBackend
@@ -29,6 +30,7 @@ from rest_framework import filters
 from rest_framework.permissions import AllowAny
 from rest_framework.serializers import ValidationError
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
+
 from utils import custom_viewsets
 from utils.custom_permissions import BlacklistDestroyMethodPermission, BlacklistUpdateMethodPermission, InternalAPICall, IsManipalAdminUser, IsPatientUser
 from utils.exceptions import InvalidRequest
@@ -82,31 +84,55 @@ class DoctorsAPIView(custom_viewsets.ReadOnlyModelViewSet):
 
         return qs
 
-def extract_slots(slot_list):
+def extract_slots(slot_list,slot_blocking_duration=0):
     morning_slot, afternoon_slot, evening_slot = [], [], []
+    services = {"HV":False,"VC":False,"PR":False}
+    current_datetime = datetime.now() + timedelta(minutes=slot_blocking_duration)
+    
     for slot in slot_list:
         time_format = ""
         appointment_type = "HV"
+        end_time_format = '%d %b, %Y %I:%M:%S %p'
+
         if "HVVC" in slot['startTime']:
             time_format = '%d %b, %Y %I:%M:%S %p(HVVC)'
             appointment_type = "HVVC"
+            services["HV"] = True
+            services["VC"] = True
+
         elif "VC" in slot['startTime']:
             time_format = '%d %b, %Y %I:%M:%S %p(VC)'
             appointment_type = "VC"
+            services["VC"] = True
+
         elif "PR" in slot['startTime']:
             time_format = '%d %b, %Y %I:%M:%S %p(PR)'
             appointment_type = "PR"
+            services["PR"] = True
+
         else:
             time_format = '%d %b, %Y %I:%M:%S %p(HV)'
-        time = datetime.strptime(
-            slot['startTime'], time_format).time()
+            services["HV"] = True
+
+        start_datetime = datetime.strptime(slot['startTime'], time_format)
+
+        if start_datetime < current_datetime:
+            continue
+
+        time = start_datetime.time()
+        end_time = datetime.strptime(slot['endTime'], end_time_format).time()
+
+        slot_duration_td = datetime.combine(date.today(), end_time) - datetime.combine(date.today(), time)
+        slot_duration_minute = (slot_duration_td.seconds//60)%60
+        
         if time.hour < 12:
-            morning_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
+            morning_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type, 'slot_duration':slot_duration_minute})
         elif (time.hour >= 12) and (time.hour < 17):
-            afternoon_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
+            afternoon_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type, 'slot_duration':slot_duration_minute})
         else:
-            evening_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type})
-    return morning_slot, afternoon_slot, evening_slot
+            evening_slot.append({"slot": time.strftime(DoctorsConstants.APPOINTMENT_SLOT_TIME_FORMAT), "type": appointment_type, 'slot_duration':slot_duration_minute})
+
+    return morning_slot, afternoon_slot, evening_slot, services
 
 def get_doctor_instace(data,date):
     doctor = None
@@ -122,7 +148,7 @@ def get_doctor_instace(data,date):
         logger.info("Exception in DoctorSlotAvailability: %s"%(str(e)))
         raise InvalidRequest
     if not doctor:
-        raise DoctorDoesNotExistsValidationException
+        raise ValidationError("Doctor is not available on the selected date.")
     return doctor
 
 class DoctorSlotAvailability(ProxyView):
@@ -146,6 +172,9 @@ class DoctorSlotAvailability(ProxyView):
 
         slots = serializable_SlotAvailability(**request.data)
         request_data = custom_serializer().serialize(slots, 'XML')
+
+        request.data["hospital_id"] = hospital
+
         return request_data
 
     def post(self, request, *args, **kwargs):
@@ -156,23 +185,36 @@ class DoctorSlotAvailability(ProxyView):
         slots = root.find("timeSlots").text
         price = root.find("price").text
         status = root.find("Status").text
+        hospital = self.request.data.get("hospital_id")
+        slot_blocking_duration = 0
+
+        if hospital and hospital.slot_blocking_duration:
+            slot_blocking_duration = hospital.slot_blocking_duration
+
         hv_price, vc_price, pr_price = 0, 0, 0
         morning_slot, afternoon_slot, evening_slot = [], [], []
         
         response = {}
+        services = {"HV":False,"VC":False,"PR":False}
         if status == "SUCCESS":
+
             hv_price, *vc_pr_price = price.split("-")
+            
             if vc_pr_price:
+                
                 vc_price, *pr_price = vc_pr_price
                 if pr_price:
                     pr_price, *rem = pr_price
+
             if slots:
+
                 slot_list = ast.literal_eval(slots)
-                morning_slot, afternoon_slot, evening_slot = extract_slots(slot_list)
+                morning_slot, afternoon_slot, evening_slot, services = extract_slots(slot_list,slot_blocking_duration)
             
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
+        response["services"] = services
         response["hv_price"] = hv_price
         response["vc_price"] = vc_price
         response["prime_price"] = pr_price
@@ -273,7 +315,7 @@ class DoctorloginView(ProxyView):
 
 class DoctorRescheduleSlot(ProxyView):
     source = 'getSlotForAppntType'
-    permission_classes = [IsPatientUser]
+    permission_classes = [IsPatientUser | IsManipalAdminUser]
 
     def get_request_data(self, request):
         slots = serializable_RescheduleSlot(**request.data)
@@ -288,14 +330,24 @@ class DoctorRescheduleSlot(ProxyView):
         slots = root.find("timeSlots").text
         price = root.find("price").text
         status = root.find("Status").text
+
+        slot_blocking_duration = 0
+        if self.request.data.get("location_code"):
+            hospital = Hospital.objects.filter(code=self.request.data.get("location_code")).first()
+            slot_blocking_duration = hospital.slot_blocking_duration if hospital else 0
+
         morning_slot, afternoon_slot, evening_slot = [], [], []
+        services = {"HV":False,"VC":False,"PR":False}
+
         response = {}
         if status == "SUCCESS":
-            morning_slot, afternoon_slot, evening_slot = process_slots(slots)
+            morning_slot, afternoon_slot, evening_slot, services = process_slots(slots,slot_blocking_duration)
             response["price"] = price.split("-")[0]
+
         response["morning_slot"] = morning_slot
         response["afternoon_slot"] = afternoon_slot
         response["evening_slot"] = evening_slot
+        response["services"] = services
         return self.custom_success_response(message=DoctorsConstants.AVAILABLE_SLOTS,success=True, data=response)
 
 
@@ -325,6 +377,7 @@ class DoctorScheduleView(ProxyView):
                 for record in schedule_list:
                     if hospital_description not in records:
                         records[hospital_description] = []
+                    record["SessionType"] = record["SessionType"].replace("/","") 
                     records[hospital_description].append(record)
                 
         return self.custom_success_response(message=DoctorsConstants.AVAILABLE_SLOTS,success=True, data=records)

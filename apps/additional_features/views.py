@@ -110,8 +110,11 @@ class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet)
         AdditionalFeaturesUtil.datetime_validation_on_creation(request_data)
         
         serializer.validated_data['code'] = AdditionalFeaturesUtil.generate_unique_drive_code(serializer.validated_data['description'])
+    
         serializer_id = serializer.save(is_active=True)
 
+        AdditionalFeaturesUtil.generate_qr_code(serializer.validated_data['code'],serializer_id)
+        
         AdditionalFeaturesUtil.create_drive_inventory(serializer_id.id,request_data)
         AdditionalFeaturesUtil.create_drive_billing(serializer_id.id,request_data)
         
