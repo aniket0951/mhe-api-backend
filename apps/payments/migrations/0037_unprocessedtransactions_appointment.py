@@ -17,4 +17,4 @@ class Migration(migrations.Migration):
             name='appointment',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='unprocessed_transactions_appointment', to='appointments.Appointment'),
         ),
-    ]
+    ] 

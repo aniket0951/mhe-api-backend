@@ -1087,6 +1087,7 @@ class DoctorRescheduleAppointmentView(ProxyView):
             raise ValidationError(AppointmentsConstants.APPOINTMENT_DOESNT_EXIST)
 
         other_reason = request.data.pop("other")
+
         slot_book = serializable_RescheduleAppointment(**request.data)
         request_data = custom_serializer().serialize(slot_book, 'XML')
 
@@ -1166,12 +1167,18 @@ class DoctorRescheduleAppointmentView(ProxyView):
                         if payment_instances.exists():
                             payment_instances.update(appointment=appointment.id)
 
-                        instance.status = 5            
-                        instance.reason_id = self.request.data.get("reason_id")
-                        instance.other_reason = self.request.data.get("other_reason")
-                        instance.save()
-
-                        send_appointment_rescheduling_invitation(appointment)
+                        update_data = {
+                            "status":5,
+                            "reason_id":self.request.data.get("reason_id"),
+                            "other_reason":self.request.data.get("other_reason")
+                        }
+                        old_appointment_instances = Appointment.objects.filter(appointment_identifier=self.request.data["app_id"])
+                        old_appointment_instances.update(**update_data)
+                        
+                        try:
+                            send_appointment_rescheduling_invitation(appointment)
+                        except Exception as e:
+                            logger.error("Error while sending invitation email : %s"%(str(e)))
     
                         response_success = True
                         response_message = AppointmentsConstants.APPOINTMENT_HAS_RESCHEDULED
