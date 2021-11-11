@@ -836,6 +836,7 @@ class OfflineAppointment(APIView):
             if appointment_instance:
 
                 appointment_data.pop("hospital")
+                appointment_data.pop("appointmentMode")
                 if datetime_object.year < 1900:
                     appointment_data.pop("appointment_date")
                     appointment_data.pop("appointment_slot")
