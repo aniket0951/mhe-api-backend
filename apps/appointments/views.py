@@ -288,6 +288,9 @@ class CreateMyAppointment(ProxyView):
         family_member_id = request.data.pop("user_id", None)
         amount = request.data.pop("amount", None)
         corporate = request.data.pop("corporate", None)
+        
+        if not request.data.get("appointment_mode", None):
+            raise ValidationError("Kindly select a valid appointment mode!")
 
         family_member = FamilyMember.objects.filter(id=family_member_id).first()
         
