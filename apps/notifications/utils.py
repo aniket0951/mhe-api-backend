@@ -33,6 +33,7 @@ def doctor_rebook_parameters(instance, new_date=None, factory=APIRequestFactory(
     param["mrn"] = user.uhid_number
     param["instance"] = instance.id
     param["rescheduled"] = rescheduled
+    param["appointment_mode"] = instance.appointment_mode
     return factory.post(
         '', param, format='json')
 
