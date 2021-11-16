@@ -1055,6 +1055,7 @@ class ReBookDoctorAppointment(ProxyView):
                 new_appointment["department"] = instance.department.id
                 new_appointment["consultation_amount"] = instance.consultation_amount
                 new_appointment["payment_status"] = instance.payment_status
+                new_appointment["appointment_mode"] = instance.appointment_mode
                 if instance.family_member:
                     new_appointment["family_member"] = instance.family_member.id
                 new_appointment["doctor"] = instance.doctor.id
