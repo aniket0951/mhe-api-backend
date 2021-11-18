@@ -984,7 +984,8 @@ class PaymentRefundAPIView(custom_viewsets.ReadOnlyModelViewSet):
     ordering = ('-created_at',)
     filter_fields = ('status','uhid_number',)
     search_fields = ['uhid_number','payment__id','payment__patient__first_name','payment__patient__mobile','payment__payment_done_for_family_member__mobile',
-                     'payment__payment_done_for_family_member__first_name','payment__location__code','payment__location__description']
+                     'payment__payment_done_for_family_member__first_name','payment__location__code','payment__location__description',
+                     'payment__appointment__appointment_identifier']
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Payment Refund list returned successfully!'
     retrieve_success_message = 'Payment Refund information returned successfully!'

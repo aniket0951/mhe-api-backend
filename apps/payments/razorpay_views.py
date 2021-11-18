@@ -381,3 +381,20 @@ class UnprocessedTransactionsViewSet(custom_viewsets.CreateUpdateListRetrieveMod
             'payment__uhid_number',
             'health_package_appointment__appointment_identifier'
         ]
+    
+class InitiateManualRefundAPI(APIView):
+    permission_classes = (IsManipalAdminUser,)
+
+    def post(self, request, format=None):
+
+        logger.info("Payment Request data: %s"%str(request.data))
+
+        is_requested_from_mobile = False
+     
+        payment_instance = PaymentUtils.validate_and_wait_for_mobile_request(request,is_requested_from_mobile)
+        order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
+        order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
+        PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
+                
+        PaymentUtils.cancel_drive_booking_on_failure(payment_instance)
+        PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
