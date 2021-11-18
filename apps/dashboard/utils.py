@@ -25,7 +25,8 @@ class DashboardUtils:
     def validate_app_version(version_number,dashboard_details):
         if version_number:
             dashboard_details["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
-            dashboard_details["force_update_required"] = DashboardUtils.check_if_version_update_required(version_number)
+            dashboard_details["force_update_required"]          = DashboardUtils.check_if_version_update_required(version_number)
+            dashboard_details["force_update_required_android"]  = DashboardUtils.check_if_version_update_required(version_number,settings.ANDROID_VERSION)
         return dashboard_details
 
 
@@ -36,9 +37,8 @@ class DashboardUtils:
         return False
 
     @staticmethod
-    def check_if_version_update_required(version_number):
+    def check_if_version_update_required(version_number,current_version=settings.IOS_VERSION):
         force_update_required = False
-        current_version = settings.IOS_VERSION
         if version_number:
             if DashboardUtils.compare_versions(version_number,current_version)!=-1:
                 force_update_required = False

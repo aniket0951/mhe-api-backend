@@ -121,11 +121,14 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def perform_create(self, serializer):
 
         app_version = self.request.query_params.get("version", None)
-        if  app_version and \
-            DashboardUtils.check_if_version_update_enabled() and \
-            DashboardUtils.check_if_version_update_required(app_version):
-            raise MobileAppVersionValidationException
+        app_device = self.request.query_params.get("device")
 
+        if  DashboardUtils.check_if_version_update_enabled() and \
+            app_version and \
+            (app_device!="android" and DashboardUtils.check_if_version_update_required(app_version)) or \
+            (app_device=="android" and DashboardUtils.check_if_version_update_required(app_version,settings.ANDROID_VERSION)):
+            raise MobileAppVersionValidationException
+                
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
@@ -436,14 +439,18 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def generate_login_otp(self, request):
 
         app_version = self.request.query_params.get("version", None)
+        app_device = self.request.query_params.get("device")
         data = {}
-        if  app_version and \
-            DashboardUtils.check_if_version_update_enabled() and \
-            DashboardUtils.check_if_version_update_required(app_version):
-            
-            data["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
-            data["force_update_required"] = DashboardUtils.check_if_version_update_required(app_version)
-            return Response(data, status=status.HTTP_200_OK)
+        if DashboardUtils.check_if_version_update_enabled() and app_version:
+            for_ios_required = DashboardUtils.check_if_version_update_required(app_version)
+            for_android_required = DashboardUtils.check_if_version_update_required(app_version,settings.ANDROID_VERSION)
+            if  app_device!="android" and for_ios_required:
+                data["force_update_required"] = for_ios_required    
+            elif app_device=="android" and for_android_required:
+                data["force_update_required_android"]  = for_android_required
+            if "force_update_required" in data or "force_update_required_android" in data:
+                data["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
+                return Response(data, status=status.HTTP_200_OK)
 
         mobile = request.data.get('mobile')
         facebook_id = request.data.get('facebook_id')
