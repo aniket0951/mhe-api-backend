@@ -1,5 +1,5 @@
 import logging
-from apps.appointments.views import CancelMyAppointment
+
 from apps.notifications.utils import cancel_parameters
 
 from apps.patients.models import FamilyMember, Patient
@@ -403,7 +403,7 @@ class InitiateManualRefundAPI(APIView):
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
 
         except Exception as e:
-            
+
             logger.debug("Refund Generated: %s"%str(e))
             if payment_instance.appointment and payment_instance.appointment.appointment_identifier:
                 param = dict()
@@ -412,4 +412,5 @@ class InitiateManualRefundAPI(APIView):
                 param["status"] = "2"
                 param["auto_cancellation"] = True
                 request_param = cancel_parameters(param)
+                from apps.appointments.views import CancelMyAppointment
                 CancelMyAppointment.as_view()(request_param)
