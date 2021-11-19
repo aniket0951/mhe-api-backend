@@ -394,7 +394,7 @@ class InitiateManualRefundAPI(APIView):
         
         payment_instance = PaymentUtils.validate_and_wait_for_mobile_request(request,is_requested_from_mobile)
         if payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED:
-            return Response(data={"message":"The payment is already refunded!"},status=status.HTTP_200_OK)
+            return Response(data={"message":"The reund is already processed!"},status=status.HTTP_200_OK)
         
         if payment_instance.status in [
                             PaymentConstants.MANIPAL_PAYMENT_STATUS_INITIATED,
