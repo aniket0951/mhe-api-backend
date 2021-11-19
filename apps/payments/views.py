@@ -696,37 +696,38 @@ class RefundView(APIView):
 
     def post(self, request, format=None):
 
-        appointment_identifier = request.data.get(
-            "appointment_identifier", None)
-        appointment_instance = Appointment.objects.filter(
-            appointment_identifier=appointment_identifier).first()
+        appointment_identifier = request.data.get("appointment_identifier", None)
+        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
         if appointment_instance.payment_appointment.exists():
             param = get_refund_param(request.data)
             url = settings.REFUND_URL
             response = requests.post(url, data=param)
             data = json.loads(response.text)
             if data["status_code"] == 1200:
-                payment_instance = appointment_instance.payment_appointment.filter(
-                    status="success").first()
+                payment_instance = appointment_instance.payment_appointment.filter(status="success").first()
                 if payment_instance:
+                    
                     refund_param = dict()
                     refund_param["payment"] = payment_instance.id
                     refund_param["uhid_number"] = data["accounts"]["account_number"]
                     refund_param["processing_id"] = data["processing_id"]
                     refund_param["transaction_id"] = data["transaction_id"]
+                    
                     if data["status_message"] == "Request processed successfully":
                         refund_param["status"] = "success"
+                    
                     refund_param["amount"] = data["accounts"]["amount"]
                     refund_param["receipt_number"] = data["payment_response"]["mihpayid"]
                     refund_param["request_id"] = data["payment_response"]["request_id"]
-                    refund_instance = PaymentRefundSerializer(
-                        data=refund_param)
+
+                    refund_instance = PaymentRefundSerializer(data=refund_param)
                     refund_instance.is_valid(raise_exception=True)
                     refund_instance.save()
                     payment_instance.status = "Refunded"
                     appointment_instance.payment_status = "Refunded"
                     appointment_instance.save()
                     payment_instance.save()
+
         return Response(status=status.HTTP_200_OK)
 
 

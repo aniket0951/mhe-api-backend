@@ -1,4 +1,6 @@
 import logging
+from apps.appointments.views import CancelMyAppointment
+from apps.notifications.utils import cancel_parameters
 
 from apps.patients.models import FamilyMember, Patient
 from apps.appointments.models import Appointment
@@ -322,7 +324,7 @@ class RazorRefundView(APIView):
         appointment_identifier = request.data.get("appointment_identifier", None)
         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
 
-        if appointment_instance.payment_appointment.exists():
+        if appointment_instance.payment_appointment.exists() and appointment_instance.payment_status != PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED:
             param = get_refund_param_for_razorpay(request.data)
             payment_instance = appointment_instance.payment_appointment.filter(status=PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS).first()
             
@@ -386,15 +388,28 @@ class InitiateManualRefundAPI(APIView):
     permission_classes = (IsManipalAdminUser,)
 
     def post(self, request, format=None):
-
+        
         logger.info("Payment Request data: %s"%str(request.data))
-
         is_requested_from_mobile = False
-     
+        
         payment_instance = PaymentUtils.validate_and_wait_for_mobile_request(request,is_requested_from_mobile)
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
         order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
+        
         PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
-                
         PaymentUtils.cancel_drive_booking_on_failure(payment_instance)
-        PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
+
+        try:
+            PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
+
+        except Exception as e:
+            
+            logger.debug("Refund Generated: %s"%str(e))
+            if payment_instance.appointment and payment_instance.appointment.appointment_identifier:
+                param = dict()
+                param["appointment_identifier"] = payment_instance.appointment.appointment_identifier
+                param["reason_id"] = "1"
+                param["status"] = "2"
+                param["auto_cancellation"] = True
+                request_param = cancel_parameters(param)
+                CancelMyAppointment.as_view()(request_param)
