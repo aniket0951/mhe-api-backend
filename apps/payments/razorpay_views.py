@@ -289,7 +289,6 @@ class RazorPaymentResponse(APIView):
         order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
         PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
 
-        
         logger.info("Payment Request order_payment_details: %s"%str(order_payment_details))
 
         if not is_request_from_cron and order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED]:
@@ -389,11 +388,21 @@ class InitiateManualRefundAPI(APIView):
     permission_classes = (IsManipalAdminUser,)
 
     def post(self, request, format=None):
-        
+
         logger.info("Payment Request data: %s"%str(request.data))
         is_requested_from_mobile = False
         
         payment_instance = PaymentUtils.validate_and_wait_for_mobile_request(request,is_requested_from_mobile)
+        if payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED:
+            return Response(data={"message":"The payment is already refunded!"},status=status.HTTP_200_OK)
+        
+        if payment_instance.status in [
+                            PaymentConstants.MANIPAL_PAYMENT_STATUS_INITIATED,
+                            PaymentConstants.MANIPAL_PAYMENT_STATUS_PENDING,
+                            PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+                        ]:
+            return Response(data={"message":"First, complete the payment in order to initiate its refund!"},status=status.HTTP_200_OK)
+
         order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
         order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
         
@@ -414,4 +423,4 @@ class InitiateManualRefundAPI(APIView):
                 from apps.appointments.views import CancelMyAppointment
                 CancelMyAppointment.as_view()(request_param)
         
-        return Response(status=status.HTTP_200_OK)
+        return Response(data={"message":"The refund is processed successfully!"},status=status.HTTP_200_OK)
