@@ -290,10 +290,14 @@ class PaymentUtils:
     
     @staticmethod
     def update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
-        
-        payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
-        payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
-        payment_instance.save()
+
+        payment_update_data = {
+            "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
+            "status":PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+        }
+        payment_serializer_instance = PaymentSerializer(payment_instance,data=payment_update_data,partial=True)
+        payment_serializer_instance.is_valid(raise_exception=True)
+        payment_instance = payment_serializer_instance.save()
 
         if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0:
             
@@ -312,9 +316,16 @@ class PaymentUtils:
                 )
                 if refunded_payment_details:
                     PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
-                    
-            payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
-            payment_instance.save()
+            
+            if payment_instance.appointment:
+                appointment_serializer_instance = AppointmentSerializer(payment_instance.appointment,data={"payment_status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED},partial=True)
+                appointment_serializer_instance.is_valid(raise_exception=True)
+                appointment_serializer_instance.save()
+
+            payment_update_data.update({"status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED})
+            payment_serializer_instance = PaymentSerializer(payment_instance,data=payment_update_data,partial=True)
+            payment_serializer_instance.is_valid(raise_exception=True)
+            payment_serializer_instance.save()
 
         if is_requested_from_mobile:
             raise PaymentProcessingFailedRefundProcessedException

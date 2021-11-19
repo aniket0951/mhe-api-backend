@@ -330,6 +330,7 @@ class RazorRefundView(APIView):
             
             if not payment_instance:
                 raise IncompletePaymentCannotProcessRefund
+
             razor_payment_id = None
             if payment_instance.razor_payment_id:
                 razor_payment_id = payment_instance.razor_payment_id
@@ -401,11 +402,9 @@ class InitiateManualRefundAPI(APIView):
 
         try:
             PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
-
         except Exception as e:
-
             logger.debug("Refund Generated: %s"%str(e))
-            if payment_instance.appointment and payment_instance.appointment.appointment_identifier:
+            if payment_instance.appointment:
                 param = dict()
                 param["appointment_identifier"] = payment_instance.appointment.appointment_identifier
                 param["reason_id"] = "1"
@@ -414,3 +413,5 @@ class InitiateManualRefundAPI(APIView):
                 request_param = cancel_parameters(param)
                 from apps.appointments.views import CancelMyAppointment
                 CancelMyAppointment.as_view()(request_param)
+        
+        return Response(status=status.HTTP_200_OK)

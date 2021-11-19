@@ -17,6 +17,7 @@ from apps.master_data.exceptions import (
 from apps.master_data.models import Department, Hospital, HospitalDepartment
 from apps.patients.exceptions import PatientDoesNotExistsValidationException
 from apps.patients.models import FamilyMember, Patient
+from apps.payments.constants import PaymentConstants
 from apps.payments.models import Payment
 from apps.payments.razorpay_views import RazorRefundView
 from apps.payments.views import AppointmentPaymentView
@@ -621,11 +622,19 @@ class CancelMyAppointment(ProxyView):
                     raise AppointmentDoesNotExistsValidationException
                 instance.status = 2
 
+                appointment_data={
+                            "reason_id": self.request.data.get("reason_id"),
+                            "other_reason": self.request.data.get("other_reason"),
+                            "payment_status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
+                        }
                 if self.request.data.get("status"):
-                    instance.status = self.request.data.get("status")
-                instance.reason_id = self.request.data.get("reason_id")
-                instance.other_reason = self.request.data.get("other_reason")
-                instance.save()
+                    appointment_data.update({
+                        "status": self.request.data.get("status")
+                    })
+
+                appointment_serializer_instance = AppointmentSerializer(instance,data=appointment_data,partial=True)
+                appointment_serializer_instance.is_valid(raise_exception=True)
+                instance = appointment_serializer_instance.save()
                 
                 refund_param = cancel_and_refund_parameters({"appointment_identifier": instance.appointment_identifier})
                 RazorRefundView.as_view()(refund_param)
