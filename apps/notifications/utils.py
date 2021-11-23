@@ -1,4 +1,5 @@
 import openpyxl
+import re
 from datetime import datetime
 from django.conf import settings
 from django.db.models.query_utils import Q
@@ -84,8 +85,15 @@ def read_excel_file_data(excel_file):
         excel_data.append(row_data)
 
     uhid_list = [item for sublist in excel_data for item in sublist if item.startswith("MH")]
-    uhid_string = ','.join(uhid_list)
+    uhid_string = format_and_clean_uhid(','.join(uhid_list))
 
     return uhid_string
-        
+
+def format_and_clean_uhid(uhid):
+    if uhid:
+        uhid = uhid.upper()
+        pattern = re.compile(r'\s+')
+        uhid = re.sub(pattern, '', uhid)
+    return uhid
+
         
