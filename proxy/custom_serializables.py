@@ -1,13 +1,14 @@
 class ValidateUHID:
-    def __init__(self, uhid=None, otp=None):
+    def __init__(self, uhid=None, otp=None, location_code="MHB"):
         self.uhid = uhid
         self.otp = otp
+        self.location_code = location_code
 
     def serialize(self, serializer):
         serializer.start_object('ValidateRequestParam')
         serializer.add_property('UHID', self.uhid)
         serializer.add_property('POTP', self.otp)
-        serializer.add_property('LocationCode', "MHB")
+        serializer.add_property('LocationCode', self.location_code)
 
 
 class PatientDetails:
@@ -50,10 +51,8 @@ class CancelAppointmentRequest:
 
     def serialize(self, serializer):
         serializer.start_object('CancelAppointments')
-        serializer.add_property('appointmentIdentifier',
-                                self.appointment_identifier)
+        serializer.add_property('appointmentIdentifier',self.appointment_identifier)
         serializer.add_property('locationCode', self.location_code)
-
 
 class BookMySlot:
     def __init__(self, param):
