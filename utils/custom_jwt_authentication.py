@@ -12,7 +12,7 @@ from apps.manipal_admin.models import ManipalAdmin
 from apps.doctors.models import Doctor
 from rest_framework_jwt.settings import api_settings
 from .custom_jwt_whitelisted_tokens import WhiteListedJWTTokenUtil
-
+from django.core.exceptions import ObjectDoesNotExist
 
 jwt_decode_handler = api_settings.JWT_DECODE_HANDLER
 jwt_get_username_from_payload = api_settings.JWT_PAYLOAD_GET_USERNAME_HANDLER
@@ -66,11 +66,17 @@ class BaseJSONWebTokenAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed(msg)
 
         try:
-            user_info = Patient.objects.filter(mobile=username).first()
-            if not user_info:
-                user_info = Doctor.objects.filter(code=username).exclude(hospital_departments=None).first()
-                if not user_info:
-                    user_info = ManipalAdmin.objects.get(mobile=username)
+            user_info = None
+            try:
+                user_info = Patient.objects.get(mobile=username)
+            except ObjectDoesNotExist:
+                try:
+                    user_info = Doctor.objects.filter(code=username).exclude(hospital_departments=None).first()
+                except ObjectDoesNotExist:
+                    try:
+                        user_info = ManipalAdmin.objects.get(mobile=username)
+                    except ObjectDoesNotExist:
+                        user_info = None
 
             if not user_info:
                 msg = _(INVALID_SIGNATURE)
