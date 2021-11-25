@@ -608,12 +608,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         corporate_email = self.request.data.get("corporate_email")
 
         if company_name:
-            company_instance = Company.objects.filter(
-                name=company_name).first()
+            company_instance = Company.objects.filter(name=company_name).first()
 
         random_email_otp = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
-        otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+        otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         send_corporate_email_activation_otp(str(authenticated_patient.id), corporate_email, random_email_otp)
 

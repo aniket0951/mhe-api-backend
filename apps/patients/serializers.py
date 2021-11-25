@@ -49,7 +49,8 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                     'updated_at',
                     'is_active',
                     'mobile_verified',
-                    'is_corporate'
+                    'is_corporate',
+                    'company_info'
                 )
 
         extra_kwargs = {
