@@ -650,6 +650,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.corporate_email_otp = random_email_otp
         authenticated_patient.active_view = "Corporate"
         authenticated_patient.is_corporate = True
+        authenticated_patient.save()
+
         family_members_ids = FamilyMember.objects.filter(patient_info = authenticated_patient.id)
         if family_members_ids and authenticated_patient.company_info:
             for family_member in family_members_ids:
@@ -660,8 +662,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 if family_members_history:
                     family_member.is_corporate = True
                     family_member.save()
-        authenticated_patient.save()
-
+        
         data = {
             "data": self.get_serializer(authenticated_patient).data,
             "message": "Your email is verified successfully!"
@@ -675,10 +676,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.corporate_email = None
         authenticated_patient.active_view = "Normal"
         authenticated_patient.is_corporate = False
-        family_members_ids = FamilyMember.objects.filter(patient_info=authenticated_patient.id)
-        if family_members_ids:
-             family_members_ids.update(is_corporate=False)
         authenticated_patient.save()
+        family_members_ids = FamilyMember.objects.filter(patient_info=authenticated_patient.id)
+        if family_members_ids.exists():
+             family_members_ids.update(is_corporate=False)
+        
         data = {
             "data": self.get_serializer(authenticated_patient).data,
             "message": "Your corporate email is unlinked successfully!"
