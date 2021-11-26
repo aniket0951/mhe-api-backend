@@ -19,7 +19,7 @@ logger = logging.getLogger("django")
 class PaymentSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Payment
-        exclude = ('raw_info_from_salucro_response')
+        exclude = ('raw_info_from_salucro_response', )
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
@@ -100,7 +100,24 @@ class UnprocessedTransactionsSerializer(DynamicFieldsModelSerializer):
         fields = '__all__'
         
     def to_representation(self, instance):
-        return super().to_representation(instance)
+        response_object = super().to_representation(instance)
+
+        if instance.payment:
+            response_object['payment'] = PaymentSerializer(instance.payment).data
+            
+        if instance.appointment:
+            response_object['appointment'] = AppointmentSerializer(instance.appointment).data
+
+        if instance.health_package_appointment:
+            response_object['health_package_appointment'] = HealthPackageAppointmentSerializer(instance.health_package_appointment).data
+
+        if instance.patient:
+            response_object['patient'] = PatientSerializer(instance.patient).data
+
+        if instance.family_member:
+            response_object['family_member'] = FamilyMemberSerializer(instance.family_member).data
+
+        return response_object
 
 
 class PaymentReceiptsSerializer(DynamicFieldsModelSerializer):
