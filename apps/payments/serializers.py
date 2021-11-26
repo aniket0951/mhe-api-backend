@@ -51,11 +51,16 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
         response_object["refund"] = None
 
         if instance.payment_refund.exists():
-            payment_instance = instance.payment_refund.filter(
-                status="success").first()
+            payment_instance = instance.payment_refund.filter(status="success").first()
             if payment_instance:
-                response_object["refund"] = PaymentSpecificRefundSerializer(
-                    payment_instance).data
+                response_object["refund"] = PaymentSpecificRefundSerializer(payment_instance).data
+
+        response_object["unprocessed_transaction"] = None
+
+        if instance.unprocessed_transactions_payment.exists():
+            unprocessed_transaction_instance = instance.unprocessed_transactions_payment.first()
+            if unprocessed_transaction_instance:
+                response_object["unprocessed_transaction"] = UnprocessedTransactionsSerializer(unprocessed_transaction_instance,fields=("id","retries","status")).data
 
         response_object["receipt"] = None
 

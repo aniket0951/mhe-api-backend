@@ -171,6 +171,7 @@ class UnprocessedTransactions(MyBaseModel):
 
     payment = models.ForeignKey(Payment,
                                  on_delete=models.PROTECT,
+                                 related_name="unprocessed_transactions_payment",
                                  blank=False,
                                  null=False)
 
