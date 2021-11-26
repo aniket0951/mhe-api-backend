@@ -69,13 +69,13 @@ class BaseJSONWebTokenAuthentication(BaseAuthentication):
             user_info = None
             try:
                 user_info = Patient.objects.get(mobile=username)
-            except ObjectDoesNotExist:
+            except Exception:
                 try:
                     user_info = Doctor.objects.filter(code=username).exclude(hospital_departments=None).first()
-                except ObjectDoesNotExist:
+                except Exception:
                     try:
                         user_info = ManipalAdmin.objects.get(mobile=username)
-                    except ObjectDoesNotExist:
+                    except Exception:
                         user_info = None
 
             if not user_info:
