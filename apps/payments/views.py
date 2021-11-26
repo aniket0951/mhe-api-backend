@@ -512,9 +512,18 @@ class PaymentsAPIView(custom_viewsets.ReadOnlyModelViewSet):
     serializer_class = PaymentSerializer
     ordering = ('-created_at',)
     filter_fields = ('status','uhid_number',)
-    search_fields = ['patient__first_name','uhid_number','appointment__appointment_identifier','health_package_appointment__appointment_identifier',
-                     'location__code','location__description','patient__mobile','payment_done_for_family_member__uhid_number',
-                     'payment_done_for_family_member__mobile','payment_done_for_family_member__first_name']
+    search_fields = [
+            'appointment__appointment_identifier',
+            'health_package_appointment__appointment_identifier',
+            'location__code',
+            'location__description',
+            'patient__mobile',
+            'patient__first_name',
+            'uhid_number',
+            'payment_done_for_family_member__uhid_number',
+            'payment_done_for_family_member__mobile',
+            'payment_done_for_family_member__first_name'
+        ]
     permission_classes = [IsManipalAdminUser | IsSelfUserOrFamilyMember]
     list_success_message = 'Payment list returned successfully!'
     retrieve_success_message = 'Payment information returned successfully!'

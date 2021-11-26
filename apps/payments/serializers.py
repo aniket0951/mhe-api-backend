@@ -63,12 +63,8 @@ class PaymentSerializer(DynamicFieldsModelSerializer):
                 response_object["unprocessed_transaction"] = UnprocessedTransactionsSerializer(unprocessed_transaction_instance,fields=("id","retries","status")).data
 
         response_object["receipt"] = None
-
-        receipts = PaymentReceipts.objects.filter(
-            payment_info=instance.id).first()
-
-        response_object["receipt"] = PaymentReceiptsSerializer(
-            receipts).data
+        receipts = PaymentReceipts.objects.filter(payment_info=instance.id).first()
+        response_object["receipt"] = PaymentReceiptsSerializer(receipts).data
 
         return response_object
 
@@ -101,22 +97,6 @@ class UnprocessedTransactionsSerializer(DynamicFieldsModelSerializer):
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-
-        if instance.payment:
-            response_object['payment'] = PaymentSerializer(instance.payment).data
-            
-        if instance.appointment:
-            response_object['appointment'] = AppointmentSerializer(instance.appointment).data
-
-        if instance.health_package_appointment:
-            response_object['health_package_appointment'] = HealthPackageAppointmentSerializer(instance.health_package_appointment).data
-
-        if instance.patient:
-            response_object['patient'] = PatientSerializer(instance.patient).data
-
-        if instance.family_member:
-            response_object['family_member'] = FamilyMemberSerializer(instance.family_member).data
-
         return response_object
 
 
