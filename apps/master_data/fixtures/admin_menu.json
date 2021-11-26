@@ -274,15 +274,5 @@
             "name": "Refund History",
             "parent_menu": "bb6561a6-7b02-4439-8e2e-a9d4b59883cf"
         }
-    },
-    {
-        "model": "manipal_admin.AdminMenu",
-        "pk": "d83c8326-b451-456c-8f3f-3a0172b12780",
-        "fields": {
-            "created_at": "2021-11-08T18:37:24.893Z",
-            "updated_at": "2021-11-08T18:37:24.893Z",
-            "name": "Unprocessed Transactions",
-            "parent_menu": "bb6561a6-7b02-4439-8e2e-a9d4b59883cf"
-        }
     }
 ]

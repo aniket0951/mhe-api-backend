@@ -100,21 +100,7 @@ class UnprocessedTransactionsSerializer(DynamicFieldsModelSerializer):
         fields = '__all__'
         
     def to_representation(self, instance):
-        response_object = super().to_representation(instance)
-            
-        if instance.appointment:
-            response_object['appointment'] = AppointmentSerializer(instance.appointment).data
-
-        if instance.health_package_appointment:
-            response_object['health_package_appointment'] = HealthPackageAppointmentSerializer(instance.health_package_appointment).data
-
-        if instance.patient:
-            response_object['patient'] = PatientSerializer(instance.patient).data
-
-        if instance.family_member:
-            response_object['family_member'] = FamilyMemberSerializer(instance.family_member).data
-
-        return response_object
+        return super().to_representation(instance)
 
 
 class PaymentReceiptsSerializer(DynamicFieldsModelSerializer):
