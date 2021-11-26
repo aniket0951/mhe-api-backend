@@ -101,9 +101,6 @@ class UnprocessedTransactionsSerializer(DynamicFieldsModelSerializer):
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
-
-        if instance.payment:
-            response_object['payment'] = PaymentSerializer(instance.payment).data
             
         if instance.appointment:
             response_object['appointment'] = AppointmentSerializer(instance.appointment).data
