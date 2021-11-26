@@ -19,7 +19,7 @@ logger = logging.getLogger("django")
 class PaymentSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Payment
-        exclude = ('raw_info_from_salucro_response', 'updated_at')
+        exclude = ('raw_info_from_salucro_response')
 
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
