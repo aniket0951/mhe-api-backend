@@ -94,6 +94,23 @@ class ManipalAdminTypeSerializer(DynamicFieldsModelSerializer):
             response_object["menu_rights"][menu.name] = False
             if menu.id in allowed_menus:
                 response_object["menu_rights"][menu.name] = True
+
+        if not response_object.get('secret_key'):
+            secret_key = generate_random_string("secret_key")
+            while ManipalAdmin.objects.filter(secret_key=secret_key).exists():
+                secret_key = generate_random_string("secret_key")
+            instance.secret_key = secret_key
+            instance.save()
+            response_object['secret_key'] = secret_key
+
+        if not response_object.get('secret_token'):
+            secret_token = generate_random_string("secret_token")
+            while ManipalAdmin.objects.filter(secret_token=secret_token).exists():
+                secret_token = generate_random_string("secret_token")
+            instance.secret_token = secret_token
+            instance.save()
+            response_object['secret_token'] = secret_token
+
         return response_object
 
     def update(self, instance, validated_data):
