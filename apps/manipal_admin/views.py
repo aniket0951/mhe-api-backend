@@ -1,14 +1,13 @@
-from django.db.models.query_utils import Q
-from apps.patients.models import Patient
+
 import json
 from datetime import datetime
-
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core import serializers
 from django.http import HttpResponse
 from django.utils.http import urlsafe_base64_decode
+from django.db.models.query_utils import Q
 from rest_framework import filters, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import CreateAPIView
@@ -17,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
+from apps.patients.models import Patient
 from apps.manipal_admin.models import ManipalAdmin, AdminMenu, AdminRole
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.exceptions import InvalidCredentialsException
@@ -74,11 +74,12 @@ def login(request):
     return Response(data, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([AllowAny])
-def login_via_token(request):
-    secret_key = request.data.get('secret_key')
-    secret_token = request.data.get('secret_token')
+def token_login(request):
+    secret_key = request.query_params.get('secret_key')
+    secret_token = request.query_params.get('secret_token')
+    
     if not (secret_key and secret_token):
         raise InvalidCredentialsException
 
