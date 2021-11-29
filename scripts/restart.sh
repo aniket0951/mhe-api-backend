@@ -6,4 +6,4 @@ sudo chmod 777 -R .
 source ../mhenv/bin/activate
 python manage.py migrate
 sudo service gunicorn restart
-sudo service celery restart
+sudo service celery restart 
