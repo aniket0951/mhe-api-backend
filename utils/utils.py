@@ -1,6 +1,8 @@
 import logging
 import urllib
 import hashlib
+import time
+import random
 from datetime import datetime, timedelta, date
 from utils.exceptions import UserNotRegisteredException
 from django.db.models import Sum
@@ -265,3 +267,11 @@ def validate_uhid_number(uhid_number):
     if uhid_number and len(uhid_number)>2 and (uhid_number[:2].upper() == "MH" or uhid_number[:3].upper() == "MMH"):
         return True
     return False
+
+def generate_random_string(*args):
+    t = time.time()*1000
+    r = random.random()*100000000000000000
+    a = random.random()*100000000000000000
+    processing_id = str(t)+' '+str(r)+' '+str(a)+' '+str(args)
+    processing_id = hashlib.md5(processing_id.encode('utf-8')).hexdigest()
+    return processing_id
