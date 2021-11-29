@@ -70,7 +70,7 @@ class ManipalAdminTypeSerializer(DynamicFieldsModelSerializer):
     
     class Meta:
         model = ManipalAdmin
-        fields = ['id', 'name', 'email','role','hospital','menus', 'mobile','is_active']
+        fields = ['id', 'name', 'email','role','hospital','menus', 'mobile','is_active','secret_key','secret_token']
         
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
