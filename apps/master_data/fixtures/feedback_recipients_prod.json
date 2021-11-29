@@ -6,10 +6,10 @@
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
             "hospital_code":"MHB",
-            "name":"Dr Priyanka Baghel",
+            "name":"Debojit",
             "contact":"9784063241",
             "type":"TO",
-            "email":"priyanka.baghel@manipalhospitals.com"
+            "email":"debojit.s@manipalhospitals.com"
         }
     },
     {
@@ -22,18 +22,6 @@
             "name":"Customer Care",
             "type":"TO",
             "email":"customer.care@manipalhospitals.com"
-        }
-    },
-    {
-        "model": "master_data.FeedbackRecipients",
-        "pk": "0d0e377f-6d61-44d5-97a7-ed694f1d214f",
-        "fields": {
-            "created_at": "2021-09-01T14:47:24.893Z",
-            "updated_at": "2021-09-01T14:47:24.893Z",
-            "hospital_code":"MHB",
-            "name":"Ananya K",
-            "type":"TO",
-            "email":"ananya.k@manipalhospitals.com"
         }
     },
     {
@@ -493,9 +481,21 @@
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
             "hospital_code":"MMH",
-            "name":"Palash",
+            "name":"Mohanakshi",
             "type":"TO",
-            "email":"palash@manipalhospitals.com"
+            "email":"mohanakshi.na@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "ff7c4d51-0dc4-47f3-a10a-a624237b9007",
+        "fields": {
+            "created_at": "2021-01-27T18:47:24.893Z",
+            "updated_at": "2021-01-27T18:47:24.893Z",
+            "hospital_code":"MMH",
+            "name":"Nipun Kanwar",
+            "type":"TO",
+            "email":"nipun.kanwar@manipalhospitals.com"
         }
     },
     {
@@ -553,9 +553,9 @@
             "created_at": "2021-09-01T14:47:24.893Z",
             "updated_at": "2021-09-01T14:47:24.893Z",
             "hospital_code":"MMH",
-            "name":"Priyanka Baghel",
+            "name":"Debojit",
             "type":"CC",
-            "email":"priyanka.baghel@manipalhospitals.com"
+            "email":"debojit.s@manipalhospitals.com"
         }
     },
     {
@@ -581,6 +581,18 @@
             "name":"Indrani Y",
             "type":"TO",
             "email":"indrani.y@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "948ada72-6911-47fd-ab63-6bc38cc5d720",
+        "fields": {
+            "created_at": "2021-01-27T18:47:24.893Z",
+            "updated_at": "2021-01-27T18:47:24.893Z",
+            "hospital_code":"MHN",
+            "name":"Palash",
+            "type":"TO",
+            "email":"palash@manipalhospitals.com"
         }
     },
     {
@@ -638,9 +650,9 @@
             "created_at": "2021-09-01T14:47:24.893Z",
             "updated_at": "2021-09-01T14:47:24.893Z",
             "hospital_code":"MHN",
-            "name":"Priyanka Baghel",
+            "name":"Debojit",
             "type":"CC",
-            "email":"priyanka.baghel@manipalhospitals.com"
+            "email":"debojit.s@manipalhospitals.com"
         }
     },
     {
@@ -724,9 +736,9 @@
             "created_at": "2021-01-27T18:47:24.893Z",
             "updated_at": "2021-01-27T18:47:24.893Z",
             "hospital_code":"MHS",
-            "name":"Vashudev Pahlajrai Godya",
+            "name":"Gurura Gavendran",
             "type":"TO",
-            "email":"vashudev.godya@manipalhospitals.com"
+            "email":"gururagavendran.b@manipalhospitals.com"
         }
     },
     {
@@ -808,9 +820,9 @@
             "created_at": "2021-09-01T14:47:24.893Z",
             "updated_at": "2021-09-01T14:47:24.893Z",
             "hospital_code":"MHS",
-            "name":"Priyanka Baghel",
+            "name":"Debojit",
             "type":"CC",
-            "email":"priyanka.baghel@manipalhospitals.com"
+            "email":"debojit.s@manipalhospitals.com"
         }
     },
     {

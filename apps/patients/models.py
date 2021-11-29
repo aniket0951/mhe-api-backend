@@ -158,6 +158,13 @@ class Patient(BaseUser):
         null=True,
         verbose_name='Corporate Email OTP Key Expiration DateTime')
 
+    corporate_favorite_hospital = models.ForeignKey(Hospital,
+                                          on_delete=models.PROTECT,
+                                          blank=True,
+                                          null=True,
+                                          related_name='corporate_favorite_hospital'
+                                          )
+
     drive_corporate_email = models.EmailField(null=True, blank=True)
 
     drive_corporate_email_otp = models.CharField(max_length=6,
