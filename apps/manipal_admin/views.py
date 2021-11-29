@@ -73,6 +73,44 @@ def login(request):
     }
     return Response(data, status=status.HTTP_200_OK)
 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_via_token(request):
+    secret_key = request.data.get('secret_key')
+    secret_token = request.data.get('secret_token')
+    if not (secret_key and secret_token):
+        raise InvalidCredentialsException
+
+    admin = None
+    try:
+        admin = ManipalAdmin.objects.get(secret_key=secret_key,secret_token=secret_token)
+    except Exception:
+        raise ManipalAdminDoesNotExistsValidationException
+
+    if not admin.is_active:
+        raise ManipalAdminDisabledUserException
+    
+    payload = jwt_payload_handler(admin)
+    payload['mobile'] = payload['mobile'].raw_input
+    payload['username'] = payload['username'].raw_input
+    token = jwt_encode_handler(payload)
+    expiration = datetime.utcnow() + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+    expiration_epoch = expiration.timestamp()
+
+    WhiteListedJWTTokenUtil.create_token(admin,token)
+
+    serializer = ManipalAdminSerializer(admin)
+    data = {
+        "data": serializer.data,
+        "message":  "Login successful!",
+        "token": token,
+        "token_expiration": expiration_epoch
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout(request):
