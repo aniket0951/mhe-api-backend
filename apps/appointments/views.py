@@ -636,11 +636,12 @@ class CancelMyAppointment(ProxyView):
                 appointment_serializer_instance.is_valid(raise_exception=True)
                 instance = appointment_serializer_instance.save()
                 
-                refund_param = cancel_and_refund_parameters({"appointment_identifier": instance.appointment_identifier})
-                RazorRefundView.as_view()(refund_param)
+                if instance.hospital.allow_refund_on_cancellation:
+                    refund_param = cancel_and_refund_parameters({"appointment_identifier": instance.appointment_identifier})
+                    RazorRefundView.as_view()(refund_param)
 
-                request_param = cancel_and_refund_appointment_view(instance)
-                CancelAndRefundView.as_view()(request_param)
+                    request_param = cancel_and_refund_appointment_view(instance)
+                    CancelAndRefundView.as_view()(request_param)
 
                 if not self.request.data.get("auto_cancellation"):
                     send_appointment_cancellation_invitation(instance)

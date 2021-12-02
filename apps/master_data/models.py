@@ -66,6 +66,8 @@ class Hospital(MyBaseModel):
                         )
     
     slot_blocking_duration = models.IntegerField(default=0)
+    
+    allow_refund_on_cancellation = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Hospital"
