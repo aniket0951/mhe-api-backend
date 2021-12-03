@@ -46,8 +46,11 @@ class AppointmentSerializer(DynamicFieldsModelSerializer):
                 instance.family_member).data
 
         if instance.hospital:
-            response_object['hospital'] = HospitalSerializer(
-                instance.hospital).data
+            response_object['hospital'] = HospitalSerializer(instance.hospital).data
+            if not response_object['hospital']['allow_refund_on_cancellation']:
+                response_object['hospital']['refund_not_allowed_message'] = 'For {}, refund cannot be initiate on cancellation. Please contact the hospital for refund.'.format(
+                                    response_object['hospital']['description']
+                                )
 
         if instance.department:
             response_object['department_code'] = Department.objects.filter(id=instance.department.id).first().code
