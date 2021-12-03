@@ -6,6 +6,6 @@ sudo chmod 777 -R .
 source ../mhenv/bin/activate
 python manage.py migrate
 python manage.py loaddata apps/master_data/fixtures/hospitals.json
-python manage.py loaddata apps/master_data/fixtures/payment_key_dev.json
+python manage.py loaddata apps/master_data/fixtures/payment_key_test.json
 sudo service gunicorn restart
 sudo service celery restart 
