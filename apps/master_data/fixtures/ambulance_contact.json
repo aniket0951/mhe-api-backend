@@ -98,6 +98,106 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8204",
             "mobile":"+918040091234"
         }
+    },
+    {
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd8",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8215",
+            "mobile":"08067366795"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363bd9",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8216",
+            "mobile":"08066756565"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b10",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8218",
+            "mobile":"08041791777"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b11",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8219",
+            "mobile":"02071290129"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b12",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8220",
+            "mobile":"08066606666"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b13",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8221",
+            "mobile":"08061656262"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b14",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8222",
+            "mobile":"08067416262"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b15",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8223",
+            "mobile":"01244169950"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b16",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8224",
+            "mobile":"08212555000"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b17",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8225",
+            "mobile":"+919781529896"
+        }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b18",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8226",
+            "mobile":"03340998899"
+        }
     }
 
 ]
