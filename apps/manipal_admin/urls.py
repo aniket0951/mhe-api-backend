@@ -6,6 +6,7 @@ from .views import (
                 change_password,
                 forgot_password, 
                 login,
+                token_login,
                 logout,
                 AdminMenuView,
                 AdminRoleView,
@@ -21,6 +22,7 @@ router.register('admin_access',ManipalAdminView)
 
 urlpatterns = [
     url(r'^login', login, name='login'),
+    url(r'^token_login', token_login, name='token_login'),
     url(r'^logout', logout, name='logout'),
     url(r'^forgot_password', forgot_password, name='forgot_password'),
     url(r'^change_password', change_password, name='change_password'),

@@ -290,16 +290,23 @@ class PaymentUtils:
     
     @staticmethod
     def update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile):
-        
-        payment_instance.uhid_number = PaymentUtils.get_uhid_number(payment_instance)
-        payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
-        payment_instance.save()
+
+        payment_update_data = {
+            "uhid_number":PaymentUtils.get_uhid_number(payment_instance),
+            "status":PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+        }
+        payment_serializer_instance = PaymentSerializer(payment_instance,data=payment_update_data,partial=True)
+        payment_serializer_instance.is_valid(raise_exception=True)
+        payment_instance = payment_serializer_instance.save()
 
         if order_details.get("status")==PaymentConstants.RAZORPAY_PAYMENT_STATUS_PAID and payment_instance.amount>0:
+            
             hospital_key_info = PaymentUtils.get_hospital_key_info_from_payment_instance(payment_instance)
             hospital_key = hospital_key_info.secret_key
             hospital_secret = hospital_key_info.secret_secret
+            
             refunded_payment_details = PaymentUtils.get_razorpay_payment_data_from_order_id(hospital_key,hospital_secret,order_details.get("id"),order_details)
+            
             if not refunded_payment_details or refunded_payment_details.get("status") not in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_REFUNDED]:
                 refunded_payment_details = PaymentUtils.initiate_refund(
                     hospital_key=hospital_key,
@@ -309,9 +316,16 @@ class PaymentUtils:
                 )
                 if refunded_payment_details:
                     PaymentUtils.update_refund_payment_response(refunded_payment_details,payment_instance,int(payment_instance.amount))
-                    
-            payment_instance.status = PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
-            payment_instance.save()
+            
+            if payment_instance.appointment:
+                appointment_serializer_instance = AppointmentSerializer(payment_instance.appointment,data={"payment_status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED},partial=True)
+                appointment_serializer_instance.is_valid(raise_exception=True)
+                appointment_serializer_instance.save()
+
+            payment_update_data.update({"status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED})
+            payment_serializer_instance = PaymentSerializer(payment_instance,data=payment_update_data,partial=True)
+            payment_serializer_instance.is_valid(raise_exception=True)
+            payment_serializer_instance.save()
 
         if is_requested_from_mobile:
             raise PaymentProcessingFailedRefundProcessedException

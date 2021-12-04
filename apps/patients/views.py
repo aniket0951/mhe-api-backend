@@ -121,11 +121,14 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def perform_create(self, serializer):
 
         app_version = self.request.query_params.get("version", None)
-        if  app_version and \
-            DashboardUtils.check_if_version_update_enabled() and \
-            DashboardUtils.check_if_version_update_required(app_version):
-            raise MobileAppVersionValidationException
+        app_device = self.request.query_params.get("device")
 
+        if  DashboardUtils.check_if_version_update_enabled() and \
+            app_version and \
+            (app_device!="android" and DashboardUtils.check_if_version_update_required(app_version)) or \
+            (app_device=="android" and DashboardUtils.check_if_version_update_required(app_version,settings.ANDROID_VERSION)):
+            raise MobileAppVersionValidationException
+                
         facebook_id = self.request.data.get('facebook_id')
         google_id = self.request.data.get('google_id')
         apple_id = self.request.data.get("apple_id")
@@ -436,14 +439,18 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
     def generate_login_otp(self, request):
 
         app_version = self.request.query_params.get("version", None)
+        app_device = self.request.query_params.get("device")
         data = {}
-        if  app_version and \
-            DashboardUtils.check_if_version_update_enabled() and \
-            DashboardUtils.check_if_version_update_required(app_version):
-            
-            data["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
-            data["force_update_required"] = DashboardUtils.check_if_version_update_required(app_version)
-            return Response(data, status=status.HTTP_200_OK)
+        if DashboardUtils.check_if_version_update_enabled() and app_version:
+            for_ios_required = DashboardUtils.check_if_version_update_required(app_version)
+            for_android_required = DashboardUtils.check_if_version_update_required(app_version,settings.ANDROID_VERSION)
+            if  app_device!="android" and for_ios_required:
+                data["force_update_required"] = for_ios_required    
+            elif app_device=="android" and for_android_required:
+                data["force_update_required_android"]  = for_android_required
+            if "force_update_required" in data or "force_update_required_android" in data:
+                data["force_update_enable"] = settings.FORCE_UPDATE_ENABLE
+                return Response(data, status=status.HTTP_200_OK)
 
         mobile = request.data.get('mobile')
         facebook_id = request.data.get('facebook_id')
@@ -601,12 +608,10 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         corporate_email = self.request.data.get("corporate_email")
 
         if company_name:
-            company_instance = Company.objects.filter(
-                name=company_name).first()
+            company_instance = Company.objects.filter(name=company_name).first()
 
         random_email_otp = get_random_string(length=OTP_LENGTH, allowed_chars='0123456789')
-        otp_expiration_time = datetime.now(
-        ) + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
+        otp_expiration_time = datetime.now() + timedelta(seconds=int(settings.OTP_EXPIRATION_TIME))
 
         send_corporate_email_activation_otp(str(authenticated_patient.id), corporate_email, random_email_otp)
 
@@ -643,6 +648,8 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.corporate_email_otp = random_email_otp
         authenticated_patient.active_view = "Corporate"
         authenticated_patient.is_corporate = True
+        authenticated_patient.save()
+
         family_members_ids = FamilyMember.objects.filter(patient_info = authenticated_patient.id)
         if family_members_ids and authenticated_patient.company_info:
             for family_member in family_members_ids:
@@ -653,8 +660,7 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
                 if family_members_history:
                     family_member.is_corporate = True
                     family_member.save()
-        authenticated_patient.save()
-
+        
         data = {
             "data": self.get_serializer(authenticated_patient).data,
             "message": "Your email is verified successfully!"
@@ -668,10 +674,11 @@ class PatientViewSet(custom_viewsets.ModelViewSet):
         authenticated_patient.corporate_email = None
         authenticated_patient.active_view = "Normal"
         authenticated_patient.is_corporate = False
-        family_members_ids = FamilyMember.objects.filter(patient_info=authenticated_patient.id)
-        if family_members_ids:
-             family_members_ids.update(is_corporate=False)
         authenticated_patient.save()
+        family_members_ids = FamilyMember.objects.filter(patient_info=authenticated_patient.id)
+        if family_members_ids.exists():
+             family_members_ids.update(is_corporate=False)
+        
         data = {
             "data": self.get_serializer(authenticated_patient).data,
             "message": "Your corporate email is unlinked successfully!"

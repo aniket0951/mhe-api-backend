@@ -141,6 +141,127 @@
             "secret_key":"rzp_test_UcTLfWgn5pB17s",
             "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
         }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b488",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8216",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b489",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8217",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b490",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8218",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b491",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8219",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b492",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8220",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b493",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8221",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b494",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8222",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b495",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8223",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b496",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8224",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b497",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8225",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
+    },
+    {
+        "model": "payments.paymenthospitalkey",
+        "pk": "a7ca3ebc-a16b-4de7-ac9b-ac55b390b498",
+        "fields": {
+            "created_at": "2020-02-06T00:00:00+05:30",
+            "updated_at": "2020-02-06T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8226",
+            "secret_key":"rzp_test_UcTLfWgn5pB17s",
+            "secret_secret":"S9qRM5N1irFVxCacMiuoQr5B"
+        }
     }
 
 ]

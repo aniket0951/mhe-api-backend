@@ -4,7 +4,7 @@ from rest_framework import status,filters
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from apps.notifications.utils import create_notification_template, read_excel_file_data
+from apps.notifications.utils import create_notification_template, format_and_clean_uhid, read_excel_file_data
 from utils import custom_viewsets
 from apps.patients.models import Patient
 from utils.custom_permissions import (IsManipalAdminUser, IsPatientUser)
@@ -149,8 +149,8 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
         request_data["template_id"]             = request.data.get("template_id", None)
         request_data["trigger_type"]            = request.data.get("trigger_type", None)
         request_data["uhids"]                   = request.data.get("uhids", None)
-        request_data["date"]                   = request.data.get("date", None)
-        request_data["time"]                   = request.data.get("time", None)
+        request_data["date"]                    = request.data.get("date", None)
+        request_data["time"]                    = request.data.get("time", None)
 
         if not request_data["template_id"] and not request_data["notification_subject"] and not request_data["notification_body"]:
             raise ValidationError("Kindly provide either template or notification subject & body.")
@@ -164,7 +164,9 @@ class ScheduleNotificationViewSet(custom_viewsets.ListCreateViewSet):
 
         if excel_file:
             request_data['uhids']  = read_excel_file_data(excel_file)
-
+        else:
+            request_data['uhids']  = format_and_clean_uhid(request_data['uhids'])
+            
         if request_data["date"]:
             schedule_date = datetime.strptime(request_data["date"],'%Y-%m-%d')
             if schedule_date.date() < current_date_time.date():

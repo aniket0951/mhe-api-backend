@@ -1,5 +1,7 @@
 import logging
 
+from apps.notifications.utils import cancel_parameters
+
 from apps.patients.models import FamilyMember, Patient
 from apps.appointments.models import Appointment
 from apps.appointments.serializers import (HealthPackageAppointmentDetailSerializer,)
@@ -287,7 +289,6 @@ class RazorPaymentResponse(APIView):
         order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
         PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
 
-        
         logger.info("Payment Request order_payment_details: %s"%str(order_payment_details))
 
         if not is_request_from_cron and order_payment_details.get("status") in [PaymentConstants.RAZORPAY_PAYMENT_STATUS_FAILED]:
@@ -322,12 +323,13 @@ class RazorRefundView(APIView):
         appointment_identifier = request.data.get("appointment_identifier", None)
         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).first()
 
-        if appointment_instance.payment_appointment.exists():
+        if appointment_instance.payment_appointment.exists() and appointment_instance.payment_status != PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED:
             param = get_refund_param_for_razorpay(request.data)
             payment_instance = appointment_instance.payment_appointment.filter(status=PaymentConstants.MANIPAL_PAYMENT_STATUS_SUCCESS).first()
             
             if not payment_instance:
                 raise IncompletePaymentCannotProcessRefund
+
             razor_payment_id = None
             if payment_instance.razor_payment_id:
                 razor_payment_id = payment_instance.razor_payment_id
@@ -381,3 +383,44 @@ class UnprocessedTransactionsViewSet(custom_viewsets.CreateUpdateListRetrieveMod
             'payment__uhid_number',
             'health_package_appointment__appointment_identifier'
         ]
+    
+class InitiateManualRefundAPI(APIView):
+    permission_classes = (IsManipalAdminUser,)
+
+    def post(self, request, format=None):
+
+        logger.info("Payment Request data: %s"%str(request.data))
+        is_requested_from_mobile = False
+        
+        payment_instance = PaymentUtils.validate_and_wait_for_mobile_request(request,is_requested_from_mobile)
+        if payment_instance.status==PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED:
+            return Response(data={"message":"The reund is already processed!"},status=status.HTTP_200_OK)
+        
+        if payment_instance.status in [
+                            PaymentConstants.MANIPAL_PAYMENT_STATUS_INITIATED,
+                            PaymentConstants.MANIPAL_PAYMENT_STATUS_PENDING,
+                            PaymentConstants.MANIPAL_PAYMENT_STATUS_FAILED
+                        ]:
+            return Response(data={"message":"First, complete the payment in order to initiate its refund!"},status=status.HTTP_200_OK)
+
+        order_details = PaymentUtils.get_razorpay_order_details_payment_instance(payment_instance)
+        order_payment_details = PaymentUtils.get_razorpay_order_payment_response(request,order_details,payment_instance)
+        
+        PaymentUtils.validate_order_details_status(order_details,order_payment_details,payment_instance)
+        PaymentUtils.cancel_drive_booking_on_failure(payment_instance)
+
+        try:
+            PaymentUtils.update_failed_payment_response(payment_instance,order_details,order_payment_details,is_requested_from_mobile)
+        except Exception as e:
+            logger.debug("Refund Generated: %s"%str(e))
+            if payment_instance.appointment:
+                param = dict()
+                param["appointment_identifier"] = payment_instance.appointment.appointment_identifier
+                param["reason_id"] = "1"
+                param["status"] = "2"
+                param["auto_cancellation"] = True
+                request_param = cancel_parameters(param)
+                from apps.appointments.views import CancelMyAppointment
+                CancelMyAppointment.as_view()(request_param)
+        
+        return Response(data={"message":"The refund is processed successfully!"},status=status.HTTP_200_OK)

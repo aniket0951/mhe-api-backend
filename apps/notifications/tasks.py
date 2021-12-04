@@ -431,17 +431,23 @@ def trigger_scheduled_notification(scheduler):
     for uhid in uhid_list:
         family_member_ids = FamilyMember.objects.filter(
                                     uhid_number     = uhid,
-                                    is_visible      = True,
-                                    patient_info__is_promotional_notification_on = True
+                                    is_visible      = True
                                 )
+
+        if scheduler.schedule_type=="promotional":
+            family_member_ids = family_member_ids.filter(patient_info__is_promotional_notification_on = True)
+
         for family_member_id in family_member_ids:
             notification_data["recipient"] = family_member_id.patient_info.id
             send_push_notification.delay(notification_data=notification_data)
 
         patient_ids = Patient.objects.filter(
-                                    uhid_number     = uhid, 
-                                    is_promotional_notification_on = True
+                                    uhid_number     = uhid,
                                 )
+
+        if scheduler.schedule_type=="promotional":
+            patient_ids = patient_ids.filter(is_promotional_notification_on = True)
+
         for patient_id in patient_ids:
             notification_data["recipient"] = patient_id.id
             send_push_notification.delay(notification_data=notification_data)
@@ -453,8 +459,8 @@ def trigger_scheduled_notification(scheduler):
 def scheduler_notification_reminder():
     current_time = datetime.now()
     
-    start_time = current_time - timedelta(minutes=2)
-    end_time = current_time + timedelta(minutes=2)
+    start_time = current_time - timedelta(minutes=4)
+    end_time = current_time + timedelta(minutes=1)
 
     appointment_schedulers = ScheduleNotifications.objects.filter(
                                         date            = current_time.date(),

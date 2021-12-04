@@ -1,14 +1,13 @@
-from django.db.models.query_utils import Q
-from apps.patients.models import Patient
+
 import json
 from datetime import datetime
-
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core import serializers
 from django.http import HttpResponse
 from django.utils.http import urlsafe_base64_decode
+from django.db.models.query_utils import Q
 from rest_framework import filters, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import CreateAPIView
@@ -17,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework_jwt.utils import jwt_encode_handler, jwt_payload_handler
 
+from apps.patients.models import Patient
 from apps.manipal_admin.models import ManipalAdmin, AdminMenu, AdminRole
 from apps.manipal_admin.serializers import ManipalAdminSerializer
 from apps.patients.exceptions import InvalidCredentialsException
@@ -72,6 +72,45 @@ def login(request):
         "token_expiration": expiration_epoch
     }
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def token_login(request):
+    secret_key = request.query_params.get('secret_key')
+    secret_token = request.query_params.get('secret_token')
+    
+    if not (secret_key and secret_token):
+        raise InvalidCredentialsException
+
+    admin = None
+    try:
+        admin = ManipalAdmin.objects.get(secret_key=secret_key,secret_token=secret_token)
+    except Exception:
+        raise ManipalAdminDoesNotExistsValidationException
+
+    if not admin.is_active:
+        raise ManipalAdminDisabledUserException
+    
+    payload = jwt_payload_handler(admin)
+    payload['mobile'] = payload['mobile'].raw_input
+    payload['username'] = payload['username'].raw_input
+    token = jwt_encode_handler(payload)
+    expiration = datetime.utcnow() + settings.JWT_AUTH['JWT_EXPIRATION_DELTA']
+    expiration_epoch = expiration.timestamp()
+
+    WhiteListedJWTTokenUtil.create_token(admin,token)
+
+    serializer = ManipalAdminSerializer(admin)
+    data = {
+        "data": serializer.data,
+        "message":  "Login successful!",
+        "token": token,
+        "token_expiration": expiration_epoch
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

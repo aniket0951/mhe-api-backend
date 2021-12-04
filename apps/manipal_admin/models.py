@@ -35,12 +35,21 @@ class ManipalAdmin(BaseUser):
     email_verified = models.BooleanField(default=False,
                                          verbose_name='Email Verified')
     
-    hospital = models.ForeignKey(
-        Hospital,null = True, on_delete=models.PROTECT, related_name='hospital_name')
+    hospital = models.ForeignKey(Hospital,null = True, on_delete=models.PROTECT, related_name='hospital_name')
     
     role = models.ForeignKey(AdminRole, on_delete=models.PROTECT, null = True)
 
     menus = models.ManyToManyField(AdminMenu, null = True)
+
+    secret_key = models.CharField(max_length=200,
+                            blank=True,
+                            null=True,
+                            verbose_name='secret_key')
+    
+    secret_token = models.CharField(max_length=200,
+                            blank=True,
+                            null=True,
+                            verbose_name='secret_token')
 
     @property
     def representation(self):

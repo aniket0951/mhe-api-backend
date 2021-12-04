@@ -49,7 +49,8 @@ class PatientSerializer(DynamicFieldsModelSerializer):
                     'updated_at',
                     'is_active',
                     'mobile_verified',
-                    'is_corporate'
+                    'is_corporate',
+                    'company_info'
                 )
 
         extra_kwargs = {
@@ -102,8 +103,10 @@ class PatientSerializer(DynamicFieldsModelSerializer):
         response_object = super().to_representation(instance)
 
         if 'favorite_hospital' in response_object and response_object['favorite_hospital']:
-            response_object['favorite_hospital'] = HospitalSerializer(
-                Hospital.objects.get(id=str(response_object['favorite_hospital']))).data
+            response_object['favorite_hospital'] = HospitalSerializer(Hospital.objects.get(id=str(response_object['favorite_hospital']))).data
+        
+        if 'corporate_favorite_hospital' in response_object and response_object['corporate_favorite_hospital']:
+            response_object['corporate_favorite_hospital'] = HospitalSerializer(Hospital.objects.get(id=str(response_object['corporate_favorite_hospital']))).data
 
         response_object['display_picture'] = None
         try:
