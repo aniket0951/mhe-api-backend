@@ -14,7 +14,8 @@
             "health_package_doctor_code":"MHBHC",
             "health_package_department_code":"MHBHSVC",
             "is_home_collection_supported":"True",
-            "location":"0101000020E610000044696FF08569534009F9A067B3EA2940"
+            "location":"0101000020E610000044696FF08569534009F9A067B3EA2940",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -31,7 +32,8 @@
             "health_package_doctor_code":"MHNHC",
             "health_package_department_code":"MHNDHC",
             "is_home_collection_supported":"True",
-            "location":"0101000020E6100000B98D06F0166453408D976E1283002A40"
+            "location":"0101000020E6100000B98D06F0166453408D976E1283002A40",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -47,7 +49,8 @@
             "health_package_doctor_code":"",
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
-            "location":"0101000020E6100000A089B0E1E96553406891ED7C3FD52940"
+            "location":"0101000020E6100000A089B0E1E96553406891ED7C3FD52940",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -64,7 +67,8 @@
             "health_package_doctor_code":"MHWHC",
             "health_package_department_code":"MHWHSVC",
             "is_home_collection_supported":"True",
-            "location":"0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940"
+            "location":"0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -80,7 +84,8 @@
             "health_package_doctor_code":"MHDHC",
             "health_package_department_code":"MHDHSVS",
             "is_home_collection_supported":"True",
-            "location":"0101000020E61000004DF38E53744453404694F6065F983C40"
+            "location":"0101000020E61000004DF38E53744453404694F6065F983C40",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -97,7 +102,8 @@
             "health_package_doctor_code":"MHJHC",
             "health_package_department_code":"MHJHSVC",
             "is_home_collection_supported":"True",
-            "location":"0101000020E61000002FDD240681F152402B1895D409F83A40"
+            "location":"0101000020E61000002FDD240681F152402B1895D409F83A40",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -114,7 +120,8 @@
             "health_package_doctor_code":"MHVHC",
             "health_package_department_code":"MHVHSVC",
             "is_home_collection_supported":"True",
-            "location":"0101000020E6100000C139234A7B27544079E92631087C3040"
+            "location":"0101000020E6100000C139234A7B27544079E92631087C3040",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -131,7 +138,8 @@
             "health_package_doctor_code":"MHGHC",
             "health_package_department_code":"MHGDHC",
             "is_home_collection_supported":"True",
-            "location": "0101000020E6100000F2D24D6210745240EC51B81E85EB2E40"
+            "location": "0101000020E6100000F2D24D6210745240EC51B81E85EB2E40",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -148,7 +156,8 @@
             "health_package_doctor_code":"MHSHC",
             "health_package_department_code":"MHSDHC",
             "is_home_collection_supported":"True",
-            "location": "0101000020E6100000D8817346948653400E2DB29DEF672740"
+            "location": "0101000020E6100000D8817346948653400E2DB29DEF672740",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -165,7 +174,8 @@
             "health_package_doctor_code":"KMCHSVC",
             "health_package_department_code":"KMCHC",
             "is_home_collection_supported":"True",
-            "location":"0101000020E6100000984C158C4AB65240CAC342AD69BE2940"
+            "location":"0101000020E6100000984C158C4AB65240CAC342AD69BE2940",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -182,7 +192,8 @@
             "health_package_doctor_code":"MHWHC",
             "health_package_department_code":"MHWHSVC",
             "is_home_collection_supported":"True",
-            "location": "0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940"
+            "location": "0101000020E6100000B4C876BE9F6E5340EE5A423EE8F92940",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -202,7 +213,8 @@
             "location":"",
             "promo_code":"MIO",
             "corporate_only":"True",
-            "slot_blocking_duration": 30
+            "slot_blocking_duration": 60,
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -220,7 +232,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":true
         }
     },{
         "model": "master_data.hospital",
@@ -238,7 +251,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -256,7 +270,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -274,7 +289,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -292,7 +308,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -310,7 +327,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -328,7 +346,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -346,7 +365,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -364,7 +384,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -382,7 +403,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -400,7 +422,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -418,7 +441,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     },{
         "model": "master_data.hospital",
@@ -436,7 +460,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     }
 ]
