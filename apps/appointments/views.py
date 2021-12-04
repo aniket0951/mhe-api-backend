@@ -623,7 +623,7 @@ class CancelMyAppointment(ProxyView):
                 instance.status = 2
 
                 appointment_data={
-                            "reason_id": self.request.data.get("reason_id"),
+                            "reason": self.request.data.get("reason_id"),
                             "other_reason": self.request.data.get("other_reason"),
                             "payment_status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
                         }
