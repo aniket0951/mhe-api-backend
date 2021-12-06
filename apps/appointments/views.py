@@ -625,8 +625,11 @@ class CancelMyAppointment(ProxyView):
                 appointment_data={
                             "reason": self.request.data.get("reason_id"),
                             "other_reason": self.request.data.get("other_reason"),
-                            "payment_status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
                         }
+                if instance.hospital and instance.hospital.allow_refund_on_cancellation:
+                    appointment_data.update({
+                        "payment_status":PaymentConstants.MANIPAL_PAYMENT_STATUS_REFUNDED
+                    })
                 if self.request.data.get("status"):
                     appointment_data.update({
                         "status": self.request.data.get("status")
