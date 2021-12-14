@@ -827,6 +827,282 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d05",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPP",
+            "name":"Ravinder Kumar",
+            "type":"TO",
+            "email":"ravinder.k@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d06",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPP",
+            "name":"Customer Care Supervisor",
+            "type":"TO",
+            "email":"customercare.patiala@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d07",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPP",
+            "name":"Jaskaran Singh",
+            "type":"TO",
+            "email":"jaskaran.g@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d08",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPP",
+            "name":"Gurkirat Singh",
+            "type":"CC",
+            "email":"gurkirat.s@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d09",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPP",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d10",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MKP",
+            "name":"Avinash Mohan",
+            "type":"TO",
+            "email":"ipcoordinator.pune@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d11",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MKP",
+            "name":"Customer Care Supervisor",
+            "type":"TO",
+            "email":"customercare.pune@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d12",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MKP",
+            "name":"Misbha Khan",
+            "type":"TO",
+            "email":"misbha.k@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d13",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MKP",
+            "name":"Murali Rao",
+            "type":"CC",
+            "email":"murali.rao@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d14",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MKP",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d15",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPD",
+            "name":"Customer Care Supervisor",
+            "type":"TO",
+            "email":"customercare.palam@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d16",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPD",
+            "name":"Gopal G",
+            "type":"TO",
+            "email":"gopal.g@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d17",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPD",
+            "name":"Manish Gupta",
+            "type":"CC",
+            "email":"manish.gupta@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d18",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MPD",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d19",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MGD",
+            "name":"Ajay Kumar",
+            "type":"TO",
+            "email":"ajay.kumar@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d20",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MGD",
+            "name":"Customer Care Supervisor",
+            "type":"TO",
+            "email":"customercare.ghaziabad@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d21",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MGD",
+            "name":"Atul Behl",
+            "type":"CC",
+            "email":"atul.b@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d22",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MGD",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d23",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MSK",
+            "name":"Rituparna Sen",
+            "type":"TO",
+            "email":"rituparna.s@manipalhospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d24",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MSK",
+            "name":"Customer Care Supervisor",
+            "type":"TO",
+            "email":"customercare.saltlake@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d25",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MSK",
+            "name":"Arnab J",
+            "type":"TO",
+            "email":"arnab.jana@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d26",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MSK",
+            "name":"Arindam Banerjee",
+            "type":"CC",
+            "email":"arindam.banerjee@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
+        "pk": "173c2a3f-b802-41af-9d0f-ec3bc1e93d27",
+        "fields": {
+            "created_at": "2021-09-01T15:47:24.893Z",
+            "updated_at": "2021-09-01T15:47:24.893Z",
+            "hospital_code":"MSK",
+            "name":"Sonu Chopra",
+            "type":"CC",
+            "email":"sonu.chopra@columbiaindiahospitals.com"
+        }
+    },
+    {
+        "model": "master_data.FeedbackRecipients",
         "pk": "b70da334-6edf-4181-92a7-d706b7db1c7a",
         "fields": {
             "created_at": "2021-01-27T18:47:24.893Z",
