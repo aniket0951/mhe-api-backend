@@ -402,7 +402,7 @@ class FeedbackRecipients(MyBaseModel):
                             null=True
                         )
     email = models.CharField(
-                            max_length=50,
+                            max_length=300,
                             blank=True,
                             null=True
                         )
