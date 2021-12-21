@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -15,6 +16,7 @@ from utils.custom_storage import FileStorage
 from utils.validators import validate_file_authenticity, validate_file_size
 from django_clamd.validators import validate_file_infection
 
+logger = logging.getLogger('django')
 
 def generate_personal_file_path(self, filename):
     _, obj_file_extension = os.path.splitext(filename)
@@ -143,8 +145,11 @@ class Appointment(models.Model):
                     return True
 
                 date_time_slot = datetime.combine(datetime.now(), self.appointment_slot)
+                logger.info("date_time_slot --> %s"%(str(date_time_slot)))
                 date_time_now = datetime.combine(datetime.now(), datetime.now().time())
+                logger.info("date_time_now --> %s"%(str(date_time_now)))
                 time_delta = (date_time_slot - date_time_now).total_seconds()/3600
+                logger.info("time_delta --> %s"%(str(time_delta)))
 
                 if time_delta > 2:
                     self.refundable_amount = self.consultation_amount - registration_amount
