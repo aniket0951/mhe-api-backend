@@ -76,6 +76,7 @@ def get_appointment(patient_id):
 
     patient_appointment = Appointment.objects.filter(
             Q(appointment_date__gte=datetime.now().date()) & Q(status=1) & 
+            Q(appointment_slot__gte=datetime.now().time()) &
             (
                 (Q(uhid__isnull=False) & Q(uhid=member_uhid)) | 
                 (Q(patient_id=patient.id) & Q(family_member__isnull=True))
