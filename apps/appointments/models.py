@@ -177,7 +177,7 @@ class Appointment(models.Model):
                 if self.payment_status == "success":
                     self.refundable_amount = self.consultation_amount - registration_amount
                     self.save()
-                return True
+                    return True
 
             if self.appointment_date == datetime.now().date() and self.appointment_slot > datetime.now().time():
                 if not self.payment_status:
