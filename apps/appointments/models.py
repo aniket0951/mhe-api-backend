@@ -141,14 +141,15 @@ class Appointment(models.Model):
                 return True
 
             if self.appointment_date == datetime.now().date() and self.appointment_slot > datetime.now().time():
-                # if not self.payment_status:
-                #     return True
-
+               
                 date_time_slot = datetime.combine(datetime.now(), self.appointment_slot)
                 date_time_now = datetime.combine(datetime.now(), datetime.now().time())
                 time_delta = (date_time_slot - date_time_now).total_seconds()/3600
-
+                
                 if time_delta > 2:
+                    if not self.payment_status:
+                        return True    
+                
                     self.refundable_amount = self.consultation_amount - registration_amount
 
                     if time_delta <= 4:
@@ -177,14 +178,15 @@ class Appointment(models.Model):
                     return True
 
             if self.appointment_date == datetime.now().date() and self.appointment_slot > datetime.now().time():
-                if not self.payment_status:
-                    return True
 
                 date_time_slot = datetime.combine(datetime.now(), self.appointment_slot)
                 date_time_now = datetime.combine(datetime.now(), datetime.now().time())
                 time_delta = (date_time_slot - date_time_now).total_seconds()/3600
 
                 if time_delta > 0.5:
+                    if not self.payment_status:
+                        return True
+                    
                     self.refundable_amount = self.consultation_amount - registration_amount
 
                     if time_delta <= 4:
