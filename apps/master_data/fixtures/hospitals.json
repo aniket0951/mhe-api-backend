@@ -479,7 +479,8 @@
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
             "location":"",
-            "promo_code":""
+            "promo_code":"",
+            "allow_refund_on_cancellation":false
         }
     }
 ]
