@@ -463,7 +463,7 @@
             "promo_code":"",
             "allow_refund_on_cancellation":false
         }
-    }{
+    },{
         "model": "master_data.hospital",
         "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8226",
         "fields": {
