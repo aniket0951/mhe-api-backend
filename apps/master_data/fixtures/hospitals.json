@@ -478,7 +478,7 @@
             "health_package_doctor_code":"",
             "health_package_department_code":"",
             "is_home_collection_supported":"True",
-            "location":"",
+            "location":"POINT(12.988129,77.592406)",
             "promo_code":"",
             "allow_refund_on_cancellation":false
         }
