@@ -198,6 +198,15 @@
             "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8226",
             "mobile":"03340998899"
         }
+    },{
+        "model": "master_data.ambulancecontact",
+        "pk": "327c8bd9-1bc4-4c31-bc12-1474bd363b19",
+        "fields": {
+            "created_at": "2022-01-10T00:00:00+05:30",
+            "updated_at": "2022-01-10T00:00:00+05:30",
+            "hospital_id":"63850af2-3fdd-4fd6-84a2-a3c18b9f8215",
+            "mobile":"08045004600"
+        }
     }
 
 ]
