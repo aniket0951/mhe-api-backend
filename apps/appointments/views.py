@@ -849,7 +849,7 @@ class OfflineAppointment(APIView):
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
             if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
-                appointment_data["booked_via_app"] = True
+                appointment_data["booked_via_app"] = False
             if appointment_instance:
 
                 appointment_data.pop("hospital")
