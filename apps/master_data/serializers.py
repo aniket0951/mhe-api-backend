@@ -94,6 +94,7 @@ class AmbulanceContactSerializer(DynamicFieldsModelSerializer):
 
 
 class HospitalSpecificSerializer(DynamicFieldsModelSerializer):
+    calculated_distance = serializers.CharField(read_only=True)
     class Meta:
         model = Hospital
         exclude = ('created_at', 'updated_at',)
