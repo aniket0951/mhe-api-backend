@@ -790,6 +790,8 @@ class OfflineAppointment(APIView):
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
                          'locationCode', 'status', 'payment_status', 'department']
         data = request.data
+        logger.info("offline appointment data --> %s"%(str(data)))
+        logger.info("offline appointment payment status --> %s"%(str(data["payment_status"])))
         appointment_data = dict()
         if not (data and set(required_keys).issubset(set(data.keys()))):
             return Response({"message": "Mandatory parameter is missing"},
@@ -837,10 +839,12 @@ class OfflineAppointment(APIView):
             appointment_data["status"] = 2
 
         if data["payment_status"] == "Paid":
+            logger.info("payment status Paid -->")
             appointment_data["payment_status"] = "success"
         if data["payment_status"] == "NotPaid":
+            logger.info("payment status NotPaid -->")
             appointment_data["payment_status"] = None
-            
+
         if data.get("appointmentMode"):
             appointment_data["appointment_mode"] = data.get("appointmentMode")
         appointment_data["episode_number"] = data.get("episodeNumber", None)
