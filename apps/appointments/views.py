@@ -865,7 +865,7 @@ class OfflineAppointment(APIView):
                 if appointment_instance.payment_status == "success":
                     logger.info("offline if appointment_instance.payment_status --> ")
                     logger.info("offline if before pop payment status --> %s"%(str(appointment_instance.payment_status)))
-                    # appointment_data.pop("payment_status")
+                    appointment_data.pop("payment_status")
                     logger.info("offline if after pop payment status --> %s"%(str(appointment_instance.payment_status)))
                     appointment_data.pop("patient")
                     if appointment_data.get("family_member"):
@@ -878,11 +878,12 @@ class OfflineAppointment(APIView):
                         logger.info("if loop payment status NotPaid -->")
                         appointment_data["payment_status"] = None
                 logger.info("offline if appointment_data --> %s"%(str(appointment_data)))
-                appointment_data.pop("hospital")
-                appointment_data.pop("appointmentMode")
-                if datetime_object.year < 1900:
-                    appointment_data.pop("appointment_date")
-                    appointment_data.pop("appointment_slot")
+                
+                # appointment_data.pop("hospital")
+                # appointment_data.pop("appointmentMode")
+                # if datetime_object.year < 1900:
+                #     appointment_data.pop("appointment_date")
+                #     appointment_data.pop("appointment_slot")
 
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
