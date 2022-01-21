@@ -865,7 +865,7 @@ class OfflineAppointment(APIView):
                 if appointment_instance.payment_status == "success":
                     logger.info("offline if appointment_instance.payment_status --> ")
                     logger.info("offline if before pop payment status --> %s"%(str(appointment_instance.payment_status)))
-                    appointment_data.pop("payment_status")
+                    # appointment_data.pop("payment_status")
                     logger.info("offline if after pop payment status --> %s"%(str(appointment_instance.payment_status)))
                     appointment_data.pop("patient")
                     if appointment_data.get("family_member"):
