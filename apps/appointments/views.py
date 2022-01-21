@@ -1633,7 +1633,7 @@ class CurrentAppointmentListView(ProxyView):
             appointment_list = app_list["AppointmentList"]
 
             for appointment in appointment_list:
-
+                logger.info("appointment --> %s"%(str(appointment)))
                 appointment_identifier = appointment["AppId"]
                 appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                 appointment["enable_vc"] = False
@@ -1657,10 +1657,11 @@ class CurrentAppointmentListView(ProxyView):
                                 'payment_status': appointment["PaymentStatus"],
                                 'department':appointment["DeptCode"]
                         }
+                        logger.info("new_appointment --> %s"%(str(new_appointment)))
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
-
+                        logger.info("appointment_instance --> %s"%(str(appointment_instance)))
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
