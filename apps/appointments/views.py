@@ -870,6 +870,14 @@ class OfflineAppointment(APIView):
                     appointment_data.pop("patient")
                     if appointment_data.get("family_member"):
                         appointment_data.pop("family_member")
+                else:
+                    if data["payment_status"] == "Paid":
+                        logger.info("if loop payment status Paid -->")
+                        appointment_data["payment_status"] = "success"
+                    if data["payment_status"] == "NotPaid":
+                        logger.info("if loop payment status NotPaid -->")
+                        appointment_data["payment_status"] = None
+
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
             else:
