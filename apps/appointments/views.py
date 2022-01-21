@@ -860,11 +860,7 @@ class OfflineAppointment(APIView):
                 appointment_data["booked_via_app"] = False
             if appointment_instance:
                 logger.info("offline if appointment_instance --> ")
-                appointment_data.pop("hospital")
-                appointment_data.pop("appointmentMode")
-                if datetime_object.year < 1900:
-                    appointment_data.pop("appointment_date")
-                    appointment_data.pop("appointment_slot")
+                
                 logger.info("offline if check payment status --> %s"%(str(appointment_instance.payment_status)))
                 if appointment_instance.payment_status == "success":
                     logger.info("offline if appointment_instance.payment_status --> ")
@@ -882,8 +878,16 @@ class OfflineAppointment(APIView):
                         logger.info("if loop payment status NotPaid -->")
                         appointment_data["payment_status"] = None
                 logger.info("offline if appointment_data --> %s"%(str(appointment_data)))
+                appointment_data.pop("hospital")
+                appointment_data.pop("appointmentMode")
+                if datetime_object.year < 1900:
+                    appointment_data.pop("appointment_date")
+                    appointment_data.pop("appointment_slot")
+
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
+
+                logger.info("appointment_serializer --> %s"%(str(appointment_serializer)))
             else:
                 if not appointment_data.get("appointment_mode") or not appointment_data.get("appointment_mode").upper()=="VC":
                     appointment_data["booked_via_app"] = False
