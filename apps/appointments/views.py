@@ -835,9 +835,12 @@ class OfflineAppointment(APIView):
         appointment_data["status"] = 1
         if data["status"] == "Cancelled":
             appointment_data["status"] = 2
-        appointment_data["payment_status"] = None
+
         if data["payment_status"] == "Paid":
             appointment_data["payment_status"] = "success"
+        if data["payment_status"] == "NotPaid":
+            appointment_data["payment_status"] = None
+            
         if data.get("appointmentMode"):
             appointment_data["appointment_mode"] = data.get("appointmentMode")
         appointment_data["episode_number"] = data.get("episodeNumber", None)
