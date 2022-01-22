@@ -856,11 +856,18 @@ class OfflineAppointment(APIView):
             if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
                 appointment_data["booked_via_app"] = False
             if appointment_instance:
+                
                 if appointment_instance.payment_status == "success":
                     appointment_data.pop("payment_status")
                     appointment_data.pop("patient")
                     if appointment_data.get("family_member"):
                         appointment_data.pop("family_member")
+                else:
+                    if data["payment_status"] == "Paid":
+                        appointment_data["payment_status"] = "success"
+                    if data["payment_status"] == "NotPaid":
+                        appointment_data["payment_status"] = None
+                
                 logger.info("next 1 -->")               
                 # appointment_data.pop("hospital")
                 # appointment_data.pop("appointmentMode")
