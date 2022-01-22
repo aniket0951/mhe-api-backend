@@ -839,10 +839,8 @@ class OfflineAppointment(APIView):
             appointment_data["status"] = 2
 
         if data["payment_status"] == "Paid":
-            logger.info("payment status Paid -->")
             appointment_data["payment_status"] = "success"
         if data["payment_status"] == "NotPaid":
-            logger.info("payment status NotPaid -->")
             appointment_data["payment_status"] = None
 
         if data.get("appointmentMode"):
@@ -855,40 +853,23 @@ class OfflineAppointment(APIView):
             appointment_data["appointment_slot"] = datetime_object.time().strftime(AppointmentsConstants.APPOINTMENT_TIME_FORMAT)
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
-            logger.info("offline appointment_instance --> %s"%(str(appointment_instance)))
             if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
                 appointment_data["booked_via_app"] = False
             if appointment_instance:
-                logger.info("offline if appointment_instance --> ")
-                
-                logger.info("offline if check payment status --> %s"%(str(appointment_instance.payment_status)))
                 if appointment_instance.payment_status == "success":
-                    logger.info("offline if appointment_instance.payment_status --> ")
-                    logger.info("offline if before pop payment status --> %s"%(str(appointment_instance.payment_status)))
                     appointment_data.pop("payment_status")
-                    logger.info("offline if after pop payment status --> %s"%(str(appointment_instance.payment_status)))
                     appointment_data.pop("patient")
                     if appointment_data.get("family_member"):
                         appointment_data.pop("family_member")
-                else:
-                    if data["payment_status"] == "Paid":
-                        logger.info("if loop payment status Paid -->")
-                        appointment_data["payment_status"] = "success"
-                    if data["payment_status"] == "NotPaid":
-                        logger.info("if loop payment status NotPaid -->")
-                        appointment_data["payment_status"] = None
-                logger.info("offline if appointment_data --> %s"%(str(appointment_data)))
-                
+                logger.info("next 1 -->")               
                 # appointment_data.pop("hospital")
                 # appointment_data.pop("appointmentMode")
-                # if datetime_object.year < 1900:
-                #     appointment_data.pop("appointment_date")
-                #     appointment_data.pop("appointment_slot")
-
+                if datetime_object.year < 1900:
+                    appointment_data.pop("appointment_date")
+                    appointment_data.pop("appointment_slot")
+                logger.info("next 2 -->")
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
-
-                logger.info("appointment_serializer --> %s"%(str(appointment_serializer)))
             else:
                 if not appointment_data.get("appointment_mode") or not appointment_data.get("appointment_mode").upper()=="VC":
                     appointment_data["booked_via_app"] = False
@@ -1650,7 +1631,6 @@ class CurrentAppointmentListView(ProxyView):
             appointment_list = app_list["AppointmentList"]
 
             for appointment in appointment_list:
-                logger.info("appointment --> %s"%(str(appointment)))
                 appointment_identifier = appointment["AppId"]
                 appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                 appointment["enable_vc"] = False
@@ -1674,11 +1654,9 @@ class CurrentAppointmentListView(ProxyView):
                                 'payment_status': appointment["PaymentStatus"],
                                 'department':appointment["DeptCode"]
                         }
-                        logger.info("new_appointment --> %s"%(str(new_appointment)))
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
-                        logger.info("appointment_instance --> %s"%(str(appointment_instance)))
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
@@ -1697,7 +1675,6 @@ class CurrentAppointmentListView(ProxyView):
                                         'payment_status': appointment["PaymentStatus"],
                                         'department':appointment["DeptCode"]
                                 }
-                        logger.info("appointment_data paid --> %s"%(str(appointment_data)))
                         appointment_request_param = cancel_parameters(appointment_data)
                         OfflineAppointment.as_view()(appointment_request_param)
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
