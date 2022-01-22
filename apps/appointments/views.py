@@ -791,7 +791,6 @@ class OfflineAppointment(APIView):
                          'locationCode', 'status', 'payment_status', 'department']
         data = request.data
         logger.info("offline appointment data --> %s"%(str(data)))
-        logger.info("offline appointment payment status --> %s"%(str(data["payment_status"])))
         appointment_data = dict()
         if not (data and set(required_keys).issubset(set(data.keys()))):
             return Response({"message": "Mandatory parameter is missing"},
@@ -877,6 +876,7 @@ class OfflineAppointment(APIView):
                 logger.info("next 2 -->")
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
+                logger.info("next 3 -->")
             else:
                 if not appointment_data.get("appointment_mode") or not appointment_data.get("appointment_mode").upper()=="VC":
                     appointment_data["booked_via_app"] = False
