@@ -868,8 +868,8 @@ class OfflineAppointment(APIView):
                         appointment_data["payment_status"] = None
                 
                 logger.info("next 1 -->")               
-                appointment_data.pop("hospital")
-                appointment_data.pop("appointmentMode")
+                # appointment_data.pop("hospital")
+                # appointment_data.pop("appointmentMode")
                 if datetime_object.year < 1900:
                     appointment_data.pop("appointment_date")
                     appointment_data.pop("appointment_slot")
