@@ -1751,6 +1751,7 @@ class CurrentAppointmentListView(ProxyView):
                         appointment["uhid_linked"] = True
                         if not validate_uhid_number(appointment["HospNo"]):
                             appointment["HospNo"] = user.uhid_number
+                logger.info("next 7 --> ")
                 appointment_data_list.append(appointment)
                 logger.info("appointment list data ---> %s"%(str(appointment)))
                 logger.info("appointment_data_list list data ---> %s"%(str(appointment_data_list)))
