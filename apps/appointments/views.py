@@ -1624,7 +1624,7 @@ class CurrentAppointmentListView(ProxyView):
         status = root.find("Status").text
         message = root.find("Message").text
         appointment_list = []
-        appointment = []
+        appointment_obj_list = []
         today_count = 0
         tomorrow_count = 0
 
@@ -1678,6 +1678,7 @@ class CurrentAppointmentListView(ProxyView):
             
             appointment_obj_data = Appointment.objects.filter(appointment_identifier__in=appointment_identifier).order_by('-created_at')
             logger.info("appointment_obj_data --> %s"%(str(appointment_obj_data)))
+            appointment = []
             for appointment_instance in appointment_obj_data:
                 for appointment_obj in appointment_list:
                     if id_not_in_db == appointment_obj["AppId"]:
@@ -1740,7 +1741,9 @@ class CurrentAppointmentListView(ProxyView):
                         appointment["uhid_linked"] = True
                         if not validate_uhid_number(appointment["HospNo"]):
                             appointment["HospNo"] = user.uhid_number
+                appointment_obj_list.append(appointment)
                 logger.info("appointment list data ---> %s"%(str(appointment)))
+                logger.info("appointment_obj_list list data ---> %s"%(str(appointment_obj_list)))
                         
         return self.custom_success_response(
                                     message=message,
