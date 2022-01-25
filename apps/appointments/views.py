@@ -1671,10 +1671,9 @@ class CurrentAppointmentListView(ProxyView):
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
                 user = None
-                if appointment_instance.payment_status != "success":
-                    if appointment["PaymentStatus"] == "Paid":
-                        try:
-                            appointment_data = {
+                if appointment["PaymentStatus"] == "Paid":
+                    try:
+                        appointment_data = {
                                             'UHID':appointment["HospNo"],
                                             'doctorCode':self.request.data["doctor_code"],
                                             'appointmentIdentifier':appointment_identifier,
@@ -1686,13 +1685,13 @@ class CurrentAppointmentListView(ProxyView):
                                             'payment_status': appointment["PaymentStatus"],
                                             'department':appointment["DeptCode"]
                                     }
-                            appointment_request_param = cancel_parameters(appointment_data)
-                            OfflineAppointment.as_view()(appointment_request_param)
-                            try:
-                                appointment_instance = Appointment.objects.get(appointment_identifier=appointment_identifier)
-                            except:
-                                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
-                        except Exception as e:
+                        appointment_request_param = cancel_parameters(appointment_data)
+                        OfflineAppointment.as_view()(appointment_request_param)
+                        try:
+                            appointment_instance = Appointment.objects.get(appointment_identifier=appointment_identifier)
+                        except:
+                            appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                    except Exception as e:
                             logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
 
                 if validate_uhid_number(appointment["HospNo"]):
