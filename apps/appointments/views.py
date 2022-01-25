@@ -1700,9 +1700,10 @@ class CurrentAppointmentListView(ProxyView):
                 appointment["app_user"] = False
                 appointment["uhid_linked"] = False
                 appointment["mobile"] = None
-
+                logger.info("next 8 --> ")
                 user = None
                 if appointment["PaymentStatus"] == "Paid":
+                    logger.info("next 9 --> ")
                     try:
                         appointment_data = {
                                         'UHID':appointment["HospNo"],
@@ -1717,7 +1718,9 @@ class CurrentAppointmentListView(ProxyView):
                                         'department':appointment["DeptCode"]
                                 }
                         appointment_request_param = cancel_parameters(appointment_data)
+                        logger.info("next 10 --> ")
                         OfflineAppointment.as_view()(appointment_request_param)
+                        logger.info("next 11 --> ")
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
@@ -1726,6 +1729,7 @@ class CurrentAppointmentListView(ProxyView):
                     user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first() or FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
 
                 if appointment_instance:
+                    logger.info("next 12 --> ")
                     user = appointment_instance.family_member or appointment_instance.patient
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready
@@ -1738,7 +1742,7 @@ class CurrentAppointmentListView(ProxyView):
                         not appointment_instance.vc_appointment_status == 4:
 
                         appointment["enable_vc"] = True
-
+                        logger.info("next 13 --> ")
                     if appointment_instance.appointment_vitals.exists():
                         appointment["vitals_available"] = True
 
