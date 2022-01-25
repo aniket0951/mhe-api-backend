@@ -1624,7 +1624,6 @@ class CurrentAppointmentListView(ProxyView):
         status = root.find("Status").text
         message = root.find("Message").text
         appointment_list = []
-        appointment_data_list = []
         today_count = 0
         tomorrow_count = 0
 
@@ -1635,33 +1634,25 @@ class CurrentAppointmentListView(ProxyView):
             tomorrow_count = app_list["TomorrowCount"]
             appointment_list = app_list["AppointmentList"]
 
-            appointment_identifiers = []
             for appointment in appointment_list:
-                appointment_identifiers.append(appointment["AppId"])
+                appointment_identifier = appointment["AppId"]
+                try:
+                    appointment_instance = Appointment.objects.get(appointment_identifier=appointment_identifier)
+                except:
+                    appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                appointment["enable_vc"] = False
+                appointment["vitals_available"] = False
+                appointment["prescription_available"] = False
+                appointment["app_user"] = False
+                appointment["uhid_linked"] = False
+                appointment["mobile"] = None
 
-            logger.info("appointment_identifiers data --> %s"%(str(appointment_identifiers)))
-
-            appointment_objs = Appointment.objects.filter(appointment_identifier__in=appointment_identifiers).order_by('-created_at')
-            logger.info("appointment_objs data --> %s"%(str(appointment_objs)))
-            
-            appointment_identifier = [obj.appointment_identifier for obj in appointment_objs]
-            logger.info("appointment_identifier for loop data --> %s"%(str(appointment_identifier)))
-            
-            id_not_in_db =  [id for id in appointment_identifiers if id not in appointment_identifier]
-            logger.info("id_not_in_db data --> %s"%(str(id_not_in_db)))
-            id_not_in_db_dict = []
-            
-            for appointment in appointment_list:
-                if id_not_in_db == appointment["AppId"]:
-                    id_not_in_db_dict.append(appointment)
-            logger.info("id_not_in_db_dict data --> %s"%(str(id_not_in_db_dict)))
-            
-            for appointment in id_not_in_db_dict:
+                if not appointment_instance:
                     try:
                         new_appointment = {
                                 'UHID':appointment["HospNo"],
                                 'doctorCode':self.request.data["doctor_code"],
-                                'appointmentIdentifier':appointment["AppId"],
+                                'appointmentIdentifier':appointment_identifier,
                                 'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
                                 'appointmentMode': appointment["ApptType"],
                                 'episodeNumber':None,
@@ -1672,88 +1663,54 @@ class CurrentAppointmentListView(ProxyView):
                         }
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
-                        appointment_identifier.append(appointment["AppId"])
-                    except Exception as e:
-                        logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))            
-            
-            appointment_obj_data = Appointment.objects.filter(appointment_identifier__in=appointment_identifier).order_by('-created_at')
-            logger.info("appointment_obj_data --> %s"%(str(appointment_obj_data)))
-            
-            logger.info("next 1 --->")
-            for appointment_instance in appointment_obj_data:
-                
-                logger.info("next 2 --->")
-                logger.info("appointment_instance.appointment_identifier --> %s"%(str(appointment_instance.appointment_identifier)))
-                for appointment_obj in appointment_list:
-                    appointment = dict()
-                    logger.info("appointment_obj for loop ---> %s"%(str(appointment_obj["AppId"])))
-                    logger.info("next 3 --->")
-                    if appointment_instance.appointment_identifier == appointment_obj["AppId"]:
-                        logger.info("next 4 --->")
-                        appointment.update(appointment_obj)
-                        logger.info("next 5 --->")
-                logger.info("next 6 --->")
-                logger.info("appointment list 1 --> %s"%(str(appointment)))
-                appointment["enable_vc"] = False
-                logger.info("enalble --> ")
-                appointment["vitals_available"] = False
-                appointment["prescription_available"] = False
-                appointment["app_user"] = False
-                appointment["uhid_linked"] = False
-                appointment["mobile"] = None
-                logger.info("next 8 --> ")
-                user = None
-                if appointment["PaymentStatus"] == "Paid":
-                    logger.info("next 9 --> ")
-                    try:
-                        appointment_data = {
-                                        'UHID':appointment["HospNo"],
-                                        'doctorCode':self.request.data["doctor_code"],
-                                        'appointmentIdentifier':appointment_instance.appointment_identifier,
-                                        'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
-                                        'appointmentMode': appointment["ApptType"],
-                                        'episodeNumber':None,
-                                        'locationCode': appointment["HospitalCode"],
-                                        'status':"Confirmed", 
-                                        'payment_status': appointment["PaymentStatus"],
-                                        'department':appointment["DeptCode"]
-                                }
-                        appointment_request_param = cancel_parameters(appointment_data)
-                        logger.info("next 10 --> ")
-                        OfflineAppointment.as_view()(appointment_request_param)
-                        logger.info("next 11 --> ")
                         appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
+                
+                user = None
+                if appointment_instance.payment_status != "success":
+                    if appointment["PaymentStatus"] == "Paid":
+                        try:
+                            appointment_data = {
+                                            'UHID':appointment["HospNo"],
+                                            'doctorCode':self.request.data["doctor_code"],
+                                            'appointmentIdentifier':appointment_identifier,
+                                            'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
+                                            'appointmentMode': appointment["ApptType"],
+                                            'episodeNumber':None,
+                                            'locationCode': appointment["HospitalCode"],
+                                            'status':"Confirmed", 
+                                            'payment_status': appointment["PaymentStatus"],
+                                            'department':appointment["DeptCode"]
+                                    }
+                            appointment_request_param = cancel_parameters(appointment_data)
+                            OfflineAppointment.as_view()(appointment_request_param)
+                            appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                        except Exception as e:
+                            logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
 
                 if validate_uhid_number(appointment["HospNo"]):
                     user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first() or FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
 
-                # if appointment_instance:
-                logger.info("next 12 --> ")
-                user = None
-                if appointment_instance.family_member:
-                    logger.info("next 12.1 --> ")
-                    user = appointment_instance.family_member
-                else:
-                    user = appointment_instance.patient
-                appointment["status"] = appointment_instance.status
-                appointment["patient_ready"] = appointment_instance.patient_ready
-                appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
-                appointment["app_user"] = True
+                if appointment_instance:
+                    user = appointment_instance.family_member or appointment_instance.patient
+                    appointment["status"] = appointment_instance.status
+                    appointment["patient_ready"] = appointment_instance.patient_ready
+                    appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
+                    appointment["app_user"] = True
 
-                if  appointment_instance.status == 1 and \
+                    if  appointment_instance.status == 1 and \
                         appointment_instance.appointment_mode == "VC" and \
                         appointment_instance.payment_status == "success" and \
                         not appointment_instance.vc_appointment_status == 4:
 
-                    appointment["enable_vc"] = True
-                    logger.info("next 13 --> ")
-                if appointment_instance.appointment_vitals.exists():
-                    appointment["vitals_available"] = True
+                        appointment["enable_vc"] = True
 
-                if appointment_instance.appointment_prescription.exists():
-                    appointment["prescription_available"] = True
+                    if appointment_instance.appointment_vitals.exists():
+                        appointment["vitals_available"] = True
+
+                    if appointment_instance.appointment_prescription.exists():
+                        appointment["prescription_available"] = True
 
                 if user:
                     appointment["mobile"] = user.mobile.raw_input
@@ -1761,16 +1718,12 @@ class CurrentAppointmentListView(ProxyView):
                         appointment["uhid_linked"] = True
                         if not validate_uhid_number(appointment["HospNo"]):
                             appointment["HospNo"] = user.uhid_number
-                logger.info("next 7 --> ")
-                appointment_data_list.append(appointment)
-                logger.info("appointment list data ---> %s"%(str(appointment)))
-                logger.info("appointment_data_list list data ---> %s"%(str(appointment_data_list)))
                         
         return self.custom_success_response(
                                     message=message,
                                     success=True, 
                                     data={
-                                        "appointment_list": appointment_data_list, 
+                                        "appointment_list": appointment_list, 
                                         "today_count": today_count, 
                                         "tomorrow_count": tomorrow_count
                                     }
