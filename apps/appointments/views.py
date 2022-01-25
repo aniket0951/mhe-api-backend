@@ -1678,9 +1678,10 @@ class CurrentAppointmentListView(ProxyView):
             
             appointment_obj_data = Appointment.objects.filter(appointment_identifier__in=appointment_identifier).order_by('-created_at')
             logger.info("appointment_obj_data --> %s"%(str(appointment_obj_data)))
-            appointment = []
+            
             logger.info("next 1 --->")
             for appointment_instance in appointment_obj_data:
+                appointment = []
                 logger.info("next 2 --->")
                 for appointment_obj in appointment_list:
                     logger.info("next 3 --->")
