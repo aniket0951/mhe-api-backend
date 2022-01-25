@@ -1695,6 +1695,7 @@ class CurrentAppointmentListView(ProxyView):
                 logger.info("next 6 --->")
                 logger.info("appointment list 1 --> %s"%(str(appointment)))
                 appointment["enable_vc"] = False
+                logger.info("enalble --> ")
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
                 appointment["app_user"] = False
