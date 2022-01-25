@@ -1729,26 +1729,26 @@ class CurrentAppointmentListView(ProxyView):
                 if validate_uhid_number(appointment["HospNo"]):
                     user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first() or FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
 
-                if appointment_instance:
-                    logger.info("next 12 --> ")
-                    user = appointment_instance.family_member or appointment_instance.patient
-                    appointment["status"] = appointment_instance.status
-                    appointment["patient_ready"] = appointment_instance.patient_ready
-                    appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
-                    appointment["app_user"] = True
+                # if appointment_instance:
+                logger.info("next 12 --> ")
+                user = appointment_instance.family_member or appointment_instance.patient
+                appointment["status"] = appointment_instance.status
+                appointment["patient_ready"] = appointment_instance.patient_ready
+                appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
+                appointment["app_user"] = True
 
-                    if  appointment_instance.status == 1 and \
+                if  appointment_instance.status == 1 and \
                         appointment_instance.appointment_mode == "VC" and \
                         appointment_instance.payment_status == "success" and \
                         not appointment_instance.vc_appointment_status == 4:
 
-                        appointment["enable_vc"] = True
-                        logger.info("next 13 --> ")
-                    if appointment_instance.appointment_vitals.exists():
-                        appointment["vitals_available"] = True
+                    appointment["enable_vc"] = True
+                    logger.info("next 13 --> ")
+                if appointment_instance.appointment_vitals.exists():
+                    appointment["vitals_available"] = True
 
-                    if appointment_instance.appointment_prescription.exists():
-                        appointment["prescription_available"] = True
+                if appointment_instance.appointment_prescription.exists():
+                    appointment["prescription_available"] = True
 
                 if user:
                     appointment["mobile"] = user.mobile.raw_input
