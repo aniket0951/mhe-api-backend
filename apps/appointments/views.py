@@ -1679,11 +1679,15 @@ class CurrentAppointmentListView(ProxyView):
             appointment_obj_data = Appointment.objects.filter(appointment_identifier__in=appointment_identifier).order_by('-created_at')
             logger.info("appointment_obj_data --> %s"%(str(appointment_obj_data)))
             appointment = []
+            logger.info("next 1 --->")
             for appointment_instance in appointment_obj_data:
+                logger.info("next 2 --->")
                 for appointment_obj in appointment_list:
+                    logger.info("next 3 --->")
                     if id_not_in_db == appointment_obj["AppId"]:
+                        logger.info("next 4 --->")
                         appointment.append(appointment_obj)
-                
+                logger.info("next 5 --->")
                 appointment["enable_vc"] = False
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
