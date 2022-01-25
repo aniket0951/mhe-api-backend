@@ -1663,7 +1663,10 @@ class CurrentAppointmentListView(ProxyView):
                         }
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
-                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                        try:
+                            appointment_instance = Appointment.objects.get(appointment_identifier=appointment_identifier)
+                        except:
+                            appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
@@ -1685,7 +1688,10 @@ class CurrentAppointmentListView(ProxyView):
                                     }
                             appointment_request_param = cancel_parameters(appointment_data)
                             OfflineAppointment.as_view()(appointment_request_param)
-                            appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                            try:
+                                appointment_instance = Appointment.objects.get(appointment_identifier=appointment_identifier)
+                            except:
+                                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                         except Exception as e:
                             logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
 
