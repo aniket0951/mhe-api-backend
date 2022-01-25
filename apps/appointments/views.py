@@ -1685,10 +1685,13 @@ class CurrentAppointmentListView(ProxyView):
                 logger.info("next 2 --->")
                 logger.info("appointment_instance.appointment_identifier --> %s"%(str(appointment_instance.appointment_identifier)))
                 for appointment_obj in appointment_list:
-                    logger.info("appointment_obj for loop ---> %s"%(str(appointment_obj)))
+                    sample_list = []
+                    logger.info("appointment_obj for loop ---> %s"%(str(appointment_obj["AppId"])))
                     logger.info("next 3 --->")
                     if appointment_instance.appointment_identifier == appointment_obj["AppId"]:
                         logger.info("next 4 --->")
+                        sample_list.append(appointment_obj)
+                        logger.info("sample_list for loop ---> %s"%(str(sample_list)))
                         appointment.append(appointment_obj)
                         logger.info("next 5 --->")
                 logger.info("next 6 --->")
