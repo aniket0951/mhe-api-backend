@@ -1749,7 +1749,7 @@ class CurrentAppointmentListView(ProxyView):
                                     message=message,
                                     success=True, 
                                     data={
-                                        "appointment_list": appointment, 
+                                        "appointment_list": appointment_obj_list, 
                                         "today_count": today_count, 
                                         "tomorrow_count": tomorrow_count
                                     }
