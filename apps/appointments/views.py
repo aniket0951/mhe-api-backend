@@ -1624,6 +1624,7 @@ class CurrentAppointmentListView(ProxyView):
         status = root.find("Status").text
         message = root.find("Message").text
         appointment_list = []
+        appointment = []
         today_count = 0
         tomorrow_count = 0
 
@@ -1669,7 +1670,7 @@ class CurrentAppointmentListView(ProxyView):
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))            
             
             appointment_obj_data = Appointment.objects.filter(appointment_identifier__in=appointment_identifier).order_by('-created_at')
-            appointment = []
+            
             for appointment_instance in appointment_obj_data:
                 for appointment_obj in appointment_list:
                     if id_not_in_db == appointment_obj["AppId"]:
