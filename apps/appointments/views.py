@@ -1731,7 +1731,11 @@ class CurrentAppointmentListView(ProxyView):
 
                 # if appointment_instance:
                 logger.info("next 12 --> ")
-                user = appointment_instance.family_member or appointment_instance.patient
+                user = None
+                if appointment_instance.family_member:
+                    user = appointment_instance.family_member
+                else:
+                    user = appointment_instance.patient
                 appointment["status"] = appointment_instance.status
                 appointment["patient_ready"] = appointment_instance.patient_ready
                 appointment["vc_appointment_status"] = appointment_instance.vc_appointment_status
