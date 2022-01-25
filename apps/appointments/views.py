@@ -1639,16 +1639,23 @@ class CurrentAppointmentListView(ProxyView):
             for appointment in appointment_list:
                 appointment_identifiers.append(appointment["AppId"])
 
-            appointment_objs = Appointment.objects.filter(appointment_identifier__in=appointment_identifiers).order_by('-created_at')
-            appointment_identifier = [obj.appointment_identifier for obj in appointment_objs]
-            id_not_in_db =  [id for id in appointment_identifiers if id not in appointment_identifier]
+            logger.info("appointment_identifiers data --> %s"%(str(appointment_identifiers)))
 
+            appointment_objs = Appointment.objects.filter(appointment_identifier__in=appointment_identifiers).order_by('-created_at')
+            logger.info("appointment_objs data --> %s"%(str(appointment_objs)))
+            
+            appointment_identifier = [obj.appointment_identifier for obj in appointment_objs]
+            logger.info("appointment_identifier for loop data --> %s"%(str(appointment_identifier)))
+            
+            id_not_in_db =  [id for id in appointment_identifiers if id not in appointment_identifier]
+            logger.info("id_not_in_db data --> %s"%(str(id_not_in_db)))
             id_not_in_db_dict = []
             
             for appointment in appointment_list:
                 if id_not_in_db == appointment["AppId"]:
                     id_not_in_db_dict.append(appointment)
-
+            logger.info("id_not_in_db_dict data --> %s"%(str(id_not_in_db_dict)))
+            
             for appointment in id_not_in_db_dict:
                     try:
                         new_appointment = {
@@ -1670,7 +1677,7 @@ class CurrentAppointmentListView(ProxyView):
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))            
             
             appointment_obj_data = Appointment.objects.filter(appointment_identifier__in=appointment_identifier).order_by('-created_at')
-            
+            logger.info("appointment_obj_data --> %s"%(str(appointment_obj_data)))
             for appointment_instance in appointment_obj_data:
                 for appointment_obj in appointment_list:
                     if id_not_in_db == appointment_obj["AppId"]:
@@ -1733,6 +1740,7 @@ class CurrentAppointmentListView(ProxyView):
                         appointment["uhid_linked"] = True
                         if not validate_uhid_number(appointment["HospNo"]):
                             appointment["HospNo"] = user.uhid_number
+                logger.info("appointment list data ---> %s"%(str(appointment)))
                         
         return self.custom_success_response(
                                     message=message,
