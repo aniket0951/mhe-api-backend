@@ -1634,22 +1634,26 @@ class CurrentAppointmentListView(ProxyView):
             tomorrow_count = app_list["TomorrowCount"]
             appointment_list = app_list["AppointmentList"]
 
+            appointment_identifiers = []
             for appointment in appointment_list:
-                appointment_identifier = appointment["AppId"]
-                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
-                appointment["enable_vc"] = False
-                appointment["vitals_available"] = False
-                appointment["prescription_available"] = False
-                appointment["app_user"] = False
-                appointment["uhid_linked"] = False
-                appointment["mobile"] = None
+                appointment_identifiers.append(appointment["AppId"])
 
-                if not appointment_instance:
+            appointment_objs = Appointment.objects.filter(appointment_identifier__in=appointment_identifiers).order_by('-created_at')
+            appointment_identifier = [obj.appointment_identifier for obj in appointment_objs]
+            id_not_in_db =  [id for id in appointment_identifiers if id not in appointment_identifier]
+
+            id_not_in_db_dict = []
+            
+            for appointment in appointment_list:
+                if id_not_in_db == appointment["AppId"]:
+                    id_not_in_db_dict.append(appointment)
+
+            for appointment in id_not_in_db_dict:
                     try:
                         new_appointment = {
                                 'UHID':appointment["HospNo"],
                                 'doctorCode':self.request.data["doctor_code"],
-                                'appointmentIdentifier':appointment_identifier,
+                                'appointmentIdentifier':appointment["AppId"],
                                 'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
                                 'appointmentMode': appointment["ApptType"],
                                 'episodeNumber':None,
@@ -1660,17 +1664,31 @@ class CurrentAppointmentListView(ProxyView):
                         }
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
-                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                        appointment_identifier.append(appointment["AppId"])
                     except Exception as e:
-                        logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
+                        logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))            
+            
+            appointment_obj_data = Appointment.objects.filter(appointment_identifier__in=appointment_identifier).order_by('-created_at')
+            appointment = []
+            for appointment_instance in appointment_obj_data:
+                for appointment_obj in appointment_list:
+                    if id_not_in_db == appointment_obj["AppId"]:
+                        appointment.append(appointment_obj)
                 
+                appointment["enable_vc"] = False
+                appointment["vitals_available"] = False
+                appointment["prescription_available"] = False
+                appointment["app_user"] = False
+                appointment["uhid_linked"] = False
+                appointment["mobile"] = None
+
                 user = None
                 if appointment["PaymentStatus"] == "Paid":
                     try:
                         appointment_data = {
                                         'UHID':appointment["HospNo"],
                                         'doctorCode':self.request.data["doctor_code"],
-                                        'appointmentIdentifier':appointment_identifier,
+                                        'appointmentIdentifier':appointment_instance.appointment_identifier,
                                         'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
                                         'appointmentMode': appointment["ApptType"],
                                         'episodeNumber':None,
@@ -1719,7 +1737,7 @@ class CurrentAppointmentListView(ProxyView):
                                     message=message,
                                     success=True, 
                                     data={
-                                        "appointment_list": appointment_list, 
+                                        "appointment_list": appointment, 
                                         "today_count": today_count, 
                                         "tomorrow_count": tomorrow_count
                                     }
