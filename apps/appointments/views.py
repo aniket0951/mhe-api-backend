@@ -1733,6 +1733,7 @@ class CurrentAppointmentListView(ProxyView):
                 logger.info("next 12 --> ")
                 user = None
                 if appointment_instance.family_member:
+                    logger.info("next 12.1 --> ")
                     user = appointment_instance.family_member
                 else:
                     user = appointment_instance.patient
