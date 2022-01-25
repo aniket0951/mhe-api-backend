@@ -1624,7 +1624,7 @@ class CurrentAppointmentListView(ProxyView):
         status = root.find("Status").text
         message = root.find("Message").text
         appointment_list = []
-        appointment_obj_list = []
+        appointment = []
         today_count = 0
         tomorrow_count = 0
 
@@ -1681,11 +1681,11 @@ class CurrentAppointmentListView(ProxyView):
             
             logger.info("next 1 --->")
             for appointment_instance in appointment_obj_data:
-                appointment = []
+                
                 logger.info("next 2 --->")
                 for appointment_obj in appointment_list:
                     logger.info("next 3 --->")
-                    if id_not_in_db == appointment_obj["AppId"]:
+                    if appointment_instance.appointment_identifier == appointment_obj["AppId"]:
                         logger.info("next 4 --->")
                         appointment.append(appointment_obj)
                 logger.info("next 5 --->")
@@ -1746,15 +1746,15 @@ class CurrentAppointmentListView(ProxyView):
                         appointment["uhid_linked"] = True
                         if not validate_uhid_number(appointment["HospNo"]):
                             appointment["HospNo"] = user.uhid_number
-                appointment_obj_list.append(appointment)
+            #    appointment_obj_list.append(appointment)
                 logger.info("appointment list data ---> %s"%(str(appointment)))
-                logger.info("appointment_obj_list list data ---> %s"%(str(appointment_obj_list)))
+               # logger.info("appointment_obj_list list data ---> %s"%(str(appointment_obj_list)))
                         
         return self.custom_success_response(
                                     message=message,
                                     success=True, 
                                     data={
-                                        "appointment_list": appointment_obj_list, 
+                                        "appointment_list": appointment, 
                                         "today_count": today_count, 
                                         "tomorrow_count": tomorrow_count
                                     }
