@@ -153,10 +153,15 @@ class ReportsSyncAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             report_info = request.data.get('ORUMessage', None)
+            logger.info("request report_info  --> %"%(str(report_info)))
             root = ET.fromstring(report_info['msgORB'])
+            logger.info("root info  --> %"%(str(root)))
             report_info["place_order"] = root.find('OBR.2').find('OBR.2.1').text
+            logger.info("report info --> %"%(str(report_info["place_order"])))
             report_details = request.data.get('ORUDetails', None)
+            logger.info("report_details info --> %"%(str(report_details)))
             proxy_request = report_handler(report_info=report_info)
+            logger.info("proxy_request info --> %"%(str(proxy_request)))
             report_response = None
             if not proxy_request:
                 ValidationError("Something went wrong!")
