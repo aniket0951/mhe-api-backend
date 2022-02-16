@@ -5,6 +5,6 @@ cd /home/ec2-user/mhe-backend/mhe-api-backend/
 sudo chmod 777 -R .
 source ../mhenv/bin/activate
 python manage.py migrate
-python manage.py loaddata apps/master_data/fixtures/hospitals.json
 sudo service gunicorn restart
 sudo service celery restart
+python manage.py create_or_update_health_packages
