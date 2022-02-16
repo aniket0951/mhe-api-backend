@@ -483,6 +483,7 @@ class HealthPackagesView(ProxyView):
         ]
         hospital_code = ""
         for each_health_package in response_content:
+            logger.info("each_health_package -- %s"%(str(each_health_package)))
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
                 if not each_health_package[key]:
