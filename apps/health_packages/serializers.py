@@ -19,7 +19,7 @@ class HealthTestSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         response_object = super().to_representation(instance)
         if instance.description:
-            response_object['description'] = instance.description.title()
+            response_object['description'] = instance.description
         return response_object
 
 
@@ -123,7 +123,7 @@ class HealthPackageSerializer(DynamicFieldsModelSerializer):
 
         response_object = super().to_representation(instance)
         if instance.name:
-            response_object['name'] = instance.name.title()
+            response_object['name'] = instance.name
 
         return response_object
 
