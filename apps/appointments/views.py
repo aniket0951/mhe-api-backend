@@ -790,6 +790,7 @@ class OfflineAppointment(APIView):
         required_keys = ['UHID', 'doctorCode', 'appointmentIdentifier', 'appointmentDatetime',
                          'locationCode', 'status', 'payment_status', 'department']
         data = request.data
+        logger.info("offline appointment data --> %s"%(str(data)))
         appointment_data = dict()
         if not (data and set(required_keys).issubset(set(data.keys()))):
             return Response({"message": "Mandatory parameter is missing"},
@@ -835,9 +836,12 @@ class OfflineAppointment(APIView):
         appointment_data["status"] = 1
         if data["status"] == "Cancelled":
             appointment_data["status"] = 2
-        appointment_data["payment_status"] = None
+
         if data["payment_status"] == "Paid":
             appointment_data["payment_status"] = "success"
+        if data["payment_status"] == "NotPaid":
+            appointment_data["payment_status"] = None
+
         if data.get("appointmentMode"):
             appointment_data["appointment_mode"] = data.get("appointmentMode")
         appointment_data["episode_number"] = data.get("episodeNumber", None)
@@ -849,20 +853,25 @@ class OfflineAppointment(APIView):
             appointment_instance = Appointment.objects.filter(
                 appointment_identifier=appointment_identifier).first()
             if appointment_data.get("appointment_mode") and appointment_data.get("appointment_mode").upper()=="VC":
-                appointment_data["booked_via_app"] = True
+                appointment_data["booked_via_app"] = False
             if appointment_instance:
-
-                appointment_data.pop("hospital")
-                appointment_data.pop("appointmentMode")
-                if datetime_object.year < 1900:
-                    appointment_data.pop("appointment_date")
-                    appointment_data.pop("appointment_slot")
-
+                
                 if appointment_instance.payment_status == "success":
                     appointment_data.pop("payment_status")
                     appointment_data.pop("patient")
                     if appointment_data.get("family_member"):
                         appointment_data.pop("family_member")
+                else:
+                    if data["payment_status"] == "Paid":
+                        appointment_data["payment_status"] = "success"
+                    if data["payment_status"] == "NotPaid":
+                        appointment_data["payment_status"] = None
+                
+                # appointment_data.pop("hospital")
+                # appointment_data.pop("appointmentMode")
+                if datetime_object.year < 1900:
+                    appointment_data.pop("appointment_date")
+                    appointment_data.pop("appointment_slot")
                 appointment_serializer = AppointmentSerializer(
                     appointment_instance, data=appointment_data, partial=True)
             else:
@@ -1625,10 +1634,18 @@ class CurrentAppointmentListView(ProxyView):
             tomorrow_count = app_list["TomorrowCount"]
             appointment_list = app_list["AppointmentList"]
 
+            appointment_identifiers_list = []
             for appointment in appointment_list:
+                appointment_identifiers_list.append(appointment["AppId"])
+            appointment_instances = Appointment.objects.filter(appointment_identifier__in=appointment_identifiers_list).order_by('-created_at')
+            
+            appointment_identifiers_objects_list = {}
+            for appointment_instance_obj in appointment_instances:
+                appointment_identifiers_objects_list[appointment_instance_obj.appointment_identifier] = appointment_instance_obj
 
+            for appointment in appointment_list:
                 appointment_identifier = appointment["AppId"]
-                appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                appointment_instance = appointment_identifiers_objects_list.get(appointment_identifier)
                 appointment["enable_vc"] = False
                 appointment["vitals_available"] = False
                 appointment["prescription_available"] = False
@@ -1652,17 +1669,42 @@ class CurrentAppointmentListView(ProxyView):
                         }
                         new_appointment_request_param = cancel_parameters(new_appointment)
                         OfflineAppointment.as_view()(new_appointment_request_param)
-                        appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
-
+                        try:
+                            appointment_instance = Appointment.objects.get(appointment_identifier=appointment_identifier)
+                        except:
+                            appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
                     except Exception as e:
                         logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                 
                 user = None
-                
+               
                 if validate_uhid_number(appointment["HospNo"]):
                     user = Patient.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first() or FamilyMember.objects.filter(uhid_number=appointment["HospNo"]).order_by('-created_at').first()
 
                 if appointment_instance:
+                    if appointment_instance.payment_status != "success":
+                        if appointment["PaymentStatus"] == "Paid":
+                            try:
+                                appointment_data = {
+                                                    'UHID':appointment["HospNo"],
+                                                    'doctorCode':self.request.data["doctor_code"],
+                                                    'appointmentIdentifier':appointment_identifier,
+                                                    'appointmentDatetime': date_and_time_str_to_obj(appointment["ApptDate"],appointment["ApptTime"]), 
+                                                    'appointmentMode': appointment["ApptType"],
+                                                    'episodeNumber':None,
+                                                    'locationCode': appointment["HospitalCode"],
+                                                    'status':"Confirmed", 
+                                                    'payment_status': appointment["PaymentStatus"],
+                                                    'department':appointment["DeptCode"]
+                                            }
+                                appointment_request_param = cancel_parameters(appointment_data)
+                                OfflineAppointment.as_view()(appointment_request_param)
+                                try:
+                                    appointment_instance = Appointment.objects.get(appointment_identifier=appointment_identifier)
+                                except:
+                                    appointment_instance = Appointment.objects.filter(appointment_identifier=appointment_identifier).order_by('-created_at').first()
+                            except Exception as e:
+                                    logger.error("Exception in CurrentAppointmentListView: %s"%(str(e)))
                     user = appointment_instance.family_member or appointment_instance.patient
                     appointment["status"] = appointment_instance.status
                     appointment["patient_ready"] = appointment_instance.patient_ready

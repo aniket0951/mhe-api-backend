@@ -221,6 +221,41 @@
             "location":"",
             "promo_code":""
         }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8215",
+        "fields": {
+            "created_at": "2021-01-14T00:00:00+05:30",
+            "updated_at": "2021-01-14T00:00:00+05:30",
+            "code": "MHM",
+            "description": "Manipal Hospital Millers Road",
+            "email": "info.mhmr@manipalhospitals.com",
+            "mobile": "080-61914686",
+            "address": "Manipal Hospital Millers Road. 71/1, Millers Road,Opp to St. Anne's College, Vasanth Nagar, Bengaluru, 560052",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"",
+            "health_package_department_code":"",
+            "is_home_collection_supported":"True",
+            "location":"",
+            "promo_code":""
+        }
+    },{
+        "model": "master_data.hospital",
+        "pk": "63850af2-3fdd-4fd6-84a2-a3c18b9f8216",
+        "fields": {
+            "created_at": "2021-01-18T00:00:00+05:30",
+            "updated_at": "2021-01-18T00:00:00+05:30",
+            "code": "MVB",
+            "description": "Manipal Hospital Varthur Road",
+            "email": "info@manipalhospitals.com",
+            "mobile": "+918067366795",
+            "address": "Survey No. 10P & 12P, Whitefield Main Rd, Varthur Kodi, Ramagondanahalli, Bengaluru, Karnataka",
+            "is_health_package_online_purchase_supported": "True",
+            "health_package_doctor_code":"",
+            "health_package_department_code":"",
+            "is_home_collection_supported":"True",
+            "location":"",
+            "promo_code":""
+        }
     }
-
 ]
