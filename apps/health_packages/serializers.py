@@ -1,3 +1,4 @@
+import logging
 from django.db.models import Q
 from django.utils.timezone import datetime
 
@@ -9,6 +10,7 @@ from utils.utils import generate_pre_signed_url
 
 from .models import HealthPackage, HealthPackagePricing, HealthTest
 
+logger = logging.getLogger('django')
 
 class HealthTestSerializer(DynamicFieldsModelSerializer):
     class Meta:
@@ -76,6 +78,9 @@ class HealthPackageDetailSerializer(DynamicFieldsModelSerializer):
 
     def get_included_health_tests(self, instance):
         health_tests = instance.included_health_tests.all().order_by('description')
+        logger.info("health_tests -- %s"%(str(health_tests)))
+        serializer_data = HealthTestSerializer(health_tests, many=True).data
+        logger.info("serializer_data -- %s"%(str(serializer_data)))
         return HealthTestSerializer(health_tests, many=True).data
 
     def to_representation(self, instance):
