@@ -530,6 +530,9 @@ class HealthPackagesView(ProxyView):
                 health_test_details['billing_sub_group'] = BillingSubGroup.objects.filter(
                     description=health_test_details['billing_sub_group']).first()
 
+            logger.info("health_test_kwargs view -- %s"%(str(health_test_kwargs)))
+            logger.info("health_test_details view -- %s"%(str(health_test_details)))
+
             health_test, health_test_created = HealthTest.objects.update_or_create(
                 **health_test_kwargs, defaults=health_test_details)
 
