@@ -533,6 +533,9 @@ class HealthPackagesView(ProxyView):
             health_test, health_test_created = HealthTest.objects.update_or_create(
                 **health_test_kwargs, defaults=health_test_details)
 
+            logger.info("health_test view -- %s"%(str(health_test)))
+            logger.info("health_test_created view -- %s"%(str(health_test_created)))
+
             hospital_code = health_package_details.pop('hospital_code')
             hospital_health_package_details['start_date'] = health_package_details.pop(
                 'start_date')
