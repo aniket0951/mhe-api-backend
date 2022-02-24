@@ -483,7 +483,6 @@ class HealthPackagesView(ProxyView):
         ]
         hospital_code = ""
         for each_health_package in response_content:
-            logger.info("each_health_package -- %s"%(str(each_health_package)))
             health_package_details = dict()
             for index, key in enumerate(sorted(each_health_package.keys())):
                 if not each_health_package[key]:
@@ -530,14 +529,8 @@ class HealthPackagesView(ProxyView):
                 health_test_details['billing_sub_group'] = BillingSubGroup.objects.filter(
                     description=health_test_details['billing_sub_group']).first()
 
-            logger.info("health_test_kwargs view -- %s"%(str(health_test_kwargs)))
-            logger.info("health_test_details view -- %s"%(str(health_test_details)))
-
             health_test, health_test_created = HealthTest.objects.update_or_create(
                 **health_test_kwargs, defaults=health_test_details)
-
-            logger.info("health_test view -- %s"%(str(health_test)))
-            logger.info("health_test_created view -- %s"%(str(health_test_created)))
 
             hospital_code = health_package_details.pop('hospital_code')
             hospital_health_package_details['start_date'] = health_package_details.pop(
@@ -566,9 +559,7 @@ class HealthPackagesView(ProxyView):
             try:
                 health_package, health_package_created = HealthPackage.objects.update_or_create(
                     **health_package_kwargs, defaults=health_package_details)
-
-                health_test_objs = health_package.included_health_tests
-                logger.info("health_test_objs -- %s"%(str(health_test_objs)))    
+  
                 health_package.included_health_tests.add(health_test)
 
                 hospital_health_package_kwargs['hospital'] = hospital
