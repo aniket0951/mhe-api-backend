@@ -545,11 +545,14 @@ class CreateMyAppointment(ProxyView):
                             appointment_instance.payment_status = "success"
                             appointment_instance.save()
 
-                            send_appointment_invitation(appointment_instance)
+                            
                             #if appointment_instance.appointment_mode == 'VC':
                             logger.info("next111 --->")
                             web_url = 'https://www.manipalhospitals.com'
+                            logger.info("web_url  ---->%s"%(str(web_url)))
                             send_appointment_web_url_link_mail(patient_instance,web_url)
+                            logger.info("sent mail-->")
+                            send_appointment_invitation(appointment_instance)
                             logger.info("next -->")
                             mobile_number = str(patient_instance.mobile.raw_input)
                             logger.info("mobile_number -->",mobile_number)
@@ -580,6 +583,9 @@ class CreateMyAppointment(ProxyView):
                     appointment_instance.save()
 
                 if not is_invitation_email_sent and appointment_instance.appointment_mode in ["HV"]:
+                    web_url = 'https://www.manipalhospitals.com'
+                    logger.info("web_url  ---->%s"%(str(web_url)))
+                    send_appointment_web_url_link_mail(patient_instance,web_url)
                     send_appointment_invitation(appointment_instance)
 
         return self.custom_success_response(
