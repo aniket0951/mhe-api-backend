@@ -7,8 +7,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db.models import Q
-from django.core.mail import EmailMultiAlternatives
-from apps.patients.exceptions import UnablToSendEmailException
+
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.exceptions import FeatureNotAvailableException
@@ -50,7 +49,6 @@ from rest_framework.test import APIClient
 
 from utils import custom_viewsets
 from utils.custom_validation import ValidationUtil
-
 from utils.custom_sms import send_sms
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
@@ -482,23 +480,8 @@ class CreateMyAppointment(ProxyView):
                                     patient_instance.save()
 
                                 send_appointment_invitation(appointment_instance)
-                                logger.info("Added logger ----->")
                                 #if appointment_instance.appointment_mode == 'VC':
                                 web_url = 'https://www.manipalhospitals.com'
-                                logger.info(" debug1 -->%s"%(str(web_url)))
-                                
-                                logger.info("inside send_appointment_link function")
-                                subject = 'Appointment web url link'
-                                body = 'Dear {},\n Click on the following link to join the VC \n {}'.format(patient_instance.first_name,web_url)
-                                logger.info("email body --> %s"%(str(body)))
-
-                                email = EmailMultiAlternatives(
-                                    subject, body, settings.EMAIL_FROM_USER, patient_instance.email)
-                                email_sent = email.send()
-
-                                if not email_sent:
-                                    raise UnablToSendEmailException
-                                                         
                                 send_appointment_web_url_link_mail(patient_instance,web_url)
                                 logger.info(" debug1 -->")
                                 mobile_number = str(patient_instance.mobile.raw_input)
@@ -563,22 +546,10 @@ class CreateMyAppointment(ProxyView):
                             appointment_instance.save()
 
                             send_appointment_invitation(appointment_instance)
-                            logger.info("Added logger ----->")
                             #if appointment_instance.appointment_mode == 'VC':
+                            logger.info("next111 --->")
                             web_url = 'https://www.manipalhospitals.com'
-                            logger.info(" debug1 -->%s"%(str(web_url)))
-                            
-                            logger.info("inside send_appointment_link function")
-                            subject = 'Appointment web url link'
-                            body = 'Dear {},\n Click on the following link to join the VC \n {}'.format(patient_instance.first_name,web_url)
-                            logger.info("email body --> %s"%(str(body)))
-
-                            email = EmailMultiAlternatives(
-                                subject, body, settings.EMAIL_FROM_USER, patient_instance.email)
-                            email_sent = email.send()
-                            logger.info("Added logger 2----->")
-                            if not email_sent:
-                                raise UnablToSendEmailException
+                            send_appointment_web_url_link_mail(patient_instance,web_url)
                             logger.info("next -->")
                             mobile_number = str(patient_instance.mobile.raw_input)
                             logger.info("mobile_number -->",mobile_number)
