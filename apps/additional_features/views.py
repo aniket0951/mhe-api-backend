@@ -58,7 +58,7 @@ class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
 class DriveScheduleViewSet(custom_viewsets.CreateUpdateListRetrieveModelViewSet):
     queryset = Drive.objects.all()
     serializer_class = DriveSerializer
-    permission_classes = [IsPccUserPermission]
+    permission_classes = [IsManipalAdminUser | IsPatientUser]
     create_success_message = 'Drive Schedule created successfully!'
     list_success_message = 'Drive Schedules returned successfully!'
     retrieve_success_message = 'Drive Schedule information returned successfully!'
