@@ -559,6 +559,7 @@ class HealthPackagesView(ProxyView):
             try:
                 health_package, health_package_created = HealthPackage.objects.update_or_create(
                     **health_package_kwargs, defaults=health_package_details)
+  
                 health_package.included_health_tests.add(health_test)
 
                 hospital_health_package_kwargs['hospital'] = hospital
