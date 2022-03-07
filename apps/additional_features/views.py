@@ -44,7 +44,7 @@ logger = logging.getLogger("django")
 class StaticInstructionsViewSet(custom_viewsets.ReadOnlyModelViewSet):
     queryset = StaticInstructions.objects.all()
     serializer_class = StaticInstructionsSerializer
-    permission_classes = [IsPatientUser]
+    permission_classes = [IsPccUserPermission]
     list_success_message = 'Static Instructions returned successfully!'
     retrieve_success_message = 'Static Instruction returned successfully!'
     filter_backends = (
