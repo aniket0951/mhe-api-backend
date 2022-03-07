@@ -150,9 +150,10 @@ def check_health_package_age_and_gender(patient,package_id_list):
 
 def send_appointment_web_url_link_mail(web_url,patient_instance):
     try:
-       
+        logger.info("inside send_appointment_link function")
         subject = 'Appointment web url link'
         body = 'Dear {},\n Click on the following link to join the VC \n {}'.format(patient_instance.first_name,web_url)
+        logger.info("email body --> %s"%(str(body)))
         email = EmailMultiAlternatives(
                             subject=subject,
                             body=body,
@@ -160,7 +161,7 @@ def send_appointment_web_url_link_mail(web_url,patient_instance):
                             to=patient_instance.email
                         )
         email_sent = email.send()
-
+        logger.info("successfully sent email")
         if not email_sent:
             raise UnablToSendEmailException
     except Exception as e:
