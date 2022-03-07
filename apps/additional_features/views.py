@@ -416,6 +416,3 @@ class DriveBookingViewSet(custom_viewsets.ModelViewSet):
             "drive_booking": DriveBookingSerializer(DriveBooking.objects.get(id=drive_booking.id)).data,
             "params": payment_params
         }, status=status.HTTP_200_OK)
-
-
-#this is testing
