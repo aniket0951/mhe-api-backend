@@ -148,3 +148,21 @@ def check_health_package_age_and_gender(patient,package_id_list):
             if patient.gender not in health_package.gender:
                 raise ValidationError(AppointmentsConstants.HEALTH_PACKAGE_GENDER_ERROR_MESSAGE%(str(health_package), str(health_package.gender)))
 
+def send_appointment_web_url_link_mail(web_url,patient_instance):
+    try:
+       
+        subject = 'Appointment web url link'
+        body = 'Dear {},\n Click on the following link to join the VC \n {}'.format(patient_instance.first_name,web_url)
+        email = EmailMultiAlternatives(
+                            subject=subject,
+                            body=body,
+                            from_email=settings.EMAIL_FROM_USER,
+                            to=patient_instance.email
+                        )
+        email_sent = email.send()
+
+        if not email_sent:
+            raise UnablToSendEmailException
+    except Exception as e:
+        logger.info("Exception while sending appointment web url email: %s"%str(e))
+

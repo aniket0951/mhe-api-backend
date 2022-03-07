@@ -49,6 +49,7 @@ from rest_framework.test import APIClient
 
 from utils import custom_viewsets
 from utils.custom_validation import ValidationUtil
+from utils.custom_sms import send_sms
 from utils.custom_permissions import (InternalAPICall, IsDoctor,
                                       IsManipalAdminUser, IsPatientUser,
                                       IsSelfUserOrFamilyMember,BlacklistUpdateMethodPermission,IsSelfDocument)
@@ -66,7 +67,7 @@ from .serializers import (AppointmentDocumentsSerializer,
                           PrescriptionDocumentsSerializer, PrimeBenefitsSerializer)
 
 from apps.doctors.serializers import DoctorChargesSerializer
-from .utils import cancel_and_refund_parameters, rebook_parameters, send_feedback_received_mail,get_processing_id, check_health_package_age_and_gender
+from .utils import cancel_and_refund_parameters, rebook_parameters, send_appointment_web_url_link_mail, send_feedback_received_mail,get_processing_id, check_health_package_age_and_gender
 from utils.send_invite import send_appointment_invitation, send_appointment_cancellation_invitation, send_appointment_rescheduling_invitation
 from .constants import AppointmentsConstants
 
@@ -479,6 +480,17 @@ class CreateMyAppointment(ProxyView):
                                     patient_instance.save()
 
                                 send_appointment_invitation(appointment_instance)
+                                if appointment_instance.appointment_mode == 'VC':
+                                    web_url = 'https://www.manipalhospitals.com'
+                                    send_appointment_web_url_link_mail(patient_instance,web_url)
+                                    mobile_number = str(patient_instance.mobile.raw_input)
+                                    message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
+                                              patient_instance.first_name,web_url)
+
+                                    if self.request.query_params.get('is_android', True):
+                                        message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
+                                    send_sms(mobile_number=mobile_number, message=message)
+                    
                                 is_invitation_email_sent = True
                                     
                     except Exception as e:
@@ -531,6 +543,17 @@ class CreateMyAppointment(ProxyView):
                             appointment_instance.save()
 
                             send_appointment_invitation(appointment_instance)
+                            if appointment_instance.appointment_mode == 'VC':
+                                    web_url = 'https://www.manipalhospitals.com'
+                                    send_appointment_web_url_link_mail(patient_instance,web_url)
+                                    mobile_number = str(patient_instance.mobile.raw_input)
+                                    message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
+                                              patient_instance.first_name,web_url)
+
+                                    if self.request.query_params.get('is_android', True):
+                                        message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
+                                    send_sms(mobile_number=mobile_number, message=message)
+                            
                             is_invitation_email_sent = True
 
                         else:
