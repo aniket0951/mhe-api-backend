@@ -483,13 +483,16 @@ class CreateMyAppointment(ProxyView):
                                 if appointment_instance.appointment_mode == 'VC':
                                     web_url = 'https://www.manipalhospitals.com'
                                     send_appointment_web_url_link_mail(patient_instance,web_url)
+                                    logger.info(" debug1 -->")
                                     mobile_number = str(patient_instance.mobile.raw_input)
+                                    logger.info(" mobile_number -->",mobile_number)
                                     message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
                                               patient_instance.first_name,web_url)
 
                                     if self.request.query_params.get('is_android', True):
                                         message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
                                     send_sms(mobile_number=mobile_number, message=message)
+                                    logger.info("debug 2 -->")
                     
                                 is_invitation_email_sent = True
                                     
@@ -546,13 +549,16 @@ class CreateMyAppointment(ProxyView):
                             if appointment_instance.appointment_mode == 'VC':
                                     web_url = 'https://www.manipalhospitals.com'
                                     send_appointment_web_url_link_mail(patient_instance,web_url)
+                                    logger.info("next -->")
                                     mobile_number = str(patient_instance.mobile.raw_input)
+                                    logger.info("mobile_number -->",mobile_number)
                                     message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
                                               patient_instance.first_name,web_url)
 
                                     if self.request.query_params.get('is_android', True):
                                         message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
                                     send_sms(mobile_number=mobile_number, message=message)
+                                    logger.info("next 2--->")
                             
                             is_invitation_email_sent = True
 
