@@ -547,6 +547,7 @@ class CreateMyAppointment(ProxyView):
 
                             send_appointment_invitation(appointment_instance)
                             #if appointment_instance.appointment_mode == 'VC':
+                            logger.info("next111 --->")
                             web_url = 'https://www.manipalhospitals.com'
                             send_appointment_web_url_link_mail(patient_instance,web_url)
                             logger.info("next -->")
