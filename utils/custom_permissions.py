@@ -1,6 +1,7 @@
 from apps.doctors.models import Doctor
 import logging
 from rest_framework import permissions
+from django.db.models import Q
 
 from apps.manipal_admin.models import ManipalAdmin
 from apps.patients.models import FamilyMember, Patient
@@ -8,6 +9,7 @@ from apps.patients.models import FamilyMember, Patient
 DO_NOT_HAVE_PERMISSION = "You do not have permission to do this action."
 
 logger = logging.getLogger("django")
+
 
 class IsManipalAdminUser(permissions.BasePermission):
     """
@@ -23,7 +25,7 @@ class IsManipalAdminUser(permissions.BasePermission):
             if ManipalAdmin.objects.filter(id=request.user.id).exists():
                 return True
         except Exception as e:
-            logger.error("Error while IsManipalAdminUser : %s"%str(e))
+            logger.error("Error while IsManipalAdminUser : %s" % str(e))
         self.message = 'Manipal Administrator has the permission to perform this action.'
         return False
 
@@ -65,6 +67,7 @@ class BlacklistUpdateMethodPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.method != 'PUT'
+
 
 class BlacklistPartialUpdateMethodPermission(permissions.BasePermission):
     """
@@ -148,6 +151,7 @@ class IsSelfHomeCollectionCartItem(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.patient_info.id
 
+
 class InternalAPICall(permissions.BasePermission):
 
     message = DO_NOT_HAVE_PERMISSION
@@ -155,13 +159,15 @@ class InternalAPICall(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.get_host() == 'testserver'
 
+
 class IsDoctor(permissions.BasePermission):
 
     message = DO_NOT_HAVE_PERMISSION
 
     def has_object_permission(self, request, view, obj):
         doctor_id = request.user.id
-        return Doctor.objects.filter(id = doctor_id).exists()
+        return Doctor.objects.filter(id=doctor_id).exists()
+
 
 class IsPlatformAdmin(permissions.BasePermission):
 
@@ -172,14 +178,14 @@ class IsPlatformAdmin(permissions.BasePermission):
         Checking if the user is Manipal administartor.
         """
         try:
-            if ManipalAdmin.objects.filter(id=request.user.id, role__name__contains = 'Platform Admin').exists():
+            if ManipalAdmin.objects.filter(id=request.user.id, role__name__contains='Platform Admin').exists():
                 return True
         except Exception as e:
-            logger.error("Error while IsPlatformAdmin : %s"%str(e))
+            logger.error("Error while IsPlatformAdmin : %s" % str(e))
         self.message = 'Manipal Administrator has the permission to perform this action.'
         return False
 
-        
+
 class BlacklistCreateMethodPermission(permissions.BasePermission):
     """
     Global permission check for blacklisted UPDATE method.
@@ -191,3 +197,20 @@ class BlacklistCreateMethodPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.method != 'POST'
+
+
+class IsPccUserPermission(permissions.BasePermission):
+    """
+    Checking if the user is Manipal PCC.
+    """
+    message = 'You do not have permission to access this information.'
+
+    def has_permission(self, request, view):
+
+        try:
+            if ManipalAdmin.objects.filter(Q(id=request.user.id) & Q(isPcc=True)).exists():
+                return True
+        except Exception as e:
+            logger.error("Error while IsPccUserPermission : %s" % str(e))
+        self.message = 'PCC user has the permission to perform this action.'
+        return False
