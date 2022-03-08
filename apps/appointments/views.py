@@ -479,7 +479,9 @@ class CreateMyAppointment(ProxyView):
                                     patient_instance.uhid_number = bill_detail.get("HospitalNo")
                                     patient_instance.save()
 
+                                logger.info("before sending invitation email")
                                 send_appointment_invitation(appointment_instance)
+                                logger.info("after sending invitation email")
                                 #if appointment_instance.appointment_mode == 'VC':
                                 web_url = 'https://www.manipalhospitals.com'
                                 send_appointment_web_url_link_mail(patient_instance,web_url)
@@ -547,12 +549,15 @@ class CreateMyAppointment(ProxyView):
 
                             
                             #if appointment_instance.appointment_mode == 'VC':
+                            logger.info("before sending invitation email")
                             logger.info("next111 --->")
                             web_url = 'https://www.manipalhospitals.com'
                             logger.info("web_url  ---->%s"%(str(web_url)))
                             send_appointment_web_url_link_mail(patient_instance,web_url)
                             logger.info("sent mail-->")
+                            logger.info("before sending invitation email2")
                             send_appointment_invitation(appointment_instance)
+                            logger.info("after sending invitation email2")
                             logger.info("next -->")
                             mobile_number = str(patient_instance.mobile.raw_input)
                             logger.info("mobile_number -->",mobile_number)
@@ -586,7 +591,9 @@ class CreateMyAppointment(ProxyView):
                     web_url = 'https://www.manipalhospitals.com'
                     logger.info("web_url  ---->%s"%(str(web_url)))
                     send_appointment_web_url_link_mail(patient_instance,web_url)
+                    logger.info("before sending invitation email3")
                     send_appointment_invitation(appointment_instance)
+                    logger.info("after sending invitation email3")
 
         return self.custom_success_response(
                                         message=response_message,
