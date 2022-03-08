@@ -579,8 +579,8 @@ class CreateMyAppointment(ProxyView):
                     elif appointment_instance.family_member:
                         mobile_number = str(appointment_instance.family_member.mobile.raw_input)
                     logger.info(" mobile_number -->",mobile_number)
-                    message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
-                                    patient_instance.first_name,web_url)
+                    message = 'Dear ,\n Click on the following link to join the VC \n {}'.format(
+                                    web_url)
 
                     if self.request.query_params.get('is_android', True):
                             message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
