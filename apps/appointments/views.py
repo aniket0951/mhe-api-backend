@@ -589,7 +589,7 @@ class CreateMyAppointment(ProxyView):
                                         subject=subject,
                                         body=body,
                                         from_email=settings.EMAIL_FROM_USER,
-                                        to=email
+                                        to=[email]
                                     )
                     email_sent = email.send()
                     logger.info("successfully sent email")
