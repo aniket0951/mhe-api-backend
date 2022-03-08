@@ -461,6 +461,8 @@ ENVIRONMENT = env("ENVIRONMENT")
 SEND_CALENDAR_INVITATION = True if env("SEND_CALENDAR_INVITATION") and str(
     env("SEND_CALENDAR_INVITATION")) == "True" else False
 
+MANIPAL_WEB_URL = env('MANIPAL_WEB_URL')
+
 # Logger configuration
 LOGGING = {
     'version': 1,

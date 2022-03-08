@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db.models import Q
-
+from django.core.mail import EmailMultiAlternatives
 from apps.doctors.exceptions import DoctorDoesNotExistsValidationException
 from apps.doctors.models import Doctor
 from apps.health_packages.exceptions import FeatureNotAvailableException
@@ -571,14 +571,35 @@ class CreateMyAppointment(ProxyView):
                     
                     web_url = 'https://www.manipalhospitals.com'
                     logger.info("before sending web url link")
-                    send_appointment_web_url_link_mail(appointment_instance,web_url)
+                    subject = 'Appointment web url link'
+                    appointment_obj = appointment_instance
+                    logger.info("appointment_obj --> %s"%(str(appointment_obj)))
+                    
+                    email = None
+                    if appointment_instance.patient:
+                        logger.info("patient email")
+                        email = appointment_instance.patient.email
+                    elif appointment_instance.family_member:
+                        logger.info("family member email")
+                        email = appointment_instance.family_member.email 
+                    logger.info("patient email -->%s"%(str(email)))
+                    body = 'Dear ,\n Click on the following link to join the VC \n {}'.format(web_url)
+                    logger.info("email body --> %s"%str(body))
+                    email = EmailMultiAlternatives(
+                                        subject=subject,
+                                        body=body,
+                                        from_email=settings.EMAIL_FROM_USER,
+                                        to=[email]
+                                    )
+                    email_sent = email.send()
+                    logger.info("successfully sent email")
                     logger.info("after sending web url link")
                     mobile_number = None
                     if appointment_instance.patient:
                         mobile_number = str(appointment_instance.patient.mobile.raw_input)
                     elif appointment_instance.family_member:
                         mobile_number = str(appointment_instance.family_member.mobile.raw_input)
-                    logger.info(" mobile_number -->",mobile_number)
+                    logger.info(" mobile_number -->%s"%str(mobile_number))
                     message = 'Dear ,\n Click on the following link to join the VC \n {}'.format(
                                     web_url)
 
