@@ -568,6 +568,26 @@ class CreateMyAppointment(ProxyView):
                     appointment_instance.save()
                     logger.info("debug logger15 ****")
 
+                    
+                    web_url = 'https://www.manipalhospitals.com'
+                    logger.info("before sending web url link")
+                    send_appointment_web_url_link_mail(appointment_instance,web_url)
+                    logger.info("after sending web url link")
+                    mobile_number = None
+                    if appointment_instance.patient:
+                        mobile_number = str(appointment_instance.patient.mobile.raw_input)
+                    elif appointment_instance.family_member:
+                        mobile_number = str(appointment_instance.family_member.mobile.raw_input)
+                    logger.info(" mobile_number -->",mobile_number)
+                    message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
+                                    patient_instance.first_name,web_url)
+
+                    if self.request.query_params.get('is_android', True):
+                            message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
+                    logger.info("before sending sms url link")
+                    send_sms(mobile_number=mobile_number, message=message)
+                    logger.info("after sending sms url link")
+
                 if not is_invitation_email_sent and appointment_instance.appointment_mode in ["HV"]:
                     logger.info("debug logger16 ****")
                     send_appointment_invitation(appointment_instance)
