@@ -417,6 +417,7 @@ class CreateMyAppointment(ProxyView):
                 date_time = datetime_object.strftime("%Y%m%d")
                 corporate_appointment = dict()
 
+                logger.info("appointment_instance --> %s"%(str(appointment_instance)))
 
                 uhid = new_appointment["uhid"] or "None"
                 location_code = data.get("hospital").code
@@ -433,7 +434,7 @@ class CreateMyAppointment(ProxyView):
                                                     'order_date':order_date,
                                                     "promo_code":promo_code
                                                 }), content_type='application/json')
-                
+
                 
                 corporate_appointment["uhid"] = new_appointment["uhid"]
                 corporate_appointment["location_code"] = data.get("hospital").code
@@ -446,6 +447,7 @@ class CreateMyAppointment(ProxyView):
                 is_invitation_email_sent = False
 
                 if patient and patient.active_view == 'Corporate':
+                    logger.info("debug logger1 ****")
                     
                     corporate_appointment["processing_id"] = get_processing_id()
                     corporate_appointment["transaction_number"] = corporate_appointment["location_code"]+appointment_identifier
@@ -454,7 +456,7 @@ class CreateMyAppointment(ProxyView):
                     payment_update_response = AppointmentPaymentView.as_view()(corporate_param)
                     
                     try:
-
+                        logger.info("debug logger2 ****")
                         if  payment_update_response.status_code==200 and \
                             payment_update_response.data and \
                             payment_update_response.data.get("data") and \
@@ -462,8 +464,10 @@ class CreateMyAppointment(ProxyView):
                             payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"):
                             bill_detail = json.loads(payment_update_response.data.get("data").get("payDetailAPIResponse").get("BillDetail"))[0]
                             
+                            logger.info("debug logger3 ****")
                             if bill_detail.get("AppointmentId") and "||" in bill_detail.get("AppointmentId"):
-                                
+                                logger.info("debug logger4 ****")
+
                                 appointment_instance.uhid = bill_detail.get("HospitalNo")
                                 appointment_instance.appointment_identifier = bill_detail.get("AppointmentId")
                                 appointment_instance.payment_status = "success"
@@ -478,27 +482,14 @@ class CreateMyAppointment(ProxyView):
                                     patient_instance = Patient.objects.filter(id=data.get("patient").id).first()
                                     patient_instance.uhid_number = bill_detail.get("HospitalNo")
                                     patient_instance.save()
-
-                                logger.info("before sending invitation email")
+                               
+                                logger.info("debug logger5 ****")
                                 send_appointment_invitation(appointment_instance)
-                                logger.info("after sending invitation email")
-                                #if appointment_instance.appointment_mode == 'VC':
-                                web_url = 'https://www.manipalhospitals.com'
-                                send_appointment_web_url_link_mail(patient_instance,web_url)
-                                logger.info(" debug1 -->")
-                                mobile_number = str(patient_instance.mobile.raw_input)
-                                logger.info(" mobile_number -->",mobile_number)
-                                message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
-                                              patient_instance.first_name,web_url)
-
-                                if self.request.query_params.get('is_android', True):
-                                        message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
-                                send_sms(mobile_number=mobile_number, message=message)
-                                logger.info("debug 2 -->")
-                    
+                                logger.info("debug logger6 ****")
                                 is_invitation_email_sent = True
                                     
                     except Exception as e:
+                        logger.info("debug logger7 ****")
                         param = dict()
                         param["appointment_identifier"] = appointment_instance.appointment_identifier
                         param["reason_id"] = "1"
@@ -511,22 +502,29 @@ class CreateMyAppointment(ProxyView):
                 response_message = "Appointment has been created"
                 response_data["appointment_identifier"] = appointment_identifier
                 response_data['consultation_object'] = consultation_response.data['data']
+                logger.info("debug logger8 ****")
 
                 if  patient and patient.active_view != 'Corporate' and \
                     consultation_response.status_code == 200 and \
                     consultation_response.data and \
                     consultation_response.data['data']:
 
+                    logger.info("debug logger9 ****")
+
                     hv_charges = consultation_response.data['data'].get("OPDConsCharges")
                     vc_charges = consultation_response.data['data'].get("VCConsCharges")
                     pr_charges = consultation_response.data['data'].get("PRConsCharges")
 
                     if consultation_response.data['data'].get("PlanCode"):
+                        logger.info("debug logger10 ****")
+
                         appointment_instance.plan_code = consultation_response.data['data'].get("PlanCode")
                     
                     if  (appointment_instance.appointment_mode == "HV" and str(hv_charges) == "0") or \
                         (appointment_instance.appointment_mode == "VC" and str(vc_charges) == "0") or \
                         (appointment_instance.appointment_mode == "PR" and str(pr_charges) == "0"):
+
+                        logger.info("debug logger11 ****")
 
                         if  (consultation_response.data['data'].get('IsFollowUp') and \
                             consultation_response.data['data'].get('IsFollowUp') == "Y") or \
@@ -547,28 +545,9 @@ class CreateMyAppointment(ProxyView):
                             appointment_instance.payment_status = "success"
                             appointment_instance.save()
 
-                            
-                            #if appointment_instance.appointment_mode == 'VC':
-                            logger.info("before sending invitation email")
-                            logger.info("next111 --->")
-                            web_url = 'https://www.manipalhospitals.com'
-                            logger.info("web_url  ---->%s"%(str(web_url)))
-                            send_appointment_web_url_link_mail(patient_instance,web_url)
-                            logger.info("sent mail-->")
-                            logger.info("before sending invitation email2")
+                            logger.info("debug logger12 ****")
                             send_appointment_invitation(appointment_instance)
-                            logger.info("after sending invitation email2")
-                            logger.info("next -->")
-                            mobile_number = str(patient_instance.mobile.raw_input)
-                            logger.info("mobile_number -->",mobile_number)
-                            message = 'Dear {},\n Click on the following link to join the VC \n {}'.format(
-                                              patient_instance.first_name,web_url)
-
-                            if self.request.query_params.get('is_android', True):
-                                        message = '<#> ' + message + ' ' + settings.ANDROID_SMS_RETRIEVER_API_KEY
-                            send_sms(mobile_number=mobile_number, message=message)
-                            logger.info("next 2--->")
-                            
+                            logger.info("debug logger13 ****")
                             is_invitation_email_sent = True
 
                         else:
@@ -580,21 +559,20 @@ class CreateMyAppointment(ProxyView):
                             response_success = False
                             response_message = "Unable to book your appointment!"
                             logger.info("Cancelling the appointment : %s"%(str(param)))
+                            logger.info("debug logger14 ****")
                             CancelMyAppointment.as_view()(request_param)
                             raise InvalidAppointmentPrice
 
                         appointment_instance.is_follow_up = True if consultation_response.data['data'].get('IsFollowUp') != "N" else False
 
                     appointment_instance.save()
+                    logger.info("debug logger15 ****")
 
                 if not is_invitation_email_sent and appointment_instance.appointment_mode in ["HV"]:
-                    web_url = 'https://www.manipalhospitals.com'
-                    logger.info("web_url  ---->%s"%(str(web_url)))
-                    send_appointment_web_url_link_mail(patient_instance,web_url)
-                    logger.info("before sending invitation email3")
+                    logger.info("debug logger16 ****")
                     send_appointment_invitation(appointment_instance)
-                    logger.info("after sending invitation email3")
-
+                    logger.info("debug logger17 ****")
+                    
         return self.custom_success_response(
                                         message=response_message,
                                         success=response_success, 
