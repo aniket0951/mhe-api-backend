@@ -13,9 +13,3 @@ class UrlShorter(models.Model):
 
     def __str__(self):
         return f'{self.short_url}'
-
-    # def save(self, *args, **kwargs):
-    #     if not self.short_url:
-    #         self.short_url = short_it(self)
-
-    #     super().save(*args, **kwargs)
