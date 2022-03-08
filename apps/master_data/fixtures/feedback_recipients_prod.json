@@ -402,19 +402,6 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
-        "pk": "22f83668-7213-4d78-96dc-635e1cd815d5",
-        "fields": {
-            "created_at": "2021-01-27T18:47:24.893Z",
-            "updated_at": "2021-01-27T18:47:24.893Z",
-            "hospital_code": "MHJ",
-            "name": "Zuber Khan",
-            "contact": "8003306126",
-            "type": "TO",
-            "email": "zuber.k@manipalhospitals.com"
-        }
-    },
-    {
-        "model": "master_data.FeedbackRecipients",
         "pk": "22f83668-7213-4d78-96dc-635e1cd815d6",
         "fields": {
             "created_at": "2021-09-01T15:47:24.893Z",
@@ -439,14 +426,14 @@
     },
     {
         "model": "master_data.FeedbackRecipients",
-        "pk": "22f83668-7213-4d78-96dc-635e1cd815d8",
+        "pk": "22f83668-7213-4d78-96dc-635e1cd816d5",
         "fields": {
-            "created_at": "2021-09-01T15:47:24.893Z",
-            "updated_at": "2021-09-01T15:47:24.893Z",
+            "created_at": "2021-03-07T18:47:24.893Z",
+            "updated_at": "2021-03-07T18:47:24.893Z",
             "hospital_code": "MHJ",
-            "name": "Sudeep Singh",
+            "name": "Zuber Khan",
             "type": "TO",
-            "email": "sudeep.singh1@manipalhospitals.com"
+            "email": "zuber.khan@manipalhospitals.com"
         }
     },
     {
