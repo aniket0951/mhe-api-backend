@@ -11,7 +11,7 @@ from .utils import short_it
 def shortView(request):
     long_url = request.POST.get("url")
     hash = short_it(long_url)
-    current_site = '127.0.0.1:8000'
+    current_site = str(request.get_host())
     data = {
         "success": True,
         "id": hash,
