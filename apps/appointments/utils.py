@@ -152,14 +152,19 @@ def send_appointment_web_url_link_mail(web_url,appointment_instance):
     try:
         logger.info("inside send_appointment_link function")
         subject = 'Appointment web url link'
+        appointment_obj = appointment_instance
+        logger.info("appointment_obj --> %s"%(str(appointment_obj)))
+        
         email = None
         if appointment_instance.patient:
+            logger.info("patient email")
             email = appointment_instance.patient.email
         elif appointment_instance.family_member:
+            logger.info("family member email")
             email = appointment_instance.family_member.email 
         logger.info("patient email -->%s"%(str(email)))
         body = 'Dear ,\n Click on the following link to join the VC \n {}'.format(web_url)
-        logger.info("email body --> %s"%(str(body)))
+        logger.info("email body --> %s"%str(body))
         email = EmailMultiAlternatives(
                             subject=subject,
                             body=body,

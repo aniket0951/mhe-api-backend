@@ -578,7 +578,7 @@ class CreateMyAppointment(ProxyView):
                         mobile_number = str(appointment_instance.patient.mobile.raw_input)
                     elif appointment_instance.family_member:
                         mobile_number = str(appointment_instance.family_member.mobile.raw_input)
-                    logger.info(" mobile_number -->",mobile_number)
+                    logger.info(" mobile_number -->%s"%str(mobile_number))
                     message = 'Dear ,\n Click on the following link to join the VC \n {}'.format(
                                     web_url)
 
