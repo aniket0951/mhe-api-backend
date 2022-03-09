@@ -3,7 +3,7 @@ import urllib
 import hashlib
 import time
 import random
-from datetime import datetime, timedelta, datecomplete_statement
+from datetime import datetime, timedelta, date
 from utils.exceptions import UserNotRegisteredException
 from django.db.models import Sum
 
