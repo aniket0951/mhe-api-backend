@@ -24,7 +24,6 @@ from apps.url_shortner.utils import short_it
 logger = logging.getLogger('django')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-
 def generate_pre_signed_url(image_url):
     try:
         decoded_url = urllib.request.unquote(image_url)
