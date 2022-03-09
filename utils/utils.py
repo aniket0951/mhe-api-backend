@@ -1,10 +1,9 @@
 import logging
-from sqlite3 import complete_statement
 import urllib
 import hashlib
 import time
 import random
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, datecomplete_statement
 from utils.exceptions import UserNotRegisteredException
 from django.db.models import Sum
 
