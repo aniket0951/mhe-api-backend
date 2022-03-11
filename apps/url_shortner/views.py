@@ -18,7 +18,7 @@ def shortView(request):
     data = {
         "success": True,
         "id": hash,
-        "short_url": "http://{}/{}".format(current_site, hash),
+        "short_url": "{}/{}".format(current_site, hash),
         "long_url": long_url
     }
     return JsonResponse(data)
