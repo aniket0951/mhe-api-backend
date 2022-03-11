@@ -1,8 +1,11 @@
-from django.shortcuts import redirect
-from django.contrib.sites.requests import RequestSite
+from django.conf import settings
 from django.contrib.sites.models import Site
-from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
+from django.contrib.sites.requests import RequestSite
+from django.http import (Http404, HttpResponse, HttpResponseRedirect,
+                         JsonResponse)
+from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
+
 from .models import UrlShorter
 from .utils import short_it
 
@@ -11,7 +14,7 @@ from .utils import short_it
 def shortView(request):
     long_url = request.POST.get("url")
     hash = short_it(long_url)
-    current_site = str(request.get_host())
+    current_site = settings.MANIPAL_WEB_URL
     data = {
         "success": True,
         "id": hash,
