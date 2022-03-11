@@ -14,7 +14,7 @@ from .utils import short_it
 def shortView(request):
     long_url = request.POST.get("url")
     hash = short_it(long_url)
-    current_site = settings.MANIPAL_WEB_URL
+    current_site = str(settings.MANIPAL_WEB_URL)
     data = {
         "success": True,
         "id": hash,
